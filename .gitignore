@@ -1,0 +1,60 @@
+*.pydevproject
+.metadata
+.gradle
+bin/
+tmp/
+*.tmp
+*.bak
+*.swp
+*~.nib
+local.properties
+.settings/
+.loadpath
+
+# External tool builders
+.externalToolBuilders/
+
+# Locally stored "Eclipse launch configurations"
+*.launch
+
+# JDT-specific (Eclipse Java Development Tools)
+.classpath
+
+# Java annotation processor (APT)
+.factorypath
+
+# PDT-specific
+.buildpath
+
+# sbteclipse plugin
+.target
+
+# TeXlipse plugin
+.texlipse
+
+# STS (Spring Tool Suite)
+.springBeans
+
+# Build tmp files
+*.o
+**/*.o
+*.d
+**/*.d
+*.a
+**/*.a
+
+# acs
+/ESP8266_IOT/include/board/acs_*
+
+# Valgring cfg
+valgrind-suppressions.cfg
+
+# Eclipse
+/RemoteSystemsTempFiles/
+
+# Binaries
+/supla-server/Debug/supla-server
+/supla-server/Release/supla-server
+
+/supla-dev/Debug/supla-dev
+/supla-dev/Release/supla-dev
