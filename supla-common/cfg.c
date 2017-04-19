@@ -1,11 +1,19 @@
 /*
- ============================================================================
- Name        : cfg.c
- Author      : Przemyslaw Zygmunt p.zygmunt@acsoftware.pl [AC SOFTWARE]
- Version     : 1.0
- Copyright   : GPLv2
- ============================================================================
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
+
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -105,6 +113,10 @@ void scfg_set_callback(_func_cfg_callback cb) {
 
 	if ( scfg == NULL ) {
 		scfg = malloc(sizeof(TSuplaCfg));
+
+		if ( scfg == NULL )
+			return;
+
 		memset(scfg, 0, sizeof(TSuplaCfg));
 	}
 
@@ -114,28 +126,49 @@ void scfg_set_callback(_func_cfg_callback cb) {
 void scfg_add_param(char *section_name, const char *param_name, unsigned char vtype, char *cval, unsigned char bval, double dval, int ival) {
 
 	TSuplaCfgParam *param;
+	TSuplaCfgParam **scfg_param = NULL;
 
-	assert( section_name != NULL && strlen(section_name) > 0);
-	assert( param_name != NULL && strlen(param_name) > 0);
+	assert( section_name != NULL && strnlen(section_name, 128) > 0);
+	assert( param_name != NULL && strnlen(param_name, 128) > 0);
 
 	if ( scfg == NULL ) {
 		scfg = malloc(sizeof(TSuplaCfg));
+
+		if ( scfg == NULL )
+			return;
+
 		memset(scfg, 0, sizeof(TSuplaCfg));
 	}
 
-	scfg->count++;
-
-	scfg->param = realloc(scfg->param, sizeof(void*)*scfg->count);
 	param = malloc(sizeof(TSuplaCfgParam));
-	memset(param, 0, sizeof(TSuplaCfgParam));
-	param->section_name = section_name;
-	param->name = strdup(param_name);
-	param->vtype = vtype;
-	param->cval = cval == NULL ? NULL : strdup(cval);
-	param->bval = bval;
-	param->dval = dval;
-	param->ival = ival;
-	scfg->param[scfg->count-1] = param;
+
+	if ( param == NULL )
+		return;
+
+	scfg_param = realloc(scfg->param, sizeof(void*)*(scfg->count+1));
+
+	if ( scfg_param == NULL ) {
+
+		free(param);
+
+	} else {
+
+		memset(param, 0, sizeof(TSuplaCfgParam));
+
+		scfg->count++;
+		scfg->param = scfg_param;
+
+		param->section_name = section_name;
+		param->name = strdup(param_name);
+		param->vtype = vtype;
+		param->cval = cval == NULL ? NULL : strdup(cval);
+		param->bval = bval;
+		param->dval = dval;
+		param->ival = ival;
+		scfg->param[scfg->count-1] = param;
+
+	}
+
 
 }
 
@@ -175,7 +208,7 @@ unsigned char scfg_load(int argc, char* argv[], char default_file[]) {
 	           if ( strcmp("-c", argv[a]) == 0 && a<argc-1 ) {
 	                   cfg_path = argv[a+1];
 	                   a++;
-	           } else if ( strcmp("-p", argv[a]) == 0 && a<argc-1 && strlen(argv[a+1]) < 1024 ) {
+	           } else if ( strcmp("-p", argv[a]) == 0 && a<argc-1 && strnlen(argv[a+1], 1030) < 1024 ) {
 	        	       pidfile_path = strdup(argv[a+1]);
 	                           a++;
 	           } else if ( strcmp("-d", argv[a]) == 0 ) {
@@ -270,7 +303,7 @@ int scfg_getuid(unsigned char param_id) {
 	char *name = scfg_string(param_id);
 
 	if( name
-		&& strlen(name) > 0 ) {
+		&& strnlen(name, 256) > 0 ) {
 
         struct passwd *pwd = getpwnam(name); /* don't free, see man getpwnam() for details */
         if( pwd )
@@ -285,7 +318,7 @@ int scfg_getgid(unsigned char param_id) {
 	char *name = scfg_string(param_id);
 
 	if( name
-		&& strlen(name) > 0 ) {
+		&& strnlen(name, 256) > 0 ) {
 
         struct group *gr = getgrnam(name); /* don't free, see man getgrnam() for details */
         if( gr )

@@ -1,9 +1,17 @@
 /*
- ============================================================================
- Name        : srpc.c [SUPLA DATA EXCHANGE]
- Author      : Przemyslaw Zygmunt p.zygmunt@acsoftware.pl [AC SOFTWARE]
- Copyright   : 2015-2016 GPLv2
- ============================================================================
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include "srpc.h"
@@ -25,9 +33,8 @@
 	#define srpc_BUFFER_SIZE      1024
 	#define srpc_QUEUE_MAX_SIZE   2
 
-	#define malloc os_malloc
-	#define realloc os_realloc
-	#define free os_free
+	#include <user_interface.h>
+	#include "espmissingincludes.h"
 
 #elif defined(__AVR__)
 
@@ -68,6 +75,10 @@ void SRPC_ICACHE_FLASH  srpc_params_init(TsrpcParams *params) {
 void* SRPC_ICACHE_FLASH srpc_init(TsrpcParams *params) {
 
 	Tsrpc *srpc = (Tsrpc *)malloc(sizeof(Tsrpc));
+
+	if ( srpc == NULL )
+		return NULL;
+
 	memset(srpc, 0, sizeof(Tsrpc));
 	srpc->proto = sproto_init();
 
@@ -124,22 +135,22 @@ char SRPC_ICACHE_FLASH srpc_queue_push(TSuplaDataPacket ***queue, unsigned char 
 
 	if ( sdp_new == 0 )
 		return SUPLA_RESULT_FALSE;
-	
+
 	(*size)++;
 
-    *queue = (TSuplaDataPacket **)realloc(*queue, sizeof(TSuplaDataPacket *)*(*size));
+    TSuplaDataPacket **queue_new = (TSuplaDataPacket **)realloc(*queue, sizeof(TSuplaDataPacket *)*(*size));
 
-	if ( *queue == 0 ) {
-			*size = 0;
-			free(sdp_new);
-			return SUPLA_RESULT_FALSE;
+	if ( queue_new == 0 ) {
+		(*size)--;
+		free(sdp_new);
+		return SUPLA_RESULT_FALSE;
+	} else {
+		*queue = queue_new;
 	}
-
 
 	memcpy(sdp_new, sdp, sizeof(TSuplaDataPacket));
 
 	(*queue)[(*size)-1] = sdp_new;
-
 
 	return SUPLA_RESULT_TRUE;
 }
@@ -158,17 +169,20 @@ char SRPC_ICACHE_FLASH srpc_queue_pop(TSuplaDataPacket ***queue, unsigned char *
 			} else {
 
 				free((*queue)[a]);
+				(*queue)[a] = NULL;
 
                 for(b=a;b<((*size)-1);b++)
                 	(*queue)[b] = (*queue)[b+1];
 
+                // before "--" size is always > 1
                 (*size)--;
 
-                *queue = (TSuplaDataPacket **)realloc(*queue, sizeof(TSuplaDataPacket *)*(*size));
+                TSuplaDataPacket **queue_new = (TSuplaDataPacket **)realloc(*queue, sizeof(TSuplaDataPacket *)*(*size));
 
-            	if ( *queue == 0 ) {
-            			*size = 0;
-            			return SUPLA_RESULT_FALSE;
+            	if ( *queue_new == 0 ) {
+            		return SUPLA_RESULT_FALSE;
+            	} else {
+                    *queue = queue_new;
             	}
 			}
 
@@ -229,7 +243,6 @@ char SRPC_ICACHE_FLASH srpc_iterate(void *_srpc) {
     			lck_lock(srpc->lck);
     		}
 
-
     	} else {
         	supla_log(LOG_DEBUG, "ssrpc_in_queue_push error");
         	return lck_unlock_r(srpc->lck, SUPLA_RESULT_FALSE);
@@ -284,6 +297,7 @@ char SRPC_ICACHE_FLASH srpc_iterate(void *_srpc) {
 
     }
 
+
     return lck_unlock_r(srpc->lck, SUPLA_RESULT_TRUE);
 }
 
@@ -309,6 +323,10 @@ void SRPC_ICACHE_FLASH srpc_getchannelpack(Tsrpc *srpc, TsrpcReceivedData *rd) {
 
 	pack_size = header_size+(sizeof(TSC_SuplaChannel)*count);
 	pack = (TSC_SuplaChannelPack *)malloc(pack_size);
+
+	if ( pack == NULL )
+		return;
+
 	memset(pack, 0, pack_size);
 	memcpy(pack, srpc->sdp.data, header_size);
 
@@ -365,6 +383,10 @@ void SRPC_ICACHE_FLASH srpc_getlocationpack(Tsrpc *srpc, TsrpcReceivedData *rd) 
 
 	pack_size = header_size+(sizeof(TSC_SuplaLocation)*count);
 	pack = (TSC_SuplaLocationPack *)malloc(pack_size);
+
+	if ( pack == NULL )
+		return;
+
 	memset(pack, 0, pack_size);
 	memcpy(pack, srpc->sdp.data, header_size);
 
@@ -487,6 +509,17 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned
 
 			   break;
 
+		   case SUPLA_DS_CALL_REGISTER_DEVICE_C: // ver. >= 6
+
+			   if ( srpc->sdp.data_size >= (sizeof(TDS_SuplaRegisterDevice_C)-(sizeof(TDS_SuplaDeviceChannel_B)*SUPLA_CHANNELMAXCOUNT))
+					&& srpc->sdp.data_size <= sizeof(TDS_SuplaRegisterDevice_C) ) {
+
+				   rd->data.ds_register_device_c = (TDS_SuplaRegisterDevice_C*)malloc(sizeof(TDS_SuplaRegisterDevice_C));
+
+			   }
+
+			   break;
+
 		   case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT:
 
 			   if ( srpc->sdp.data_size == sizeof(TSD_SuplaRegisterDeviceResult) )
@@ -497,6 +530,13 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned
 
 			   if ( srpc->sdp.data_size == sizeof(TCS_SuplaRegisterClient) )
 				   rd->data.cs_register_client = (TCS_SuplaRegisterClient*)malloc(sizeof(TCS_SuplaRegisterClient));
+
+			   break;
+
+		   case SUPLA_CS_CALL_REGISTER_CLIENT_B: // ver. >= 6
+
+			   if ( srpc->sdp.data_size == sizeof(TCS_SuplaRegisterClient_B) )
+				   rd->data.cs_register_client_b = (TCS_SuplaRegisterClient_B*)malloc(sizeof(TCS_SuplaRegisterClient_B));
 
 			   break;
 
@@ -581,6 +621,30 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned
 					&& srpc->sdp.data_size <= sizeof(TSC_SuplaEvent) ) {
 				   rd->data.sc_event = (TSC_SuplaEvent*)malloc(sizeof(TSC_SuplaEvent));
 			   }
+
+			   break;
+
+		   case SUPLA_DS_CALL_GET_FIRMWARE_UPDATE_URL:
+
+			   if ( srpc->sdp.data_size == sizeof(TDS_FirmwareUpdateParams) )
+				   rd->data.ds_firmware_update_params = (TDS_FirmwareUpdateParams*)malloc(sizeof(TDS_FirmwareUpdateParams));
+
+			   break;
+
+
+
+		   case SUPLA_SD_CALL_GET_FIRMWARE_UPDATE_URL_RESULT:
+
+			   if ( srpc->sdp.data_size == sizeof(TSD_FirmwareUpdate_UrlResult)
+				    || srpc->sdp.data_size == sizeof(char) ) {
+
+				   rd->data.sc_firmware_update_url_result = (TSD_FirmwareUpdate_UrlResult*)malloc(sizeof(TSD_FirmwareUpdate_UrlResult));
+
+				   if ( srpc->sdp.data_size == sizeof(char)
+						&& rd->data.sc_firmware_update_url_result != NULL )
+					   memset(rd->data.sc_firmware_update_url_result, 0, sizeof(TSD_FirmwareUpdate_UrlResult));
+			   }
+
 
 			   break;
 
@@ -734,6 +798,11 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_dcs_async_set_activity_timeout_result(void *
 	return srpc_async_call(_srpc, SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT, (char*)sdc_set_activity_timeout_result, sizeof(TSDC_SuplaSetActivityTimeoutResult));
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_get_firmware_update_url(void *_srpc, TDS_FirmwareUpdateParams *result) {
+
+	return srpc_async_call(_srpc, SUPLA_DS_CALL_GET_FIRMWARE_UPDATE_URL, (char*)result, sizeof(TDS_FirmwareUpdateParams));
+}
+
 _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice(void *_srpc, TDS_SuplaRegisterDevice *registerdevice) {
 
 	_supla_int_t size = sizeof(TDS_SuplaRegisterDevice)
@@ -760,6 +829,20 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice_b(void *_srpc, TDS_S
 	return srpc_async_call(_srpc, SUPLA_DS_CALL_REGISTER_DEVICE_B, (char*)registerdevice, size);
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice_c(void *_srpc, TDS_SuplaRegisterDevice_C *registerdevice) {
+
+	_supla_int_t size = sizeof(TDS_SuplaRegisterDevice_C)
+			- ( sizeof(TDS_SuplaDeviceChannel_B) * SUPLA_CHANNELMAXCOUNT )
+			+ ( sizeof(TDS_SuplaDeviceChannel_B) * registerdevice->channel_count );
+
+
+	if ( size > sizeof(TDS_SuplaRegisterDevice_C) )
+		return 0;
+
+
+	return srpc_async_call(_srpc, SUPLA_DS_CALL_REGISTER_DEVICE_C, (char*)registerdevice, size);
+}
+
 _supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_registerdevice_result(void *_srpc, TSD_SuplaRegisterDeviceResult *registerdevice_result) {
 	return srpc_async_call(_srpc, SUPLA_SD_CALL_REGISTER_DEVICE_RESULT, (char*)registerdevice_result, sizeof(TSD_SuplaRegisterDeviceResult));
 }
@@ -768,6 +851,9 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_registerclient(void *_srpc, TCS_Sup
 	return srpc_async_call(_srpc, SUPLA_CS_CALL_REGISTER_CLIENT, (char*)registerclient, sizeof(TCS_SuplaRegisterClient));
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_registerclient_b(void *_srpc, TCS_SuplaRegisterClient_B *registerclient) {
+	return srpc_async_call(_srpc, SUPLA_CS_CALL_REGISTER_CLIENT_B, (char*)registerclient, sizeof(TCS_SuplaRegisterClient_B));
+}
 
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_registerclient_result(void *_srpc, TSC_SuplaRegisterClientResult *registerclient_result) {
 	return srpc_async_call(_srpc, SUPLA_SC_CALL_REGISTER_CLIENT_RESULT, (char*)registerclient_result, sizeof(TSC_SuplaRegisterClientResult));
@@ -797,6 +883,12 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_set_channel_result(void *_srpc, uns
 	return srpc_async_call(_srpc, SUPLA_DS_CALL_CHANNEL_SET_VALUE_RESULT, (char*)&result, sizeof(TDS_SuplaChannelNewValueResult));
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_get_firmware_update_url_result(void *_srpc, TSD_FirmwareUpdate_UrlResult *result) {
+
+	return srpc_async_call(_srpc, SUPLA_SD_CALL_GET_FIRMWARE_UPDATE_URL_RESULT, (char*)result, result->exists == 1 ? sizeof(TSD_FirmwareUpdate_UrlResult) : sizeof(char));
+
+}
+
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_location_update(void *_srpc, TSC_SuplaLocation *location) {
 
 	_supla_int_t size = sizeof(TSC_SuplaLocation)-SUPLA_LOCATION_CAPTION_MAXSIZE+location->CaptionSize;
@@ -823,13 +915,25 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_locationpack_update(void *_srpc, TS
 	offset = size;
 
 	char *buffer = malloc(size);
+
+	if ( buffer == NULL )
+		return 0;
+
 	memcpy(buffer, location_pack, size);
 
 	for(a=0;a<location_pack->count;a++) {
 
 		if ( location_pack->locations[a].CaptionSize <= SUPLA_LOCATION_CAPTION_MAXSIZE ) {
 			size+=sizeof(TSC_SuplaLocation)-SUPLA_LOCATION_CAPTION_MAXSIZE+location_pack->locations[a].CaptionSize;
-			buffer = (char *)realloc(buffer, size);
+
+			char *new_buffer = (char *)realloc(buffer, size);
+
+			if ( new_buffer == NULL ) {
+				free(buffer);
+				return 0;
+			}
+
+			buffer = new_buffer;
 			memcpy(&buffer[offset], &location_pack->locations[a], size-offset);
 			offset+=size-offset;
 			n++;
@@ -874,13 +978,25 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_channelpack_update(void *_srpc, TSC
 	offset = size;
 
 	char *buffer = malloc(size);
+
+	if ( buffer == NULL )
+		return 0;
+
 	memcpy(buffer, channel_pack, size);
 
 	for(a=0;a<channel_pack->count;a++) {
 
 		if ( channel_pack->channels[a].CaptionSize <= SUPLA_CHANNEL_CAPTION_MAXSIZE ) {
 			size+=sizeof(TSC_SuplaChannel)-SUPLA_CHANNEL_CAPTION_MAXSIZE+channel_pack->channels[a].CaptionSize;
-			buffer = (char *)realloc(buffer, size);
+
+			char *new_buffer = (char *)realloc(buffer, size);
+
+			if ( new_buffer == NULL ) {
+				free(buffer);
+				return 0;
+			}
+
+			buffer = new_buffer;
 			memcpy(&buffer[offset], &channel_pack->channels[a], size-offset);
 			offset+=size-offset;
 			n++;

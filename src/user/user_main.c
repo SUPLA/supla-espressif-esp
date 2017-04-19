@@ -1,11 +1,18 @@
 /*
- ============================================================================
- Name        : user_main.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.0
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 
 #include <string.h>
@@ -18,12 +25,32 @@
 
 #include "supla_esp.h"
 #include "supla_esp_cfg.h"
+#include "supla_esp_devconn.h"
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_gpio.h"
+#include "supla_esp_pwm.h"
+#include "supla_dht.h"
+#include "supla_ds18b20.h"
 #include "supla-dev/log.h"
 
 #include "board/supla_esp_board.c"
 
+#ifdef __FOTA
+#include "supla_update.h"
+#endif
+
+/*
+void *supla_malloc(size_t size) {
+
+	void *result = os_malloc(size);
+
+	if ( result == NULL ) {
+		supla_log(LOG_DEBUG, "Free heap size: %i/%i", system_get_free_heap_size(), size);
+	}
+
+	return result;
+}
+*/
 
 uint32 ICACHE_FLASH_ATTR
 user_rf_cal_sector_set(void)
@@ -60,10 +87,10 @@ user_rf_cal_sector_set(void)
 }
 
 
-void user_rf_pre_init() {};
+void MAIN_ICACHE_FLASH user_rf_pre_init() {};
 
 
-void user_init(void)
+void MAIN_ICACHE_FLASH user_init(void)
 {
 
 	 struct rst_info *rtc_info = system_get_rst_info();
@@ -83,6 +110,10 @@ void user_init(void)
 
 	 #if NOSSL == 1
       supla_log(LOG_DEBUG, "NO SSL!");
+	 #endif
+
+	 #ifdef __FOTA
+	  supla_esp_update_init();
 	 #endif
 
      supla_esp_devconn_init();

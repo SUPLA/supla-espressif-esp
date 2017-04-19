@@ -1,11 +1,18 @@
 /*
- ============================================================================
- Name        : supla_esp_cfg.h
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.0
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #ifndef SUPLA_ESP_CFG_H_
 #define SUPLA_ESP_CFG_H_
@@ -36,12 +43,17 @@ typedef struct {
     char StatusLedOff;
     char InputCfgTriggerOff;
 
+    char FirmwareUpdate;
 
 }SuplaEspCfg;
 
 typedef struct {
 
 	char Relay[RELAY_MAX_COUNT];
+
+    int color[4];
+    char color_brightness[4];
+    char brightness[4];
 
 /*
 	char ltag;
@@ -54,15 +66,15 @@ typedef struct {
 extern SuplaEspCfg supla_esp_cfg;
 extern SuplaEspState supla_esp_state;
 
-char ICACHE_FLASH_ATTR supla_esp_write_state(char *message);
-char ICACHE_FLASH_ATTR supla_esp_read_state(char *message);
+char CFG_ICACHE_FLASH_ATTR supla_esp_write_state(char *message);
+char CFG_ICACHE_FLASH_ATTR supla_esp_read_state(char *message);
 
-char ICACHE_FLASH_ATTR supla_esp_cfg_init(void);
-char ICACHE_FLASH_ATTR supla_esp_cfg_save(SuplaEspCfg *cfg);
-void ICACHE_FLASH_ATTR supla_esp_save_state(int delay);
+char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_init(void);
+char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_save(SuplaEspCfg *cfg);
+void CFG_ICACHE_FLASH_ATTR supla_esp_save_state(int delay);
 
 
-//char ICACHE_FLASH_ATTR supla_esp_write_log(char *log);
+//char CFG_ICACHE_FLASH_ATTR supla_esp_write_log(char *log);
 
 
 #endif /* SUPLA_ESP_CFG_H_ */

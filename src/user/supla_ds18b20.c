@@ -1,11 +1,18 @@
 /*
- ============================================================================
- Name        : supla_ds18b20.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.0
- Copyright   : 2016 GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 // Code based on http://tech.scargill.net/esp8266-and-the-dallas-ds18b20-and-ds18b20p/
 
@@ -19,6 +26,8 @@
 #include "supla_w1.h"
 #include "supla-dev/log.h"
 #include "supla_dht.h"
+
+#include "supla_esp_devconn.h"
 
 #ifdef DS18B20
 

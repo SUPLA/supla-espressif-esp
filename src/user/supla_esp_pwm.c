@@ -1,11 +1,18 @@
 /*
- ============================================================================
- Name        : supla_esp_pwm.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.0
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #include "supla_esp_pwm.h"
 
@@ -40,6 +47,8 @@ void ICACHE_FLASH_ATTR supla_esp_pwm_init(void) {
     for(a=0;a<SUPLA_PWM_COUNT;a++)
     	supla_esp_pwm_set_percent_duty(0, 0, a);
     
+    supla_esp_board_pwm_init();
+
 }
 
 void ICACHE_FLASH_ATTR supla_esp_pwm_set_percent_duty(uint8 percent, uint8 percent_percent, uint8 channel) {

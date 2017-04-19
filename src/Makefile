@@ -24,14 +24,27 @@ GEN_BINS= eagle.app.v6.bin
 SPECIAL_MKTARGETS=$(APP_MKTARGETS)
 SUBDIRS=    \
 	user    \
-        driver \
-	supla-dev    
+    driver \
+	supla-dev
 
+	ifeq ($(FOTA), 1)
+	SUBDIRS += nettle
+	endif #FOTA 
+	
 endif # } PDIR
+
+
+ifeq ($(FOTA), 1)
+	EXTRA_CCFLAGS += -D__FOTA=1
+endif #FOTA 
 
 LDDIR = $(SDK_PATH)/ld
 
-CCFLAGS += -Os
+#CCFLAGS += -Os
+
+CCFLAGS = -Os -ggdb -std=gnu99 -Werror -Wpointer-arith -Wundef -Wall -Wl,-EL -fno-inline-functions \
+		-nostdlib -mlongcalls -mtext-section-literals  -D__ets__ -DICACHE_FLASH \
+		-Wno-address
 
 TARGET_LDFLAGS =		\
 	-nostdlib		\
@@ -50,7 +63,11 @@ endif
 COMPONENTS_eagle.app.v6 = \
 	user/libuser.a  \
 	driver/libdriver.a \
-	supla-dev/libsupladev.a
+	supla-dev/libsupladev.a \
+
+ifeq ($(FOTA), 1)
+COMPONENTS_eagle.app.v6 += nettle/libnettle.a
+endif #FOTA 
 
 LINKFLAGS_eagle.app.v6 = \
 	-L$(SDK_PATH)/lib        \
@@ -61,6 +78,7 @@ LINKFLAGS_eagle.app.v6 = \
     -u call_user_start	\
 	-Wl,-static						\
 	-Wl,--start-group					\
+	-lc \
 	-lgcc	\
 	-lpp	\
 	-lphy	\
@@ -114,8 +132,16 @@ DDEFINES +=				\
 # Required for each makefile to inherit from the parent
 #
 
-INCLUDES := $(INCLUDES) -I $(PDIR)include
+INCLUDES := $(INCLUDES) -I $(PDIR)include 
+
+ifeq ($(FOTA), 1)
+INCLUDES := $(INCLUDES) -I $(PDIR)nettle/include
+endif #FOTA 
+
+
 sinclude $(SDK_PATH)/Makefile
+
+
 
 .PHONY: FORCE
 FORCE:

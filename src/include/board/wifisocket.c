@@ -1,20 +1,23 @@
 /*
- ============================================================================
- Name        : wifisocket.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #ifdef __BOARD_wifisocket_54
 
 	#define B_RELAY1_PORT      5
 	#define B_CFG_PORT         4
-
-#elif defined(__BOARD_wifisocket_esp01)
-
-	#define B_RELAY1_PORT      0
-	#define B_CFG_PORT         2
 
 #elif defined(__BOARD_wifisocket_x4)
 
@@ -41,13 +44,13 @@ void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 }
 #else
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
+
 	ets_snprintf(buffer, buffer_size, "SUPLA-SOCKET");
 }
 #endif
-	
 
 
-void supla_esp_board_gpio_init(void) {
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 		
 
 	#ifdef __BOARD_wifisocket_x4
@@ -109,12 +112,10 @@ void supla_esp_board_gpio_init(void) {
 
 }
 
-void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
+void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 	
 	#if defined(__BOARD_wifisocket_x4)
 		srd->channel_count = 4;
-	#elif defined(__BOARD_wifisocket_esp01)
-		srd->channel_count = 1;
 	#else
 		srd->channel_count = 2;
 	#endif
@@ -130,7 +131,6 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 	srd->channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
 	#ifndef __BOARD_wifisocket_x4
-	#ifndef __BOARD_wifisocket_esp01
 		srd->channels[1].Number = 1;
 		srd->channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 
@@ -139,7 +139,6 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 
 		supla_get_temperature(srd->channels[1].value);
 
-	#endif
 	#endif
 
 	#ifdef __BOARD_wifisocket_x4
@@ -165,7 +164,7 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 	#endif
 }
 
-void supla_esp_board_send_channel_values_with_delay(void *srpc) {
+void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
 	supla_esp_channel_value_changed(0, supla_esp_gpio_relay_on(B_RELAY1_PORT));
 

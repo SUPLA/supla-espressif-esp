@@ -21,6 +21,7 @@
 #include "user_interface.h"
 #include "gpio.h"
 #include "driver/dht22.h"
+#include "espmissingincludes.h"
 
 //#define DHT_DEBUG
 

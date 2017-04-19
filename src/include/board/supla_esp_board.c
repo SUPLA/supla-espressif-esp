@@ -1,35 +1,26 @@
 /*
- ============================================================================
- Name        : supla_esp_board.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #include "supla_esp.h"
 
-#if defined(__BOARD_dht11_esp01) \
-    || defined(__BOARD_dht22_esp01) \
-    || defined(__BOARD_am2302_esp01) \
-
-#include "board/dht_esp01.c"
-
-#elif defined(__BOARD_thermometer_esp01) \
-      || defined(__BOARD_thermometer_esp01_ds_gpio0) \
-
-#include "board/thermometer_esp01.c"
-
-#elif defined(__BOARD_wifisocket)  \
+#if defined(__BOARD_wifisocket)  \
       || defined(__BOARD_wifisocket_x4) \
-      || defined(__BOARD_wifisocket_54) \
-      || defined(__BOARD_wifisocket_esp01)
+      || defined(__BOARD_wifisocket_54)
 
 #include "board/wifisocket.c"
-
-#elif defined(__BOARD_gate_module_esp01)    \
-      || defined(__BOARD_gate_module_esp01_ds)
-
-#include "board/gate_module_esp01.c"
 
 #elif defined(__BOARD_gate_module) \
       || defined(__BOARD_gate_module_dht11)    \
@@ -46,12 +37,6 @@
       || defined(__BOARD_rs_module_wroom)
 
 #include "board/rs_module.c"
-
-#elif defined(__BOARD_starter1_module_wroom)
-
-#elif defined(__BOARD_jangoe_rs)
-
-#elif defined(__BOARD_jangoe_wifisocket)
 
 #elif defined(__BOARD_sonoff) \
       || defined(__BOARD_sonoff_ds18b20)
@@ -83,13 +68,25 @@
 
 #include "board/acs_zam_row_01.c"
 
+#elif defined(__BOARD_zam_row_02)
+
+#include "board/acs_zam_row_02.c"
+
+#elif defined(__BOARD_zam_srw_01)
+
+#include "board/acs_zam_srw_01.c"
+
 #elif defined(__BOARD_zam_sbp_01)
 
 #include "board/acs_zam_sbp_01.c"
 
-#elif defined(__BOARD_ngm)
+#elif defined(__BOARD_n_sbp_01)
 
-#include "board/acs_ngm.c"
+#include "board/acs_n_sbp_01.c"
+
+#elif defined(__BOARD_h801)
+
+#include "board/h801.c"
 
 #elif defined(__BOARD_lightswitch_x2) \
         || defined(__BOARD_lightswitch_x2_DHT11) \

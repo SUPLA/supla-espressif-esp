@@ -1,10 +1,18 @@
 /*
- ============================================================================
- Name        : supla_esp_gpio.h
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #ifndef SUPLA_ESP_GPIO_H_
 #define SUPLA_ESP_GPIO_H_
@@ -17,6 +25,7 @@
 #define RELAY_FLAG_IRQ_LOCKED         0x08
 #define RELAY_FLAG_HI_LEVEL_TRIGGER   0x10
 #define RELAY_FLAG_TURNOFF_BINDED     0x20
+#define RELAY_FLAG_VIRTUAL_GPIO       0x40
 
 typedef struct {
 
@@ -66,9 +75,17 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_ipreceived(void);
 void GPIO_ICACHE_FLASH supla_esp_gpio_state_connected(void);
 void GPIO_ICACHE_FLASH supla_esp_gpio_state_cfgmode(void);
 
+#ifdef __FOTA
+void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
+#endif
+
 void supla_esp_gpio_hi(int port, char hi);
 char supla_esp_gpio_is_hi(int port);
 char supla_esp_gpio_relay_is_hi(int port);
+char supla_esp_gpio_relay_hi(int port, char hi, char save_before);
+char supla_esp_gpio_relay_on(int port);
+
+void supla_esp_gpio_set_led(char r, char g, char b);
 
 #endif /* SUPLA_ESP_GPIO_H_ */
 

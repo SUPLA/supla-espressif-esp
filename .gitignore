@@ -44,7 +44,7 @@ local.properties
 **/*.a
 
 # acs
-/ESP8266_IOT/include/board/acs_*
+/src/include/board/acs_*
 
 # Valgring cfg
 valgrind-suppressions.cfg
@@ -52,9 +52,3 @@ valgrind-suppressions.cfg
 # Eclipse
 /RemoteSystemsTempFiles/
 
-# Binaries
-/supla-server/Debug/supla-server
-/supla-server/Release/supla-server
-
-/supla-dev/Debug/supla-dev
-/supla-dev/Release/supla-dev

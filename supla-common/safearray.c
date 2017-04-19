@@ -1,10 +1,17 @@
 /*
- ============================================================================
- Name        : safearray.c
- Author      : Przemyslaw Zygmunt p.zygmunt@acsoftware.pl [AC SOFTWARE]
- Version     : 1.0
- Copyright   : GPLv2
- ============================================================================
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
 #include <stdlib.h>
@@ -81,10 +88,21 @@ int safe_array_add(void *_arr, void *ptr) {
 		return -1;
 
 	safe_array_lock(_arr);
-	arr->arr = realloc(arr->arr, sizeof(void *) * (arr->count+1));
-	arr->arr[arr->count] = ptr;
-	result = arr->count;
-	arr->count++;
+
+	void **new_arr = realloc(arr->arr, sizeof(void *) * (arr->count+1));
+
+	if ( new_arr == NULL ) {
+
+		result = -1;
+
+	} else {
+
+		arr->arr = new_arr;
+		arr->arr[arr->count] = ptr;
+		result = arr->count;
+		arr->count++;
+
+	}
 
     safe_array_unlock(_arr);
 
@@ -107,8 +125,15 @@ void safe_array_delete(void *_arr, int idx) {
 		if ( idx < arr->count-1 )
 			arr->arr[idx] = arr->arr[arr->count-1];
 
-		arr->arr = realloc(arr->arr, sizeof(void *) * (arr->count-1));
-		arr->count--;
+		void **new_arr = realloc(arr->arr, sizeof(void *) * (arr->count-1));
+
+		if ( new_arr != NULL || arr->count == 1 ) {
+
+			arr->arr = new_arr;
+			arr->count--;
+
+		}
+
 	}
 
 	safe_array_unlock(_arr);

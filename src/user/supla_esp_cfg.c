@@ -1,11 +1,18 @@
 /*
- ============================================================================
- Name        : supla_esp_cfg.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.0
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #include <string.h>
 #include <stdio.h>
@@ -25,7 +32,7 @@ SuplaEspCfg supla_esp_cfg;
 SuplaEspState supla_esp_state;
 static ETSTimer supla_esp_cfg_timer1;
 
-char ICACHE_FLASH_ATTR
+char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_save(SuplaEspCfg *cfg) {
 
 	spi_flash_erase_sector(CFG_SECTOR);
@@ -39,7 +46,7 @@ supla_esp_cfg_save(SuplaEspCfg *cfg) {
 	return 0;
 }
 
-void ICACHE_FLASH_ATTR
+void CFG_ICACHE_FLASH_ATTR
 _supla_esp_save_state(void *timer_arg) {
 
 	spi_flash_erase_sector(CFG_SECTOR+1);
@@ -52,7 +59,7 @@ _supla_esp_save_state(void *timer_arg) {
 	supla_log(LOG_DEBUG, "STATE WRITE FAIL!");
 }
 
-void ICACHE_FLASH_ATTR
+void CFG_ICACHE_FLASH_ATTR
 supla_esp_save_state(int delay) {
 
 	os_timer_disarm(&supla_esp_cfg_timer1);
@@ -69,10 +76,10 @@ supla_esp_save_state(int delay) {
 
 }
 
-char ICACHE_FLASH_ATTR
+char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_init(void) {
 
-	char TAG[6] = {'S','U','P','L','A', 3};
+	char TAG[6] = {'S','U','P','L','A', 4};
 	char mac[6];
 	int a;
 
@@ -114,17 +121,17 @@ supla_esp_cfg_init(void) {
 	supla_esp_cfg.Button1Type = BTN_TYPE_BUTTON;
 	supla_esp_cfg.Button2Type = BTN_TYPE_SWITCH;
 
-	os_get_random(supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+	os_get_random((unsigned char*)supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 
 	if ( SUPLA_GUID_SIZE >= 6 ) {
-		wifi_get_macaddr(STATION_IF, mac);
+		wifi_get_macaddr(STATION_IF, (unsigned char*)mac);
 
 		for(a=0;a<6;a++)
 			supla_esp_cfg.GUID[a] = (supla_esp_cfg.GUID[a] * mac[a]) % 255;
 	}
 
 	if ( SUPLA_GUID_SIZE >=12 ) {
-		wifi_get_macaddr(SOFTAP_IF, mac);
+		wifi_get_macaddr(SOFTAP_IF, (unsigned char*)mac);
 
 		for(a=0;a<6;a++)
 			supla_esp_cfg.GUID[a+6] = ( supla_esp_cfg.GUID[a+6] * mac[a] ) % 255;
@@ -149,7 +156,7 @@ supla_esp_cfg_init(void) {
 	return 0;
 }
 /*
-char ICACHE_FLASH_ATTR supla_esp_write_log(char *log) {
+char CFG_ICACHE_FLASH_ATTR supla_esp_write_log(char *log) {
 
 	supla_esp_state.len++;
 

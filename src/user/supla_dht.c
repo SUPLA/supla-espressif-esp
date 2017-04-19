@@ -1,11 +1,18 @@
 /*
- ============================================================================
- Name        : supla_dht.c
- Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.0
- Copyright   : 2016 GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 
 #include <os_type.h>
 #include <osapi.h>
@@ -18,6 +25,8 @@
 #include "driver/dht22.h"
 #include "supla_ds18b20.h"
 
+#include "supla_esp_devconn.h"
+
 #ifdef DHTSENSOR
 
 static double supla_dht_last_temp = -275;
@@ -25,7 +34,7 @@ static double supla_dht_last_humidity = -1;
 
 ETSTimer supla_dht_timer1;
 
-void supla_dht_init(void) {
+void DHT_ICACHE_FLASH supla_dht_init(void) {
 	supla_w1_init();
 }
 
@@ -76,7 +85,7 @@ supla_dht_read_th(void *timer_arg) {
 	}
 }
 
-void supla_get_temp_and_humidity(char value[SUPLA_CHANNELVALUE_SIZE]) {
+void DHT_ICACHE_FLASH supla_get_temp_and_humidity(char value[SUPLA_CHANNELVALUE_SIZE]) {
 
 	int t = supla_dht_last_temp*1000.00;
 	int h = supla_dht_last_humidity*1000.00;
@@ -86,7 +95,7 @@ void supla_get_temp_and_humidity(char value[SUPLA_CHANNELVALUE_SIZE]) {
 	
 }
 
-void  supla_dht_start(void) {
+void DHT_ICACHE_FLASH supla_dht_start(void) {
 	supla_dht_last_temp = -275;
 	supla_dht_last_humidity = -1;
 

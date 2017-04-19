@@ -1,10 +1,22 @@
 /*
- ============================================================================
- Name        : lightswitch.c
- Author      : Zybi
- Copyright   : GPLv2
- ============================================================================
-*/
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU General Public License
+ as published by the Free Software Foundation; either version 2
+ of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ GNU General Public License for more details.
+
+ You should have received a copy of the GNU General Public License
+ along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+
+#include "supla_esp.h"
+#include "supla_dht.h"
+#include "supla_ds18b20.h"
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 
@@ -74,21 +86,24 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 	#if defined(DS18B20)
 
 		srd->channels[2].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
+		supla_get_temperature(srd->channels[2].value);
 
 	#elif defined(SENSOR_DHT11)
 
 		srd->channels[2].Type = SUPLA_CHANNELTYPE_DHT11;
+		supla_get_temp_and_humidity(srd->channels[2].value);
 
 	#elif defined(SENSOR_DHT22)
 
 		srd->channels[2].Type = SUPLA_CHANNELTYPE_DHT22;
+		supla_get_temp_and_humidity(srd->channels[2].value);
 
 	#endif
 
 	srd->channels[2].FuncList = 0;
 	srd->channels[2].Default = 0;
 
-	supla_get_temp_and_humidity(srd->channels[2].value);
+
 
 }
 
