@@ -885,7 +885,7 @@ supla_esp_devconn_iterate(void *timer_arg) {
 			srd.channel_count = 0;
 			srd.LocationID = supla_esp_cfg.LocationID;
 			ets_snprintf(srd.LocationPWD, SUPLA_LOCATION_PWD_MAXSIZE, "%s", supla_esp_cfg.LocationPwd);
-			ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
+			//ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
 
 			supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
 
