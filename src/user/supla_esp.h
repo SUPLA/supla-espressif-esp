@@ -10,7 +10,12 @@
 #ifndef SUPLA_ESP_H_
 #define SUPLA_ESP_H_
 
+#define MEMLEAK_DEBUG
+
 #include "supla-dev/proto.h"
+#include "board/supla_esp_board.h"
+
+#define SUPLA_ESP_SOFTVER "1.8.5"
 
 #define LO_VALUE  0
 #define HI_VALUE  1
@@ -18,213 +23,34 @@
 #define RELAY_INIT_VALUE LO_VALUE
 #define SAVE_STATE_DELAY  1000
 
+#define INPUT_MAX_COUNT         7
+#define RELAY_MAX_COUNT         4
 
-#define GPIO_PORT_INIT \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14)
+#define INPUT_FLAG_PULLUP             0x01
+#define INPUT_FLAG_CFG_BTN            0x02
 
-#define GPIO_PORT_POST_INIT
-#define RELAY_BEFORE_CHANGE_STATE
-#define RELAY_AFTER_CHANGE_STATE
+#define INPUT_TYPE_SENSOR        1
+#define INPUT_TYPE_BUTTON        2
+#define INPUT_TYPE_BUTTON_HILO   3
+#define INPUT_TYPE_SWITCH        4
+#define INPUT_TYPE_CUSTOM        200
 
-
-#ifdef __BOARD_gate_module_mem
-	#define __BOARD_gate_module
-	#define RELAY1_ELLOCK_MEM
+#ifndef RELAY_MIN_DELAY
+#define RELAY_MIN_DELAY 100000
 #endif
 
-#ifdef __BOARD_gate_module_wroom_mem
-	#define __BOARD_gate_module_wroom
-	#define RELAY1_ELLOCK_MEM
+#ifndef GPIO_ICACHE_FLASH
+#define GPIO_ICACHE_FLASH ICACHE_FLASH_ATTR
 #endif
 
-#ifdef __BOARD_gate_module2_wroom_mem
-	#define __BOARD_gate_module2_wroom
-	#define RELAY1_ELLOCK_MEM
+#ifndef DEVCONN_ICACHE_FLASH
+#define DEVCONN_ICACHE_FLASH ICACHE_FLASH_ATTR
 #endif
 
-#if defined(__BOARD_dht11_esp01)
-
-	#define DEVICE_NAME "SUPLA-DHT11-ESP01"
-	#define SENSOR_DHT11
-    #define TEMPERATURE_CHANNEL 0
-	#define CFG_PORT         0
-
-#elif defined(__BOARD_dht22_esp01)
-
-	#define DEVICE_NAME "SUPLA-DHT22-ESP01"
-	#define SENSOR_DHT22
-    #define TEMPERATURE_CHANNEL 0
-	#define CFG_PORT         0
-
-#elif defined(__BOARD_am2302_esp01)
-
-	#define DEVICE_NAME "SUPLA-AM2302-ESP01"
-	#define SENSOR_DHT22
-    #define TEMPERATURE_CHANNEL 0
-	#define CFG_PORT         0
+/*
 
 
-#elif defined(__BOARD_thermometer_esp01)
-
-	#define DEVICE_NAME "SUPLA-THERMOMETER-ESP01"
-	#define DS18B20
-    #define TEMPERATURE_CHANNEL 0
-	#define CFG_PORT         0
-
-#elif defined(__BOARD_thermometer_esp01_ds_gpio0)
-
-	#define DEVICE_NAME "SUPLA-THERMOMETER-ESP01"
-	#define DS18B20
-	#define W1_GPIO0
-	#define TEMPERATURE_CHANNEL 0
-	#define CFG_PORT         2
-
-#elif defined(__BOARD_wifisocket) || defined(__BOARD_wifisocket_54)
-
-	#define DS18B20
-    #define CFGBTN_TYPE_SELECTION
-	#define DEVICE_NAME "SUPLA-SOCKET"
-	#define TEMPERATURE_CHANNEL 1
-	#define LED_RED_PORT    13
-	#define LED_GREEN_PORT  12
-	#define LED_BLUE_PORT   14
-    #define RELAY_STATE_RESTORE
-
-	#ifdef __BOARD_wifisocket_54
-		#define RELAY1_PORT      5
-		#define CFG_PORT         4
-	#else
-		#define RELAY1_PORT      4
-		#define CFG_PORT         5
-	#endif
-
-
-#elif defined(__BOARD_wifisocket_esp01)
-
-	#define DEVICE_NAME "SUPLA-SOCKET"
-	#define RELAY1_PORT      0
-	#define CFG_PORT         2
-
-#elif defined(__BOARD_gate_module_esp01)
-
-	#define DEVICE_NAME "SUPLA-GATE-MODULE-ESP01"
-	#define RELAY1_PORT      0
-	#define CFG_PORT         2
-
-#elif defined(__BOARD_gate_module_esp01_ds)
-
-	#define DEVICE_NAME "SUPLA-GATE-MODULE-ESP01"
-	#define RELAY1_PORT      3
-	#define CFG_PORT         0
-    #define TEMPERATURE_CHANNEL 1
-	#define USE_GPIO3
-	#define DS18B20
-
-#elif defined(__BOARD_gate_module) \
-      || defined(__BOARD_gate_module_dht11) \
-      || defined(__BOARD_gate_module_dht22)
-
-	#define DEVICE_NAME "SUPLA-GATE-MODULE"
-
-    #if defined(__BOARD_gate_module_dht11)
-       #define SENSOR_DHT11
-    #elif defined(__BOARD_gate_module_dht22)
-       #define SENSOR_DHT22
-    #else
-       #define DS18B20
-    #endif
-
-    #define RESET_RELAY_PORT
-	#define TEMPERATURE_CHANNEL 4
-
-	#define LED_GREEN_PORT  12
-	#define LED_BLUE_PORT   14
-
-	#define CFG_PORT         5
-
-	#define RELAY1_PORT      4
-	#define RELAY2_PORT      13
-
-	#define INPUT_PORT1      12
-	#define INPUT_PORT2      14
-
-
-#elif defined(__BOARD_gate_module_wroom)
-
-	#define DEVICE_NAME "SUPLA-GATE-MODULE"
-    #define RESET_RELAY_PORT
-    #define DS18B20
-	#define TEMPERATURE_CHANNEL 4
-
-	#define LED_GREEN_PORT  5
-	#define LED_BLUE_PORT   12
-
-	#define CFG_PORT         13
-
-	#define RELAY1_PORT      4
-	#define RELAY2_PORT      14
-
-	#define INPUT_PORT1      5
-	#define INPUT_PORT2      12
-
-
-#elif defined(__BOARD_gate_module2_wroom)
-
-	#define DEVICE_NAME "SUPLA-GATE-MODULE"
-    #define RESET_RELAY_PORT
-    #define DS18B20
-	#define TEMPERATURE_CHANNEL 4
-
-	#define LED_GREEN_PORT  12
-	#define LED_BLUE_PORT   14
-
-	#define CFG_PORT         13
-	#define RELAY1_PORT      4
-	#define RELAY2_PORT      5
-
-	#define INPUT_PORT1      12
-	#define INPUT_PORT2      14
-
-
-#elif defined(__BOARD_rs_module)
-
-	#define DEVICE_NAME "SUPLA-RS-MODULE"
-    #define RESET_RELAY_PORT
-    #define DS18B20
-	#define TEMPERATURE_CHANNEL 2
-
-	#define LED_GREEN_PORT  12
-	#define LED_BLUE_PORT   14
-
-	#define CFG_PORT         5
-
-	#define RELAY1_PORT      4
-	#define RELAY2_PORT      13
-
-	#define INPUT_PORT1      12
-
-#elif defined(__BOARD_rs_module_wroom)
-
-	#define DEVICE_NAME "SUPLA-RS-MODULE"
-    #define RESET_RELAY_PORT
-    #define DS18B20
-
-	#define TEMPERATURE_CHANNEL 2
-
-	#define LED_GREEN_PORT  5
-	#define LED_BLUE_PORT   12
-
-	#define CFG_PORT         13
-	#define RELAY1_PORT      4
-	#define RELAY2_PORT      14
-
-	#define INPUT_PORT1      5
-
-#elif defined(__BOARD_starter1_module_wroom)
+#if  defined(__BOARD_starter1_module_wroom)
 
     #define DS18B20
     #define BTN_PULLUP
@@ -244,7 +70,7 @@
 	#define DEVICE_NAME "JANGOE-RS-MODULE"
     #define RESET_RELAY_PORT
 
-    #define INPUT_PORT1      4
+    #define SENSOR_PORT1      4
 
 	#define CFG_PORT         5
 
@@ -393,7 +219,17 @@
 		#define PWM_4_OUT_IO_NUM 4
 		#define PWM_4_OUT_IO_FUNC  FUNC_GPIO4
 #endif
+*/
 
+#ifndef GPIO_PORT_INIT
+#define GPIO_PORT_INIT \
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0); \
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4); \
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5); \
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); \
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13); \
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14)
+#endif
 
 // PWM ----------------------------------
 
@@ -433,7 +269,13 @@
 
 // --------------------------------------
 
-#define AP_SSID "SUPLA-ESP8266"
+#ifndef AP_SSID
+	#ifdef ESP8285
+		#define AP_SSID "SUPLA-ESP8285"
+	#else
+		#define AP_SSID "SUPLA-ESP8266"
+	#endif
+#endif
 
 #define SPI_FLASH_SEC_SIZE  4096
 #define SERVER_MAXSIZE      100
@@ -445,10 +287,6 @@
 #define RECVBUFF_MAXSIZE  1024
 
 #define ACTIVITY_TIMEOUT 10
-
-#if defined(SENSOR_DHT11) || defined(SENSOR_DHT22) || defined(SENSOR_AM2302)
-#define DHTSENSOR
-#endif
 
 
 

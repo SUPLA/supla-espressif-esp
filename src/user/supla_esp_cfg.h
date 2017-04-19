@@ -33,12 +33,21 @@ typedef struct {
     char Button1Type;
     char Button2Type;
 
+    char StatusLedOff;
+    char InputCfgTriggerOff;
+
+
 }SuplaEspCfg;
 
 typedef struct {
 
-	char Relay1;
-	char Relay2;
+	char Relay[RELAY_MAX_COUNT];
+
+/*
+	char ltag;
+	char len;
+	char log[20][200];
+*/
 
 }SuplaEspState;
 
@@ -51,6 +60,9 @@ char ICACHE_FLASH_ATTR supla_esp_read_state(char *message);
 char ICACHE_FLASH_ATTR supla_esp_cfg_init(void);
 char ICACHE_FLASH_ATTR supla_esp_cfg_save(SuplaEspCfg *cfg);
 void ICACHE_FLASH_ATTR supla_esp_save_state(int delay);
+
+
+//char ICACHE_FLASH_ATTR supla_esp_write_log(char *log);
 
 
 #endif /* SUPLA_ESP_CFG_H_ */

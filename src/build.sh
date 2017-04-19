@@ -18,7 +18,7 @@
 ###
 
 DEP_LIBS="-lssl"
-CFG_SECTOR=0x3C
+SDK154=1
 NOSSL=0
 
 export PATH=/hdd2/Espressif/xtensa-lx106-elf/bin:$PATH
@@ -28,62 +28,87 @@ export BIN_PATH=/hdd2/Espressif/ESP8266_BIN
 
 case $1 in
    "dht11_esp01")
+      FLASH_SIZE="512"
    ;;
    "dht22_esp01")
+      FLASH_SIZE="512"
    ;;
    "am2302_esp01")
+      FLASH_SIZE="512"
    ;;
    "thermometer_esp01")
+      FLASH_SIZE="512"
    ;;
    "thermometer_esp01_ds_gpio0")
+      FLASH_SIZE="512"
    ;;
    "wifisocket")
    ;;
+   "wifisocket_x4")
+   ;;
    "wifisocket_esp01")
+      FLASH_SIZE="512"
    ;;
    "wifisocket_54")
    ;;
    "gate_module")
-   ;;
-   "gate_module_mem")
    ;;
    "gate_module_dht11")
    ;;
    "gate_module_dht22")
    ;;
    "gate_module_esp01")
+      FLASH_SIZE="512"
    ;;
    "gate_module_esp01_ds")
+      FLASH_SIZE="512"
    ;;
    "gate_module_wroom")
-     CFG_SECTOR=0xBC
    ;;
    "gate_module2_wroom")
-     CFG_SECTOR=0xBC
-   ;;
-   "gate_module_wroom_mem")
-     CFG_SECTOR=0xBC
-   ;;
-   "gate_module2_wroom_mem")
-     CFG_SECTOR=0xBC
    ;;
    "rs_module")
    ;;
-   "rs_module_wroom")
-     CFG_SECTOR=0xBC
-   ;;
    "starter1_module_wroom")
-     CFG_SECTOR=0xBC
    ;;
    "jangoe_wifisocket")
    ;;
    "jangoe_rs")
    ;;
+   "lightswitch_x2")
+     FLASH_SIZE="4096"
+   ;;
+   "lightswitch_x2_54")
+     FLASH_SIZE="4096"
+   ;;
+   "lightswitch_x2_DHT11")
+     FLASH_SIZE="4096"
+   ;;
+   "lightswitch_x2_54_DHT11")
+     FLASH_SIZE="4096"
+   ;;
+   "lightswitch_x2_DHT22")
+     FLASH_SIZE="4096"
+   ;;
+   "lightswitch_x2_54_DHT22")
+     FLASH_SIZE="4096"
+   ;;
    "sonoff")
-     CFG_SECTOR=0xBC
+   ;;
+   "sonoff_socket")
+   ;;
+   "sonoff_touch")
+      SPI_MODE="DOUT"
+   ;;
+   "sonoff_dual")
+   ;;
+   "sonoff_th16")
+   ;;
+   "sonoff_th10")
+   ;;
+   "sonoff_dual")
    ;;
    "sonoff_ds18b20")
-     CFG_SECTOR=0xBC
    ;;
    "EgyIOT")
      DEP_LIBS="-lpwm"
@@ -94,24 +119,19 @@ case $1 in
      NOSSL=1
    ;;
    "zam_row_01")
-#     SDK154=1 
-#     UPGRADE_1024=1
-     CFG_SECTOR=0xBC
+      FLASH_SIZE="2048"
    ;;
-   "rgbw")
-     DEP_LIBS="-lpwm"
-     NOSSL=1
+   "zam_sbp_01")
+      FLASH_SIZE="2048"
+   ;;
+   "ngm")
+      FLASH_SIZE="2048"
    ;;
    "rgbw_wroom")
      DEP_LIBS="-lpwm -lssl"
-     CFG_SECTOR=0xBC
-     UPGRADE_1024=1
    ;;
    "h801")
      DEP_LIBS="-lpwm -lssl"
-     SDK154=1
-     UPGRADE_1024=1
-     CFG_SECTOR=0xBC
    ;;
    *)
    echo "Usage:"
@@ -124,32 +144,39 @@ case $1 in
    echo "              thermometer_esp01";
    echo "              thermometer_esp01_ds_gpio0";
    echo "              wifisocket  ";
+   echo "              wifisocket_x4";
    echo "              wifisocket_esp01";
    echo "              wifisocket_esp01_thermometer";
    echo "              wifisocket_54";
    echo "              gate_module";
-   echo "              gate_module_mem";
    echo "              gate_module_dht11";
    echo "              gate_module_dht22";
    echo "              gate_module_esp01";
    echo "              gate_module_esp01_ds";
    echo "              gate_module_wroom";
-   echo "              gate_module_wroom_mem";
    echo "              gate_module2_wroom";
-   echo "              gate_module2_wroom_mem";
    echo "              rs_module";
-   echo "              rs_module_wroom";
    echo "              starter1_module_wroom";
    echo "              jangoe_rs";
    echo "              jangoe_wifisocket";
    echo "              sonoff";
    echo "              sonoff_ds18b20";
+   echo "              sonoff_touch";
+   echo "              sonoff_dual";
+   echo "              sonoff_socket";
+   echo "              sonoff_th10";
+   echo "              sonoff_th16";
+   echo "              sonoff_dual";
    echo "              EgyIOT";
    echo "              dimmer";
-   echo "              zam_row_01";
-   echo "              rgbw";
    echo "              rgbw_wroom";
    echo "              h801";
+   echo "              lightswitch_x2";
+   echo "              lightswitch_x2_54";
+   echo "              lightswitch_x2_DHT11";
+   echo "              lightswitch_x2_54_DHT11";
+   echo "              lightswitch_x2_DHT22";
+   echo "              lightswitch_x2_54_DHT22";
    echo 
    echo
    exit;
@@ -157,9 +184,37 @@ case $1 in
    
 esac 
 
+case $FLASH_SIZE in
+   "512")
+     CFG_SECTOR=0x3C
+     SDK154=0
+     SPI_SIZE_MAP=0
+   ;;
+   "2048")
+     CFG_SECTOR=0xC0
+     SPI_SIZE_MAP=3
+   ;;
+   "4096")
+     CFG_SECTOR=0xC0
+     SPI_SIZE_MAP=4
+   ;;
+   *)
+     FLASH_SIZE="1024"
+     CFG_SECTOR=0xBC
+     SPI_SIZE_MAP=2
+   ;;
+esac
+
+
+if [ -z "$SPI_MODE" ]; then
+  SPI_MODE = "DIO"
+fi
+
 if [ "$SDK154" -eq 1 ]; then
   export SDK_PATH=/hdd2/Espressif/ESP8266_NONOS_SDK154
   export BIN_PATH=/hdd2/Espressif/ESP8266_BIN154
+
+  cp ./ld/sdk154/"$FLASH_SIZE"_eagle.app.v6.ld $SDK_PATH/ld/eagle.app.v6.ld || exit 1
 fi
 
 make clean
@@ -173,17 +228,17 @@ else
   EXTRA="NOSSL=0"
 fi
 
-if [ "$UPGRADE_1024" -eq 1 ]; then
 
-   make SUPLA_DEP_LIBS="$DEP_LIBS"  BOARD=$1 CFG_SECTOR="$CFG_SECTOR" BOOT=new APP=1 SPI_SPEED=40 SPI_MODE=DIO SPI_SIZE_MAP=2 $EXTRA && \
-   cp $BIN_PATH/upgrade/user1.1024.new.2.bin /media/sf_Public/"$BOARD_NAME"_user1.1024.new.2.bin && \
+if [ "$UPGRADE" -eq 1 ];then
+ make SUPLA_DEP_LIBS="$DEP_LIBS"  BOARD=$1 CFG_SECTOR="$CFG_SECTOR" BOOT=new APP=2 SPI_SPEED=40 SPI_MODE="$SPI_MODE" SPI_SIZE_MAP="$SPI_SIZE_MAP" $EXTRA && \
+   cp $BIN_PATH/upgrade/user1."$FLASH_SIZE".new."$SPI_SIZE_MAP".bin /media/sf_Public/"$BOARD_NAME"_user1."$FLASH_SIZE".new.bin && \
    cp $SDK_PATH/bin/boot_v1.2.bin /media/sf_Public/boot_v1.2.bin
-   
+
 else
 
-   make SUPLA_DEP_LIBS="$DEP_LIBS" BOARD=$1 CFG_SECTOR=$CFG_SECTOR BOOT=new APP=0 SPI_SPEED=40 SPI_MODE=DIO SPI_SIZE_MAP=0 $EXTRA && \
-   cp $BIN_PATH/eagle.flash.bin /media/sf_Public/"$BOARD_NAME"_eagle.flash.bin && \
-   cp $BIN_PATH/eagle.irom0text.bin /media/sf_Public/"$BOARD_NAME"_eagle.irom0text.bin &&
+   make SUPLA_DEP_LIBS="$DEP_LIBS" BOARD=$1 CFG_SECTOR=$CFG_SECTOR BOOT=new APP=0 SPI_SPEED=40 SPI_MODE="$SPI_MODE" SPI_SIZE_MAP="$SPI_SIZE_MAP" $EXTRA && \
+   cp $BIN_PATH/eagle.flash.bin /media/sf_Public/"$BOARD_NAME"_"$FLASH_SIZE"_eagle.flash.bin && \
+   cp $BIN_PATH/eagle.irom0text.bin /media/sf_Public/"$BOARD_NAME"_"$FLASH_SIZE"_eagle.irom0text.bin &&
    
    exit 0
 fi

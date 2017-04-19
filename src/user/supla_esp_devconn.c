@@ -2,7 +2,6 @@
  ============================================================================
  Name        : supla_esp_devconn.c
  Author      : Przemyslaw Zygmunt przemek@supla.org
- Version     : 1.5
  Copyright   : GPLv2
  ============================================================================
 */
@@ -17,6 +16,7 @@
 #include <mem.h>
 
 #include "supla_esp_devconn.h"
+#include "supla_esp_gpio.h"
 #include "supla_esp_cfg.h"
 #include "supla_esp_pwm.h"
 #include "supla_ds18b20.h"
@@ -25,9 +25,14 @@
 #include "supla-dev/log.h"
 
 static ETSTimer supla_devconn_timer1;
-static ETSTimer supla_devconn_timer2;
 static ETSTimer supla_iterate_timer;
+static ETSTimer supla_watchdog_timer;
 
+// ESPCONN_INPROGRESS fix
+#define SEND_BUFFER_SIZE 500
+static char esp_send_buffer[SEND_BUFFER_SIZE];
+static char esp_send_buffer_len = 0;
+// ---------------------------------------------
 
 #if NOSSL == 1
     #define supla_espconn_sent espconn_sent
@@ -35,22 +40,10 @@ static ETSTimer supla_iterate_timer;
     #define supla_espconn_connect espconn_connect
 #else
     #define supla_espconn_sent espconn_secure_sent
-	#define supla_espconn_disconnect espconn_secure_disconnect
+	#define _supla_espconn_disconnect espconn_secure_disconnect
 	#define supla_espconn_connect espconn_secure_connect
 #endif
 
-
-#ifdef RELAY1_PORT
-	static ETSTimer supla_relay1_timer;
-#endif
-
-#ifdef RELAY2_PORT
-	static ETSTimer supla_relay2_timer;
-#endif
-
-#ifdef RELAY3_PORT
-	static ETSTimer supla_relay3_timer;
-#endif
 
 static struct espconn ESPConn;
 static esp_tcp ESPTCP;
@@ -65,31 +58,39 @@ static unsigned int recvbuff_size = 0;
 static char devconn_laststate[STATE_MAXSIZE];
 
 static char devconn_autoconnect = 1;
-static char sys_restart = 0;
 
 static unsigned int last_response = 0;
-static unsigned char ping_flag = 0;
 static int server_activity_timeout;
 
 static uint8 last_wifi_status = STATION_GOT_IP+1;
 
-void ICACHE_FLASH_ATTR supla_esp_devconn_timer1_cb(void *timer_arg);
-void ICACHE_FLASH_ATTR supla_esp_wifi_check_status(char autoconnect);
-void ICACHE_FLASH_ATTR supla_esp_srpc_free(void);
-void ICACHE_FLASH_ATTR supla_esp_devconn_iterate(void *timer_arg);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_timer1_cb(void *timer_arg);
+void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(char autoconnect);
+void DEVCONN_ICACHE_FLASH supla_esp_srpc_free(void);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_devconn_system_restart(void) {
+
+    if ( supla_esp_cfgmode_started() == 0 ) {
+
+    	os_timer_disarm(&supla_watchdog_timer);
+    	supla_esp_srpc_free();
+
+		#ifdef BOARD_GPIO_BEFORE_REBOOT
+		supla_esp_board_before_reboot();
+		#endif
+
+		supla_log(LOG_DEBUG, "RESTART");
+    	supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
+
+    	system_restart();
 
 
-void ICACHE_FLASH_ATTR
-supla_esp_system_restart(void) {
-
-      if ( sys_restart == 1 ) {
-    	  supla_log(LOG_DEBUG, "RESTART");
-    	  system_restart();
-      }
-
+    }
 }
 
-int ICACHE_FLASH_ATTR
+int DEVCONN_ICACHE_FLASH
 supla_esp_data_read(void *buf, int count, void *dcd) {
 
 
@@ -118,7 +119,7 @@ supla_esp_data_read(void *buf, int count, void *dcd) {
 	return -1;
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_recv_cb (void *arg, char *pdata, unsigned short len) {
 
 	if ( len == 0 || pdata == NULL )
@@ -137,15 +138,66 @@ supla_esp_devconn_recv_cb (void *arg, char *pdata, unsigned short len) {
 
 }
 
-int ICACHE_FLASH_ATTR
+int DEVCONN_ICACHE_FLASH
+supla_esp_data_write_append_buffer(void *buf, int count) {
+
+	if ( count > 0 ) {
+
+		if ( esp_send_buffer_len+count > SEND_BUFFER_SIZE ) {
+
+			supla_log(LOG_ERR, "Send buffer size exceeded");
+			supla_esp_devconn_system_restart();
+
+			return -1;
+
+		} else {
+
+			memcpy(&esp_send_buffer[esp_send_buffer_len], buf, count);
+			esp_send_buffer_len+=count;
+
+			return 0;
+
+
+		}
+	}
+
+	return 0;
+}
+
+int DEVCONN_ICACHE_FLASH
 supla_esp_data_write(void *buf, int count, void *dcd) {
 
-	return supla_espconn_sent(&ESPConn, buf, count) == 0 ? count : -1;
+	int r;
 
+	if ( esp_send_buffer_len > 0
+		 && supla_espconn_sent(&ESPConn, esp_send_buffer, esp_send_buffer_len) == 0 ) {
+
+			esp_send_buffer_len = 0;
+	};
+
+
+	if ( esp_send_buffer_len > 0 ) {
+		return supla_esp_data_write_append_buffer(buf, count);
+	}
+
+	if ( count > 0 ) {
+
+		r = supla_espconn_sent(&ESPConn, buf, count);
+
+		if ( ESPCONN_INPROGRESS == r  ) {
+			return supla_esp_data_write_append_buffer(buf, count);
+		} else {
+			return r == 0 ? count : -1;
+		}
+
+	}
+
+
+	return 0;
 }
 
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_set_state(int __pri, const char *message) {
 
 	if ( message == NULL )
@@ -161,7 +213,7 @@ supla_esp_set_state(int __pri, const char *message) {
 	os_memcpy(devconn_laststate, message, len);
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_on_version_error(TSDC_SuplaVersionError *version_error) {
 
 	supla_esp_set_state(LOG_ERR, "Protocol version error");
@@ -169,7 +221,7 @@ supla_esp_on_version_error(TSDC_SuplaVersionError *version_error) {
 }
 
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_result) {
 
 	switch(register_device_result->result_code) {
@@ -179,7 +231,6 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 	case SUPLA_RESULTCODE_TEMPORARILY_UNAVAILABLE:
 		supla_esp_set_state(LOG_NOTICE, "Temporarily unavailable!");
-		supla_esp_system_restart();
 		break;
 
 	case SUPLA_RESULTCODE_LOCATION_CONFLICT:
@@ -197,6 +248,7 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		registered = 1;
 
 		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
+		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 		if ( server_activity_timeout != ACTIVITY_TIMEOUT ) {
 
@@ -206,16 +258,16 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 		}
 
+		//supla_esp_devconn_send_channel_values_with_delay();
+
 		return;
 
 	case SUPLA_RESULTCODE_DEVICE_DISABLED:
 		supla_esp_set_state(LOG_NOTICE, "Device is disabled!");
-		supla_esp_system_restart();
 		break;
 
 	case SUPLA_RESULTCODE_LOCATION_DISABLED:
 		supla_esp_set_state(LOG_NOTICE, "Location is disabled!");
-		supla_esp_system_restart();
 		break;
 
 	case SUPLA_RESULTCODE_DEVICE_LIMITEXCEEDED:
@@ -231,16 +283,18 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 	supla_esp_devconn_stop();
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_activity_timeout_result(TSDC_SuplaSetActivityTimeoutResult *result) {
 	server_activity_timeout = result->activity_timeout;
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value_changed(int channel_number, char v) {
 
 	if ( srpc != NULL
 		 && registered == 1 ) {
+
+		//supla_log(LOG_DEBUG, "supla_esp_channel_value_changed(%i, %i)", channel_number, v);
 
 		char value[SUPLA_CHANNELVALUE_SIZE];
 		memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
@@ -256,7 +310,7 @@ supla_esp_channel_value_changed(int channel_number, char v) {
 	|| defined(RGB_CONTROLLER_CHANNEL) \
     || defined(DIMMER_CHANNEL)
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, char color_brightness, char brightness) {
 
 	memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
@@ -269,7 +323,7 @@ supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, 
 
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_brightness, char brightness) {
 
 	if ( srpc != NULL
@@ -285,80 +339,31 @@ supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_b
 
 #endif
 
-char ICACHE_FLASH_ATTR
+char DEVCONN_ICACHE_FLASH
 _supla_esp_channel_set_value(int port, char v, int channel_number) {
-
-	char Success = 0;
 
 	char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
-    #ifdef RELAY_STATE_RESTORE
+	supla_esp_gpio_relay_hi(port, _v, 1);
 
-		#ifdef RELAY1_PORT
-			if ( port == RELAY1_PORT )
-				supla_esp_state.Relay1 = _v;
-		#endif
+	_v = supla_esp_gpio_relay_is_hi(port);
 
-		#ifdef RELAY2_PORT
-			if ( port == RELAY2_PORT )
-				supla_esp_state.Relay2 = _v;
-		#endif
+	supla_esp_channel_value_changed(channel_number, _v == HI_VALUE ? 1 : 0);
 
-		supla_esp_save_state(SAVE_STATE_DELAY);
-
-    #endif
-
-	#ifdef RELAY1_PORT
-		if ( port == RELAY1_PORT )
-			supla_esp_gpio_relay1_hi(_v);
-	#endif
-
-	#ifdef RELAY2_PORT
-		if ( port == RELAY2_PORT )
-			supla_esp_gpio_relay2_hi(_v);
-	#endif
-
-	//supla_log(LOG_DEBUG, "_supla_esp_channel_set_value %i, %i", port, _v);
-
-	Success = supla_esp_gpio_is_hi(port) == _v;
-
-	if ( Success ) {
-
-		supla_esp_channel_value_changed(channel_number, v);
-	}
-
-	return Success;
+	return (v == 1 ? HI_VALUE : LO_VALUE) == _v;
 }
 
-#ifdef RELAY1_PORT
-	void ICACHE_FLASH_ATTR
-	supla_esp_relay1_timer_func(void *timer_arg) {
+void supla_esp_relay_timer_func(void *timer_arg) {
 
-		_supla_esp_channel_set_value(RELAY1_PORT, 0, 0);
+	_supla_esp_channel_set_value(((supla_relay_cfg_t*)timer_arg)->gpio_id, 0, ((supla_relay_cfg_t*)timer_arg)->channel);
 
-	}
-#endif
+}
 
-#ifdef RELAY2_PORT
-	void ICACHE_FLASH_ATTR
-	supla_esp_relay2_timer_func(void *timer_arg) {
-
-		_supla_esp_channel_set_value(RELAY2_PORT, 0, 1);
-	}
-#endif
-
-#ifdef RELAY3_PORT
-	void ICACHE_FLASH_ATTR
-	supla_esp_relay3_timer_func(void *timer_arg) {
-
-		_supla_esp_channel_set_value(RELAY3_PORT, 0, 2);
-	}
-#endif
 
 #if defined(DIMMER_CHANNEL)
 
 	char
-	ICACHE_FLASH_ATTR supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
+	DEVCONN_ICACHE_FLASH supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
 
 		//supla_log(LOG_DEBUG, "Color: %i, CB: %i, B: %i", *Color, *ColorBrightness, *Brightness);
 
@@ -370,7 +375,7 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 #elif defined(RGBW_CONTROLLER_CHANNEL) || defined(RGBWW_CONTROLLER_CHANNEL)
 
 char
-ICACHE_FLASH_ATTR supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
+DEVCONN_ICACHE_FLASH supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
 
 	//supla_log(LOG_DEBUG, "Color: %i, CB: %i, B: %i", *Color, *ColorBrightness, *Brightness);
 
@@ -425,7 +430,7 @@ ICACHE_FLASH_ATTR supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color
 
 #elif defined(RGB_CONTROLLER_CHANNEL)
 
-char ICACHE_FLASH_ATTR
+char DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
 
 	//supla_log(LOG_DEBUG, "Color: %i, CB: %i, B: %i", *Color, *ColorBrightness, *Brightness);
@@ -463,14 +468,14 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrigh
     || defined(RGBWW_CONTROLLER_CHANNEL) \
     || defined(DIMMER_CHANNEL)
 
-char ICACHE_FLASH_ATTR
+char DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_rgbw__value(int ChannelNumber, int Color, char ColorBrightness, char Brightness) {
 	supla_esp_channel_set_rgbw_value(ChannelNumber, &Color, &ColorBrightness, &Brightness);
 }
 
 #endif
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 #if defined(RGBW_CONTROLLER_CHANNEL) \
@@ -518,104 +523,88 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 		if ( ColorBrightness > 100 )
 			ColorBrightness = 0;
 
-		if ( 1 == supla_esp_channel_set_rgbw_value(new_value->ChannelNumber, &Color, &ColorBrightness, &Brightness) )
-			supla_esp_channel_rgbw_value_changed(new_value->ChannelNumber, Color, ColorBrightness, Brightness);
+		supla_esp_channel_set_rgbw_value(new_value->ChannelNumber, &Color, &ColorBrightness, &Brightness);
+		supla_esp_channel_rgbw_value_changed(new_value->ChannelNumber, Color, ColorBrightness, Brightness);
 
 		return;
 	}
 
 #endif
 
-#if defined(RELAY1_PORT) || defined(RELAY2_PORT) || defined(RELAY3_PORT)
 
 	char v = new_value->value[0];
+	int a;
+	char Success = 0;
 
-    #if defined(RELAY1_PORT) && defined(RELAY2_PORT) && defined(RELAY3_PORT)
-		int port;
-		switch(new_value->ChannelNumber) {
-		case 0:
-			port = RELAY1_PORT;
-			break;
-		case 1:
-			port = RELAY2_PORT;
-			break;
-		case 2:
-			port = RELAY3_PORT;
+/*
+    char buff[200];
+    ets_snprintf(buff, 200, "set_value %i,%i,%i", new_value->value[0], new_value->ChannelNumber, new_value->SenderID);
+	supla_esp_write_log(buff);
+*/
+
+	for(a=0;a<RELAY_MAX_COUNT;a++)
+		if ( supla_relay_cfg[a].gpio_id != 255
+			 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
+
+			if ( supla_relay_cfg[a].bind != 255 ) {
+
+				char s1, s2, v1, v2;
+
+				v1 = 0;
+				v2 = 0;
+
+				if ( v == 1 ) {
+					v1 = 1;
+					v2 = 0;
+				} else if ( v == 2 ) {
+					v1 = 0;
+					v2 = 1;
+				}
+
+				s1 = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v1, new_value->ChannelNumber);
+				s2 = _supla_esp_channel_set_value(supla_relay_cfg[supla_relay_cfg[a].bind].gpio_id, v2, new_value->ChannelNumber);
+
+				Success = s1 != 0 || s2 != 0;
+
+			} else {
+				Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v, new_value->ChannelNumber);
+			}
+
+
 			break;
 		}
-	#elif defined(RELAY1_PORT) && defined(RELAY2_PORT)
-		int port = new_value->ChannelNumber == 0 ? RELAY1_PORT : RELAY2_PORT;
-    #elif defined(RELAY1_PORT)
-		int port = RELAY1_PORT;
-    #endif
 
-    #if defined(__BOARD_rs_module) \
-		|| defined(__BOARD_rs_module_wroom) \
-		|| defined(__BOARD_jangoe_rs)
-
-		char Success = 0;
-		char s1, s2, v1, v2;
-
-        v1 = 0;
-        v2 = 0;
-
-		if ( v == 1 ) {
-			v1 = 1;
-			v2 = 0;
-		} else if ( v == 2 ) {
-			v1 = 0;
-			v2 = 1;
-		}
-
-		s1 = _supla_esp_channel_set_value(RELAY1_PORT, v1, new_value->ChannelNumber);
-		s2 = _supla_esp_channel_set_value(RELAY2_PORT, v2, new_value->ChannelNumber);
-		Success = s1 != 0 || s2 != 0;
-
-    #else
-		char Success = _supla_esp_channel_set_value(port, v, new_value->ChannelNumber);
-    #endif
 
 	srpc_ds_async_set_channel_result(srpc, new_value->ChannelNumber, new_value->SenderID, Success);
 
 
 	if ( v == 1 && new_value->DurationMS > 0 ) {
 
-		if ( new_value->ChannelNumber == 0 ) {
-            #ifdef RELAY1_PORT
-				os_timer_disarm(&supla_relay1_timer);
+		for(a=0;a<RELAY_MAX_COUNT;a++)
+			if ( supla_relay_cfg[a].gpio_id != 255
+				 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
 
-				os_timer_setfn(&supla_relay1_timer, supla_esp_relay1_timer_func, NULL);
-				os_timer_arm (&supla_relay1_timer, new_value->DurationMS, false);
-            #endif
-		} else if ( new_value->ChannelNumber == 1 ) {
-			#ifdef RELAY2_PORT
-				os_timer_disarm(&supla_relay2_timer);
+				os_timer_disarm(&supla_relay_cfg[a].timer);
 
-				os_timer_setfn(&supla_relay2_timer, supla_esp_relay2_timer_func, NULL);
-				os_timer_arm (&supla_relay2_timer, new_value->DurationMS, false);
-			#endif
-		} else if ( new_value->ChannelNumber == 2 ) {
-			#ifdef RELAY3_PORT
-				os_timer_disarm(&supla_relay3_timer);
+				os_timer_setfn(&supla_relay_cfg[a].timer, supla_esp_relay_timer_func, &supla_relay_cfg[a]);
+				os_timer_arm (&supla_relay_cfg[a].timer, new_value->DurationMS, false);
 
-				os_timer_setfn(&supla_relay3_timer, supla_esp_relay3_timer_func, NULL);
-				os_timer_arm (&supla_relay3_timer, new_value->DurationMS, false);
-			#endif
-		}
+				break;
+			}
 
 	}
-#endif
 
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd, unsigned char proto_version) {
 
 	TsrpcReceivedData rd;
 	char result;
 
 	last_response = system_get_time();
-	ping_flag = 0;
+
+	//supla_log(LOG_DEBUG, "call_received");
 
 	if ( SUPLA_RESULT_TRUE == ( result = srpc_getdata(_srpc, &rd, 0)) ) {
 
@@ -628,6 +617,7 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 			break;
 		case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
 			supla_esp_channel_set_value(rd.data.sd_channel_new_value);
+			//supla_esp_devconn_send_channel_values_with_delay();
 			break;
 		case SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT:
 			supla_esp_channel_set_activity_timeout_result(rd.data.sdc_set_activity_timeout_result);
@@ -643,7 +633,7 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 
 }
 
-void ICACHE_FLASH_ATTR
+void
 supla_esp_devconn_iterate(void *timer_arg) {
 
 	if ( srpc != NULL ) {
@@ -657,304 +647,25 @@ supla_esp_devconn_iterate(void *timer_arg) {
 			srd.channel_count = 0;
 			srd.LocationID = supla_esp_cfg.LocationID;
 			ets_snprintf(srd.LocationPWD, SUPLA_LOCATION_PWD_MAXSIZE, "%s", supla_esp_cfg.LocationPwd);
-			ets_snprintf(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE, "%s", DEVICE_NAME);
-			strcpy(srd.SoftVer, "1.6");
+
+			supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+			strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
 			os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 
 			//supla_log(LOG_DEBUG, "LocationID=%i, LocationPWD=%s", srd.LocationID, srd.LocationPWD);
 
-#if defined(__BOARD_dht11_esp01)  || \
-	defined(__BOARD_dht22_esp01)  || \
-    defined(__BOARD_am2302_esp01) || \
-	defined(__BOARD_thermometer_esp01) || \
-	defined(__BOARD_thermometer_esp01_ds_gpio0)
-
-
-		srd.channel_count = 1;
-
-		srd.channels[0].Number = 0;
-
-		#ifdef __BOARD_dht11_esp01
-		  srd.channels[0].Type = SUPLA_CHANNELTYPE_DHT11;
-        #elif defined(__BOARD_dht22_esp01)
-		  srd.channels[0].Type = SUPLA_CHANNELTYPE_DHT22;
-        #elif defined(__BOARD_am2302_esp01)
-		  srd.channels[0].Type = SUPLA_CHANNELTYPE_AM2302;
-		#else
-		  srd.channels[0].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
-
-
-        #endif
-		srd.channels[0].FuncList = 0;
-		srd.channels[0].Default = 0;
-
-		supla_get_temp_and_humidity(srd.channels[0].value);
-
-
-#elif defined(__BOARD_wifisocket) \
-		|| defined(__BOARD_wifisocket_esp01) \
-		|| defined(__BOARD_wifisocket_54) \
-		|| defined(__BOARD_gate_module_esp01) \
-		|| defined(__BOARD_gate_module_esp01_ds) \
-		|| defined(__BOARD_sonoff) \
-		|| defined(__BOARD_sonoff_ds18b20) \
-		|| defined(__BOARD_jangoe_wifisocket)
-
-            #if defined(DS18B20) || defined(DHTSENSOR)
-				srd.channel_count = 2;
-            #elif defined(__BOARD_jangoe_wifisocket)
-				srd.channel_count = 2;
-			#else
-				srd.channel_count = 1;
-            #endif
-
-			srd.channels[0].Number = 0;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-
-            #if defined(__BOARD_gate_module_esp01) || defined(__BOARD_gate_module_esp01_ds)
-				srd.channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
-											| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
-											| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
-											| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK;
-				srd.channels[0].Default = 0;
-            #else
-				srd.channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
-											| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
-				srd.channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
-            #endif
-
-
-			srd.channels[0].value[0] = supla_esp_gpio_relay_on(RELAY1_PORT);
-
-            #if defined(DS18B20) || defined(DHTSENSOR)
-				srd.channels[1].Number = 1;
-
-				#if defined(DS18B20)
-					   srd.channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
-				#elif defined(SENSOR_DHT11)
-					   srd.channels[1].Type = SUPLA_CHANNELTYPE_DHT11;
-				#elif defined(SENSOR_DHT22)
-					   srd.channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
-				#endif
-
-			    srd.channels[1].FuncList = 0;
-				srd.channels[1].Default = 0;
-
-				supla_get_temp_and_humidity(srd.channels[1].value);
-
-            #endif
-
-            #ifdef __BOARD_jangoe_wifisocket
-				srd.channels[1].Number = 1;
-				srd.channels[1].Type = srd.channels[0].Type;
-				srd.channels[1].FuncList = srd.channels[0].FuncList;
-				srd.channels[1].Default = srd.channels[0].Default;
-			#endif
-
-#elif defined(__BOARD_gate_module) \
-	    || defined(__BOARD_gate_module_dht11) \
-	    || defined(__BOARD_gate_module_dht22) \
-		|| defined(__BOARD_gate_module_wroom) \
-		|| defined(__BOARD_gate_module2_wroom)
-
-            #if defined(DS18B20) || defined(SENSOR_DHT11) || defined(SENSOR_DHT22)
-				srd.channel_count = 5;
-            #else
-				srd.channel_count = 4;
-            #endif
-
-			srd.channels[0].Number = 0;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-			srd.channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK;
-			srd.channels[0].Default = 0;
-			srd.channels[0].value[0] = supla_esp_gpio_relay_on(RELAY1_PORT);
-
-			srd.channels[1].Number = 1;
-			srd.channels[1].Type = srd.channels[0].Type;
-			srd.channels[1].FuncList = srd.channels[0].FuncList;
-			srd.channels[1].Default = srd.channels[0].Default;
-			srd.channels[1].value[0] = supla_esp_gpio_relay_on(RELAY2_PORT);
-
-			srd.channels[2].Number = 2;
-			srd.channels[2].Type = SUPLA_CHANNELTYPE_SENSORNO;
-			srd.channels[2].FuncList = 0;
-			srd.channels[2].Default = 0;
-			srd.channels[2].value[0] = 0;
-
-			srd.channels[3].Number = 3;
-			srd.channels[3].Type = SUPLA_CHANNELTYPE_SENSORNO;
-			srd.channels[3].FuncList = 0;
-			srd.channels[3].Default = 0;
-			srd.channels[3].value[0] = 0;
-
-			// TEMPERATURE_CHANNEL
-            #if defined(DS18B20) || defined(SENSOR_DHT11) || defined(SENSOR_DHT22)
-				srd.channels[4].Number = 4;
-
-
-                #if defined(SENSOR_DHT11)
-			    	srd.channels[4].Type = SUPLA_CHANNELTYPE_DHT11;
-                #elif defined(SENSOR_DHT22)
-				    srd.channels[4].Type = SUPLA_CHANNELTYPE_DHT22;
-                #else
-				    srd.channels[4].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
-                #endif
-
-				srd.channels[4].FuncList = 0;
-				srd.channels[4].Default = 0;
-
-				supla_get_temp_and_humidity(srd.channels[4].value);
-            #endif
-
-#elif defined(__BOARD_rs_module) \
-		|| defined(__BOARD_rs_module_wroom) \
-		|| defined(__BOARD_jangoe_rs)
-
-            #ifdef DS18B20
-				srd.channel_count = 3;
-            #else
-				srd.channel_count = 2;
-            #endif
-
-			srd.channels[0].Number = 0;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-			srd.channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEROLLERSHUTTER;
-			srd.channels[0].Default = 0;
-			srd.channels[0].value[0] = supla_esp_gpio_relay_on(RELAY1_PORT) ? 1 : ( supla_esp_gpio_relay_on(RELAY2_PORT) ? 2 : 0 ) ;
-
-			srd.channels[1].Number = 1;
-			srd.channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;
-			srd.channels[1].FuncList = 0;
-			srd.channels[1].Default = 0;
-			srd.channels[1].value[0] = 0;
-
-            #ifdef DS18B20
-				// TEMPERATURE_CHANNEL
-				srd.channels[2].Number = 2;
-				srd.channels[2].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
-				srd.channels[2].FuncList = 0;
-				srd.channels[2].Default = 0;
-
-				supla_get_temp_and_humidity(srd.channels[2].value);
-            #endif
-
-#elif defined(__BOARD_starter1_module_wroom)
-
-			#ifdef DS18B20
-				srd.channel_count = 3;
-			#else
-				srd.channel_count = 2;
-			#endif
-
-			srd.channels[0].Number = 0;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-			srd.channels[0].FuncList = SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK;
-			srd.channels[0].Default = 0;
-			srd.channels[0].value[0] = supla_esp_gpio_relay_on(RELAY1_PORT);
-
-			srd.channels[1].Number = 1;
-			srd.channels[1].Type = srd.channels[0].Type;
-			srd.channels[1].FuncList = srd.channels[0].FuncList;
-			srd.channels[1].Default = 0;
-			srd.channels[1].value[0] = supla_esp_gpio_relay_on(RELAY2_PORT);
-
-			#ifdef DS18B20
-				// TEMPERATURE_CHANNEL
-				srd.channels[2].Number = 2;
-				srd.channels[2].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
-				srd.channels[2].FuncList = 0;
-				srd.channels[2].Default = 0;
-
-				supla_get_temp_and_humidity(srd.channels[2].value);
-			#endif
-
-#elif defined(__BOARD_dimmer)
-
-			srd.channel_count = 1;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_DIMMER;
-			supla_esp_channel_rgbw_to_value(srd.channels[0].value, 0x00FF00, 0, 0);
-			supla_esp_channel_set_rgbw__value(0, 0x00FF00, 0, 0);
-
-
-#elif defined(__BOARD_rgbw) || defined(__BOARD_rgbw_wroom)
-
-			srd.channel_count = 1;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_DIMMERANDRGBLED;
-			supla_esp_channel_rgbw_to_value(srd.channels[0].value, 0x00FF00, 0, 0);
-			supla_esp_channel_set_rgbw__value(0, 0x00FF00, 0, 0);
-
-#elif defined(__BOARD_EgyIOT)
-
-			srd.channel_count = 4;
-
-			srd.channels[0].Number = 0;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-			srd.channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
-										| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK \
-										| SUPLA_BIT_RELAYFUNC_POWERSWITCH \
-										| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
-			srd.channels[0].Default = 0;
-			srd.channels[0].value[0] = supla_esp_gpio_relay_on(RELAY1_PORT);
-
-			srd.channels[1].Number = 1;
-			srd.channels[1].Type = srd.channels[0].Type;
-			srd.channels[1].FuncList = srd.channels[0].FuncList;
-			srd.channels[1].Default = srd.channels[0].Default;
-			srd.channels[1].value[0] = supla_esp_gpio_relay_on(RELAY2_PORT);
-
-			srd.channels[2].Number = 2;
-			srd.channels[2].Type = srd.channels[0].Type;
-			srd.channels[2].FuncList = srd.channels[0].FuncList;
-			srd.channels[2].Default = srd.channels[0].Default;
-			srd.channels[2].value[0] = supla_esp_gpio_relay_on(RELAY3_PORT);
-
-			srd.channels[3].Number = 3;
-			srd.channels[3].Type = SUPLA_CHANNELTYPE_RGBLEDCONTROLLER;
-
-			supla_esp_channel_rgbw_to_value(srd.channels[3].value, 0x00FF00, 0, 0);
-			supla_esp_channel_set_rgbw__value(3, 0x00FF00, 0, 0);
-
-#elif defined(__BOARD_zam_row_01)
-
-			srd.channel_count = 1;
-
-			srd.channels[0].Number = 0;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-			srd.channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
-										| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
-			srd.channels[0].Default = SUPLA_CHANNELFNC_LIGHTSWITCH;
-
-
-		    srd.channels[0].value[0] = supla_esp_gpio_relay_on(RELAY1_PORT);
-
-#elif defined(__BOARD_h801)
-
-			srd.channel_count = 2;
-			srd.channels[0].Type = SUPLA_CHANNELTYPE_DIMMERANDRGBLED;
-			supla_esp_channel_rgbw_to_value(srd.channels[0].value, 0x00FF00, 0, 0);
-			supla_esp_channel_set_rgbw__value(0, 0x00FF00, 0, 0);
-
-			srd.channels[1].Type = SUPLA_CHANNELTYPE_DIMMER;
-			srd.channels[1].Number = 1;
-			supla_esp_channel_rgbw_to_value(srd.channels[1].value, 0x000000, 0, 0);
-			supla_esp_channel_set_rgbw__value(1, 0x000000, 0, 0);
-#endif
+			supla_esp_board_set_channels(&srd);
 
 			srpc_ds_async_registerdevice_b(srpc, &srd);
 
 		};
 
+		supla_esp_data_write(NULL, 0, NULL);
+
 		if( srpc_iterate(srpc) == SUPLA_RESULT_FALSE ) {
 			supla_log(LOG_DEBUG, "iterate fail");
-			supla_esp_system_restart();
+			supla_esp_devconn_system_restart();
 		}
 
 	}
@@ -962,14 +673,13 @@ supla_esp_devconn_iterate(void *timer_arg) {
 }
 
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_srpc_free(void) {
 
 	os_timer_disarm(&supla_iterate_timer);
 
 	registered = 0;
 	last_response = 0;
-	ping_flag = 0;
 
 	if ( srpc != NULL ) {
 		srpc_free(srpc);
@@ -977,7 +687,7 @@ supla_esp_srpc_free(void) {
 	}
 }
 
-void
+void DEVCONN_ICACHE_FLASH
 supla_esp_srpc_init(void) {
 	
 	supla_esp_srpc_free();
@@ -995,24 +705,37 @@ supla_esp_srpc_init(void) {
 
 }
 
+void supla_espconn_disconnect(struct espconn *espconn) {
+	
+	//supla_log(LOG_DEBUG, "Disconnect %i", espconn->state);
+	
+	if ( espconn->state != ESPCONN_CLOSE
+		 && espconn->state != ESPCONN_NONE ) {
+		_supla_espconn_disconnect(espconn);
+	}
+	
+}
+
 void
 supla_esp_devconn_connect_cb(void *arg) {
-	supla_log(LOG_DEBUG, "devconn_connect_cb\r\n");
+	//supla_log(LOG_DEBUG, "devconn_connect_cb\r\n");
 	supla_esp_srpc_init();	
+	devconn_autoconnect = 1;
 }
+
 
 void
 supla_esp_devconn_disconnect_cb(void *arg){
-	supla_log(LOG_DEBUG, "devconn_disconnect_cb\r\n");
-	supla_esp_system_restart();
-}
+	//supla_log(LOG_DEBUG, "devconn_disconnect_cb\r\n");
 
-void
-supla_esp_devconn_delayed_disconnect_event(int sec) {
+	devconn_autoconnect = 1;
 
-	os_timer_disarm(&supla_devconn_timer2);
-	os_timer_setfn(&supla_devconn_timer2, (os_timer_func_t *)supla_esp_devconn_disconnect_cb, NULL);
-	os_timer_arm(&supla_devconn_timer2, sec * 1000, 1);
+	 if ( supla_esp_cfgmode_started() == 0 ) {
+
+			supla_esp_srpc_free();
+			supla_esp_wifi_check_status(devconn_autoconnect);
+
+	 }
 
 }
 
@@ -1021,8 +744,7 @@ void
 supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 
 	if ( ip == NULL ) {
-		supla_log(LOG_DEBUG, "Domain %s not found.", name);
-		supla_esp_devconn_delayed_disconnect_event(15);
+		supla_esp_set_state(LOG_NOTICE, "Domain not found.");
 		return;
 
 	}
@@ -1047,11 +769,10 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 	espconn_regist_disconcb(&ESPConn, supla_esp_devconn_disconnect_cb);
 
 	supla_espconn_connect(&ESPConn);
-	devconn_autoconnect = 1;
 
 }
 
-void
+void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_resolvandconnect(void) {
 
 	devconn_autoconnect = 0;
@@ -1071,18 +792,49 @@ supla_esp_devconn_resolvandconnect(void) {
 
 }
 
-void ICACHE_FLASH_ATTR
-supla_esp_devconn_init(void) {
+void DEVCONN_ICACHE_FLASH
+supla_esp_devconn_watchdog_cb(void *timer_arg) {
 
-	devconn_laststate[0] = '-';
-	devconn_laststate[1] = 0;
+	 if ( supla_esp_cfgmode_started() == 0 ) {
+
+			unsigned int t = system_get_time();
+
+			if ( t > last_response && t-last_response > 60000000 ) {
+				supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
+				supla_esp_devconn_system_restart();
+			}
+
+	 }
+
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
+supla_esp_devconn_before_cfgmode_start(void) {
+
+	os_timer_disarm(&supla_watchdog_timer);
+
+}
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_devconn_init(void) {
+
+	memset(&ESPConn, 0, sizeof(struct espconn));
+	memset(&ESPTCP, 0, sizeof(esp_tcp));
+	
+	last_response = 0;
+	devconn_autoconnect = 1;
+	ets_snprintf(devconn_laststate, STATE_MAXSIZE, "WiFi - Connecting...");
+	//sys_wait_for_restart = 0;
+
+	os_timer_disarm(&supla_watchdog_timer);
+	os_timer_setfn(&supla_watchdog_timer, (os_timer_func_t *)supla_esp_devconn_watchdog_cb, NULL);
+	os_timer_arm(&supla_watchdog_timer, 1000, 1);
+
+}
+
+void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_start(void) {
 	
-	sys_restart = 0;
-
 	wifi_station_disconnect();
 	
 	supla_esp_gpio_state_disconnected();
@@ -1090,7 +842,11 @@ supla_esp_devconn_start(void) {
     struct station_config stationConf;
 
     wifi_set_opmode( STATION_MODE );
-    
+
+	#ifdef WIFI_SLEEP_DISABLE
+		wifi_set_sleep_type(NONE_SLEEP_T);
+	#endif
+
     os_memcpy(stationConf.ssid, supla_esp_cfg.WIFI_SSID, WIFI_SSID_MAXSIZE);
     os_memcpy(stationConf.password, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
    
@@ -1100,34 +856,29 @@ supla_esp_devconn_start(void) {
     
     wifi_station_set_config(&stationConf);
     wifi_station_set_auto_connect(1);
+
     wifi_station_connect();
     
 	os_timer_disarm(&supla_devconn_timer1);
 	os_timer_setfn(&supla_devconn_timer1, (os_timer_func_t *)supla_esp_devconn_timer1_cb, NULL);
 	os_timer_arm(&supla_devconn_timer1, 1000, 1);
 	
-	sys_restart = 1;
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_stop(void) {
 	
-	sys_restart = 0;
-
 	os_timer_disarm(&supla_devconn_timer1);
-	os_timer_disarm(&supla_devconn_timer2);
-
 	supla_espconn_disconnect(&ESPConn);
-
 	supla_esp_wifi_check_status(0);
 }
 
-char * ICACHE_FLASH_ATTR
+char * DEVCONN_ICACHE_FLASH
 supla_esp_devconn_laststate(void) {
 	return devconn_laststate;
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_wifi_check_status(char autoconnect) {
 
 	uint8 status = wifi_station_get_connect_status();
@@ -1150,37 +901,50 @@ supla_esp_wifi_check_status(char autoconnect) {
 
 	} else {
 
-		if ( srpc != NULL )
-			supla_esp_system_restart();
+		switch(status) {
 
+			case STATION_NO_AP_FOUND:
+				supla_esp_set_state(LOG_NOTICE, "SSID Not found");
+				break;
+			case STATION_WRONG_PASSWORD:
+				supla_esp_set_state(LOG_NOTICE, "WiFi - Wrong password");
+				break;
+		}
 
 		supla_esp_gpio_state_disconnected();
+
 	}
 
 }
 
-void ICACHE_FLASH_ATTR
+void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 	supla_esp_wifi_check_status(devconn_autoconnect);
 
-	unsigned int t;
+	unsigned int t1;
+	unsigned int t2;
+
+	//supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 	if ( registered == 1
 		 && server_activity_timeout > 0
 		 && srpc != NULL ) {
 
-		    t = system_get_time();
+		    t1 = system_get_time();
+		    t2 = abs((t1-last_response)/1000000);
 
-		    if ( abs((t-last_response)/1000000) >= (server_activity_timeout+10) ) {
+		    if ( t2 >= (server_activity_timeout+10) ) {
 
-		    	supla_log(LOG_DEBUG, "Response timeout %i, %i, %i, %i", t, last_response, (t-last_response)/1000000, server_activity_timeout+5);
-		    	supla_esp_system_restart();
+		    	supla_log(LOG_DEBUG, "Response timeout %i, %i, %i, %i",  t1, last_response, (t1-last_response)/1000000, server_activity_timeout+5);
 
-		    } else if ( ping_flag == 0
-		    		    && abs((t-last_response)/1000000) >= (server_activity_timeout-5) ) {
+		    	supla_esp_srpc_free();
+		    	supla_esp_wifi_check_status(devconn_autoconnect);
 
-		    	ping_flag = 1;
+		    } else if ( t2 >= (server_activity_timeout-5)
+		    		    && t2 <= server_activity_timeout ) {
+
+		    	//supla_log(LOG_DEBUG, "PING");
 				srpc_dcs_async_ping_server(srpc);
 
 			}
@@ -1188,22 +952,39 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 	}
 }
 
-#ifdef TEMPERATURE_CHANNEL
+#if defined(TEMPERATURE_CHANNEL) || defined(TEMPERATURE_HUMIDITY_CHANNEL)
 
-void ICACHE_FLASH_ATTR supla_esp_devconn_on_temp_humidity_changed(char humidity) {
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_temp_humidity_changed(char humidity) {
 
 	if ( srpc != NULL
 		 && registered == 1 ) {
 
 		char value[SUPLA_CHANNELVALUE_SIZE];
 
-		// Temperature or Humidity or ( Temperature and humidity )
-		supla_get_temp_and_humidity(value);
+        #if defined(TEMPERATURE_CHANNEL)
 
-		srpc_ds_async_channel_value_changed(srpc, TEMPERATURE_CHANNEL, value);
+		    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+
+			supla_get_temperature(value);
+			srpc_ds_async_channel_value_changed(srpc, TEMPERATURE_CHANNEL, value);
+
+		#endif
+
+        #if defined(TEMPERATURE_HUMIDITY_CHANNEL)
+
+			memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+
+			supla_get_temp_and_humidity(value);
+			srpc_ds_async_channel_value_changed(srpc, TEMPERATURE_HUMIDITY_CHANNEL, value);
+
+		#endif
+
+
 	}
 
 }
 
 #endif
+
+
 

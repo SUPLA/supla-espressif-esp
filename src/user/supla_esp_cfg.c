@@ -31,7 +31,7 @@ supla_esp_cfg_save(SuplaEspCfg *cfg) {
 	spi_flash_erase_sector(CFG_SECTOR);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_write(CFG_SECTOR * SPI_FLASH_SEC_SIZE, (uint32*)cfg, sizeof(SuplaEspCfg)) ) {
-		supla_log(LOG_DEBUG, "CFG WRITE SUCCESS");
+		//supla_log(LOG_DEBUG, "CFG WRITE SUCCESS");
 		return 1;
 	}
 
@@ -56,8 +56,16 @@ void ICACHE_FLASH_ATTR
 supla_esp_save_state(int delay) {
 
 	os_timer_disarm(&supla_esp_cfg_timer1);
-	os_timer_setfn(&supla_esp_cfg_timer1, _supla_esp_save_state, NULL);
-    os_timer_arm (&supla_esp_cfg_timer1, delay, 0);
+
+	if ( delay > 0 ) {
+
+		os_timer_setfn(&supla_esp_cfg_timer1, _supla_esp_save_state, NULL);
+	    os_timer_arm (&supla_esp_cfg_timer1, delay, 0);
+
+	} else {
+		_supla_esp_save_state(NULL);
+	}
+
 
 }
 
@@ -75,13 +83,20 @@ supla_esp_cfg_init(void) {
 
 		   supla_log(LOG_DEBUG, "CFG READ SUCCESS!");
 
+		   /*
 		   supla_log(LOG_DEBUG, "SSID: %s", supla_esp_cfg.WIFI_SSID);
+		   //supla_log(LOG_DEBUG, "Wifi PWD: %s", supla_esp_cfg.WIFI_PWD);
 		   supla_log(LOG_DEBUG, "SVR: %s", supla_esp_cfg.Server);
 		   supla_log(LOG_DEBUG, "Location ID: %i", supla_esp_cfg.LocationID);
+		   //supla_log(LOG_DEBUG, "Location PWD: %s", supla_esp_cfg.LocationPwd);
 		   supla_log(LOG_DEBUG, "CFG BUTTON TYPE: %s", supla_esp_cfg.CfgButtonType == BTN_TYPE_BUTTON ? "button" : "switch");
 
 		   supla_log(LOG_DEBUG, "BUTTON1 TYPE: %s", supla_esp_cfg.Button1Type == BTN_TYPE_BUTTON ? "button" : "switch");
 		   supla_log(LOG_DEBUG, "BUTTON2 TYPE: %s", supla_esp_cfg.Button2Type == BTN_TYPE_BUTTON ? "button" : "switch");
+		   
+		   supla_log(LOG_DEBUG, "LedOff: %i", supla_esp_cfg.StatusLedOff);
+		   supla_log(LOG_DEBUG, "InputCfgTriggerOff: %i", supla_esp_cfg.InputCfgTriggerOff);
+		   */
 
 			if ( SPI_FLASH_RESULT_OK == spi_flash_read((CFG_SECTOR+1) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
 			    supla_log(LOG_DEBUG, "STATE READ SUCCESS!");
@@ -93,12 +108,8 @@ supla_esp_cfg_init(void) {
 	   }
 	}
 
+	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
-	supla_esp_cfg.Server[0] = 0;
-	supla_esp_cfg.LocationID = 0;
-	supla_esp_cfg.LocationPwd[0] = 0;
-	supla_esp_cfg.WIFI_PWD[0] = 0;
-	supla_esp_cfg.WIFI_SSID[0] = 0;
 	supla_esp_cfg.CfgButtonType = BTN_TYPE_BUTTON;
 	supla_esp_cfg.Button1Type = BTN_TYPE_BUTTON;
 	supla_esp_cfg.Button2Type = BTN_TYPE_SWITCH;
@@ -123,6 +134,10 @@ supla_esp_cfg_init(void) {
 		supla_esp_cfg.GUID[a]= (supla_esp_cfg.GUID[a] + system_get_time() + spi_flash_get_id() + system_get_chip_id() + system_get_rtc_time()) % 255;
 	}
 
+	#ifdef CFG_AFTER_GUID_GEN
+	CFG_AFTER_GUID_GEN;
+	#endif
+
 	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
 
 	if ( supla_esp_cfg_save(&supla_esp_cfg) == 1 ) {
@@ -133,5 +148,17 @@ supla_esp_cfg_init(void) {
 
 	return 0;
 }
+/*
+char ICACHE_FLASH_ATTR supla_esp_write_log(char *log) {
 
+	supla_esp_state.len++;
 
+	if ( supla_esp_state.len < 1 || supla_esp_state.len > 20 )
+		supla_esp_state.len = 1;
+
+	ets_snprintf(supla_esp_state.log[supla_esp_state.len-1], 200, "%s", log);
+
+	supla_esp_save_state(200000);
+
+}
+*/
