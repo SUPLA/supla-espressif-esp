@@ -2,5 +2,5 @@
 
 SUPLA ESP8266 / ESP8285 source files
 
-cd
+cd src<br>
 ./build.sh
