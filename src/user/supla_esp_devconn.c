@@ -82,11 +82,6 @@ static devconn_params *devconn = NULL;
     || defined(RGBWW_CONTROLLER_CHANNEL) \
     || defined(DIMMER_CHANNEL)
 
-typedef struct {
-    double h;
-    double s;
-    double v;
-} hsv;
 
 typedef struct {
 
@@ -778,14 +773,40 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
     ets_snprintf(buff, 200, "set_value %i,%i,%i", new_value->value[0], new_value->ChannelNumber, new_value->SenderID);
 	supla_esp_write_log(buff);
 */
+	for(a=0;a<RS_MAX_COUNT;a++)
+		if ( supla_rs_cfg[a].up != NULL
+			 && supla_rs_cfg[a].down != NULL
+			 && supla_rs_cfg[a].up->channel == new_value->ChannelNumber ) {
 
-	for(a=0;a<RELAY_MAX_COUNT;a++)
-		if ( supla_relay_cfg[a].gpio_id != 255
-			 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
+			char s1, s2, v1, v2;
 
-			if ( supla_relay_cfg[a].bind != 255 ) {
+			short ct = new_value->DurationMS & 0xFFFF;
+			short ot = (new_value->DurationMS >> 16) & 0xFFFF;
 
-				char s1, s2, v1, v2;
+			if ( ct != supla_esp_cfg.FullClosingTime[a]
+			     || ot != supla_esp_cfg.FullOpeningTime[a] ) {
+
+				supla_esp_cfg.FullClosingTime[a] = ct;
+				supla_esp_cfg.FullOpeningTime[a] = ot;
+
+				supla_esp_state.rs_position[a] = 0;
+				supla_esp_save_state(0);
+				supla_esp_cfg_save(&supla_esp_cfg);
+
+				supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
+
+			}
+
+			supla_log(LOG_DEBUG, "V=%i", v);
+
+			if ( v >= 10 && v <= 110 ) {
+
+				supla_esp_gpio_rs_add_task(a, v-10);
+
+				Success = 1;
+				return;
+
+			} else {
 
 				v1 = 0;
 				v2 = 0;
@@ -798,16 +819,24 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 					v2 = 1;
 				}
 
-				s1 = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v1, new_value->ChannelNumber);
-				s2 = _supla_esp_channel_set_value(supla_relay_cfg[supla_relay_cfg[a].bind].gpio_id, v2, new_value->ChannelNumber);
+
+				s1 = _supla_esp_channel_set_value(supla_rs_cfg[a].down->gpio_id, v1, new_value->ChannelNumber);
+				s2 = _supla_esp_channel_set_value(supla_rs_cfg[a].up->gpio_id, v2, new_value->ChannelNumber);
 
 				Success = s1 != 0 || s2 != 0;
-
-			} else {
-				Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v, new_value->ChannelNumber);
 			}
 
 
+
+
+			return;
+		}
+
+	for(a=0;a<RELAY_MAX_COUNT;a++)
+		if ( supla_relay_cfg[a].gpio_id != 255
+			 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
+
+			Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v, new_value->ChannelNumber);
 			break;
 		}
 

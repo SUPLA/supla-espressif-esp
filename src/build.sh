@@ -102,11 +102,15 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
-   "zam_srw_01")
+   "zam_srw_02")
       FLASH_SIZE="2048"
       FOTA=1
    ;;
    "zam_sbp_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "zam_slw_01")
       FLASH_SIZE="2048"
       FOTA=1
    ;;

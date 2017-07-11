@@ -38,6 +38,15 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
     || defined(RGBWW_CONTROLLER_CHANNEL) \
     || defined(DIMMER_CHANNEL)
 
+typedef struct {
+    double h;
+    double s;
+    double v;
+} hsv;
+
+hsv DEVCONN_ICACHE_FLASH rgb2hsv(int rgb);
+int DEVCONN_ICACHE_FLASH hsv2rgb(hsv in);
+
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, char color_brightness, char brightness);
 

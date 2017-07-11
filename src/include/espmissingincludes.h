@@ -46,6 +46,8 @@ uint32 system_get_time();
 int rand(void);
 void ets_bzero(void *s, size_t n);
 void ets_delay_us(int ms);
+void ets_intr_lock(void);
+void ets_intr_unlock(void);
 
 void NmiTimSetFunc(void (*func)(void));
 

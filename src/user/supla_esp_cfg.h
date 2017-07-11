@@ -44,6 +44,12 @@ typedef struct {
     char InputCfgTriggerOff;
 
     char FirmwareUpdate;
+    char Test;
+    
+    unsigned int FullOpeningTime[RS_MAX_COUNT];
+    unsigned int FullClosingTime[RS_MAX_COUNT];
+
+    char zero[200];
 
 }SuplaEspCfg;
 
@@ -55,6 +61,9 @@ typedef struct {
     char color_brightness[4];
     char brightness[4];
 
+    uint8 rs_position[RS_MAX_COUNT];
+    
+    char zero[200];
 /*
 	char ltag;
 	char len;
