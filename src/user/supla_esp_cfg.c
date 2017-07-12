@@ -35,13 +35,16 @@ static ETSTimer supla_esp_cfg_timer1;
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_save(SuplaEspCfg *cfg) {
 
+	ets_intr_lock();
 	spi_flash_erase_sector(CFG_SECTOR);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_write(CFG_SECTOR * SPI_FLASH_SEC_SIZE, (uint32*)cfg, sizeof(SuplaEspCfg)) ) {
 		//supla_log(LOG_DEBUG, "CFG WRITE SUCCESS");
+		ets_intr_unlock();
 		return 1;
 	}
 
+	ets_intr_unlock();
 	supla_log(LOG_DEBUG, "CFG WRITE FAIL!");
 	return 0;
 }
@@ -49,13 +52,16 @@ supla_esp_cfg_save(SuplaEspCfg *cfg) {
 void CFG_ICACHE_FLASH_ATTR
 _supla_esp_save_state(void *timer_arg) {
 
+	ets_intr_lock();
 	spi_flash_erase_sector(CFG_SECTOR+1);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_write((CFG_SECTOR+1) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
 		//supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
+		ets_intr_unlock();
 		return;
 	}
 
+	ets_intr_unlock();
 	supla_log(LOG_DEBUG, "STATE WRITE FAIL!");
 }
 
