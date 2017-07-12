@@ -23,7 +23,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.0.2"
+#define SUPLA_ESP_SOFTVER "2.2"
 
 #define LO_VALUE  0
 #define HI_VALUE  1
@@ -33,6 +33,7 @@
 
 #define INPUT_MAX_COUNT         7
 #define RELAY_MAX_COUNT         4
+#define RS_MAX_COUNT            2
 
 #define INPUT_FLAG_PULLUP             0x01
 #define INPUT_FLAG_CFG_BTN            0x02
@@ -42,6 +43,10 @@
 #define INPUT_TYPE_BUTTON_HILO   3
 #define INPUT_TYPE_SWITCH        4
 #define INPUT_TYPE_CUSTOM        200
+
+#ifndef RS_TURNOFF_DELAY
+#define RS_TURNOFF_DELAY 50000
+#endif
 
 #ifndef RELAY_MIN_DELAY
 #define RELAY_MIN_DELAY 100000

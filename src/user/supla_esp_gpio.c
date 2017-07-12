@@ -83,8 +83,8 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 void
 supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int *full_time, unsigned int *time, uint8 up) {
 
-	if ( ( up == 1 && (*rs_cfg->position) <= 1 )
-		 || ( up == 0 && (*rs_cfg->position) >= 101 ) ) return;
+	if ( (*rs_cfg->position) < 1
+		 || (*rs_cfg->position) > 101 ) return;
 
 	uint8 last_pos = *rs_cfg->position;
 
@@ -114,6 +114,9 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 			supla_esp_save_state(0);
 
 	}
+
+	if ( ((*rs_cfg->position) == 1 && up == 1) || ((*rs_cfg->position) == 101 && up == 0) )
+		return;
 
 	if ( x <= (*time) )
 		(*time) -= x;
@@ -150,11 +153,24 @@ supla_esp_gpio_rs_time_margin(supla_roller_shutter_cfg_t *rs_cfg, unsigned int *
 void
 supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 
-	if ( rs_cfg->task.active == 0
-		 || *rs_cfg->position < 1
-		 || *rs_cfg->position > 101 )
+	if ( rs_cfg->task.active == 0 )
 		return;
 
+	if ( *rs_cfg->position < 1
+	     || *rs_cfg->position > 101 ) {
+
+		if ( 0 == supla_esp_gpio_relay_is_hi(rs_cfg->down->gpio_id)
+			 && 0 == supla_esp_gpio_relay_is_hi(rs_cfg->up->gpio_id) ) {
+
+			if ( rs_cfg->task.percent < 50 )
+				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP);
+			else
+				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN);
+
+		}
+
+		return;
+	}
 
 	uint8 percent = *rs_cfg->position-1;
 
@@ -260,7 +276,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 			supla_esp_channel_value_changed(rs_cfg->up->channel, rs_cfg->last_position-1);
 		}
 
-		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
+		supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
 		rs_cfg->n = t;
 	}
 
@@ -277,7 +293,7 @@ supla_esp_gpio_rs_cancel_task(int idx) {
 		 || supla_rs_cfg[idx].task.lock != 0 )
 		return;
 
-	supla_log(LOG_DEBUG, "Task canceled");
+	//supla_log(LOG_DEBUG, "Task canceled");
 
 	supla_rs_cfg[idx].task.active = 0;
 	supla_rs_cfg[idx].task.percent = 0;

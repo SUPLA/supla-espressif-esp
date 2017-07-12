@@ -778,7 +778,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 			 && supla_rs_cfg[a].down != NULL
 			 && supla_rs_cfg[a].up->channel == new_value->ChannelNumber ) {
 
-			char s1, s2, v1, v2;
+			char s1, s2;
 
 			short ct = new_value->DurationMS & 0xFFFF;
 			short ot = (new_value->DurationMS >> 16) & 0xFFFF;
@@ -808,20 +808,14 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 			} else {
 
-				v1 = 0;
-				v2 = 0;
-
 				if ( v == 1 ) {
-					v1 = 1;
-					v2 = 0;
+					s1 = _supla_esp_channel_set_value(supla_rs_cfg[a].down->gpio_id, 1, new_value->ChannelNumber);
 				} else if ( v == 2 ) {
-					v1 = 0;
-					v2 = 1;
+					s2 = _supla_esp_channel_set_value(supla_rs_cfg[a].up->gpio_id, 1, new_value->ChannelNumber);
+				} else {
+					s1 = _supla_esp_channel_set_value(supla_rs_cfg[a].down->gpio_id, 0, new_value->ChannelNumber);
+					s2 = _supla_esp_channel_set_value(supla_rs_cfg[a].up->gpio_id, 0, new_value->ChannelNumber);
 				}
-
-
-				s1 = _supla_esp_channel_set_value(supla_rs_cfg[a].down->gpio_id, v1, new_value->ChannelNumber);
-				s2 = _supla_esp_channel_set_value(supla_rs_cfg[a].up->gpio_id, v2, new_value->ChannelNumber);
 
 				Success = s1 != 0 || s2 != 0;
 			}
