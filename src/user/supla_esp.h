@@ -156,7 +156,9 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 
 #define ACTIVITY_TIMEOUT 10
 
-
+#ifndef WATCHDOG_TIMEOUT
+#define WATCHDOG_TIMEOUT 60000000
+#endif /*WATCHDOG_TIMEOUT*/
 
 
 #endif /* SUPLA_ESP_H_ */

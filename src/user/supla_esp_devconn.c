@@ -803,7 +803,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 				supla_esp_save_state(0);
 				supla_esp_cfg_save(&supla_esp_cfg);
 
-				supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
+				//supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
 
 			}
 
@@ -1069,7 +1069,7 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 
 			unsigned int t = system_get_time();
 
-			if ( t > devconn->last_response && t-devconn->last_response > 60000000 ) {
+			if ( t > devconn->last_response && t-devconn->last_response > WATCHDOG_TIMEOUT ) {
 				supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
 				supla_esp_devconn_system_restart();
 			}

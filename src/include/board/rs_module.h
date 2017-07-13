@@ -23,6 +23,7 @@
 
 #define TEMPERATURE_CHANNEL 2
 #define LED_RED_PORT   16
+#define WATCHDOG_TIMEOUT 90000000
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
 
