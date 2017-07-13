@@ -294,6 +294,17 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 	if ( devconn->srpc != NULL
 		 && devconn->registered == 1 ) {
 
+		int a;
+
+		for(a=0; a<RS_MAX_COUNT; a++)
+			if ( supla_rs_cfg[a].up != NULL
+				   && supla_rs_cfg[a].down != NULL
+				   && supla_rs_cfg[a].up->channel != 255 ) {
+
+				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, (*supla_rs_cfg[a].position)-1);
+
+			}
+
 		supla_esp_board_send_channel_values_with_delay(devconn->srpc);
 
 	}

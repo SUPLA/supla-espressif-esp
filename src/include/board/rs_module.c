@@ -71,7 +71,7 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 	srd->channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
 	srd->channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEROLLERSHUTTER;
 	srd->channels[0].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER;
-	srd->channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT) ? 1 : ( supla_esp_gpio_relay_on(B_RELAY2_PORT) ? 2 : 0 ) ;
+	srd->channels[0].value[0] = (*supla_rs_cfg[0].position)-1;
 
 	srd->channels[1].Number = 1;
 	srd->channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;
@@ -88,5 +88,5 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 }
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc) {
-	supla_esp_channel_value_changed(1, gpio__input_get(B_SENSOR_PORT1));
+
 }
