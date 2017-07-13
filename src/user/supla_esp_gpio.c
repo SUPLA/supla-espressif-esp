@@ -80,11 +80,30 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 
 }
 
+#define RS_RELAY_OFF   0
+#define RS_RELAY_UP    2
+#define RS_RELAY_DOWN  1
+
+#define RS_DIRECTION_NONE   0
+#define RS_DIRECTION_UP     2
+#define RS_DIRECTION_DOWN   1
+
+void
+supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value) {
+
+	rs_cfg->task.lock = 1;
+	supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, value == RS_RELAY_UP ? 1 : 0, 0);
+	supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, value == RS_RELAY_DOWN ? 1 : 0, 0);
+	rs_cfg->task.lock = 0;
+
+}
+
 void
 supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int *full_time, unsigned int *time, uint8 up) {
 
 	if ( (*rs_cfg->position) < 1
-		 || (*rs_cfg->position) > 101 ) return;
+		 || (*rs_cfg->position) > 101
+		 || (*full_time) == 0 ) return;
 
 	uint8 last_pos = *rs_cfg->position;
 
@@ -115,8 +134,18 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 
 	}
 
-	if ( ((*rs_cfg->position) == 1 && up == 1) || ((*rs_cfg->position) == 101 && up == 0) )
+	if ( ((*rs_cfg->position) == 1 && up == 1) || ((*rs_cfg->position) == 101 && up == 0) ) {
+
+		if ( (*time) >= (*full_time) * 1.1 ) {
+
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF);
+			//supla_log(LOG_DEBUG, "Timeout full_time + 10%");
+
+		}
+
 		return;
+	}
+
 
 	if ( x <= (*time) )
 		(*time) -= x;
@@ -125,23 +154,6 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 
 }
 
-#define RS_RELAY_OFF   0
-#define RS_RELAY_UP    2
-#define RS_RELAY_DOWN  1
-
-#define RS_DIRECTION_NONE   0
-#define RS_DIRECTION_UP     2
-#define RS_DIRECTION_DOWN   1
-
-void
-supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value) {
-
-	rs_cfg->task.lock = 1;
-	supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, value == RS_RELAY_UP ? 1 : 0, 0);
-	supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, value == RS_RELAY_DOWN ? 1 : 0, 0);
-	rs_cfg->task.lock = 0;
-
-}
 
 uint8
 supla_esp_gpio_rs_time_margin(supla_roller_shutter_cfg_t *rs_cfg, unsigned int *full_time, unsigned int time, uint8 m) {
@@ -181,15 +193,20 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 			rs_cfg->task.direction = RS_DIRECTION_UP;
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP);
 
-			//supla_log(LOG_DEBUG, "task go UP");
+		    //supla_log(LOG_DEBUG, "task go UP %i,%i", percent, rs_cfg->task.percent);
 
-		} else {
+		} else if ( percent < rs_cfg->task.percent ) {
 
 			rs_cfg->task.direction = RS_DIRECTION_DOWN;
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN);
 
-			//supla_log(LOG_DEBUG, "task go DOWN");
+			//supla_log(LOG_DEBUG, "task go DOWN, %i,%i", percent, rs_cfg->task.percent);
 
+		} else {
+			//supla_log(LOG_DEBUG, "task finished #1");
+
+			rs_cfg->task.active = 0;
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF);
 		}
 
 	} else if ( ( rs_cfg->task.direction == RS_DIRECTION_UP
@@ -212,7 +229,7 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 			rs_cfg->task.active = 0;
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF);
 
-			//supla_log(LOG_DEBUG, "task finished");
+			//supla_log(LOG_DEBUG, "task finished #2");
 
 		}
 
@@ -276,7 +293,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 			supla_esp_channel_value_changed(rs_cfg->up->channel, rs_cfg->last_position-1);
 		}
 
-		supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
+		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
 		rs_cfg->n = t;
 	}
 
@@ -299,6 +316,7 @@ supla_esp_gpio_rs_cancel_task(int idx) {
 	supla_rs_cfg[idx].task.percent = 0;
 	supla_rs_cfg[idx].task.direction = RS_DIRECTION_NONE;
 
+	supla_esp_save_state(0);
 }
 
 
@@ -312,12 +330,13 @@ void supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 	if ( percent > 100 )
 		percent = 100;
 
-	supla_log(LOG_DEBUG, "Task added %i", percent);
+	//supla_log(LOG_DEBUG, "Task added %i", percent);
 
 	supla_rs_cfg[idx].task.percent = percent;
 	supla_rs_cfg[idx].task.direction = RS_DIRECTION_NONE;
 	supla_rs_cfg[idx].task.active = 1;
 
+	supla_esp_save_state(0);
 
 }
 
