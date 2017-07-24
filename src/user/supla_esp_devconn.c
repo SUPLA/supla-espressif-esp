@@ -1246,8 +1246,10 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 		    	supla_esp_srpc_free();
 		    	supla_esp_wifi_check_status(devconn->autoconnect);
 
-		    } else if ( t2 >= (devconn->server_activity_timeout-5)
-		    		    && t2 <= devconn->server_activity_timeout ) {
+		    } else if ( ( t2 >= (devconn->server_activity_timeout-5)
+		    		      && t2 <= devconn->server_activity_timeout )
+		    		    || ( t3 >= (devconn->server_activity_timeout-5)
+		    		         && t3 <= devconn->server_activity_timeout ) ) {
 
 		    	//supla_log(LOG_DEBUG, "PING");
 		    	//system_print_meminfo();
