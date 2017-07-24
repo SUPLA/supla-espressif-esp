@@ -172,7 +172,9 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 	     || *rs_cfg->position > 101 ) {
 
 		if ( 0 == supla_esp_gpio_relay_is_hi(rs_cfg->down->gpio_id)
-			 && 0 == supla_esp_gpio_relay_is_hi(rs_cfg->up->gpio_id) ) {
+			 && 0 == supla_esp_gpio_relay_is_hi(rs_cfg->up->gpio_id)
+			 && *rs_cfg->full_opening_time > 0
+			 && *rs_cfg->full_closing_time > 0) {
 
 			if ( rs_cfg->task.percent < 50 )
 				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP);
@@ -186,8 +188,6 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 
 	uint8 percent = *rs_cfg->position-1;
 
-	if ( *rs_cfg->full_opening_time <= 0
-		 || *rs_cfg->full_closing_time <= 0 ) return;
 
 	if ( rs_cfg->task.direction == RS_DIRECTION_NONE ) {
 
