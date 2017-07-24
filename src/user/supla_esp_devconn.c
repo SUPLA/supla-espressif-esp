@@ -67,6 +67,7 @@ typedef struct {
 	char autoconnect;
 
 	unsigned int last_response;
+	unsigned int last_sent;
 	int server_activity_timeout;
 
 	uint8 last_wifi_status;
@@ -191,7 +192,7 @@ supla_esp_devconn_recv_cb (void *arg, char *pdata, unsigned short len) {
 	if ( len == 0 || pdata == NULL )
 		return;
 
-	//supla_log(LOG_ERR, "sproto recv %i bytes", len);
+	//supla_log(LOG_DEBUG, "sproto recv %i bytes, heap_size: %i", len, system_get_free_heap_size());
 
 	if ( len <= RECVBUFF_MAXSIZE-devconn->recvbuff_size ) {
 
@@ -199,6 +200,7 @@ supla_esp_devconn_recv_cb (void *arg, char *pdata, unsigned short len) {
 		devconn->recvbuff_size += len;
 
 		supla_esp_devconn_iterate(NULL);
+
 
 	} else {
 		supla_log(LOG_ERR, "Recv buffer size exceeded");
@@ -232,15 +234,19 @@ supla_esp_data_write_append_buffer(void *buf, int count) {
 	return 0;
 }
 
+
 int DEVCONN_ICACHE_FLASH
 supla_esp_data_write(void *buf, int count, void *dcd) {
 
 	int r;
 
+
 	if ( devconn->esp_send_buffer_len > 0
 		 && supla_espconn_sent(&devconn->ESPConn, (unsigned char*)devconn->esp_send_buffer, devconn->esp_send_buffer_len) == 0 ) {
 
 			devconn->esp_send_buffer_len = 0;
+			devconn->last_sent = system_get_time();
+
 	};
 
 
@@ -252,9 +258,15 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 
 		r = supla_espconn_sent(&devconn->ESPConn, buf, count);
 
+		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
+
 		if ( ESPCONN_INPROGRESS == r  ) {
 			return supla_esp_data_write_append_buffer(buf, count);
 		} else {
+
+			if ( r == 0 )
+				devconn->last_sent = system_get_time();
+
 			return r == 0 ? count : -1;
 		}
 
@@ -947,6 +959,7 @@ supla_esp_srpc_free(void) {
 
 	devconn->registered = 0;
 	devconn->last_response = 0;
+	devconn->last_sent = 0;
 
 	if ( devconn->srpc != NULL ) {
 		srpc_free(devconn->srpc);
@@ -1031,6 +1044,11 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 		devconn->ESPConn.proto.tcp->remote_port = 2015;
 	#else
 		devconn->ESPConn.proto.tcp->remote_port = 2016;
+
+		//espconn_secure_set_size(2, 0);
+		//espconn_secure_set_size(1, 3072);
+		//supla_log(LOG_DEBUG, "getsize: %i, %i, %i", espconn_secure_get_size(1), espconn_secure_get_size(2), espconn_secure_get_size(3));
+
 	#endif
 
 	espconn_regist_recvcb(&devconn->ESPConn, supla_esp_devconn_recv_cb);
@@ -1104,6 +1122,7 @@ supla_esp_devconn_init(void) {
 	memset(&devconn->ESPTCP, 0, sizeof(esp_tcp));
 	
 	devconn->last_response = 0;
+	devconn->last_sent = 0;
 	devconn->autoconnect = 1;
 	devconn->last_wifi_status = STATION_GOT_IP+1;
 
@@ -1208,6 +1227,7 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 	unsigned int t1;
 	unsigned int t2;
+	unsigned int t3;
 
 	//supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
@@ -1216,11 +1236,12 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 		 && devconn->srpc != NULL ) {
 
 		    t1 = system_get_time();
-		    t2 = abs((t1-devconn->last_response)/1000000);
+		    t2 = abs((t1-devconn->last_sent)/1000000);
+		    t3 = abs((t1-devconn->last_response)/1000000);
 
-		    if ( t2 >= (devconn->server_activity_timeout+10) ) {
+		    if ( t3 >= (devconn->server_activity_timeout+10) ) {
 
-		    	supla_log(LOG_DEBUG, "Response timeout %i, %i, %i, %i",  t1, devconn->last_response, (t1-devconn->last_response)/1000000, devconn->server_activity_timeout+5);
+		    	supla_log(LOG_DEBUG, "Activity timeout %i, %i, %i, %i",  t1, devconn->last_response, (t1-devconn->last_response)/1000000, devconn->server_activity_timeout+10);
 
 		    	supla_esp_srpc_free();
 		    	supla_esp_wifi_check_status(devconn->autoconnect);
