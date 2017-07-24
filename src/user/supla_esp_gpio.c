@@ -186,6 +186,9 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 
 	uint8 percent = *rs_cfg->position-1;
 
+	if ( *rs_cfg->full_opening_time <= 0
+		 || *rs_cfg->full_closing_time <= 0 ) return;
+
 	if ( rs_cfg->task.direction == RS_DIRECTION_NONE ) {
 
 		if ( percent > rs_cfg->task.percent ) {
@@ -1015,6 +1018,7 @@ supla_esp_gpio_init(void) {
     		os_timer_arm(&supla_rs_cfg[a].timer, 10, 1);
 
     	}
+
 
     supla_esp_gpio_init_time = system_get_time();
 
