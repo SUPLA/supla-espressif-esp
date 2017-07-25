@@ -61,7 +61,7 @@ typedef struct {
     char color_brightness[4];
     char brightness[4];
 
-    uint8 rs_position[RS_MAX_COUNT];
+    int rs_position[RS_MAX_COUNT];
     
     char zero[200];
 /*

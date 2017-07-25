@@ -68,7 +68,7 @@ typedef struct {
 	supla_relay_cfg_t *up;
 	supla_relay_cfg_t *down;
 
-	uint8 *position;
+	int *position;
 
     unsigned int *full_opening_time;
     unsigned int *full_closing_time;
@@ -82,7 +82,7 @@ typedef struct {
 	ETSTimer timer;
 	rs_task_t task;
 
-	uint8 last_position;
+	int last_position;
 
 }supla_roller_shutter_cfg_t;
 

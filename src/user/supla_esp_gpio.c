@@ -65,12 +65,12 @@ static ETSTimer supla_gpio_timer1;
 static ETSTimer supla_gpio_timer2;
 
 void
-supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int time, uint8 pos) {
+supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int time, int pos) {
 
-	if ( ( *rs_cfg->position == 0 || *rs_cfg->position > 101 )
+	if ( ( *rs_cfg->position < 100 || *rs_cfg->position > 10100 )
 		 && full_time > 0 ) {
 
-		full_time *= 1.05; // 5% margin
+		full_time *= 1.1; // 10% margin
 
 		if ( time >= full_time ) {
 			*rs_cfg->position = pos;
@@ -101,40 +101,46 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value) {
 void
 supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int *full_time, unsigned int *time, uint8 up) {
 
-	if ( (*rs_cfg->position) < 1
-		 || (*rs_cfg->position) > 101
+
+	if ( (*rs_cfg->position) < 100
+		 || (*rs_cfg->position) > 10100
 		 || (*full_time) == 0 ) return;
 
-	uint8 last_pos = *rs_cfg->position;
+	int last_pos = *rs_cfg->position;
 
-	uint8 p = (*time) * 100 / (*full_time);
+	int p = ((*time) * 100.00 / (*full_time) * 100);
 
-	unsigned int x = p * (*full_time) / 100;
+	unsigned int x = p * (*full_time) / 10000;
+
 
 	if ( p > 0 ) {
 
+		//supla_log(LOG_DEBUG, "p=%i, x=%i, last_pos=%i, full_time=%i, time=%i",p,x,last_pos,*full_time,*time);
+
 		if ( up == 1 ) {
 
-			if ( (*rs_cfg->position) - p <= 1 )
-				(*rs_cfg->position) = 1;
+			if ( (*rs_cfg->position) - p <= 100 )
+				(*rs_cfg->position) = 100;
 			else
 				(*rs_cfg->position) -= p;
 
 		} else {
 
-			if ( (*rs_cfg->position) + p >= 101 )
-				(*rs_cfg->position) = 101;
+			if ( (*rs_cfg->position) + p >= 10100 )
+				(*rs_cfg->position) = 10100;
 			else
 				(*rs_cfg->position) += p;
 
 		}
 
-		if ( last_pos != (*rs_cfg->position) )
+		if ( last_pos != *rs_cfg->position ) {
 			supla_esp_save_state(0);
+		}
+
 
 	}
 
-	if ( ((*rs_cfg->position) == 1 && up == 1) || ((*rs_cfg->position) == 101 && up == 0) ) {
+	if ( ((*rs_cfg->position) == 100 && up == 1) || ((*rs_cfg->position) == 10100 && up == 0) ) {
 
 		if ( (*time) >= (*full_time) * 1.1 ) {
 
@@ -168,8 +174,8 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 	if ( rs_cfg->task.active == 0 )
 		return;
 
-	if ( *rs_cfg->position < 1
-	     || *rs_cfg->position > 101 ) {
+	if ( *rs_cfg->position < 100
+	     || *rs_cfg->position > 10100 ) {
 
 		if ( 0 == supla_esp_gpio_relay_is_hi(rs_cfg->down->gpio_id)
 			 && 0 == supla_esp_gpio_relay_is_hi(rs_cfg->up->gpio_id)
@@ -186,7 +192,7 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 		return;
 	}
 
-	uint8 percent = *rs_cfg->position-1;
+	uint8 percent = ((*rs_cfg->position)-100)/100;
 
 
 	if ( rs_cfg->task.direction == RS_DIRECTION_NONE ) {
@@ -260,17 +266,17 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 	if ( 1 == supla_esp_gpio_relay_is_hi(rs_cfg->up->gpio_id) ) {
 
 		rs_cfg->down_time = 0;
-		rs_cfg->up_time += t-rs_cfg->last_time;
+		rs_cfg->up_time += (t-rs_cfg->last_time)*100;
 
-		supla_esp_gpio_rs_calibrate(rs_cfg, *rs_cfg->full_opening_time, rs_cfg->up_time, 1);
+		supla_esp_gpio_rs_calibrate(rs_cfg, *rs_cfg->full_opening_time, rs_cfg->up_time, 100);
 		supla_esp_gpio_rs_move_position(rs_cfg, rs_cfg->full_opening_time, &rs_cfg->up_time, 1);
 
 	} else if ( 1 == supla_esp_gpio_relay_is_hi(rs_cfg->down->gpio_id) ) {
 
-		rs_cfg->down_time += t-rs_cfg->last_time;
+		rs_cfg->down_time += (t-rs_cfg->last_time)*100;
 		rs_cfg->up_time = 0;
 
-		supla_esp_gpio_rs_calibrate(rs_cfg, *rs_cfg->full_closing_time, rs_cfg->down_time, 101);
+		supla_esp_gpio_rs_calibrate(rs_cfg, *rs_cfg->full_closing_time, rs_cfg->down_time, 10100);
 		supla_esp_gpio_rs_move_position(rs_cfg, rs_cfg->full_closing_time, &rs_cfg->down_time, 0);
 
 	} else {
@@ -293,7 +299,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 		if ( rs_cfg->last_position != *rs_cfg->position ) {
 
 			rs_cfg->last_position = *rs_cfg->position;
-			supla_esp_channel_value_changed(rs_cfg->up->channel, rs_cfg->last_position-1);
+			supla_esp_channel_value_changed(rs_cfg->up->channel, (rs_cfg->last_position-100)/100);
 		}
 
 		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
@@ -327,7 +333,7 @@ void supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 
 	if ( idx < 0
 		 || idx >= RS_MAX_COUNT
-		 || *supla_rs_cfg[idx].position == percent )
+		 || ((*supla_rs_cfg[idx].position)-100)/100 == percent )
 		return;
 
 	if ( percent > 100 )

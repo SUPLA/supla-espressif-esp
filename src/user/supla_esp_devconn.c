@@ -244,6 +244,8 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 	if ( devconn->esp_send_buffer_len > 0
 		 && supla_espconn_sent(&devconn->ESPConn, (unsigned char*)devconn->esp_send_buffer, devconn->esp_send_buffer_len) == 0 ) {
 
+		    supla_log(LOG_DEBUG, "sproto send count: %i", count);
+
 			devconn->esp_send_buffer_len = 0;
 			devconn->last_sent = system_get_time();
 
@@ -258,7 +260,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 
 		r = supla_espconn_sent(&devconn->ESPConn, buf, count);
 
-		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
+		supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 
 		if ( ESPCONN_INPROGRESS == r  ) {
 			return supla_esp_data_write_append_buffer(buf, count);
@@ -313,7 +315,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 				   && supla_rs_cfg[a].down != NULL
 				   && supla_rs_cfg[a].up->channel != 255 ) {
 
-				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, (*supla_rs_cfg[a].position)-1);
+				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, ((*supla_rs_cfg[a].position)-100)/100);
 
 			}
 
@@ -802,8 +804,14 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 			 && supla_rs_cfg[a].up->channel == new_value->ChannelNumber ) {
 
 
-			short ct = new_value->DurationMS & 0xFFFF;
-			short ot = (new_value->DurationMS >> 16) & 0xFFFF;
+			int ct = (new_value->DurationMS & 0xFFFF)*100;
+			int ot = ((new_value->DurationMS >> 16) & 0xFFFF)*100;
+
+			if ( ct < 0 )
+				ct = 0;
+
+			if ( ot < 0 )
+				ot = 0;
 
 			if ( ct != supla_esp_cfg.FullClosingTime[a]
 			     || ot != supla_esp_cfg.FullOpeningTime[a] ) {
