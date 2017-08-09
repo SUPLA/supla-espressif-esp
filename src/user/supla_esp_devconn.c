@@ -90,7 +90,6 @@ typedef struct {
 
 	int ChannelNumber;
 	char smoothly;
-	char send_value_changed;
 
 	int color;
 	int dest_color;
@@ -244,7 +243,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 	if ( devconn->esp_send_buffer_len > 0
 		 && supla_espconn_sent(&devconn->ESPConn, (unsigned char*)devconn->esp_send_buffer, devconn->esp_send_buffer_len) == 0 ) {
 
-		    supla_log(LOG_DEBUG, "sproto send count: %i", count);
+		    //supla_log(LOG_DEBUG, "sproto send count: %i", count);
 
 			devconn->esp_send_buffer_len = 0;
 			devconn->last_sent = system_get_time();
@@ -260,7 +259,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 
 		r = supla_espconn_sent(&devconn->ESPConn, buf, count);
 
-		supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
+		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 
 		if ( ESPCONN_INPROGRESS == r  ) {
 			return supla_esp_data_write_append_buffer(buf, count);
@@ -684,9 +683,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(void *timer_arg) {
 
 		 os_timer_disarm(&smooth->timer);
 
-		 if ( smooth->send_value_changed ) {
-			 supla_esp_channel_rgbw_value_changed(smooth->ChannelNumber, smooth->color, smooth->color_brightness, smooth->brightness);
-		 }
 	 }
 
 	 smooth->counter++;
@@ -706,11 +702,14 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 s->counter = 0;
 	 s->ChannelNumber = ChannelNumber;
 	 s->smoothly = smoothly;
-	 s->send_value_changed = send_value_changed;
 
 	 s->dest_color = Color;
 	 s->dest_color_brightness = ColorBrightness;
 	 s->dest_brightness = Brightness;
+
+	 if ( send_value_changed ) {
+		 supla_esp_channel_rgbw_value_changed(ChannelNumber, Color, ColorBrightness, Brightness);
+	 }
 
 	 os_timer_setfn(&s->timer, (os_timer_func_t *)supla_esp_devconn_smooth_cb, s);
 	 os_timer_arm(&s->timer, 10, 1);
