@@ -35,6 +35,10 @@
 #define RELAY_MAX_COUNT         4
 #define RS_MAX_COUNT            2
 
+#ifndef SMOOTH_MAX_COUNT
+#define SMOOTH_MAX_COUNT 1
+#endif /*SMOOTH_MAX_COUNT*/
+
 #define INPUT_FLAG_PULLUP             0x01
 #define INPUT_FLAG_CFG_BTN            0x02
 

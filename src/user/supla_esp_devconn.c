@@ -29,6 +29,7 @@
 #include "supla_esp_gpio.h"
 #include "supla_esp_cfg.h"
 #include "supla_esp_pwm.h"
+#include "supla_esp_hw_timer.h"
 #include "supla_ds18b20.h"
 #include "supla_dht.h"
 #include "supla-dev/srpc.h"
@@ -86,6 +87,7 @@ static devconn_params *devconn = NULL;
 
 typedef struct {
 
+	char active;
 	int counter;
 
 	int ChannelNumber;
@@ -100,11 +102,9 @@ typedef struct {
 	char brightness;
 	char dest_brightness;
 
-	ETSTimer timer;
-
 }devconn_smooth;
 
-devconn_smooth smooth[2];
+devconn_smooth smooth[SMOOTH_MAX_COUNT];
 
 #endif
 
@@ -609,23 +609,23 @@ int DEVCONN_ICACHE_FLASH hsv2rgb(hsv in)
     return rgb;
 }
 
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(void *timer_arg) {
 
-	 devconn_smooth *smooth = (devconn_smooth *)timer_arg;
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 
-	 if ( smooth->smoothly == 0 || smooth->counter >= 100 ) {
-		 smooth->color = smooth->dest_color;
-		 smooth->color_brightness = smooth->dest_color_brightness;
-		 smooth->brightness = smooth->dest_brightness;
+	 if ( _smooth->smoothly == 0 || _smooth->counter >= 100 ) {
+		 _smooth->color = _smooth->dest_color;
+		 _smooth->color_brightness = _smooth->dest_color_brightness;
+		 _smooth->brightness = _smooth->dest_brightness;
 	 }
 
-	 supla_esp_devconn_smooth_brightness(&smooth->color_brightness, &smooth->dest_color_brightness);
-	 supla_esp_devconn_smooth_brightness(&smooth->brightness, &smooth->dest_brightness);
+	 supla_esp_devconn_smooth_brightness(&_smooth->color_brightness, &_smooth->dest_color_brightness);
+	 supla_esp_devconn_smooth_brightness(&_smooth->brightness, &_smooth->dest_brightness);
+	 
 
-	 if ( smooth->color != smooth->dest_color ) {
+	 if ( _smooth->color != _smooth->dest_color ) {
 
-		 hsv c = rgb2hsv(smooth->color);
-		 hsv dc = rgb2hsv(smooth->dest_color);
+		 hsv c = rgb2hsv(_smooth->color);
+		 hsv dc = rgb2hsv(_smooth->dest_color);
 
 		 c.s = dc.s;
 		 c.v = dc.v;
@@ -668,24 +668,43 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(void *timer_arg) {
 		 }
 
 		 if ( c.h == dc.h ) {
-			 smooth->color = smooth->dest_color;
+			 _smooth->color = _smooth->dest_color;
 		 } else {
-			 smooth->color = hsv2rgb(c);
+			 _smooth->color = hsv2rgb(c);
 		 }
 
 	 }
 
-	 supla_esp_board_set_rgbw_value(smooth->ChannelNumber, &smooth->color, &smooth->color_brightness, &smooth->brightness);
+	 supla_esp_board_set_rgbw_value(_smooth->ChannelNumber, &_smooth->color, &_smooth->color_brightness, &_smooth->brightness);
+	 _smooth->counter++;
 
-	 if ( smooth->dest_color == smooth->color
-		  && smooth->color_brightness == smooth->dest_color_brightness
-		  && smooth->brightness == smooth->dest_brightness ) {
-
-		 os_timer_disarm(&smooth->timer);
-
+	 if ( _smooth->color == _smooth->dest_color
+		  && _smooth->color_brightness == _smooth->dest_color_brightness
+		  && _smooth->brightness == _smooth->dest_brightness ) {
+		 
+		 _smooth->active = 0;
 	 }
 
-	 smooth->counter++;
+}
+
+void DEVCONN_ICACHE_FLASH
+_supla_esp_devconn_smooth_cb(void) {
+
+
+	int a;
+	char job = 0;
+
+	for(a=0;a<SMOOTH_MAX_COUNT;a++)
+		if ( smooth[a].active == 1 ) {
+
+			job = 1;
+			supla_esp_devconn_smooth_cb(&smooth[a]);
+
+		}
+
+	if ( job == 0 ) {
+		supla_esp_hw_timer_disarm();
+	}
 
 }
 
@@ -695,24 +714,25 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	if ( ChannelNumber >= 2 )
 		return;
 
-	 devconn_smooth *s = &smooth[ChannelNumber];
+	supla_esp_hw_timer_disarm();
 
-	 os_timer_disarm(&s->timer);
+	devconn_smooth *_smooth = &smooth[ChannelNumber];
 
-	 s->counter = 0;
-	 s->ChannelNumber = ChannelNumber;
-	 s->smoothly = smoothly;
+	 _smooth->active = 1;
+	 _smooth->counter = 0;
+	 _smooth->ChannelNumber = ChannelNumber;
+	 _smooth->smoothly = smoothly;
 
-	 s->dest_color = Color;
-	 s->dest_color_brightness = ColorBrightness;
-	 s->dest_brightness = Brightness;
+	 _smooth->dest_color = Color;
+	 _smooth->dest_color_brightness = ColorBrightness;
+	 _smooth->dest_brightness = Brightness;
 
 	 if ( send_value_changed ) {
 		 supla_esp_channel_rgbw_value_changed(ChannelNumber, Color, ColorBrightness, Brightness);
 	 }
 
-	 os_timer_setfn(&s->timer, (os_timer_func_t *)supla_esp_devconn_smooth_cb, s);
-	 os_timer_arm(&s->timer, 10, 1);
+	supla_esp_hw_timer_init(FRC1_SOURCE, 1, _supla_esp_devconn_smooth_cb);
+	supla_esp_hw_timer_arm(10000);
 
 }
 
@@ -778,9 +798,9 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 		}
 
-		supla_esp_save_state(0);
 
 		supla_esp_channel_set_rgbw_value(new_value->ChannelNumber, Color, ColorBrightness, Brightness, 1, 1);
+		supla_esp_save_state(2000);
 
 		return;
 	}
