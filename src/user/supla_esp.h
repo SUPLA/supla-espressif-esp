@@ -31,12 +31,20 @@
 #define RELAY_INIT_VALUE LO_VALUE
 #define SAVE_STATE_DELAY  1000
 
+#ifndef INPUT_MAX_COUNT
 #define INPUT_MAX_COUNT         7
+#endif /*INPUT_MAX_COUNT*/
+
+#ifndef RELAY_MAX_COUNT
 #define RELAY_MAX_COUNT         4
+#endif /*RELAY_MAX_COUNT*/
+
+#ifndef RS_MAX_COUNT
 #define RS_MAX_COUNT            2
+#endif /*RS_MAX_COUNT*/
 
 #ifndef SMOOTH_MAX_COUNT
-#define SMOOTH_MAX_COUNT 1
+#define SMOOTH_MAX_COUNT        1
 #endif /*SMOOTH_MAX_COUNT*/
 
 #define INPUT_FLAG_PULLUP             0x01
