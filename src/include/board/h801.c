@@ -141,11 +141,11 @@ char supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBr
 		supla_esp_pwm_set_percent_duty((((*Color) & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
 		supla_esp_pwm_set_percent_duty(((*Color) & 0x000000FF) * 100 / 255, 100, 2);         //BLUE
 
-		supla_esp_pwm_set_percent_duty(*Brightness, 100, 3);
+		supla_esp_pwm_set_percent_duty(brightness, 100, 3);
 
 	} else if ( ChannelNumber ==  1 ) {
 
-		supla_esp_pwm_set_percent_duty(*Brightness, 100, 4);
+		supla_esp_pwm_set_percent_duty(brightness, 100, 4);
 
 
 	}
