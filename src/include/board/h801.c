@@ -120,20 +120,26 @@ void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
 
 char supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
 
+	uint8 brightness = *Brightness;
+	int color = *Color;
+	uint8 color_brightness = *ColorBrightness;
+	
+	if ( brightness > 100 )
+		brightness = 100;
+	
+	if ( color_brightness > 100 )
+		color_brightness = 100;
 
 	if ( ChannelNumber == 0 ) {
+		
+		hsv _hsv = rgb2hsv(color);
+		_hsv.v = 255 * color_brightness / 100;
 
-		char CB = *ColorBrightness;
-
-		if ( CB > 10 && CB < 25 )
-			CB = 25;
-
-		if ( CB < 10 )
-			CB = 0;
-
-		supla_esp_pwm_set_percent_duty((((*Color) & 0x00FF0000) >> 16) * 100 / 255, CB, 0); //RED
-		supla_esp_pwm_set_percent_duty((((*Color) & 0x0000FF00) >> 8) * 100 / 255, CB, 1);  //GREEN
-		supla_esp_pwm_set_percent_duty(((*Color) & 0x000000FF) * 100 / 255, CB, 2);         //BLUE
+		color = hsv2rgb(_hsv);
+		
+		supla_esp_pwm_set_percent_duty((((*Color) & 0x00FF0000) >> 16) * 100 / 255, 100, 0); //RED
+		supla_esp_pwm_set_percent_duty((((*Color) & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
+		supla_esp_pwm_set_percent_duty(((*Color) & 0x000000FF) * 100 / 255, 100, 2);         //BLUE
 
 		supla_esp_pwm_set_percent_duty(*Brightness, 100, 3);
 
