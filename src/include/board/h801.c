@@ -137,9 +137,9 @@ char supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBr
 
 		color = hsv2rgb(_hsv);
 		
-		supla_esp_pwm_set_percent_duty((((*Color) & 0x00FF0000) >> 16) * 100 / 255, 100, 0); //RED
-		supla_esp_pwm_set_percent_duty((((*Color) & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
-		supla_esp_pwm_set_percent_duty(((*Color) & 0x000000FF) * 100 / 255, 100, 2);         //BLUE
+		supla_esp_pwm_set_percent_duty(((color & 0x00FF0000) >> 16) * 100 / 255, 100, 0); //RED
+		supla_esp_pwm_set_percent_duty(((color & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
+		supla_esp_pwm_set_percent_duty((color & 0x000000FF) * 100 / 255, 100, 2);        //BLUE
 
 		supla_esp_pwm_set_percent_duty(brightness, 100, 3);
 
