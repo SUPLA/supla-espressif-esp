@@ -93,6 +93,10 @@ void MAIN_ICACHE_FLASH user_rf_pre_init() {};
 
 void MAIN_ICACHE_FLASH user_init(void)
 {
+	
+#ifdef BOARD_USER_INIT
+	BOARD_USER_INIT;
+#else
 
 	 struct rst_info *rtc_info = system_get_rst_info();
 	 supla_log(LOG_DEBUG, "RST reason: %i", rtc_info->reason);
@@ -171,6 +175,8 @@ void MAIN_ICACHE_FLASH user_init(void)
 	for(a=0;a<supla_esp_state.len;a++)
 		supla_log(LOG_DEBUG, "%i. %s", a, supla_esp_state.log[a]);
 */
+	
+#endif /*BOARD_USER_INIT*/
 
 }
 

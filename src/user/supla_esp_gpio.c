@@ -734,7 +734,18 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 
 					// CFG MODE
 
-					supla_esg_gpio_start_cfg_mode();
+					if ( supla_esp_cfgmode_started() == 0 ) {
+
+						supla_esg_gpio_start_cfg_mode();
+
+					} else if ( input_cfg->flags & INPUT_FLAG_FACTORY_RESET ) {
+
+						factory_defaults(1);
+						supla_log(LOG_DEBUG, "Factory defaults");
+						os_delay_us(500000);
+						system_restart();
+					}
+
 
 					input_cfg->step = 0;
 					os_timer_disarm(&input_cfg->timer);

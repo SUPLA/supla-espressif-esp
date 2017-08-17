@@ -82,6 +82,33 @@ supla_esp_save_state(int delay) {
 
 }
 
+void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
+
+	char GUID[SUPLA_GUID_SIZE];
+	char TAG[6];
+
+	memcpy(GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+	memcpy(TAG, supla_esp_cfg.TAG, 6);
+
+	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
+	memcpy(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE);
+	memcpy(supla_esp_cfg.TAG, TAG, 6);
+
+	supla_esp_cfg.CfgButtonType = BTN_TYPE_BUTTON;
+	supla_esp_cfg.Button1Type = BTN_TYPE_BUTTON;
+	supla_esp_cfg.Button2Type = BTN_TYPE_SWITCH;
+
+	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+
+	if ( save == 1 ) {
+
+		supla_esp_cfg_save(&supla_esp_cfg);
+		supla_esp_save_state(0);
+
+	}
+
+}
+
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_init(void) {
 
@@ -121,11 +148,8 @@ supla_esp_cfg_init(void) {
 	   }
 	}
 
-	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
+	factory_defaults(0);
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
-	supla_esp_cfg.CfgButtonType = BTN_TYPE_BUTTON;
-	supla_esp_cfg.Button1Type = BTN_TYPE_BUTTON;
-	supla_esp_cfg.Button2Type = BTN_TYPE_SWITCH;
 
 	os_get_random((unsigned char*)supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 
@@ -151,8 +175,6 @@ supla_esp_cfg_init(void) {
 	CFG_AFTER_GUID_GEN;
 	#endif
 
-	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
-
 	if ( supla_esp_cfg_save(&supla_esp_cfg) == 1 ) {
 
 		supla_esp_save_state(1);
@@ -161,6 +183,9 @@ supla_esp_cfg_init(void) {
 
 	return 0;
 }
+
+
+
 /*
 char CFG_ICACHE_FLASH_ATTR supla_esp_write_log(char *log) {
 

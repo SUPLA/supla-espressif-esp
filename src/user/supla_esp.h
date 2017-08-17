@@ -49,6 +49,7 @@
 
 #define INPUT_FLAG_PULLUP             0x01
 #define INPUT_FLAG_CFG_BTN            0x02
+#define INPUT_FLAG_FACTORY_RESET      0x04
 
 #define INPUT_TYPE_SENSOR        1
 #define INPUT_TYPE_BUTTON        2
