@@ -86,9 +86,11 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 
 	char GUID[SUPLA_GUID_SIZE];
 	char TAG[6];
+	char Test;
 
 	memcpy(GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 	memcpy(TAG, supla_esp_cfg.TAG, 6);
+	Test = supla_esp_cfg.Test;
 
 	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
 	memcpy(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE);
@@ -99,6 +101,7 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 	supla_esp_cfg.Button2Type = BTN_TYPE_SWITCH;
 
 	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+	supla_esp_cfg.Test = Test;
 
 	if ( save == 1 ) {
 
@@ -149,7 +152,9 @@ supla_esp_cfg_init(void) {
 	}
 
 	factory_defaults(0);
+	supla_esp_cfg.Test = 0;
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
+
 
 	os_get_random((unsigned char*)supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 
