@@ -85,15 +85,18 @@ supla_esp_save_state(int delay) {
 void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 
 	char GUID[SUPLA_GUID_SIZE];
+	char AuthKey[SUPLA_AUTHKEY_SIZE];
 	char TAG[6];
 	char Test;
 
 	memcpy(GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+	memcpy(AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 	memcpy(TAG, supla_esp_cfg.TAG, 6);
 	Test = supla_esp_cfg.Test;
 
 	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
 	memcpy(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE);
+	memcpy(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE);
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
 
 	supla_esp_cfg.CfgButtonType = BTN_TYPE_BUTTON;
@@ -115,7 +118,7 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_init(void) {
 
-	char TAG[6] = {'S','U','P','L','A', 4};
+	char TAG[6] = {'S','U','P','L','A', 5};
 	char mac[6];
 	int a;
 
@@ -157,6 +160,7 @@ supla_esp_cfg_init(void) {
 
 
 	os_get_random((unsigned char*)supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+	os_get_random((unsigned char*)supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 
 	if ( SUPLA_GUID_SIZE >= 6 ) {
 		wifi_get_macaddr(STATION_IF, (unsigned char*)mac);
@@ -176,9 +180,15 @@ supla_esp_cfg_init(void) {
 		supla_esp_cfg.GUID[a]= (supla_esp_cfg.GUID[a] + system_get_time() + spi_flash_get_id() + system_get_chip_id() + system_get_rtc_time()) % 255;
 	}
 
+	a = SUPLA_GUID_SIZE > SUPLA_AUTHKEY_SIZE ? SUPLA_AUTHKEY_SIZE : SUPLA_GUID_SIZE;
+	for(;a>0;a--) {
+		supla_esp_cfg.AuthKey[a] += supla_esp_cfg.GUID[a];
+	}
+
 	#ifdef CFG_AFTER_GUID_GEN
 	CFG_AFTER_GUID_GEN;
 	#endif
+
 
 	if ( supla_esp_cfg_save(&supla_esp_cfg) == 1 ) {
 

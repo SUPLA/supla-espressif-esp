@@ -49,6 +49,9 @@ typedef struct {
     unsigned int FullOpeningTime[RS_MAX_COUNT];
     unsigned int FullClosingTime[RS_MAX_COUNT];
 
+    char Email[SUPLA_EMAIL_MAXSIZE];
+    char AuthKey[SUPLA_AUTHKEY_SIZE];
+
     char zero[200];
 
 }SuplaEspCfg;
