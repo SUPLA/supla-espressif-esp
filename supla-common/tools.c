@@ -26,6 +26,11 @@
 #include "log.h"
 #include "eh.h"
 
+#ifdef __BCRYPT
+#include "crypt_blowfish/ow-crypt.h"
+#define BCRYPT_RABD_SIZE 16
+#endif
+
 unsigned char st_app_terminate = 0;
 pthread_t main_thread;
 
@@ -179,48 +184,44 @@ size_t st_strlen(char *str, size_t maxlen) {
 	return strnlen(str, maxlen-1);
 }
 
+char *st_bin2hex(char *buffer, const char *src, size_t len) {
+
+	int a, b;
+
+	buffer[0] = 0;
+
+	if ( src == 0 || buffer == 0 )
+		return buffer;
+
+	b=0;
+
+	for(a=0;a<len;a++) {
+		snprintf(&buffer[b], 3, "%02X", (unsigned char)src[a]);
+		b+=2;
+	}
+
+	return buffer;
+
+}
+
 void st_guid2hex(char GUIDHEX[SUPLA_GUID_HEXSIZE], const char GUID[SUPLA_GUID_SIZE]) {
 
-	snprintf(GUIDHEX,
-			 SUPLA_GUID_HEXSIZE,
-	                        "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X",
-	                        (unsigned char)GUID[0],
-	                        (unsigned char)GUID[1],
-	                        (unsigned char)GUID[2],
-	                        (unsigned char)GUID[3],
-	                        (unsigned char)GUID[4],
-	                        (unsigned char)GUID[5],
-	                        (unsigned char)GUID[6],
-	                        (unsigned char)GUID[7],
-	                        (unsigned char)GUID[8],
-	                        (unsigned char)GUID[9],
-	                        (unsigned char)GUID[10],
-	                        (unsigned char)GUID[11],
-	                        (unsigned char)GUID[12],
-	                        (unsigned char)GUID[13],
-	                        (unsigned char)GUID[14],
-	                        (unsigned char)GUID[15]);
+	st_bin2hex(GUIDHEX, GUID, SUPLA_GUID_SIZE);
+}
+
+void st_authkey2hex(char AuthKeyHEX[SUPLA_AUTHKEY_HEXSIZE], const char AuthKey[SUPLA_AUTHKEY_SIZE]) {
+
+	st_bin2hex(AuthKeyHEX, AuthKey, SUPLA_AUTHKEY_SIZE);
 
 }
 
 char *st_str2hex(char *buffer, const char *str, size_t maxlen) {
 
-	int a, b;
+	return st_bin2hex(buffer, str, strnlen(str, maxlen));
 
-	if ( str == 0 || buffer == 0 )
-		return buffer;
-
-	b=0;
-
-	for(a=0;a<strnlen(str, maxlen);a++) {
-		snprintf(&buffer[b], 3, "%02X", (unsigned char)str[a]);
-		b+=2;
-	}
-
-	return buffer;
 }
 
-char st_read_guid_from_file(char *file, char *GUID, char create) {
+char st_read_randkey_from_file(char *file, char *KEY, int size, char create) {
 
 	FILE *F;
 	int a;
@@ -239,10 +240,10 @@ char st_read_guid_from_file(char *file, char *GUID, char create) {
             	     srand(tv.tv_usec);
             	     gettimeofday(&tv, NULL);
 
-            	     for(a=0;a<SUPLA_GUID_SIZE;a++)
-            	    	 GUID[a] = (unsigned char)(rand()+tv.tv_usec);
+            	     for(a=0;a<size;a++)
+            	    	 KEY[a] = (unsigned char)(rand()+tv.tv_usec);
 
-                     if ( fwrite(GUID, SUPLA_GUID_SIZE, (int)1, F) == 1 ) {
+                     if ( fwrite(KEY, size, (int)1, F) == 1 ) {
                     	 result = 1;
                      } else {
                     	 supla_log(LOG_ERR, "Can't write to file %s", file);
@@ -263,10 +264,10 @@ char st_read_guid_from_file(char *file, char *GUID, char create) {
     F = fopen(file, "r");
     if ( F ) {
     	fseek(F, 0, SEEK_END);
-    	if ( ftell(F) == SUPLA_GUID_SIZE ) {
+    	if ( ftell(F) == size ) {
     		fseek(F, 0, SEEK_SET);
 
-            if ( fread(GUID, SUPLA_GUID_SIZE, (int)1, F) == 1 ) {
+            if ( fread(KEY, size, (int)1, F) == 1 ) {
            	 result = 1;
             } else {
            	 supla_log(LOG_ERR, "Can't read file %s", file);
@@ -282,8 +283,8 @@ char st_read_guid_from_file(char *file, char *GUID, char create) {
 
     if ( result == 1 ) {
     	result = 0;
-    	for(a=0;a<SUPLA_GUID_SIZE;a++)
-    		if ( (int)GUID[a] != 0 ) {
+    	for(a=0;a<size;a++)
+    		if ( (int)KEY[a] != 0 ) {
     			result = 1;
     			break;
     		}
@@ -295,6 +296,14 @@ char st_read_guid_from_file(char *file, char *GUID, char create) {
 	return result;
 }
 
+char st_read_guid_from_file(char *file, char *GUID, char create) {
+	return st_read_randkey_from_file(file, GUID, SUPLA_GUID_SIZE, create);
+}
+
+char st_read_authkey_from_file(char *file, char *AuthKey, char create) {
+	return st_read_randkey_from_file(file, AuthKey, SUPLA_AUTHKEY_SIZE, create);
+}
+
 time_t st_get_utc_time(void) {
 
 	time_t now = time(0);
@@ -302,3 +311,119 @@ time_t st_get_utc_time(void) {
 	return mktime(now_tm);
 
 }
+
+char *st_get_datetime_str(char buffer[64]) {
+
+	memset(buffer, 0 , 64);
+
+	time_t t = time(NULL);
+	struct tm *tm = localtime(&t);
+	strftime(buffer, 64, "%c", tm);
+
+	return buffer;
+}
+
+#ifdef __BCRYPT
+char st_bcrypt_gensalt(char *salt, int salt_buffer_size, char rounds) {
+
+	if ( salt == NULL || salt_buffer_size == 0 )
+		return 0;
+
+	char random[BCRYPT_RABD_SIZE];
+	int a;
+
+	if ( rounds > 31 )
+		rounds = 31;
+	else if ( rounds < 4 )
+		rounds = 4;
+
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+
+    srand(tv.tv_usec);
+
+    for(a=0;a<BCRYPT_RABD_SIZE;a++)
+    	random[a] = rand()+tv.tv_usec;
+
+
+    return crypt_gensalt_rn("$2a$", rounds, random, BCRYPT_RABD_SIZE,
+    			       salt, salt_buffer_size) == NULL ? 0 : 1;
+
+}
+
+char st_bcrypt_hash(char *str, char *salt, char *hash, int hash_buffer_size) {
+
+	if ( str == NULL || hash == NULL || salt == NULL || hash_buffer_size == 0 )
+		return 0;
+
+	return crypt_rn(str, salt, hash, hash_buffer_size) == NULL ? 0 : 1;
+
+}
+
+char st_bcrypt_crypt(char *str, char *hash, int hash_buffer_size, char rounds) {
+
+	if ( str == NULL || hash == NULL || hash_buffer_size == 0 )
+		return 0;
+
+	char salt[32];
+	if ( 1 == st_bcrypt_gensalt(salt, 32, rounds) ) {
+
+		return st_bcrypt_hash(str, salt, hash, hash_buffer_size);
+	}
+
+	return 0;
+}
+
+char st_bcrypt_check(char *str, char *hash, int hash_len) {
+
+	if ( str == NULL || hash == NULL || hash_len == 0 )
+		return 0;
+
+	char *cmp_hash = malloc(hash_len+1);
+	char result = 0;
+
+	if ( st_bcrypt_hash(str, hash, cmp_hash, hash_len+1) == 1 ) {
+
+		cmp_hash[hash_len] = 0;
+
+		if ( hash_len == strnlen(cmp_hash, hash_len)
+			 && memcmp(hash, cmp_hash, hash_len) == 0 ) {
+
+			result = 1;
+		}
+
+	}
+
+	free(cmp_hash);
+	return result;
+
+}
+
+char *st_get_authkey_hash_hex(const char AuthKey[SUPLA_AUTHKEY_SIZE]) {
+
+	char AuthKeyHEX[SUPLA_AUTHKEY_HEXSIZE];
+	memset(AuthKeyHEX, 0, SUPLA_AUTHKEY_HEXSIZE);
+
+	st_authkey2hex(AuthKeyHEX, AuthKey);
+
+	char hash[BCRYPT_HASH_MAXSIZE];
+
+	if ( st_bcrypt_crypt(AuthKeyHEX, hash, BCRYPT_HASH_MAXSIZE, 4) ) {
+
+		int size = strnlen(hash, BCRYPT_HASH_MAXSIZE);
+		char *hash_hex = (char*)malloc(size*2 + 1);
+
+		st_str2hex(hash_hex, hash, strnlen(hash, BCRYPT_HASH_MAXSIZE));
+		hash_hex[size*2] = 0;
+
+		return hash_hex;
+	}
+
+
+	return NULL;
+}
+
+
+
+#endif
+

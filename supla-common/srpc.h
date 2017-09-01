@@ -62,9 +62,11 @@ union TsrpcDataPacketData {
 	TDS_SuplaRegisterDevice *ds_register_device;
 	TDS_SuplaRegisterDevice_B *ds_register_device_b;
 	TDS_SuplaRegisterDevice_C *ds_register_device_c;
+	TDS_SuplaRegisterDevice_D *ds_register_device_d;
 	TSD_SuplaRegisterDeviceResult *sd_register_device_result;
 	TCS_SuplaRegisterClient *cs_register_client;
 	TCS_SuplaRegisterClient_B *cs_register_client_b;
+	TCS_SuplaRegisterClient_C *cs_register_client_c;
 	TSC_SuplaRegisterClientResult *sc_register_client_result;
 	TDS_SuplaDeviceChannelValue *ds_device_channel_value;
 	TSC_SuplaLocation *sc_location;
@@ -79,6 +81,9 @@ union TsrpcDataPacketData {
 	TCS_SuplaChannelNewValue_B *cs_channel_new_value_b;
 	TDS_FirmwareUpdateParams *ds_firmware_update_params;
 	TSD_FirmwareUpdate_UrlResult *sc_firmware_update_url_result;
+	TSDC_RegistrationEnabled *sdc_reg_enabled;
+	TCS_OAuthParametersRequest *cs_oauth_parameters_request;
+	TSC_OAuthParameters *sc_oauth_parameters;
 
 };
 
@@ -112,11 +117,14 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_dcs_async_ping_server(void *_srpc);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sdc_async_ping_server_result(void *_srpc);
 _supla_int_t SRPC_ICACHE_FLASH srpc_dcs_async_set_activity_timeout(void *_srpc, TDCS_SuplaSetActivityTimeout *dcs_set_activity_timeout);
 _supla_int_t SRPC_ICACHE_FLASH srpc_dcs_async_set_activity_timeout_result(void *_srpc, TSDC_SuplaSetActivityTimeoutResult *sdc_set_activity_timeout_result);
+_supla_int_t SRPC_ICACHE_FLASH srpc_dcs_async_get_registration_enabled(void *_srpc);
+_supla_int_t SRPC_ICACHE_FLASH srpc_sdc_async_get_registration_enabled_result(void *_srpc, TSDC_RegistrationEnabled *reg_enabled);
 
 // device <-> server
 _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice(void *_srpc, TDS_SuplaRegisterDevice *registerdevice);
 _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice_b(void *_srpc, TDS_SuplaRegisterDevice_B *registerdevice); // ver. >= 2
 _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice_c(void *_srpc, TDS_SuplaRegisterDevice_C *registerdevice); // ver. >= 6
+_supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_registerdevice_d(void *_srpc, TDS_SuplaRegisterDevice_D *registerdevice); // ver. >= 7
 _supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_registerdevice_result(void *_srpc, TSD_SuplaRegisterDeviceResult *registerdevice_result);
 _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_channel_value_changed(void *_srpc, unsigned char channel_number, char *value);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_set_channel_value(void *_srpc, TSD_SuplaChannelNewValue *value);
@@ -127,6 +135,7 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_get_firmware_update_url_result(void
 // client <-> server
 _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_registerclient(void *_srpc, TCS_SuplaRegisterClient *registerclient);
 _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_registerclient_b(void *_srpc, TCS_SuplaRegisterClient_B *registerclient); // ver. >= 6
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_registerclient_c(void *_srpc, TCS_SuplaRegisterClient_C *registerclient); // ver. >= 7
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_registerclient_result(void *_srpc, TSC_SuplaRegisterClientResult *registerclient_result);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_location_update(void *_srpc, TSC_SuplaLocation *location);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_locationpack_update(void *_srpc, TSC_SuplaLocationPack *location_pack);
@@ -137,6 +146,8 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_get_next(void *_srpc);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_event(void *_srpc, TSC_SuplaEvent *event);
 _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_channel_value(void *_srpc, TCS_SuplaChannelNewValue *value);
 _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_channel_value_b(void *_srpc, TCS_SuplaChannelNewValue_B *value);
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_get_oauth_parameters(void *_srpc, TCS_OAuthParametersRequest *req);
+_supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_get_oauth_parameters_result(void *_srpc, TSC_OAuthParameters *params);
 
 #ifdef __cplusplus
 }

@@ -454,7 +454,7 @@ char ssocket_accept(void *_ssd, unsigned int *ipv4, void **_supla_socket) {
 
 		      if ( client_sd != -1 ) {
 
-			      //supla_log(LOG_DEBUG, "Connection: %i, %s:%d\n",client_sd, inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+			      supla_log(LOG_INFO, "Connection accepted: %s:%d ClientSD: %i Secure: %i", inet_ntoa(addr.sin_addr), ntohs(addr.sin_port),client_sd, ssd->secure);
 
 		    	  supla_socket = malloc(sizeof(TSuplaSocket));
 
@@ -466,7 +466,7 @@ char ssocket_accept(void *_ssd, unsigned int *ipv4, void **_supla_socket) {
 			    	  memset(supla_socket, 0, sizeof(TSuplaSocket));
 			    	  supla_socket->sfd = -1;
 
-			    	  *ipv4 = addr.sin_addr.s_addr;
+			    	  *ipv4 = htonl(addr.sin_addr.s_addr);
 
 				      if ( client_sd != -1
 				    	   && ssd->secure != 1 ) {
