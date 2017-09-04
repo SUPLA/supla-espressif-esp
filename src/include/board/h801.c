@@ -104,16 +104,16 @@ void supla_esp_board_pwm_init(void) {
 	supla_esp_channel_set_rgbw_value(1, 0, 0, supla_esp_state.brightness[1], 0, 0);
 }
 
-void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 
-	srd->channel_count = 2;
-	srd->channels[0].Type = SUPLA_CHANNELTYPE_DIMMERANDRGBLED;
-	supla_esp_channel_rgbw_to_value(srd->channels[0].value, supla_esp_state.color[0], supla_esp_state.color_brightness[0], supla_esp_state.brightness[0]);
+	*channel_count = 2;
+	channels[0].Type = SUPLA_CHANNELTYPE_DIMMERANDRGBLED;
+	supla_esp_channel_rgbw_to_value(channels[0].value, supla_esp_state.color[0], supla_esp_state.color_brightness[0], supla_esp_state.brightness[0]);
 
 
-	srd->channels[1].Type = SUPLA_CHANNELTYPE_DIMMER;
-	srd->channels[1].Number = 1;
-	supla_esp_channel_rgbw_to_value(srd->channels[1].value, 0, 0, supla_esp_state.brightness[1]);
+	channels[1].Type = SUPLA_CHANNELTYPE_DIMMER;
+	channels[1].Number = 1;
+	supla_esp_channel_rgbw_to_value(channels[1].value, 0, 0, supla_esp_state.brightness[1]);
 
 
 }

@@ -23,7 +23,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.2"
+#define SUPLA_ESP_SOFTVER "2.5"
 
 #define LO_VALUE  0
 #define HI_VALUE  1
@@ -57,10 +57,12 @@
 #define INPUT_TYPE_SWITCH        4
 #define INPUT_TYPE_CUSTOM        200
 
-#ifndef RS_TURNOFF_DELAY
-#define RS_TURNOFF_DELAY 50000
+// milliseconds
+#ifndef RS_SWITCH_DELAY
+#define RS_SWITCH_DELAY 1000
 #endif
 
+// microseconds
 #ifndef RELAY_MIN_DELAY
 #define RELAY_MIN_DELAY 100000
 #endif
@@ -86,7 +88,7 @@
 #endif
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size);
-void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd);
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count);
 void supla_esp_board_relay_before_change_state(void);
 void supla_esp_board_relay_after_change_state(void);
 void supla_esp_board_gpio_init(void);

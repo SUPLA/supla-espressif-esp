@@ -109,19 +109,19 @@ void supla_esp_board_gpio_init(void) {
 
 }
 
-void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 
-	srd->channel_count = 1;
+	*channel_count = 1;
 
-	srd->channels[0].Number = 0;
-	srd->channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[0].Number = 0;
+	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
 
-	srd->channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
 								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
 
-	srd->channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
+	channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 
-	srd->channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
+	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
 }
 

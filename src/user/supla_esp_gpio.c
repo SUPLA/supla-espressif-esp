@@ -91,10 +91,10 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 void
 supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value) {
 
-	rs_cfg->task.lock = 1;
+	rs_cfg->task.lock++;
 	supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, value == RS_RELAY_UP ? 1 : 0, 0);
 	supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, value == RS_RELAY_DOWN ? 1 : 0, 0);
-	rs_cfg->task.lock = 0;
+	rs_cfg->task.lock--;
 
 }
 
@@ -465,18 +465,31 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 
 
 }
+void
+supla_esp_gpio_relay_hi_delayed(void *timer_arg) {
+
+	supla_relay_delayed_trigger *delayed_trigger = (supla_relay_delayed_trigger *)timer_arg;
+
+	if ( delayed_trigger->lock )
+		(*delayed_trigger->lock)++;
+
+	supla_esp_gpio_relay_hi(delayed_trigger->port, delayed_trigger->hi, delayed_trigger->save_before);
+
+	if ( delayed_trigger->lock )
+		(*delayed_trigger->lock)--;
+}
 
 char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 
     unsigned int t = system_get_time();
     unsigned int *time = NULL;
+    unsigned int *lo_time = NULL;
+    unsigned int delay_time = 0;
     int a,b;
     char result = 0;
     char *state = NULL;
     char _hi;
     
-    //supla_log(LOG_DEBUG, "supla_esp_gpio_relay_hi(%i, %i, %i)", port, hi, save_before);
-
     system_soft_wdt_stop();
 
     if ( hi == 255 ) {
@@ -488,7 +501,10 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     for(a=0;a<RELAY_MAX_COUNT;a++)
     	if ( supla_relay_cfg[a].gpio_id == port ) {
 
+    		os_timer_disarm(&supla_relay_cfg[a].delayed_trigger.timer);
+
     		time = &supla_relay_cfg[a].last_time;
+    		lo_time = &supla_relay_cfg[a].lo_time;
 
     		if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE
     			 || supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE )
@@ -500,19 +516,46 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 
 
 			for(b=0;b<RS_MAX_COUNT;b++)
-				if ( supla_rs_cfg[b].up == &supla_relay_cfg[a]
-					 || supla_rs_cfg[b].down == &supla_relay_cfg[a] ) {
+				if ( hi &&
+				     ( supla_rs_cfg[b].up == &supla_relay_cfg[a]
+				       || supla_rs_cfg[b].down == &supla_relay_cfg[a] ) ) {
 
-					supla_esp_gpio_rs_cancel_task(b);
-
-					if ( hi ) {
 						supla_relay_cfg_t *rel = supla_rs_cfg[b].up == &supla_relay_cfg[a] ? supla_rs_cfg[b].down : supla_rs_cfg[b].up;
 
-						supla_esp_gpio_hi(rel->gpio_id,
-								rel->flags  &  RELAY_FLAG_LO_LEVEL_TRIGGER ? HI_VALUE : LO_VALUE);
+						supla_esp_gpio_rs_cancel_task(b);
 
-						os_delay_us(RS_TURNOFF_DELAY);
-					}
+						if ( __supla_esp_gpio_relay_is_hi(rel) ) {
+
+							supla_esp_gpio_hi(rel->gpio_id,
+										rel->flags  &  RELAY_FLAG_LO_LEVEL_TRIGGER ? HI_VALUE : LO_VALUE);
+
+							rel->lo_time = t;
+							os_delay_us(50000);
+
+						}
+
+						if ( RS_SWITCH_DELAY
+							 && rel->lo_time > 0
+							 && t >= rel->lo_time
+							 && (t - rel->lo_time)/1000 < RS_SWITCH_DELAY) {
+
+							delay_time = RS_SWITCH_DELAY - (t - rel->lo_time)/1000 + 1;
+						}
+
+
+						if ( delay_time > 100 ) {
+
+							supla_relay_cfg[a].delayed_trigger.port = port;
+							supla_relay_cfg[a].delayed_trigger.hi = hi;
+							supla_relay_cfg[a].delayed_trigger.save_before = save_before;
+							supla_relay_cfg[a].delayed_trigger.lock = &supla_rs_cfg[b].task.lock;
+
+							os_timer_setfn(&supla_relay_cfg[a].delayed_trigger.timer, supla_esp_gpio_relay_hi_delayed, &supla_relay_cfg[a].delayed_trigger);
+							os_timer_arm(&supla_relay_cfg[a].delayed_trigger.timer, delay_time, 0);
+
+							return 2;
+						}
+
 
 					break;
 			}
@@ -554,9 +597,17 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     	supla_esp_gpio_hi(port, _hi);
     	ETS_GPIO_INTR_ENABLE();
 
-    	if ( time != NULL )
-        	*time = t;
+    	if ( time != NULL ) {
+    		*time = t;
+    	}
 
+    	if ( lo_time != NULL ) {
+    		if ( hi == 1 ) {
+    			*lo_time = 0;
+    		} else if ( *lo_time == 0 ) {
+    			*lo_time = t;
+    		}
+    	}
 
     	result = 1;
     }
@@ -980,6 +1031,7 @@ supla_esp_gpio_init(void) {
 			}
 
 			supla_relay_cfg[a].last_time = 2147483647;
+			supla_relay_cfg[a].lo_time = 2147483647;
 
 			if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE ) {
 

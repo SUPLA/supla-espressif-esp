@@ -112,54 +112,54 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
 }
 
-void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
+void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
 	#if defined(__BOARD_wifisocket_x4)
-		srd->channel_count = 4;
+		*channel_count = 4;
 	#else
-		srd->channel_count = 2;
+		*channel_count = 2;
 	#endif
 
-	srd->channels[0].Number = 0;
-	srd->channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[0].Number = 0;
+	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
 
-	srd->channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
 								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
 
-	srd->channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
+	channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 
-	srd->channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
+	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
 	#ifndef __BOARD_wifisocket_x4
-		srd->channels[1].Number = 1;
-		srd->channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
+		channels[1].Number = 1;
+		channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 
-		srd->channels[1].FuncList = 0;
-		srd->channels[1].Default = 0;
+		channels[1].FuncList = 0;
+		channels[1].Default = 0;
 
-		supla_get_temperature(srd->channels[1].value);
+		supla_get_temperature(channels[1].value);
 
 	#endif
 
 	#ifdef __BOARD_wifisocket_x4
 
-		srd->channels[1].Number = 1;
-		srd->channels[1].Type = srd->channels[0].Type;
-		srd->channels[1].FuncList = srd->channels[0].FuncList;
-		srd->channels[1].Default = srd->channels[0].Default;
-		srd->channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
+		channels[1].Number = 1;
+		schannels[1].Type = channels[0].Type;
+		channels[1].FuncList = channels[0].FuncList;
+		channels[1].Default = channels[0].Default;
+		channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
-		srd->channels[2].Number = 2;
-		srd->channels[2].Type = srd->channels[0].Type;
-		srd->channels[2].FuncList = srd->channels[0].FuncList;
-		srd->channels[2].Default = srd->channels[0].Default;
-		srd->channels[2].value[0] = supla_esp_gpio_relay_on(B_RELAY3_PORT);
+		channels[2].Number = 2;
+		channels[2].Type = channels[0].Type;
+		channels[2].FuncList = channels[0].FuncList;
+		channels[2].Default = channels[0].Default;
+		channels[2].value[0] = supla_esp_gpio_relay_on(B_RELAY3_PORT);
 
-		srd->channels[3].Number = 3;
-		srd->channels[3].Type = srd->channels[0].Type;
-		srd->channels[3].FuncList = srd->channels[0].FuncList;
-		srd->channels[3].Default = srd->channels[0].Default;
-		srd->channels[3].value[0] = supla_esp_gpio_relay_on(B_RELAY4_PORT);
+		channels[3].Number = 3;
+		channels[3].Type = channels[0].Type;
+		channels[3].FuncList = channels[0].FuncList;
+		channels[3].Default = channels[0].Default;
+		channels[3].value[0] = supla_esp_gpio_relay_on(B_RELAY4_PORT);
 
 	#endif
 }

@@ -46,12 +46,26 @@ typedef struct {
 
 typedef struct {
 
+	ETSTimer timer;
+
+	int port;
+	char hi;
+	char save_before;
+	uint8 *lock;
+
+}supla_relay_delayed_trigger;
+
+typedef struct {
+
 	uint8 gpio_id;
 	uint8 flags;
 	uint8 channel;
 
 	unsigned int last_time;
+	unsigned int lo_time;
 	ETSTimer timer;
+
+	supla_relay_delayed_trigger delayed_trigger;
 
 }supla_relay_cfg_t;
 

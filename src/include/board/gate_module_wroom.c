@@ -137,44 +137,44 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
 }
 
-void  supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
+void  supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
-    srd->channel_count = 5;
+	*channel_count = 5;
 
-	srd->channels[0].Number = 0;
-	srd->channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-	srd->channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
+	channels[0].Number = 0;
+	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
 								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
 								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
 								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK;
-	srd->channels[0].Default = 0;
-	srd->channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
+	channels[0].Default = 0;
+	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
-	srd->channels[1].Number = 1;
-	srd->channels[1].Type = srd->channels[0].Type;
-	srd->channels[1].FuncList = srd->channels[0].FuncList;
-	srd->channels[1].Default = srd->channels[0].Default;
-	srd->channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
+	channels[1].Number = 1;
+	channels[1].Type = srd->channels[0].Type;
+	channels[1].FuncList = srd->channels[0].FuncList;
+	channels[1].Default = srd->channels[0].Default;
+	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
-	srd->channels[2].Number = 2;
-	srd->channels[2].Type = SUPLA_CHANNELTYPE_SENSORNO;
-	srd->channels[2].FuncList = 0;
-	srd->channels[2].Default = 0;
-	srd->channels[2].value[0] = 0;
+	channels[2].Number = 2;
+	channels[2].Type = SUPLA_CHANNELTYPE_SENSORNO;
+	channels[2].FuncList = 0;
+	channels[2].Default = 0;
+	channels[2].value[0] = 0;
 
-	srd->channels[3].Number = 3;
-	srd->channels[3].Type = SUPLA_CHANNELTYPE_SENSORNO;
-	srd->channels[3].FuncList = 0;
-	srd->channels[3].Default = 0;
-	srd->channels[3].value[0] = 0;
+	channels[3].Number = 3;
+	channels[3].Type = SUPLA_CHANNELTYPE_SENSORNO;
+	channels[3].FuncList = 0;
+	channels[3].Default = 0;
+	channels[3].value[0] = 0;
 
-	srd->channels[4].Number = 4;
-	srd->channels[4].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
+	channels[4].Number = 4;
+	channels[4].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 
-	srd->channels[4].FuncList = 0;
-	srd->channels[4].Default = 0;
+	channels[4].FuncList = 0;
+	channels[4].Default = 0;
 
-	supla_get_temperature(srd->channels[4].value);
+	supla_get_temperature(channels[4].value);
 
 
 	

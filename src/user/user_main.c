@@ -93,7 +93,7 @@ void MAIN_ICACHE_FLASH user_rf_pre_init() {};
 
 void MAIN_ICACHE_FLASH user_init(void)
 {
-	
+
 #ifdef BOARD_USER_INIT
 	BOARD_USER_INIT;
 #else
@@ -136,11 +136,11 @@ void MAIN_ICACHE_FLASH user_init(void)
 	     supla_esp_pwm_init();
 	#endif
 
-     if ( supla_esp_cfg.LocationID == 0
-    		 || supla_esp_cfg.LocationPwd[0] == 0
-    		 || supla_esp_cfg.Server[0] == 0
-    		 || supla_esp_cfg.WIFI_PWD[0] == 0
-    		 || supla_esp_cfg.WIFI_SSID[0] == 0 ) {
+     if ( ( (supla_esp_cfg.LocationID == 0 || supla_esp_cfg.LocationPwd[0] == 0)
+    		 && supla_esp_cfg.Email[0] == 0 )
+    		|| supla_esp_cfg.Server[0] == 0
+    		|| supla_esp_cfg.WIFI_PWD[0] == 0
+    		|| supla_esp_cfg.WIFI_SSID[0] == 0 ) {
 
     	 supla_esp_cfgmode_start();
     	 return;

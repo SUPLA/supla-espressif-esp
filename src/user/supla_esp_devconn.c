@@ -340,7 +340,6 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 	case SUPLA_RESULTCODE_BAD_CREDENTIALS:
 		supla_esp_set_state(LOG_ERR, "Bad credentials!");
 		break;
-
 	case SUPLA_RESULTCODE_TEMPORARILY_UNAVAILABLE:
 		supla_esp_set_state(LOG_NOTICE, "Temporarily unavailable!");
 		break;
@@ -352,6 +351,20 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 	case SUPLA_RESULTCODE_CHANNEL_CONFLICT:
 		supla_esp_set_state(LOG_ERR, "Channel conflict!");
 		break;
+
+	case SUPLA_RESULTCODE_REGISTRATION_DISABLED:
+		supla_esp_set_state(LOG_ERR, "Registration disabled!");
+		break;
+	case SUPLA_RESULTCODE_AUTHKEY_ERROR:
+		supla_esp_set_state(LOG_NOTICE, "Incorrect device AuthKey!");
+		break;
+	case SUPLA_RESULTCODE_NO_LOCATION_AVAILABLE:
+		supla_esp_set_state(LOG_ERR, "No location available!");
+		break;
+	case SUPLA_RESULTCODE_USER_CONFLICT:
+		supla_esp_set_state(LOG_ERR, "User conflict!");
+		break;
+
 	case SUPLA_RESULTCODE_TRUE:
 
 		supla_esp_gpio_state_connected();
@@ -946,24 +959,46 @@ supla_esp_devconn_iterate(void *timer_arg) {
 		if ( devconn->registered == 0 ) {
 			devconn->registered = -1;
 
-			TDS_SuplaRegisterDevice_B srd;
-			memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_B));
+			if ( strlen(supla_esp_cfg.Email) > 0 ) {
 
-			srd.channel_count = 0;
-			srd.LocationID = supla_esp_cfg.LocationID;
-			ets_snprintf(srd.LocationPWD, SUPLA_LOCATION_PWD_MAXSIZE, "%s", supla_esp_cfg.LocationPwd);
-			//ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
+				TDS_SuplaRegisterDevice_D srd;
+				memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_C));
 
-			supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
+				srd.channel_count = 0;
+				ets_snprintf(srd.Email, SUPLA_EMAIL_MAXSIZE, "%s", supla_esp_cfg.Email);
+				ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
 
-			strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
-			os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+				supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
 
-			//supla_log(LOG_DEBUG, "LocationID=%i, LocationPWD=%s", srd.LocationID, srd.LocationPWD);
+				strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
+				os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+				os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 
-			supla_esp_board_set_channels(&srd);
+				supla_esp_board_set_channels(srd.channels, &srd.channel_count);
 
-			srpc_ds_async_registerdevice_b(devconn->srpc, &srd);
+				srpc_ds_async_registerdevice_d(devconn->srpc, &srd);
+
+			} else {
+
+				TDS_SuplaRegisterDevice_C srd;
+				memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_B));
+
+				srd.channel_count = 0;
+				srd.LocationID = supla_esp_cfg.LocationID;
+				ets_snprintf(srd.LocationPWD, SUPLA_LOCATION_PWD_MAXSIZE, "%s", supla_esp_cfg.LocationPwd);
+				ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
+
+				supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+				strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
+				os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+
+				supla_esp_board_set_channels(srd.channels, &srd.channel_count);
+
+				srpc_ds_async_registerdevice_c(devconn->srpc, &srd);
+
+			}
+
 
 		};
 

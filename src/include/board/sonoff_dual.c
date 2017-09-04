@@ -245,27 +245,27 @@ void uart_rx_intr_enable(uint8 uart_no)
 #endif
 }
 
-void supla_esp_board_set_channels(TDS_SuplaRegisterDevice_B *srd) {
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
 
-    srd->channel_count = 2;
+    *channel_count = 2;
 
-	srd->channels[0].Number = 0;
-	srd->channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[0].Number = 0;
+	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
 
-	srd->channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
 								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
 
-	srd->channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
+	channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 
-	srd->channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
+	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
-	srd->channels[1].Number = 1;
-	srd->channels[1].Type = srd->channels[0].Type;
-	srd->channels[1].FuncList = srd->channels[0].FuncList;
-	srd->channels[1].Default = srd->channels[0].Default;
+	channels[1].Number = 1;
+	channels[1].Type = channels[0].Type;
+	channels[1].FuncList = channels[0].FuncList;
+	channels[1].Default = channels[0].Default;
 
-	srd->channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
+	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
 }
 

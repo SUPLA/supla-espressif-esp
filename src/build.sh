@@ -102,7 +102,19 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
-   "zam_srw_02")
+   "zam_row_01_tester")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "zam_row_07")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "zam_srw_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "zam_srw_03")
       FLASH_SIZE="2048"
       FOTA=1
    ;;
@@ -187,8 +199,12 @@ esac
 
 export SDK_PATH=/hdd2/Espressif/ESP8266_NONOS_SDK154
 export BIN_PATH=/hdd2/Espressif/ESP8266_BIN154
+LD_DIR=sdk154
 
-cp ./ld/sdk154/"$FLASH_SIZE"_eagle.app.v6.ld $SDK_PATH/ld/eagle.app.v6.ld || exit 1
+#export SDK_PATH=/hdd2/Espressif/ESP8266_NONOS_SDK210
+#export BIN_PATH=/hdd2/Espressif/ESP8266_NONOS_SDK210
+#LD_DIR=sdk210
+
 
 make clean
 
@@ -223,7 +239,7 @@ if [ "$FOTA" -eq 1 ]; then
       ;;
   esac
 
-
+cp ./ld/"$LD_DIR"/"$FLASH_SIZE"_eagle.app"$APP".v6.ld $SDK_PATH/ld/eagle.app.v6.ld || exit 1
    make SUPLA_DEP_LIBS="$DEP_LIBS" FOTA="$FOTA" BOARD=$1 CFG_SECTOR="$CFG_SECTOR" BOOT=new APP="$APP" SPI_SPEED=40 SPI_MODE="$SPI_MODE" SPI_SIZE_MAP="$SPI_SIZE_MAP" $EXTRA && \
    cp $BIN_PATH/upgrade/user"$APP"."$FLASH_SIZE".new."$SPI_SIZE_MAP".bin /media/sf_Public/"$BOARD_NAME"_user"$APP"."$FLASH_SIZE".new."$SPI_SIZE_MAP".bin && \
    cp $SDK_PATH/bin/boot_v1.2.bin /media/sf_Public/boot_v1.2.bin
