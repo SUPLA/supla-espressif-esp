@@ -1207,6 +1207,7 @@ supla_esp_devconn_start(void) {
 	supla_esp_gpio_state_disconnected();
 
     struct station_config stationConf;
+    memset(stationConf, 0, sizeof(station_config));
 
     wifi_set_opmode( STATION_MODE );
 
