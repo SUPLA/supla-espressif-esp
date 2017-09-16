@@ -338,6 +338,8 @@ supla_esp_devconn_send_channel_values_with_delay(void) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_result) {
 
+	char *buff = NULL;
+
 	switch(register_device_result->result_code) {
 	case SUPLA_RESULTCODE_BAD_CREDENTIALS:
 		supla_esp_set_state(LOG_ERR, "Bad credentials!");
@@ -407,6 +409,16 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 	case SUPLA_RESULTCODE_GUID_ERROR:
 		supla_esp_set_state(LOG_NOTICE, "Incorrect device GUID!");
+		break;
+
+	default:
+
+		buff = os_malloc(30);
+		ets_snprintf(buff, 30, "Unknown code %i", register_device_result->result_code);
+		supla_esp_set_state(LOG_NOTICE, buff);
+		os_free(buff);
+		buff = NULL;
+
 		break;
 	}
 
