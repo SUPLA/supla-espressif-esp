@@ -768,6 +768,8 @@ supla_esp_cfgmode_start(void) {
 	wifi_get_macaddr(SOFTAP_IF, (unsigned char*)mac);
 
 	struct softap_config apconfig;
+	wifi_softap_get_config(&apconfig);
+
 	struct espconn *conn;
 	
 	if ( supla_esp_cfgmode_entertime != 0 )
