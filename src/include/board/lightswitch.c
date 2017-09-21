@@ -41,13 +41,13 @@ void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 
 void supla_esp_board_gpio_init(void) {
 
-	supla_input_cfg[0].type = supla_esp_cfg.CfgButtonType == BTN_TYPE_SWITCH ? INPUT_TYPE_SWITCH : INPUT_TYPE_BUTTON;
+	supla_input_cfg[0].type = supla_esp_cfg.CfgButtonType == BTN_TYPE_BISTABLE ? INPUT_TYPE_BTN_BISTABLE : INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[0].gpio_id = B_CFG_PORT;
 	supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 	supla_input_cfg[0].relay_gpio_id = B_RELAY1_PORT;
 	supla_input_cfg[0].channel = 0;
 	
-	supla_input_cfg[1].type = supla_esp_cfg.CfgButtonType == BTN_TYPE_SWITCH ? INPUT_TYPE_SWITCH : INPUT_TYPE_BUTTON;
+	supla_input_cfg[1].type = supla_esp_cfg.CfgButtonType == BTN_TYPE_BISTABLE ? INPUT_TYPE_BTN_BISTABLE : INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[1].gpio_id = B_BTN2_PORT;
 	supla_input_cfg[1].flags = INPUT_FLAG_PULLUP;
 	supla_input_cfg[1].relay_gpio_id = B_RELAY2_PORT;

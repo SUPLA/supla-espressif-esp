@@ -29,6 +29,9 @@
 #define RELAY_FLAG_LO_LEVEL_TRIGGER   0x10
 #define RELAY_FLAG_VIRTUAL_GPIO       0x20
 
+#define RS_RELAY_OFF   0
+#define RS_RELAY_UP    2
+#define RS_RELAY_DOWN  1
 
 typedef struct {
 
@@ -47,16 +50,6 @@ typedef struct {
 
 }supla_input_cfg_t;
 
-typedef struct {
-
-	ETSTimer timer;
-
-	int port;
-	char hi;
-	char save_before;
-	uint8 *lock;
-
-}supla_relay_delayed_trigger;
 
 typedef struct {
 
@@ -65,10 +58,7 @@ typedef struct {
 	uint8 channel;
 
 	unsigned int last_time;
-	unsigned int lo_time;
 	ETSTimer timer;
-
-	supla_relay_delayed_trigger delayed_trigger;
 
 }supla_relay_cfg_t;
 
@@ -77,7 +67,6 @@ typedef struct {
 	uint8 percent;
 	uint8 direction;
 	uint8 active;
-	uint8 lock;
 
 }rs_task_t;
 
@@ -96,8 +85,10 @@ typedef struct {
 	unsigned int up_time;
 	unsigned int down_time;
 	unsigned int last_time;
+	unsigned int stop_time;
 
 	ETSTimer timer;
+	ETSTimer delayed_trigger_timer;
 	rs_task_t task;
 
 	int last_position;
@@ -128,6 +119,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_cfgmode(void);
 void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 #endif
 
+void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task);
 void supla_esp_gpio_hi(int port, char hi);
 char supla_esp_gpio_is_hi(int port);
 char supla_esp_gpio_relay_is_hi(int port);
@@ -139,6 +131,8 @@ void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
 
 void supla_esp_gpio_rs_add_task(int idx, uint8 percent);
+
+supla_roller_shutter_cfg_t  *supla_esp_gpio_get_rs__cfg(int port);
 
 #endif /* SUPLA_ESP_GPIO_H_ */
 

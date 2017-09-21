@@ -24,8 +24,8 @@
 #include "supla-dev/proto.h"
 #include "supla_esp.h"
 
-#define BTN_TYPE_BUTTON       0
-#define BTN_TYPE_SWITCH       1
+#define BTN_TYPE_MONOSTABLE       0
+#define BTN_TYPE_BISTABLE         1
 
 typedef struct {
 

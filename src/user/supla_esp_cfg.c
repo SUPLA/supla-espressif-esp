@@ -101,9 +101,9 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 	memcpy(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE);
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
 
-	supla_esp_cfg.CfgButtonType = BTN_TYPE_BUTTON;
-	supla_esp_cfg.Button1Type = BTN_TYPE_BUTTON;
-	supla_esp_cfg.Button2Type = BTN_TYPE_SWITCH;
+	supla_esp_cfg.CfgButtonType = BTN_TYPE_MONOSTABLE;
+	supla_esp_cfg.Button1Type = BTN_TYPE_MONOSTABLE;
+	supla_esp_cfg.Button2Type = BTN_TYPE_BISTABLE;
 
 	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
 	supla_esp_cfg.Test = Test;
@@ -137,10 +137,10 @@ supla_esp_cfg_init(void) {
 		   supla_log(LOG_DEBUG, "SVR: %s", supla_esp_cfg.Server);
 		   supla_log(LOG_DEBUG, "Location ID: %i", supla_esp_cfg.LocationID);
 		   //supla_log(LOG_DEBUG, "Location PWD: %s", supla_esp_cfg.LocationPwd);
-		   supla_log(LOG_DEBUG, "CFG BUTTON TYPE: %s", supla_esp_cfg.CfgButtonType == BTN_TYPE_BUTTON ? "button" : "switch");
+		   supla_log(LOG_DEBUG, "CFG BUTTON TYPE: %s", supla_esp_cfg.CfgButtonType == BTN_TYPE_MONOSTABLE ? "button" : "switch");
 
-		   supla_log(LOG_DEBUG, "BUTTON1 TYPE: %s", supla_esp_cfg.Button1Type == BTN_TYPE_BUTTON ? "button" : "switch");
-		   supla_log(LOG_DEBUG, "BUTTON2 TYPE: %s", supla_esp_cfg.Button2Type == BTN_TYPE_BUTTON ? "button" : "switch");
+		   supla_log(LOG_DEBUG, "BUTTON1 TYPE: %s", supla_esp_cfg.Button1Type == BTN_TYPE_MONOSTABLE ? "button" : "switch");
+		   supla_log(LOG_DEBUG, "BUTTON2 TYPE: %s", supla_esp_cfg.Button2Type == BTN_TYPE_MONOSTABLE ? "button" : "switch");
 		   
 		   supla_log(LOG_DEBUG, "LedOff: %i", supla_esp_cfg.StatusLedOff);
 		   supla_log(LOG_DEBUG, "InputCfgTriggerOff: %i", supla_esp_cfg.InputCfgTriggerOff);

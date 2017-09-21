@@ -53,11 +53,12 @@
 #define INPUT_FLAG_CFG_BTN            0x02
 #define INPUT_FLAG_FACTORY_RESET      0x04
 
-#define INPUT_TYPE_SENSOR        1
-#define INPUT_TYPE_BUTTON        2
-#define INPUT_TYPE_BUTTON_HILO   3
-#define INPUT_TYPE_SWITCH        4
-#define INPUT_TYPE_CUSTOM        200
+#define INPUT_TYPE_SENSOR                1
+#define INPUT_TYPE_BTN_MONOSTABLE        2
+#define INPUT_TYPE_BTN_MONOSTABLE_RS     3
+#define INPUT_TYPE_BTN_BISTABLE          4
+#define INPUT_TYPE_BTN_BISTABLE_RS       5
+#define INPUT_TYPE_CUSTOM                200
 
 // milliseconds
 #ifndef RS_SWITCH_DELAY
