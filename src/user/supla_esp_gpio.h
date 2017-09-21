@@ -120,6 +120,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 #endif
 
 void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task);
+uint8 supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg);
+
 void supla_esp_gpio_hi(int port, char hi);
 char supla_esp_gpio_is_hi(int port);
 char supla_esp_gpio_relay_is_hi(int port);
@@ -130,6 +132,7 @@ char supla_esp_gpio_relay_on(int port);
 void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
 
+void supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg);
 void supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
 supla_roller_shutter_cfg_t  *supla_esp_gpio_get_rs__cfg(int port);

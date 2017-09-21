@@ -89,9 +89,40 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 void
 supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task) {
 
-	supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, value == RS_RELAY_UP ? 1 : 0, 0);
-	supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, value == RS_RELAY_DOWN ? 1 : 0, 0);
+	if ( rs_cfg == NULL ) {
+		return;
+	}
+		
+	if ( cancel_task ) {
+		supla_esp_gpio_rs_cancel_task(rs_cfg);
+	}
+	
+	if (  value == RS_RELAY_UP ) {
+		supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 1, 0);
+	} else if ( value == RS_RELAY_DOWN ) {
+		supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 1, 0);
+	} else {
+		supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 0, 0);
+		supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 0, 0);
+	}
+	
+}
 
+uint8 
+supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg) {
+	
+	if ( rs_cfg != NULL ) {
+		
+		if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) ) {
+			return RS_RELAY_UP;
+		} else if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down) ) {
+			return RS_RELAY_DOWN;
+		}
+		
+	}
+
+	
+	return RS_RELAY_OFF;
 }
 
 void
@@ -298,6 +329,10 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 			supla_esp_channel_value_changed(rs_cfg->up->channel, (rs_cfg->last_position-100)/100);
 		}
 
+		if ( rs_cfg->up_time > 600000 || rs_cfg->down_time > 600000 ) { // 10 min. - timeout
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0);
+		}
+		
 		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
 		rs_cfg->n = t;
 	}
@@ -440,9 +475,9 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 		input_cfg = &supla_input_cfg[a];
 
 		if ( input_cfg->gpio_id != 255
-				&& ( input_cfg->type == INPUT_TYPE_BUTTON
-					 || input_cfg->type == INPUT_TYPE_BUTTON_RS
-					 || input_cfg->type == INPUT_TYPE_SWITCH ) ) {
+				&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
+					 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
+					 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) ) {
 
 			gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), lock == 1 ? GPIO_PIN_INTR_DISABLE : GPIO_PIN_INTR_ANYEDGE);
 
@@ -517,7 +552,8 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     }
 
     _hi = hi;
-
+    
+   
     for(a=0;a<RELAY_MAX_COUNT;a++)
     	if ( supla_relay_cfg[a].gpio_id == port ) {
 
@@ -558,7 +594,7 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 
 
 					if ( delay_time > 100 ) {
-
+						
 						os_timer_setfn(&rs_cfg->delayed_trigger_timer, supla_esp_gpio_rs_hi_delayed, (void*)port);
 						os_timer_arm(&rs_cfg->delayed_trigger_timer, delay_time, 0);
 
@@ -572,7 +608,7 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 
     		break;
     	}
-
+    
     system_soft_wdt_stop();
 
     if ( save_before == 1
@@ -691,7 +727,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	BOARD_ON_INPUT_ACTIVE;
 	#endif
 
-	if ( input_cfg->type == INPUT_TYPE_BUTTON_RS ) {
+	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
 
 		//supla_log(LOG_DEBUG, "RELAY HI");
 
@@ -702,7 +738,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 		}
 
 
-	} else if ( input_cfg->type == INPUT_TYPE_SWITCH ) {
+	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 		//supla_log(LOG_DEBUG, "RELAY");
 		supla_esp_gpio_relay_switch(input_cfg, 255);
@@ -727,7 +763,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 	BOARD_ON_INPUT_INACTIVE;
 	#endif
 
-	if ( input_cfg->type == INPUT_TYPE_BUTTON_RS ) {
+	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
 
 		//supla_log(LOG_DEBUG, "RELAY LO");
 
@@ -737,8 +773,8 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 			supla_esp_gpio_relay_switch(input_cfg, 0);
 		}
 
-	} else if ( input_cfg->type == INPUT_TYPE_BUTTON
-		 || input_cfg->type == INPUT_TYPE_SWITCH ) {
+	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
+		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 
 		supla_esp_gpio_relay_switch(input_cfg, 255);
@@ -771,8 +807,8 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 			input_cfg->cycle_counter = 1;
 
 			if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-				 && ( input_cfg->type == INPUT_TYPE_BUTTON
-					  || input_cfg->type == INPUT_TYPE_BUTTON_RS
+				 && ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
+					  || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
 				      || (system_get_time() - input_cfg->last_active) >= 2000000 ) ) {
 
 				input_cfg->cfg_counter = 0;
@@ -804,8 +840,8 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 
 			if ( input_cfg->step == 3
 					&& input_cfg->flags & INPUT_FLAG_CFG_BTN
-					&& ( input_cfg->type == INPUT_TYPE_BUTTON
-						 || input_cfg->type == INPUT_TYPE_BUTTON_RS) ) {
+					&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
+						 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) ) {
 
 				if ( input_cfg->cfg_counter < 255 )
 					input_cfg->cfg_counter++;
@@ -844,7 +880,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 
 
 				if ( (input_cfg->flags & INPUT_FLAG_CFG_BTN) == 0
-						|| input_cfg->type == INPUT_TYPE_SWITCH ) {
+						|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 					os_timer_disarm(&input_cfg->timer);
 
@@ -867,7 +903,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 			if ( input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
 
 				if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-						&& input_cfg->type == INPUT_TYPE_SWITCH ) {
+						&& input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 					input_cfg->cfg_counter++;
 
@@ -895,8 +931,8 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 
 				if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
 						&& supla_esp_cfgmode_started() == 1
-						&& ( input_cfg->type == INPUT_TYPE_BUTTON
-							 || input_cfg->type == INPUT_TYPE_BUTTON_RS )
+						&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
+							 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS )
 						&& (system_get_time() - supla_esp_cfgmode_entertime) > 3000000 ) {
 
 					// EXIT CFG MODE
