@@ -53,6 +53,8 @@ typedef struct {
 
     char Email[SUPLA_EMAIL_MAXSIZE];
     char AuthKey[SUPLA_AUTHKEY_SIZE];
+    
+    char UpsideDown;
 
     char zero[200];
 

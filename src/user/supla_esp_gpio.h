@@ -72,6 +72,13 @@ typedef struct {
 
 typedef struct {
 
+	ETSTimer timer;
+	uint8 value;
+
+}supla_rs_delayed_trigger;
+
+typedef struct {
+
 	supla_relay_cfg_t *up;
 	supla_relay_cfg_t *down;
 
@@ -86,9 +93,10 @@ typedef struct {
 	unsigned int down_time;
 	unsigned int last_time;
 	unsigned int stop_time;
+	unsigned int start_time;
 
 	ETSTimer timer;
-	ETSTimer delayed_trigger_timer;
+	supla_rs_delayed_trigger delayed_trigger;
 	rs_task_t task;
 
 	int last_position;
@@ -119,7 +127,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_cfgmode(void);
 void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 #endif
 
-void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task);
+void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task, uint8 stop_delay);
 uint8 supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg);
 
 void supla_esp_gpio_hi(int port, char hi);

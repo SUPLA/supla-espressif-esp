@@ -882,11 +882,11 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 			} else {
 
 				if ( v == 1 ) {
-					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1);
+					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 1);
 				} else if ( v == 2 ) {
-					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1);
+					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 1);
 				} else {
-					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1);
+					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 1);
 				}
 
 			}

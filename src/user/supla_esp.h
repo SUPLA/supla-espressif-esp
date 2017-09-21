@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.5"
+#define SUPLA_ESP_SOFTVER "2.5.1"
 
 #define LO_VALUE  0
 #define HI_VALUE  1
@@ -61,8 +61,13 @@
 #define INPUT_TYPE_CUSTOM                200
 
 // milliseconds
-#ifndef RS_SWITCH_DELAY
-#define RS_SWITCH_DELAY 1000
+#ifndef RS_START_DELAY
+#define RS_START_DELAY 1000
+#endif
+
+// milliseconds
+#ifndef RS_STOP_DELAY
+#define RS_STOP_DELAY 500
 #endif
 
 // microseconds

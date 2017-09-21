@@ -60,6 +60,7 @@
 #define VAR_UPD          11
 #define VAR_RBT          12
 #define VAR_EML          20
+#define VAR_USD          21
 
 typedef struct {
 	
@@ -239,6 +240,7 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 				char upd[3] = { 'u', 'p', 'd' };
 				char rbt[3] = { 'r', 'b', 't' };
 				char eml[3] = { 'e', 'm', 'l' };
+				char usd[3] = { 'u', 's', 'd' };
 				
 				if ( len-a >= 4
 					 && pdata[a+3] == '=' ) {
@@ -321,7 +323,13 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
 						pVars->pbuff = cfg->Email;
 
-					}
+					} else if ( memcmp(usd, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_USD;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    } 
 					
 					a+=4;
 					pVars->offset = 0;
@@ -407,6 +415,10 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 
 						if ( reboot != NULL )
 							*reboot = pVars->intval[0] - '0';
+
+					} else if ( pVars->current_var == VAR_USD ) {
+
+						cfg->UpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
 
 					}
 					

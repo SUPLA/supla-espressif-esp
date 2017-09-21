@@ -87,14 +87,77 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 #define RS_DIRECTION_DOWN   1
 
 void
-supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task) {
+supla_esp_gpio_rs_set_relay_delayed(void *timer_arg) {
+
+	supla_esp_gpio_rs_set_relay((supla_roller_shutter_cfg_t*)timer_arg, ((supla_roller_shutter_cfg_t*)timer_arg)->delayed_trigger.value, 0, 0);
+
+}
+
+void
+supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task, uint8 stop_delay) {
 
 	if ( rs_cfg == NULL ) {
 		return;
 	}
-		
+
+	unsigned int t = system_get_time();
+	unsigned int delay_time = 0;
+	
 	if ( cancel_task ) {
 		supla_esp_gpio_rs_cancel_task(rs_cfg);
+	}
+	
+	
+	os_timer_disarm(&rs_cfg->delayed_trigger.timer);
+
+	if ( value == RS_RELAY_OFF )  {
+		
+		if ( RS_STOP_DELAY
+			 && stop_delay == 1
+			 && rs_cfg->start_time > 0
+			 && rs_cfg->stop_time == 0
+			 && t >= rs_cfg->start_time
+			 && (t - rs_cfg->start_time)/1000 < RS_STOP_DELAY) {
+
+			delay_time = RS_STOP_DELAY - (t - rs_cfg->start_time)/1000 + 1;
+		}
+		
+	} else {
+
+		supla_relay_cfg_t *rel = value == RS_RELAY_UP ? rs_cfg->down : rs_cfg->up;
+
+		if ( __supla_esp_gpio_relay_is_hi(rel) ) {
+
+			supla_esp_gpio_relay_hi(rel->gpio_id, 0, 0);
+			os_delay_us(10000);
+			
+			t = system_get_time();
+		}
+		
+
+		if ( RS_START_DELAY
+			 && rs_cfg->start_time == 0
+			 && rs_cfg->stop_time > 0
+			 && t >= rs_cfg->stop_time
+			 && (t - rs_cfg->stop_time)/1000 < RS_START_DELAY) {
+
+			delay_time = RS_START_DELAY - (t - rs_cfg->stop_time)/1000 + 1;
+		}
+		
+	}
+	
+	//supla_log(LOG_DEBUG, "VALUE: %i", value);
+	
+	if ( delay_time > 100 ) {
+		
+		rs_cfg->delayed_trigger.value = value;
+		
+		//supla_log(LOG_DEBUG, "Delay: %i", delay_time);
+		
+		os_timer_setfn(&rs_cfg->delayed_trigger.timer, supla_esp_gpio_rs_set_relay_delayed, rs_cfg);
+		os_timer_arm(&rs_cfg->delayed_trigger.timer, delay_time, 0);
+		
+		return;
 	}
 	
 	if (  value == RS_RELAY_UP ) {
@@ -171,7 +234,7 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 
 		if ( (*time) >= (*full_time) * 1.1 ) {
 
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
 			//supla_log(LOG_DEBUG, "Timeout full_time + 10%");
 
 		}
@@ -210,9 +273,9 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 			 && *rs_cfg->full_closing_time > 0) {
 
 			if ( rs_cfg->task.percent < 50 )
-				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0);
+				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 			else
-				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0);
+				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
 
 		}
 
@@ -227,14 +290,14 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 		if ( percent > rs_cfg->task.percent ) {
 
 			rs_cfg->task.direction = RS_DIRECTION_UP;
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 
 		    //supla_log(LOG_DEBUG, "task go UP %i,%i", percent, rs_cfg->task.percent);
 
 		} else if ( percent < rs_cfg->task.percent ) {
 
 			rs_cfg->task.direction = RS_DIRECTION_DOWN;
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
 
 			//supla_log(LOG_DEBUG, "task go DOWN, %i,%i", percent, rs_cfg->task.percent);
 
@@ -242,7 +305,7 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 			//supla_log(LOG_DEBUG, "task finished #1");
 
 			rs_cfg->task.active = 0;
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
 		}
 
 	} else if ( ( rs_cfg->task.direction == RS_DIRECTION_UP
@@ -263,7 +326,7 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 		} else {
 
 			rs_cfg->task.active = 0;
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
 
 			//supla_log(LOG_DEBUG, "task finished #2");
 
@@ -330,7 +393,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 		}
 
 		if ( rs_cfg->up_time > 600000 || rs_cfg->down_time > 600000 ) { // 10 min. - timeout
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
 		}
 		
 		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
@@ -495,13 +558,6 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 
 }
 
-void
-supla_esp_gpio_rs_hi_delayed(void *timer_arg) {
-
-	supla_esp_gpio_relay_hi((int)timer_arg, 1, 0);
-
-}
-
 supla_roller_shutter_cfg_t  *
 supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg) {
 
@@ -540,7 +596,6 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 
     unsigned int t = system_get_time();
     unsigned int *time = NULL;
-    unsigned int delay_time = 0;
     int a;
     char result = 0;
     char *state = NULL;
@@ -567,47 +622,10 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     			_hi = hi == HI_VALUE ? LO_VALUE : HI_VALUE;
 
     		rs_cfg = supla_esp_gpio_get_rs_cfg(&supla_relay_cfg[a]);
-
-			if ( rs_cfg != NULL ) {
-
-				os_timer_disarm(&rs_cfg->delayed_trigger_timer);
-				save_before = false;
-
-				if ( hi ) {
-
-					supla_relay_cfg_t *rel = rs_cfg->up == &supla_relay_cfg[a] ? rs_cfg->down : rs_cfg->up;
-
-					if ( __supla_esp_gpio_relay_is_hi(rel) ) {
-
-						supla_esp_gpio_relay_hi(rel->gpio_id, 0, 0);
-						supla_esp_gpio_relay_hi(port, 1, 0);
-						return 2;
-					}
-
-					if ( RS_SWITCH_DELAY
-						 && rs_cfg->stop_time > 0
-						 && t >= rs_cfg->stop_time
-						 && (t - rs_cfg->stop_time)/1000 < RS_SWITCH_DELAY) {
-
-						delay_time = RS_SWITCH_DELAY - (t - rs_cfg->stop_time)/1000 + 1;
-					}
-
-
-					if ( delay_time > 100 ) {
-						
-						os_timer_setfn(&rs_cfg->delayed_trigger_timer, supla_esp_gpio_rs_hi_delayed, (void*)port);
-						os_timer_arm(&rs_cfg->delayed_trigger_timer, delay_time, 0);
-
-						return 2;
-					}
-
-				}
-
-				break;
-			}
-
     		break;
     	}
+    
+    //supla_log(LOG_DEBUG, "port=%i, hi=%i, save_before=%i",port, hi, save_before);
     
     system_soft_wdt_stop();
 
@@ -649,17 +667,28 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 
     	if ( rs_cfg != NULL ) {
 
-    		if ( rs_cfg->stop_time == 0
-    			 && __supla_esp_gpio_relay_is_hi(rs_cfg->up) == 0
+    		if ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) == 0
     			 && __supla_esp_gpio_relay_is_hi(rs_cfg->down) == 0 ) {
 
-    			rs_cfg->stop_time = t;
+    			if ( rs_cfg->start_time != 0 ) {
+    				rs_cfg->start_time = 0;
+    			}
+    			
+    			if ( rs_cfg->stop_time == 0 ) {
+    				rs_cfg->stop_time = t;
+    			}
+    			
 
-    		} else if ( rs_cfg->stop_time != 0
-    				    && ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) != 0
-    				    	  || __supla_esp_gpio_relay_is_hi(rs_cfg->down) != 0 ) ) {
+    		} else if ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) != 0
+    				    || __supla_esp_gpio_relay_is_hi(rs_cfg->down) != 0 ) {
 
-    			rs_cfg->stop_time = 0;
+    			if ( rs_cfg->start_time == 0 ) {
+    				rs_cfg->start_time = t;
+    			}
+    			
+    			if ( rs_cfg->stop_time != 0 ) {
+    				rs_cfg->stop_time = 0;
+    			}
 
     		}
 
@@ -733,8 +762,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 
 		supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
 		if ( rs_cfg != NULL ) {
-			supla_esp_gpio_rs_cancel_task(rs_cfg);
-			supla_esp_gpio_relay_switch(input_cfg, 1);
+			supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
 		}
 
 
@@ -769,8 +797,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 
 		supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
 		if ( rs_cfg != NULL ) {
-			supla_esp_gpio_rs_cancel_task(rs_cfg);
-			supla_esp_gpio_relay_switch(input_cfg, 0);
+			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
 		}
 
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
