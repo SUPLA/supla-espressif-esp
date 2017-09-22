@@ -42,6 +42,15 @@
 #endif
 
 #define SEND_BUFFER_SIZE 500
+#define CVD_MAX_COUNT 4
+
+typedef struct {
+	
+	int channel_number;
+	ETSTimer timer;
+	char value[SUPLA_CHANNELVALUE_SIZE];
+	
+}channel_value_delayed;
 
 typedef struct {
 
@@ -75,6 +84,8 @@ typedef struct {
 
 	uint8 last_wifi_status;
 
+	channel_value_delayed cvd[CVD_MAX_COUNT];
+	
 
 }devconn_params;
 
@@ -467,16 +478,29 @@ supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, 
 }
 
 void DEVCONN_ICACHE_FLASH
-supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_brightness, char brightness) {
-
+supla_esp_channel_value_changed_delayed_cb(void *timer_arg) {
+	
 	if ( devconn->srpc != NULL
 		 && devconn->registered == 1 ) {
 
-		char value[SUPLA_CHANNELVALUE_SIZE];
-
-		supla_esp_channel_rgbw_to_value(value,color, color_brightness, brightness);
-		srpc_ds_async_channel_value_changed(devconn->srpc, channel_number, value);
+		srpc_ds_async_channel_value_changed(devconn->srpc, ((channel_value_delayed*)timer_arg)->channel_number, ((channel_value_delayed*)timer_arg)->value);
 	}
+	
+}
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_brightness, char brightness) {
+
+	if ( channel_number >= CVD_MAX_COUNT )
+		return;
+	
+	devconn->cvd[channel_number].channel_number = channel_number;
+	
+	supla_esp_channel_rgbw_to_value(devconn->cvd[channel_number].value, color, color_brightness, brightness);
+	
+	os_timer_disarm(&devconn->cvd[channel_number].timer);
+	os_timer_setfn(&devconn->cvd[channel_number].timer, (os_timer_func_t *)supla_esp_channel_value_changed_delayed_cb, &devconn->cvd[channel_number]);
+	os_timer_arm(&devconn->cvd[channel_number].timer, 1500, 0);
 
 }
 
