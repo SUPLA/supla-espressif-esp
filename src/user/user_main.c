@@ -112,7 +112,7 @@ void MAIN_ICACHE_FLASH user_init(void)
      supla_log(LOG_DEBUG, "Starting %i", system_get_time());
 
      #ifdef BOARD_ESP_STARTING
-     BOARD_ESP_STARTING
+     BOARD_ESP_STARTING;
      #endif
 
 	 #if NOSSL == 1
@@ -160,6 +160,10 @@ void MAIN_ICACHE_FLASH user_init(void)
 	supla_esp_devconn_start();
 
 	system_print_meminfo();
+	
+	#ifdef BOARD_ESP_STARTED
+	BOARD_ESP_STARTED;
+	#endif
 
 /*
 	if ( supla_esp_state.ltag != 25 ) {
