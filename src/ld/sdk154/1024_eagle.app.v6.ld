@@ -8,7 +8,6 @@ MEMORY
   irom0_0_seg :                         org = 0x40240000, len = 0xBC000
 }
 
-
 PHDRS
 {
   dport0_0_phdr PT_LOAD;
