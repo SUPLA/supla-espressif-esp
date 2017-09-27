@@ -94,6 +94,10 @@
 
 #include "board/acs_zam_srw_01.h"
 
+#elif defined(__BOARD_zam_srw_01_tester)
+
+#include "board/acs_zam_srw_01_tester.h"
+
 #elif defined(__BOARD_zam_sbp_01)
 
 #elif defined(__BOARD_zam_srw_03)

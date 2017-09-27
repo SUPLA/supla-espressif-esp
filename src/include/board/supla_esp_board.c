@@ -86,6 +86,10 @@
 
 #include "board/acs_zam_srw_01.c"
 
+#elif defined(__BOARD_zam_srw_01_tester)
+
+#include "board/acs_zam_srw_01_tester.c"
+
 #elif defined(__BOARD_zam_srw_03)
 
 #include "board/acs_zam_srw_03.c"
