@@ -45,6 +45,8 @@ case $1 in
       FLASH_SIZE="2048"
    ;;
    "rs_module")
+      FOTA=1
+      FLASH_SIZE="2048"
    ;;
    "lightswitch_x2")
      FLASH_SIZE="4096"
