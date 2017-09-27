@@ -478,7 +478,7 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 		
 		supla_log(LOG_DEBUG, "Matched: %i, step: %i", pVars->matched, pVars->step);
 
-		if ( pVars->matched < 5 ) {
+		if ( pVars->matched < 4 ) {
 			return;
 		}
 
