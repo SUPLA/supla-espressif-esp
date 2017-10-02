@@ -593,7 +593,7 @@ supla_esp_gpio_get_rs__cfg(int port) {
 }
 
 char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
-
+	
     unsigned int t = system_get_time();
     unsigned int *time = NULL;
     int a;
@@ -649,17 +649,21 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     if ( time == NULL
     	 || abs(t-(*time)) >= RELAY_MIN_DELAY ) {
 
-        //supla_log(LOG_DEBUG, "1. port = %i, hi = %i", port, hi);
+        //supla_log(LOG_DEBUG, "1. port = %i, hi = %i", port, _hi);
 
     	ETS_GPIO_INTR_DISABLE();
-    	supla_esp_gpio_hi(port, _hi);
+    	supla_esp_gpio_set_hi(port, _hi);
     	ETS_GPIO_INTR_ENABLE();
 
-    	os_delay_us(10000);
-
-    	ETS_GPIO_INTR_DISABLE();
-    	supla_esp_gpio_hi(port, _hi);
-    	ETS_GPIO_INTR_ENABLE();
+		#ifdef RELAY_DOUBLE_TRY
+		#if RELAY_DOUBLE_TRY > 0
+			os_delay_us(RELAY_DOUBLE_TRY);
+	
+			ETS_GPIO_INTR_DISABLE();
+			supla_esp_gpio_set_hi(port, _hi);
+			ETS_GPIO_INTR_ENABLE();
+		#endif /*RELAY_DOUBLE_TRY > 0*/
+		#endif /*RELAY_DOUBLE_TRY*/
 
     	if ( time != NULL ) {
     		*time = t;
@@ -1163,7 +1167,10 @@ supla_esp_gpio_init(void) {
                           | GPIO_PIN_SOURCE_SET(GPIO_AS_PIN_SOURCE));
 
         GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_input_cfg[a].gpio_id));
-        gpio_pin_intr_state_set(GPIO_ID_PIN(supla_input_cfg[a].gpio_id), GPIO_PIN_INTR_ANYEDGE);
+        
+        if ( !(supla_input_cfg[a].flags & INPUT_FLAG_DISABLE_INTR) ) {
+        	gpio_pin_intr_state_set(GPIO_ID_PIN(supla_input_cfg[a].gpio_id), GPIO_PIN_INTR_ANYEDGE);
+        } 
 
     }
 
@@ -1187,9 +1194,10 @@ supla_esp_gpio_init(void) {
 }
 
 void
-supla_esp_gpio_hi(int port, char hi) {
+supla_esp_gpio_set_hi(int port, char hi) {
 
-    //supla_log(LOG_DEBUG, "supla_esp_gpio_hi %i, %i", port, hi);
+    //supla_log(LOG_DEBUG, "supla_esp_gpio_set_hi %i, %i", port, hi);
+
 	#ifdef BOARD_GPIO_HI
 		BOARD_GPIO_HI
 	#endif
@@ -1208,15 +1216,15 @@ void supla_esp_gpio_set_led(char r, char g, char b) {
 	os_timer_disarm(&supla_gpio_timer2);
 
     #ifdef LED_RED_PORT
-		supla_esp_gpio_hi(LED_RED_PORT, r);
+		supla_esp_gpio_set_hi(LED_RED_PORT, r);
     #endif
 
     #ifdef LED_GREEN_PORT
-		supla_esp_gpio_hi(LED_GREEN_PORT, g);
+		supla_esp_gpio_set_hi(LED_GREEN_PORT, g);
     #endif
 
 	#ifdef LED_BLUE_PORT
-		supla_esp_gpio_hi(LED_BLUE_PORT, b);
+		supla_esp_gpio_set_hi(LED_BLUE_PORT, b);
 	#endif
 }
 
@@ -1261,17 +1269,17 @@ supla_esp_gpio_led_blinking_func(void *timer_arg) {
 
 	#ifdef LED_RED_PORT
 		if ( (int)timer_arg & LED_RED )
-			supla_esp_gpio_hi(LED_RED_PORT, supla_esp_gpio_is_hi(LED_RED_PORT) == 0 ? 1 : 0);
+			supla_esp_gpio_set_hi(LED_RED_PORT, supla_esp_gpio_output_is_hi(LED_RED_PORT) == 0 ? 1 : 0);
 	#endif
 
 	#ifdef LED_GREEN_PORT
 		if ( (int)timer_arg & LED_GREEN )
-			supla_esp_gpio_hi(LED_GREEN_PORT, supla_esp_gpio_is_hi(LED_GREEN_PORT) == 0 ? 1 : 0);
+			supla_esp_gpio_set_hi(LED_GREEN_PORT, supla_esp_gpio_output_is_hi(LED_GREEN_PORT) == 0 ? 1 : 0);
 	#endif
 
     #ifdef LED_BLUE_PORT
 		if ( (int)timer_arg & LED_BLUE )
-			supla_esp_gpio_hi(LED_BLUE_PORT, supla_esp_gpio_is_hi(LED_BLUE_PORT) == 0 ? 1 : 0);
+			supla_esp_gpio_set_hi(LED_BLUE_PORT, supla_esp_gpio_output_is_hi(LED_BLUE_PORT) == 0 ? 1 : 0);
     #endif
 
 }
@@ -1412,7 +1420,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void) {
 }
 #endif
 
-char  supla_esp_gpio_is_hi(int port) {
+char  supla_esp_gpio_output_is_hi(int port) {
 
 	#ifdef BOARD_GPIO_IS_HI
 		BOARD_GPIO_IS_HI
@@ -1428,7 +1436,7 @@ char  supla_esp_gpio_is_hi(int port) {
 
 char __supla_esp_gpio_relay_is_hi(supla_relay_cfg_t *relay_cfg) {
 
-	char result = supla_esp_gpio_is_hi(relay_cfg->gpio_id);
+	char result = supla_esp_gpio_output_is_hi(relay_cfg->gpio_id);
 
 	if ( supla_relay_cfg->flags &  RELAY_FLAG_LO_LEVEL_TRIGGER ) {
 		result = result == HI_VALUE ? LO_VALUE : HI_VALUE;
@@ -1439,7 +1447,7 @@ char __supla_esp_gpio_relay_is_hi(supla_relay_cfg_t *relay_cfg) {
 
 char supla_esp_gpio_relay_is_hi(int port) {
 
-	char result = supla_esp_gpio_is_hi(port);
+	char result = supla_esp_gpio_output_is_hi(port);
 	int a;
 
     for(a=0;a<RELAY_MAX_COUNT;a++)
