@@ -79,29 +79,62 @@ typedef struct {
 
 
 unsigned int supla_esp_cfgmode_entertime = 0;
+ETSTimer http_response_timer;
+uint32 http_response_buff_len = NULL;
+uint32 http_response_pos = 0;
+char *http_response_buff = 0;
 
+void ICACHE_FLASH_ATTR 
+supla_esp_http_send_response_cb(struct espconn *pespconn) {
+
+	uint32 len = http_response_buff_len - http_response_pos;
+	if ( len > 100 ) {
+		len = 100;
+	}
+	
+	if ( len <= 0 ) {
+		os_timer_disarm(&http_response_timer);
+		return;
+	}
+	
+	if ( 0 == espconn_sent(pespconn, (unsigned char*)&http_response_buff[http_response_pos], len) ) {
+		http_response_pos+=len;
+	}
+	
+	
+}
 
 void ICACHE_FLASH_ATTR 
 supla_esp_http_send_response(struct espconn *pespconn, const char *code, const char *html) {
-
+	
+	os_timer_disarm(&http_response_timer);
+	
+	if ( http_response_buff ) {
+		free(http_response_buff);
+		http_response_buff = NULL;
+	}
+	
 	int html_len = html != NULL ? strlen(html) : 0;
 	char response[] = "HTTP/1.1 %s\r\nAccept-Ranges: bytes\r\nContent-Length: %i\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: close\r\n\r\n";
 	
-	int buff_len = strlen(code)+strlen(response)+2;
-	char *buff = malloc(buff_len);
-	
-	ets_snprintf(buff, buff_len, response, code, html_len);
-	buff[buff_len-1] = 0;
-	
-	espconn_sent(pespconn, (unsigned char*)buff, strlen(buff));
-	free(buff);
-	
-	os_delay_us(10);
-	
-	if ( html_len > 0 )
-		espconn_sent(pespconn, (unsigned char*)html, html_len);
-	
 
+	http_response_buff_len = strlen(code)+strlen(response)+html_len+1;
+	http_response_buff = os_malloc(http_response_buff_len);
+	http_response_pos = 0;
+	
+	ets_snprintf(http_response_buff, http_response_buff_len, response, code, html_len);
+	
+	if ( html_len > 0 ) {
+		memcpy(&http_response_buff[http_response_buff_len-html_len-1], html, html_len);
+	}
+	
+	http_response_buff[http_response_buff_len-1] = 0;
+	
+	http_response_buff_len = strlen(http_response_buff);
+	
+	os_timer_setfn(&http_response_timer, (os_timer_func_t *)supla_esp_http_send_response_cb, pespconn);
+	os_timer_arm (&http_response_timer, 10, true);
+	
 }
 
 void ICACHE_FLASH_ATTR 
@@ -796,6 +829,10 @@ supla_esp_cfgmode_start(void) {
 	
 	supla_log(LOG_DEBUG, "ENTER CFG MODE");
 	supla_esp_gpio_state_cfgmode();
+	
+	#ifdef WIFI_SLEEP_DISABLE
+		wifi_set_sleep_type(NONE_SLEEP_T);
+	#endif
 
 	int apssid_len = strlen(APSSID);
 
@@ -821,8 +858,9 @@ supla_esp_cfgmode_start(void) {
 	apconfig.ssid_hidden = 0;
 	apconfig.max_connection = 4;
 	apconfig.beacon_interval = 100;
-	
+		
 	wifi_set_opmode(SOFTAP_MODE);
+		
 	wifi_softap_set_config(&apconfig);
 
 	conn = (struct espconn *)malloc(sizeof(struct espconn));
