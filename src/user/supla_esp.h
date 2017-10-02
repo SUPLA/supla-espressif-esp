@@ -52,6 +52,7 @@
 #define INPUT_FLAG_PULLUP             0x01
 #define INPUT_FLAG_CFG_BTN            0x02
 #define INPUT_FLAG_FACTORY_RESET      0x04
+#define INPUT_FLAG_DISABLE_INTR       0x08
 
 #define INPUT_TYPE_SENSOR                1
 #define INPUT_TYPE_BTN_MONOSTABLE        2
@@ -183,5 +184,8 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define WATCHDOG_TIMEOUT 60000000
 #endif /*WATCHDOG_TIMEOUT*/
 
+#ifndef RELAY_DOUBLE_TRY
+#define RELAY_DOUBLE_TRY 10000
+#endif
 
 #endif /* SUPLA_ESP_H_ */
