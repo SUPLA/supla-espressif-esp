@@ -45,7 +45,8 @@
 
 #include "board/sonoff.c"
 
-#elif defined(__BOARD_sonoff_touch)
+#elif defined(__BOARD_sonoff_touch) || \
+	  defined(__BOARD_sonoff_touch_dual)
 
 #include "board/sonoff_touch.c"
 
@@ -105,6 +106,10 @@
 #elif defined(__BOARD_zam_slw_01)
 
 #include "board/acs_zam_slw_01.c"
+
+#elif defined(__BOARD_zam_pnw_01)
+
+#include "board/acs_zam_pnw_01.c"
 
 #elif defined(__BOARD_h801)
 

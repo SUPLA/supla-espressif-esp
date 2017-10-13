@@ -515,6 +515,8 @@ void  supla_esg_gpio_start_cfg_mode(void) {
 void
 supla_esp_gpio_enable_input_port(char port) {
 
+	if ( port < 1 || port > 16 ) return;
+
     gpio_output_set(0, 0, 0, GPIO_ID_PIN(port));
 
     gpio_register_set(GPIO_PIN_ADDR(port), GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE)
@@ -538,6 +540,7 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 		input_cfg = &supla_input_cfg[a];
 
 		if ( input_cfg->gpio_id != 255
+				&& input_cfg->gpio_id <= 16
 				&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 					 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
 					 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) ) {
@@ -1009,6 +1012,7 @@ supla_esp_gpio_intr_handler(void *params) {
 		input_cfg = &supla_input_cfg[a];
 
 		if ( input_cfg->gpio_id != 255
+			 && input_cfg->gpio_id <= 16
 			 && input_cfg->type != INPUT_TYPE_CUSTOM
 			 && gpio_status & BIT(input_cfg->gpio_id) ) {
 
@@ -1119,7 +1123,8 @@ supla_esp_gpio_init(void) {
 
 			  //supla_log(LOG_DEBUG, "relay init %i", supla_relay_cfg[a].gpio_id);
 
-			if ( !(supla_relay_cfg[a].flags & RELAY_FLAG_VIRTUAL_GPIO ) ) {
+			if ( supla_relay_cfg[a].gpio_id <= 16
+				 && !(supla_relay_cfg[a].flags & RELAY_FLAG_VIRTUAL_GPIO ) ) {
 
 				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_relay_cfg[a].gpio_id));
 				gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_PIN_INTR_DISABLE);
@@ -1156,6 +1161,7 @@ supla_esp_gpio_init(void) {
 
     for (a=0; a<INPUT_MAX_COUNT; a++)
       if ( supla_input_cfg[a].gpio_id != 255
+    	    && supla_input_cfg[a].gpio_id <= 16
     		&& supla_input_cfg[a].type != 0 ) {
 
     	//supla_log(LOG_DEBUG, "input init %i", supla_input_cfg[a].gpio_id);
@@ -1198,8 +1204,8 @@ supla_esp_gpio_set_hi(int port, char hi) {
 
     //supla_log(LOG_DEBUG, "supla_esp_gpio_set_hi %i, %i", port, hi);
 
-	#ifdef BOARD_GPIO_HI
-		BOARD_GPIO_HI
+	#ifdef BOARD_GPIO_OUTPUT_SET_HI
+	BOARD_GPIO_OUTPUT_SET_HI
 	#endif
 
 	if ( port == 16 ) {
@@ -1348,6 +1354,7 @@ supla_esp_gpio_enable_sensors(void *timer_arg) {
 
 	for(a=0;a<INPUT_MAX_COUNT;a++)
 		if ( supla_input_cfg[a].gpio_id != 255
+			 && supla_input_cfg[a].gpio_id <= 16
 			 && supla_input_cfg[a].type == INPUT_TYPE_SENSOR )
 
 		supla_esp_gpio_enable_input_port(supla_input_cfg[a].gpio_id);
@@ -1422,8 +1429,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void) {
 
 char  supla_esp_gpio_output_is_hi(int port) {
 
-	#ifdef BOARD_GPIO_IS_HI
-		BOARD_GPIO_IS_HI
+	#ifdef BOARD_GPIO_OUTPUT_IS_HI
+		BOARD_GPIO_OUTPUT_IS_HI
 	#endif
 
 	if ( port == 16 ) {
@@ -1464,12 +1471,7 @@ char supla_esp_gpio_relay_is_hi(int port) {
 }
 
 char  supla_esp_gpio_relay_on(int port) {
-
-	#ifdef BOARD_GPIO_RELAY_ON
-		BOARD_GPIO_RELAY_ON
-	#endif
-
-	return GPIO_OUTPUT_GET(port) == HI_VALUE ? 1 : 0;
+	return supla_esp_gpio_output_is_hi(port) == HI_VALUE ? 1 : 0;
 }
 
 

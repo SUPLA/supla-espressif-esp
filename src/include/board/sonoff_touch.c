@@ -17,8 +17,9 @@
  */
 
 #define B_RELAY1_PORT    12
+#define B_RELAY2_PORT     5
 #define B_CFG_PORT        0
-
+#define B_INPUT2_PORT     9
 
 const uint8_t rsa_public_key_bytes[512] = {
     0xc8, 0x8a, 0x22, 0xad, 0x80, 0x18, 0xb0, 0x7f,
@@ -108,12 +109,54 @@ void supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
     supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
     supla_relay_cfg[0].channel = 0;
-    
+
+#ifdef __BOARD_sonoff_touch_dual
+
+	supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
+	supla_input_cfg[1].gpio_id = B_INPUT2_PORT;
+	supla_input_cfg[1].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
+	supla_input_cfg[1].relay_gpio_id = B_RELAY2_PORT;
+	supla_input_cfg[1].channel = 1;
+
+    supla_relay_cfg[1].gpio_id = B_RELAY2_PORT;
+    supla_relay_cfg[1].flags = RELAY_FLAG_RESTORE_FORCE;
+    supla_relay_cfg[1].channel = 1;
+
+#endif /*__BOARD_sonoff_touch_dual*/
 
 }
 
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
+#ifdef __BOARD_sonoff_touch_dual
+
+	*channel_count = 3;
+
+	channels[0].Number = 0;
+	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
+
+	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
+
+	channels[0].Default = SUPLA_CHANNELFNC_LIGHTSWITCH;
+	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
+
+
+	channels[1].Number = 1;
+	channels[1].Type = channels[0].Type;
+	channels[1].FuncList = channels[0].FuncList;
+	channels[1].Default = channels[0].Default;
+	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
+
+	channels[2].Number = 2;
+	channels[2].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
+	channels[2].FuncList = 0;
+	channels[2].Default = 0;
+
+	supla_get_temperature(channels[1].value);
+
+#else /*__BOARD_sonoff_touch_dual*/
+
 	*channel_count = 2;
 
 	channels[0].Number = 0;
@@ -133,6 +176,8 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 	channels[1].Default = 0;
 
 	supla_get_temperature(channels[1].value);
+
+#endif
 
 }
 

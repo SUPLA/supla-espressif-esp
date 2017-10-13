@@ -53,7 +53,8 @@
 
 #include "board/sonoff.h"
 
-#elif defined(__BOARD_sonoff_touch)
+#elif defined(__BOARD_sonoff_touch) || \
+	  defined(__BOARD_sonoff_touch_dual)
 
 #include "board/sonoff_touch.h"
 
@@ -100,11 +101,11 @@
 
 #elif defined(__BOARD_zam_sbp_01)
 
+#include "board/acs_zam_sbp_01.h"
+
 #elif defined(__BOARD_zam_srw_03)
 
 #include "board/acs_zam_srw_03.h"
-
-#include "board/acs_zam_sbp_01.h"
 
 #elif defined(__BOARD_n_sbp_01)
 
@@ -113,6 +114,10 @@
 #elif defined(__BOARD_zam_slw_01)
 
 #include "board/acs_zam_slw_01.h"
+
+#elif defined(__BOARD_zam_pnw_01)
+
+#include "board/acs_zam_pnw_01.h"
 
 #elif defined(__BOARD_h801)
 

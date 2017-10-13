@@ -76,6 +76,10 @@ case $1 in
       SPI_MODE="DOUT"
       FOTA=1
    ;;
+   "sonoff_touch_dual")
+      SPI_MODE="DOUT"
+      FOTA=1
+   ;;
    "sonoff_dual")
       FOTA=1
    ;;
@@ -113,6 +117,10 @@ case $1 in
       FOTA=1
    ;;
    "zam_srw_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "zam_pnw_01")
       FLASH_SIZE="2048"
       FOTA=1
    ;;

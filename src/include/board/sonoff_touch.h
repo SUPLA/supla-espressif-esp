@@ -23,7 +23,12 @@
 #define ESP8285
 
 #define DS18B20
+
+#ifdef __BOARD_sonoff_touch_dual
+#define TEMPERATURE_CHANNEL 2
+#else /*#ifdef __BOARD_sonoff_touch_dual*/
 #define TEMPERATURE_CHANNEL 1
+#endif
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
 

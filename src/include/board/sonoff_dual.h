@@ -31,9 +31,8 @@ char supla_esp_board_gpio_relay_on(int port);
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
 
-#define BOARD_GPIO_HI if ( port >= 20 ) { supla_esp_board_gpio_hi(port, hi); return; };
-#define BOARD_GPIO_IS_HI if ( port >= 20 ) return supla_esp_board_gpio_is_hi(port);
-#define BOARD_GPIO_RELAY_ON if ( port >= 20 ) return supla_esp_board_gpio_relay_on(port);
+#define BOARD_GPIO_OUTPUT_SET_HI if ( port >= 20 ) { supla_esp_board_gpio_hi(port, hi); return; };
+#define BOARD_GPIO_OUTPUT_IS_HI if ( port >= 20 ) return supla_esp_board_gpio_is_hi(port);
 
 #define ESP8266_LOG_DISABLED
 

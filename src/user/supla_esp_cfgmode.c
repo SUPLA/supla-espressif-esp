@@ -88,8 +88,8 @@ void ICACHE_FLASH_ATTR
 supla_esp_http_send_response_cb(struct espconn *pespconn) {
 
 	uint32 len = http_response_buff_len - http_response_pos;
-	if ( len > 100 ) {
-		len = 100;
+	if ( len > 200 ) {
+		len = 200;
 	}
 	
 	if ( len <= 0 ) {
