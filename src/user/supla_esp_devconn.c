@@ -109,12 +109,14 @@ typedef struct {
 	int color;
 	int dest_color;
 
-	char color_brightness;
-	char dest_color_brightness;
-
-	char brightness;
-	char dest_brightness;
-
+	float color_brightness;
+	float color_brightness_step;
+	float dest_color_brightness;
+	
+	float brightness;
+	float brightness_step;
+	float dest_brightness;
+		
 }devconn_smooth;
 
 devconn_smooth smooth[SMOOTH_MAX_COUNT];
@@ -404,6 +406,10 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 		supla_esp_devconn_send_channel_values_with_delay();
 
+		#ifdef BOARD_ON_DEVICE_REGISTERED
+			BOARD_ON_DEVICE_REGISTERED;
+		#endif
+
 		return;
 
 	case SUPLA_RESULTCODE_DEVICE_DISABLED:
@@ -532,13 +538,13 @@ void supla_esp_relay_timer_func(void *timer_arg) {
     || defined(RGBWW_CONTROLLER_CHANNEL) \
     || defined(DIMMER_CHANNEL)
 
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(char *brightness, char *dest_brightness) {
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(float *brightness, float *dest_brightness, float *step) {
 
 	if ( *brightness > *dest_brightness ) {
 
-		 *brightness=*brightness - 2;
+		 *brightness=*brightness - *step;
 
-		 if ( *brightness < 0 || *brightness > 100 ) /* *brightness > 100 - over value fix*/
+		 if ( *brightness < 0 )
 			 *brightness = 0;
 
 		 if ( *brightness < *dest_brightness )
@@ -546,7 +552,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(char *brightness, 
 
 	 } else if ( *brightness < *dest_brightness ) {
 
-		 *brightness=*brightness + 2;
+		 *brightness=*brightness + *step;
 
 		 if ( *brightness > 100 )
 			 *brightness = 100;
@@ -555,6 +561,8 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(char *brightness, 
 			 *brightness = *dest_brightness;
 	 }
 
+	*step = (*step) * 1.05;
+	
 }
 
 hsv DEVCONN_ICACHE_FLASH rgb2hsv(int rgb)
@@ -669,9 +677,10 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 		 _smooth->brightness = _smooth->dest_brightness;
 	 }
 
-	 supla_esp_devconn_smooth_brightness(&_smooth->color_brightness, &_smooth->dest_color_brightness);
-	 supla_esp_devconn_smooth_brightness(&_smooth->brightness, &_smooth->dest_brightness);
-	 
+
+	 supla_esp_devconn_smooth_brightness(&_smooth->color_brightness, &_smooth->dest_color_brightness, &_smooth->color_brightness_step);
+	 supla_esp_devconn_smooth_brightness(&_smooth->brightness, &_smooth->dest_brightness, &_smooth->brightness_step);
+
 
 	 if ( _smooth->color != _smooth->dest_color ) {
 
@@ -764,6 +773,18 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 
 	if ( ChannelNumber >= 2 )
 		return;
+	
+	if ( ColorBrightness < 0 ) {
+		ColorBrightness = 0;
+	} else if ( ColorBrightness > 100 ) {
+		ColorBrightness = 100;
+	}
+	
+	if ( Brightness < 0 ) {
+		Brightness = 0;
+	} else if ( Brightness > 100 ) {
+		Brightness = 100;
+	}
 
 	supla_esp_hw_timer_disarm();
 
@@ -774,6 +795,11 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 _smooth->ChannelNumber = ChannelNumber;
 	 _smooth->smoothly = smoothly;
 
+	 supla_esp_board_get_rgbw_value(ChannelNumber, &_smooth->color, &_smooth->color_brightness, &_smooth->brightness);
+	 	 
+	 _smooth->color_brightness_step = abs(_smooth->color_brightness-ColorBrightness)/100.00;
+	 _smooth->brightness_step = abs(_smooth->brightness-Brightness)/100.00;
+	 
 	 _smooth->dest_color = Color;
 	 _smooth->dest_color_brightness = ColorBrightness;
 	 _smooth->dest_brightness = Brightness;
@@ -791,6 +817,10 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
+
+#ifdef BOARD_ON_CHANNEL_VALUE_SET
+	 BOARD_ON_CHANNEL_VALUE_SET
+#endif /*BOARD_ON_CHANNEL_VALUE_SET*/
 
 #if defined(RGBW_CONTROLLER_CHANNEL) \
 	|| defined(RGBWW_CONTROLLER_CHANNEL) \
@@ -851,7 +881,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 
 		supla_esp_channel_set_rgbw_value(new_value->ChannelNumber, Color, ColorBrightness, Brightness, 1, 1);
-		supla_esp_save_state(2000);
+		supla_esp_save_state(1000);
 
 		return;
 	}
@@ -883,11 +913,11 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 			if ( ot < 0 )
 				ot = 0;
 
-			if ( ct != supla_esp_cfg.FullClosingTime[a]
-			     || ot != supla_esp_cfg.FullOpeningTime[a] ) {
+			if ( ct != supla_esp_cfg.Time2[a]
+			     || ot != supla_esp_cfg.Time1[a] ) {
 
-				supla_esp_cfg.FullClosingTime[a] = ct;
-				supla_esp_cfg.FullOpeningTime[a] = ot;
+				supla_esp_cfg.Time2[a] = ct;
+				supla_esp_cfg.Time1[a] = ot;
 
 				supla_esp_state.rs_position[a] = 0;
 				supla_esp_save_state(0);

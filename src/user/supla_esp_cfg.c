@@ -102,8 +102,8 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
 
 	supla_esp_cfg.CfgButtonType = BTN_TYPE_MONOSTABLE;
-	supla_esp_cfg.Button1Type = BTN_TYPE_MONOSTABLE;
-	supla_esp_cfg.Button2Type = BTN_TYPE_BISTABLE;
+	supla_esp_cfg.Button1Type = BTN1_DEFAULT;
+	supla_esp_cfg.Button2Type = BTN2_DEFAULT;
 
 	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
 	supla_esp_cfg.Test = Test;

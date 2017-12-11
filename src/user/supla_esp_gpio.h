@@ -107,7 +107,7 @@ extern supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
 extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 extern unsigned int supla_esp_gpio_init_time;
-
+extern unsigned char supla_esp_restart_on_cfg_press;
 
 void gpio16_output_conf(void);
 void gpio16_output_set(uint8 value);

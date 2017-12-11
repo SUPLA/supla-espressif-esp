@@ -47,14 +47,15 @@ typedef struct {
 
     char FirmwareUpdate;
     char Test;
-    
-    unsigned int FullOpeningTime[RS_MAX_COUNT];
-    unsigned int FullClosingTime[RS_MAX_COUNT];
 
     char Email[SUPLA_EMAIL_MAXSIZE];
     char AuthKey[SUPLA_AUTHKEY_SIZE];
     
     char UpsideDown;
+
+    unsigned int Time1[CFG_TIME1_COUNT];
+    unsigned int Time2[CFG_TIME2_COUNT];
+
 
     char zero[200];
 
@@ -70,6 +71,9 @@ typedef struct {
 
     int rs_position[RS_MAX_COUNT];
     
+    unsigned int Time1Left[CFG_TIME1_COUNT];
+    unsigned int Time2Left[CFG_TIME2_COUNT];
+
     char zero[200];
 /*
 	char ltag;

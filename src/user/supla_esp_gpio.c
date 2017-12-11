@@ -49,7 +49,6 @@
 #define INPUT_MIN_CYCLE_COUNT   5
 #define INPUT_CYCLE_TIME        20
 
-#define CFG_BTN_PRESS_TIME      5000
 #define CFG_BTN_PRESS_COUNT     10
 
 #define RS_STATE_STOP           0
@@ -65,6 +64,7 @@ unsigned int supla_esp_gpio_init_time = 0;
 static char supla_last_state = STATE_UNKNOWN;
 static ETSTimer supla_gpio_timer1;
 static ETSTimer supla_gpio_timer2;
+unsigned char supla_esp_restart_on_cfg_press = 0;
 
 void
 supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int time, int pos) {
@@ -827,6 +827,10 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 	input_cfg->last_state = 0;
 }
 
+uint32 supla_esp_gpio_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
+	return CFG_BTN_PRESS_TIME;
+}
+
 LOCAL void
 supla_esp_gpio_input_timer_cb(void *timer_arg) {
 
@@ -880,11 +884,14 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 				if ( input_cfg->cfg_counter < 255 )
 					input_cfg->cfg_counter++;
 
+				if ( supla_esp_restart_on_cfg_press == 1 ) {
+					system_restart();
+					return;
+				}
 
-				if ( (input_cfg->cfg_counter * INPUT_CYCLE_TIME) >= CFG_BTN_PRESS_TIME ) {
+				if ( (input_cfg->cfg_counter * INPUT_CYCLE_TIME) >= GET_CFG_PRESS_TIME(input_cfg) ) {
 
 					// CFG MODE
-
 					if ( supla_esp_cfgmode_started() == 0 ) {
 
 						supla_esg_gpio_start_cfg_mode();
@@ -1045,6 +1052,7 @@ supla_esp_gpio_init(void) {
 	//supla_log(LOG_DEBUG, "supla_esp_gpio_init");
 
 	supla_esp_gpio_init_time = 0;
+	supla_esp_restart_on_cfg_press = 0;
 
 	memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
 	memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
@@ -1065,8 +1073,8 @@ supla_esp_gpio_init(void) {
 
 	for(a=0; a<RS_MAX_COUNT; a++) {
 		supla_rs_cfg[a].position = &supla_esp_state.rs_position[a];
-		supla_rs_cfg[a].full_opening_time = &supla_esp_cfg.FullOpeningTime[a];
-		supla_rs_cfg[a].full_closing_time = &supla_esp_cfg.FullClosingTime[a];
+		supla_rs_cfg[a].full_opening_time = &supla_esp_cfg.Time1[a];
+		supla_rs_cfg[a].full_closing_time = &supla_esp_cfg.Time2[a];
 	}
 
 	#if defined(USE_GPIO3) ||  defined(USE_GPIO1) || defined(UART_SWAP)

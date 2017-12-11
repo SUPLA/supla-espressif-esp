@@ -33,6 +33,15 @@
 #define RELAY_INIT_VALUE LO_VALUE
 #define SAVE_STATE_DELAY  1000
 
+#ifndef CFG_BTN_PRESS_TIME
+#define CFG_BTN_PRESS_TIME      5000
+#endif /*CFG_BTN_PRESS_TIME*/
+
+
+#ifndef GET_CFG_PRESS_TIME
+#define GET_CFG_PRESS_TIME supla_esp_gpio_get_cfg_press_time
+#endif /*GET_CFG_PRESS_TIME*/
+
 #ifndef INPUT_MAX_COUNT
 #define INPUT_MAX_COUNT         7
 #endif /*INPUT_MAX_COUNT*/
@@ -44,6 +53,14 @@
 #ifndef RS_MAX_COUNT
 #define RS_MAX_COUNT            2
 #endif /*RS_MAX_COUNT*/
+
+#ifndef CFG_TIME1_COUNT
+#define CFG_TIME1_COUNT         2
+#endif /*CFG_TIME1_COUNT*/
+
+#ifndef CFG_TIME2_COUNT
+#define CFG_TIME2_COUNT         2
+#endif /*CFG_TIME2_COUNT*/
 
 #ifndef SMOOTH_MAX_COUNT
 #define SMOOTH_MAX_COUNT        1
@@ -95,6 +112,15 @@
 #ifndef DHT_ICACHE_FLASH
 #define DHT_ICACHE_FLASH ICACHE_FLASH_ATTR
 #endif
+
+#ifndef BTN1_DEFAULT
+#define BTN1_DEFAULT BTN_TYPE_MONOSTABLE
+#endif
+
+#ifndef BTN2_DEFAULT
+#define BTN2_DEFAULT BTN_TYPE_BISTABLE
+#endif
+
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size);
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count);
