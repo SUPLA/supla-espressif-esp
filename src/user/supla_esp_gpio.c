@@ -881,7 +881,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 					&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 						 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) ) {
 
-				if ( input_cfg->cfg_counter < 255 )
+				if ( input_cfg->cfg_counter < 2048 )
 					input_cfg->cfg_counter++;
 
 				if ( supla_esp_restart_on_cfg_press == 1 ) {

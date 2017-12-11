@@ -40,7 +40,7 @@ typedef struct {
 	uint8 type;
 	uint8 step;
 	uint8 cycle_counter;
-	uint8 cfg_counter;
+	uint16 cfg_counter;
 	uint8 relay_gpio_id;
 	uint8 channel;
 	uint8 last_state;
