@@ -747,7 +747,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 
 }
 
-void DEVCONN_ICACHE_FLASH
+void
 _supla_esp_devconn_smooth_cb(void) {
 
 
