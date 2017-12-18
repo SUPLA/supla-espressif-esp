@@ -671,6 +671,7 @@ int DEVCONN_ICACHE_FLASH hsv2rgb(hsv in)
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 
+
 	 if ( _smooth->smoothly == 0 || _smooth->counter >= 100 ) {
 		 _smooth->color = _smooth->dest_color;
 		 _smooth->color_brightness = _smooth->dest_color_brightness;
@@ -680,6 +681,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 
 	 supla_esp_devconn_smooth_brightness(&_smooth->color_brightness, &_smooth->dest_color_brightness, &_smooth->color_brightness_step);
 	 supla_esp_devconn_smooth_brightness(&_smooth->brightness, &_smooth->dest_brightness, &_smooth->brightness_step);
+
 
 
 	 if ( _smooth->color != _smooth->dest_color ) {
@@ -735,6 +737,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 
 	 }
 
+
 	 supla_esp_board_set_rgbw_value(_smooth->ChannelNumber, &_smooth->color, &_smooth->color_brightness, &_smooth->brightness);
 	 _smooth->counter++;
 
@@ -744,6 +747,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 		 
 		 _smooth->active = 0;
 	 }
+
 
 }
 
@@ -1227,7 +1231,24 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_cfgmode_start(void) {
 
+	int a;
+
+	#if defined(RGB_CONTROLLER_CHANNEL) \
+		|| defined(RGBW_CONTROLLER_CHANNEL) \
+		|| defined(RGBWW_CONTROLLER_CHANNEL) \
+		|| defined(DIMMER_CHANNEL)
+
+		supla_esp_hw_timer_disarm();
+
+		for(a=0;a<SMOOTH_MAX_COUNT;a++) {
+			smooth[a].active = 0;
+		}
+
+	#endif
+
 	os_timer_disarm(&devconn->supla_watchdog_timer);
+
+
 }
 
 void DEVCONN_ICACHE_FLASH
