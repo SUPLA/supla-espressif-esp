@@ -505,6 +505,10 @@ void  supla_esg_gpio_start_cfg_mode(void) {
 
 	if ( supla_esp_cfgmode_started() == 0 ) {
 
+		#ifdef BEFORE_CFG_ENTER
+			BEFORE_CFG_ENTER
+		#endif
+
 		supla_esp_devconn_stop();
 		supla_esp_cfgmode_start();
 
@@ -959,7 +963,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 							supla_esg_gpio_start_cfg_mode();
 						}
 
-					} else if ( input_cfg->cfg_counter > 2 ) {
+					} else if ( (system_get_time() - supla_esp_cfgmode_entertime) > 3000000 ) {
 
 						//  EXIT CFG MODE
 						system_restart();
