@@ -56,6 +56,7 @@ typedef struct {
     unsigned int Time1[CFG_TIME1_COUNT];
     unsigned int Time2[CFG_TIME2_COUNT];
 
+    unsigned char Flags[8];
 
     char zero[200];
 
