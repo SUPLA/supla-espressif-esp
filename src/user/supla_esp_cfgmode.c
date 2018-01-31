@@ -276,6 +276,7 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 				char rbt[3] = { 'r', 'b', 't' };
 				char eml[3] = { 'e', 'm', 'l' };
 				char usd[3] = { 'u', 's', 'd' };
+				char trg[3] = { 't', 'r', 'g' };
 				
 				if ( len-a >= 4
 					 && pdata[a+3] == '=' ) {
@@ -364,7 +365,7 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->buff_size = 12;
 						pVars->pbuff = pVars->intval;
 
-				    } else if ( memcmp(lid, &pdata[a], 3) == 0 ) {
+				    } else if ( memcmp(trg, &pdata[a], 3) == 0 ) {
 
 						pVars->current_var = VAR_TRG;
 						pVars->buff_size = 12;
