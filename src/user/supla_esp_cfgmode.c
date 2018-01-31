@@ -61,6 +61,8 @@
 #define VAR_RBT          12
 #define VAR_EML          20
 #define VAR_USD          21
+#define VAR_TRG          22
+
 
 typedef struct {
 	
@@ -362,7 +364,13 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->buff_size = 12;
 						pVars->pbuff = pVars->intval;
 
-				    } 
+				    } else if ( memcmp(lid, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_TRG;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+					}
 					
 					a+=4;
 					pVars->offset = 0;
@@ -452,6 +460,10 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 					} else if ( pVars->current_var == VAR_USD ) {
 
 						cfg->UpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+
+					} else if ( pVars->current_var == VAR_TRG ) {
+
+						cfg->Trigger = pVars->intval[0] - '0';
 
 					}
 					
