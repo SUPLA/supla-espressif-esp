@@ -1231,12 +1231,12 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_cfgmode_start(void) {
 
-	int a;
-
 	#if defined(RGB_CONTROLLER_CHANNEL) \
 		|| defined(RGBW_CONTROLLER_CHANNEL) \
 		|| defined(RGBWW_CONTROLLER_CHANNEL) \
 		|| defined(DIMMER_CHANNEL)
+
+		int a;
 
 		supla_esp_hw_timer_disarm();
 
