@@ -120,7 +120,7 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_init(void) {
 
-	char TAG[6] = {'S','U','P','L','A', 5};
+	char TAG[6] = {'S','U','P','L','A', 6}; // 6 == v6
 	char mac[6];
 	int a;
 

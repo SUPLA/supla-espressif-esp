@@ -31,7 +31,11 @@ typedef struct {
 
 	char TAG[6];
 	char GUID[SUPLA_GUID_SIZE];
+    char AuthKey[SUPLA_AUTHKEY_SIZE];
+
 	char Server[SERVER_MAXSIZE];
+	char Email[SUPLA_EMAIL_MAXSIZE];
+
 	int LocationID;
     char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
 
@@ -48,9 +52,6 @@ typedef struct {
     char FirmwareUpdate;
     char Test;
 
-    char Email[SUPLA_EMAIL_MAXSIZE];
-    char AuthKey[SUPLA_AUTHKEY_SIZE];
-    
     char UpsideDown;
 
     unsigned int Time1[CFG_TIME1_COUNT];
