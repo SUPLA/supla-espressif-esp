@@ -408,7 +408,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 void
 supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg) {
 
-	if ( rs_cfg != NULL )
+	if ( rs_cfg == NULL )
 		return;
 
 	//supla_log(LOG_DEBUG, "Task canceled");
