@@ -147,7 +147,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	#ifdef __BOARD_wifisocket_x4
 
 		channels[1].Number = 1;
-		schannels[1].Type = channels[0].Type;
+		channels[1].Type = channels[0].Type;
 		channels[1].FuncList = channels[0].FuncList;
 		channels[1].Default = channels[0].Default;
 		channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
