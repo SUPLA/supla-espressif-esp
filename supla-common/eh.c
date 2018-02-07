@@ -194,18 +194,36 @@ int eh_wait(TEventHandler *eh, int usec) {
 	FD_ZERO(&rfds);
 
 	#ifdef __linux__
-	if ( eh->fd1 != -1 )
-		FD_SET(eh->fd1, &rfds);
+		if ( eh->epoll_fd == -1 ) {
+
+			if ( eh->fd1 != -1 ) {
+				FD_SET(eh->fd1, &rfds);
+			}
+
+			if ( eh->fd2 != -1 ) {
+				FD_SET(eh->fd2, &rfds);
+			}
+
+			if ( eh->fd3 != -1 ) {
+				FD_SET(eh->fd3, &rfds);
+			}
+		}
 	#else
-	if ( eh->fd1[0] != -1 )
-		FD_SET(eh->fd1[0], &rfds);
-	#endif
 
-	if ( eh->fd2 != -1 )
-		FD_SET(eh->fd2, &rfds);
+		if ( eh->fd1[0] != -1 ) {
+			FD_SET(eh->fd1[0], &rfds);
+		}
 
-	if ( eh->fd3 != -1 )
-		FD_SET(eh->fd3, &rfds);
+		if ( eh->fd2 != -1 ) {
+			FD_SET(eh->fd2, &rfds);
+		}
+
+		if ( eh->fd3 != -1 ) {
+			FD_SET(eh->fd3, &rfds);
+		}
+
+	#endif /*__linux__*/
+
 
 	if ( eh->nfds > 0 ) {
 
