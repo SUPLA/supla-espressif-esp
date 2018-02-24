@@ -65,6 +65,8 @@
 
 #elif defined(__BOARD_dimmer)
 
+#include "board/dimmer.c"
+
 #elif defined(__BOARD_EgyIOT)
 
 #elif defined(__BOARD_zam_row_01)

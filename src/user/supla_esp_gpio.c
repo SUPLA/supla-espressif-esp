@@ -733,19 +733,6 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     return result;
 }
 
-
-#if defined(DIMMER_CHANNEL)
-void supla_esg_gpio_pwm_onoff(void) {
-
-	char pwm_on = supla_esp_pwm_is_on() == 1 ? 0 : 1 ;
-	supla_esp_pwm_on(pwm_on);
-
-	supla_esp_channel_rgbw_value_changed(DIMMER_CHANNEL, 0, 0, pwm_on ? 100 : 0);
-
-}
-#endif
-
-
 LOCAL void supla_esp_gpio_relay_switch(supla_input_cfg_t *input_cfg, char hi) {
 
 	if (  input_cfg->relay_gpio_id != 255 ) {
@@ -819,11 +806,6 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 
 
 		supla_esp_gpio_relay_switch(input_cfg, 255);
-
-        #ifdef DIMMER_CHANNEL
-				supla_esg_gpio_pwm_onoff();
-		#endif
-
 
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 			    &&  input_cfg->channel != 255 ) {

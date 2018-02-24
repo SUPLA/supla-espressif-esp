@@ -19,6 +19,10 @@
 #include "h801.h"
 #include "supla_esp_devconn.h"
 
+uint8 h801_brightness[2] = {0, 0};
+int h801_color = 0x0FF00;
+uint8 h801_color_brightness = 0;
+
 const uint8_t rsa_public_key_bytes[512] = {
     0xcd, 0xa0, 0xf3, 0x95, 0xc2, 0xe1, 0xf1, 0xbe,
     0x00, 0xa7, 0x52, 0x03, 0xf8, 0x9a, 0xf4, 0xc6,
@@ -88,25 +92,25 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 #define B_CFG_PORT         0
 
-void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
+void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	ets_snprintf(buffer, buffer_size, "H801-RGBWW");
 }
 
 
-void supla_esp_board_gpio_init(void) {
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 		
 	supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[0].gpio_id = B_CFG_PORT;
 	supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 }
 
-void supla_esp_board_pwm_init(void) {
+void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
 
 	supla_esp_channel_set_rgbw_value(0, supla_esp_state.color[0], supla_esp_state.color_brightness[0], supla_esp_state.brightness[0], 0, 0);
 	supla_esp_channel_set_rgbw_value(1, 0, 0, supla_esp_state.brightness[1], 0, 0);
 }
 
-void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
+void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 
 	*channel_count = 2;
 	channels[0].Type = SUPLA_CHANNELTYPE_DIMMERANDRGBLED;
@@ -120,34 +124,36 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 
 }
 
-char supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBrightness, char *Brightness) {
+char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
 
-	uint8 brightness = *Brightness;
-	int color = *Color;
-	uint8 color_brightness = *ColorBrightness;
+	uint8 n = ChannelNumber == 0 ? 0 : 1;
+
+	h801_brightness[n] = *Brightness;
+	h801_color = *Color;
+	h801_color_brightness = *ColorBrightness;
 	
-	if ( brightness > 100 )
-		brightness = 100;
+	if ( h801_brightness[n] > 100 )
+		h801_brightness[n] = 100;
 	
-	if ( color_brightness > 100 )
-		color_brightness = 100;
+	if ( h801_color_brightness > 100 )
+		h801_color_brightness = 100;
 
 	if ( ChannelNumber == 0 ) {
 		
-		hsv _hsv = rgb2hsv(color);
-		_hsv.v = 255 * color_brightness / 100;
+		hsv _hsv = rgb2hsv(h801_color);
+		_hsv.v = 255 * h801_color_brightness / 100;
 
-		color = hsv2rgb(_hsv);
+		h801_color = hsv2rgb(_hsv);
 		
-		supla_esp_pwm_set_percent_duty(((color & 0x00FF0000) >> 16) * 100 / 255, 100, 0); //RED
-		supla_esp_pwm_set_percent_duty(((color & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
-		supla_esp_pwm_set_percent_duty((color & 0x000000FF) * 100 / 255, 100, 2);        //BLUE
+		supla_esp_pwm_set_percent_duty(((h801_color & 0x00FF0000) >> 16) * 100 / 255, 100, 0); //RED
+		supla_esp_pwm_set_percent_duty(((h801_color & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
+		supla_esp_pwm_set_percent_duty((h801_color & 0x000000FF) * 100 / 255, 100, 2);        //BLUE
 
-		supla_esp_pwm_set_percent_duty(brightness, 100, 3);
+		supla_esp_pwm_set_percent_duty(h801_brightness[0], 100, 3);
 
 	} else if ( ChannelNumber ==  1 ) {
 
-		supla_esp_pwm_set_percent_duty(brightness, 100, 4);
+		supla_esp_pwm_set_percent_duty(h801_brightness[1], 100, 4);
 
 
 	}
@@ -155,6 +161,33 @@ char supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, char *ColorBr
 	return 1;
 }
 
-void supla_esp_board_send_channel_values_with_delay(void *srpc) {
+
+void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
+
+	if ( ChannelNumber == 0 ) {
+
+		if ( Color != NULL ) {
+			*Color = h801_color;
+		}
+
+		if ( ColorBrightness != NULL ) {
+			*ColorBrightness = h801_color_brightness;
+		}
+
+		if ( Brightness != NULL ) {
+			*Brightness = h801_brightness[0];
+		}
+
+	} else if ( ChannelNumber == 1 ) {
+
+		if ( Brightness != NULL ) {
+			*Brightness = h801_brightness[1];
+		}
+
+	}
+
+}
+
+void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
 }
