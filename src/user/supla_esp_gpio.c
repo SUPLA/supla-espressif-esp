@@ -66,6 +66,7 @@ static ETSTimer supla_gpio_timer1;
 static ETSTimer supla_gpio_timer2;
 unsigned char supla_esp_restart_on_cfg_press = 0;
 
+#ifdef _ROLLERSHUTTER_SUPPORT
 void
 supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int time, int pos) {
 
@@ -441,6 +442,8 @@ void supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 
 }
 
+#endif /*_ROLLERSHUTTER_SUPPORT*/
+
 void
 gpio16_output_conf(void)
 {
@@ -770,12 +773,12 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
 
 		//supla_log(LOG_DEBUG, "RELAY HI");
-
-		supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-		if ( rs_cfg != NULL ) {
-			supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
-		}
-
+		#ifdef _ROLLERSHUTTER_SUPPORT
+			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+			if ( rs_cfg != NULL ) {
+				supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
+			}
+		#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
@@ -805,12 +808,12 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
 
 		//supla_log(LOG_DEBUG, "RELAY LO");
-
-		supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-		if ( rs_cfg != NULL ) {
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
-		}
-
+		#ifdef _ROLLERSHUTTER_SUPPORT
+			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+			if ( rs_cfg != NULL ) {
+				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+			}
+		#endif /*_ROLLERSHUTTER_SUPPORT*/
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
@@ -1196,18 +1199,19 @@ supla_esp_gpio_init(void) {
 
     supla_esp_gpio_init_time = system_get_time();
 
-    for(a=0;a<RS_MAX_COUNT;a++)
-    	if ( supla_rs_cfg[a].up != NULL
-    		 && supla_rs_cfg[a].down != NULL ) {
+	#ifdef _ROLLERSHUTTER_SUPPORT
+		for(a=0;a<RS_MAX_COUNT;a++)
+			if ( supla_rs_cfg[a].up != NULL
+				 && supla_rs_cfg[a].down != NULL ) {
 
-    		supla_rs_cfg[a].stop_time = supla_esp_gpio_init_time;
+				supla_rs_cfg[a].stop_time = supla_esp_gpio_init_time;
 
-    		os_timer_disarm(&supla_rs_cfg[a].timer);
-    		os_timer_setfn(&supla_rs_cfg[a].timer, (os_timer_func_t *)supla_esp_gpio_rs_timer_cb, &supla_rs_cfg[a]);
-    		os_timer_arm(&supla_rs_cfg[a].timer, 10, 1);
+				os_timer_disarm(&supla_rs_cfg[a].timer);
+				os_timer_setfn(&supla_rs_cfg[a].timer, (os_timer_func_t *)supla_esp_gpio_rs_timer_cb, &supla_rs_cfg[a]);
+				os_timer_arm(&supla_rs_cfg[a].timer, 10, 1);
 
-    	}
-
+			}
+	#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 }
 

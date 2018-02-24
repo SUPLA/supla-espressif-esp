@@ -902,56 +902,59 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
     ets_snprintf(buff, 200, "set_value %i,%i,%i", new_value->value[0], new_value->ChannelNumber, new_value->SenderID);
 	supla_esp_write_log(buff);
 */
-	for(a=0;a<RS_MAX_COUNT;a++)
-		if ( supla_rs_cfg[a].up != NULL
-			 && supla_rs_cfg[a].down != NULL
-			 && supla_rs_cfg[a].up->channel == new_value->ChannelNumber ) {
+
+	#ifdef _ROLLERSHUTTER_SUPPORT
+		for(a=0;a<RS_MAX_COUNT;a++)
+			if ( supla_rs_cfg[a].up != NULL
+				 && supla_rs_cfg[a].down != NULL
+				 && supla_rs_cfg[a].up->channel == new_value->ChannelNumber ) {
 
 
-			int ct = (new_value->DurationMS & 0xFFFF)*100;
-			int ot = ((new_value->DurationMS >> 16) & 0xFFFF)*100;
+				int ct = (new_value->DurationMS & 0xFFFF)*100;
+				int ot = ((new_value->DurationMS >> 16) & 0xFFFF)*100;
 
-			if ( ct < 0 )
-				ct = 0;
+				if ( ct < 0 )
+					ct = 0;
 
-			if ( ot < 0 )
-				ot = 0;
+				if ( ot < 0 )
+					ot = 0;
 
-			if ( ct != supla_esp_cfg.Time2[a]
-			     || ot != supla_esp_cfg.Time1[a] ) {
+				if ( ct != supla_esp_cfg.Time2[a]
+					 || ot != supla_esp_cfg.Time1[a] ) {
 
-				supla_esp_cfg.Time2[a] = ct;
-				supla_esp_cfg.Time1[a] = ot;
+					supla_esp_cfg.Time2[a] = ct;
+					supla_esp_cfg.Time1[a] = ot;
 
-				supla_esp_state.rs_position[a] = 0;
-				supla_esp_save_state(0);
-				supla_esp_cfg_save(&supla_esp_cfg);
+					supla_esp_state.rs_position[a] = 0;
+					supla_esp_save_state(0);
+					supla_esp_cfg_save(&supla_esp_cfg);
 
-				//supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
+					//supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
 
-			}
-
-			//supla_log(LOG_DEBUG, "V=%i", v);
-
-			if ( v >= 10 && v <= 110 ) {
-
-				supla_esp_gpio_rs_add_task(a, v-10);
-
-			} else {
-
-				if ( v == 1 ) {
-					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 1);
-				} else if ( v == 2 ) {
-					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 1);
-				} else {
-					supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 1);
 				}
 
-			}
+				//supla_log(LOG_DEBUG, "V=%i", v);
 
-			Success = 1;
-			return;
-		}
+				if ( v >= 10 && v <= 110 ) {
+
+					supla_esp_gpio_rs_add_task(a, v-10);
+
+				} else {
+
+					if ( v == 1 ) {
+						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 1);
+					} else if ( v == 2 ) {
+						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 1);
+					} else {
+						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 1);
+					}
+
+				}
+
+				Success = 1;
+				return;
+			}
+	#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 	for(a=0;a<RELAY_MAX_COUNT;a++)
 		if ( supla_relay_cfg[a].gpio_id != 255
