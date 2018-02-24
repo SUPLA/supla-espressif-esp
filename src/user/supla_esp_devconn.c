@@ -125,7 +125,7 @@ devconn_smooth smooth[SMOOTH_MAX_COUNT];
 
 #if NOSSL == 1
     #define supla_espconn_sent espconn_sent
-    #define supla_espconn_disconnect espconn_disconnect
+    #define _supla_espconn_disconnect espconn_disconnect
     #define supla_espconn_connect espconn_connect
 #else
     #define supla_espconn_sent espconn_secure_sent
