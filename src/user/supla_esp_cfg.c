@@ -124,10 +124,18 @@ supla_esp_cfg_init(void) {
 	char mac[6];
 	int a;
 
+	char AuthKey[SUPLA_AUTHKEY_SIZE];
+	memset(AuthKey, 0, SUPLA_AUTHKEY_SIZE);
+
+	char GUID[SUPLA_GUID_SIZE];
+	memset(GUID, 0, SUPLA_GUID_SIZE);
+
 	os_timer_disarm(&supla_esp_cfg_timer1);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_read(CFG_SECTOR * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_cfg, sizeof(SuplaEspCfg)) ) {
-	   if ( memcmp(supla_esp_cfg.TAG, TAG, 6) == 0 ) {
+	   if ( memcmp(supla_esp_cfg.TAG, TAG, 6) == 0
+			&& memcmp(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE) != 0
+			&& memcmp(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE) != 0 ) {
 
 		   supla_log(LOG_DEBUG, "CFG READ SUCCESS!");
 

@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.6"
+#define SUPLA_ESP_SOFTVER "2.6.1"
 
 #define LO_VALUE  0
 #define HI_VALUE  1
