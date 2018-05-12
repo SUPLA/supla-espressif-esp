@@ -86,6 +86,7 @@
 #include "board/acs_zam_row_07.c"
 
 #elif defined(__BOARD_zam_srw_01)
+      || defined(__BOARD_n_srw_01)
 
 #include "board/acs_zam_srw_01.c"
 
