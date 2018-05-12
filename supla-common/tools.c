@@ -156,7 +156,7 @@ char *st_bin2hex(char *buffer, const char *src, size_t len) {
   b = 0;
 
   for (a = 0; a < len; a++) {
-    snprintf(&buffer[b], 3, "%02X", (unsigned char)src[a]); // NOLINT
+    snprintf(&buffer[b], 3, "%02X", (unsigned char)src[a]);  // NOLINT
     b += 2;
   }
 
@@ -189,10 +189,18 @@ char st_read_randkey_from_file(char *file, char *KEY, int size, char create) {
         struct timeval tv;
         gettimeofday(&tv, NULL);
 
+#ifdef __ANDROID__
+        srand(tv.tv_usec);
+        gettimeofday(&tv, NULL);
+
+        for (a = 0; a < size; a++)
+          KEY[a] = (unsigned char)(rand() + tv.tv_usec);  // NOLINT
+#else
         unsigned int seed = time(NULL);
 
         for (a = 0; a < size; a++)
           KEY[a] = (unsigned char)(rand_r(&seed) + tv.tv_usec);
+#endif
 
         if (fwrite(KEY, size, (int)1, F) == 1) {
           result = 1;
@@ -227,6 +235,7 @@ char st_read_randkey_from_file(char *file, char *KEY, int size, char create) {
       supla_log(LOG_ERR, "%s - wrong size", file);
     }
 
+    fclose(F);
   } else {
     supla_log(LOG_ERR, "Can't open file %s", file);
   }
@@ -255,7 +264,7 @@ char st_read_authkey_from_file(char *file, char *AuthKey, char create) {
 
 time_t st_get_utc_time(void) {
   time_t now = time(0);
-  struct tm *now_tm = gmtime(&now); // NOLINT
+  struct tm *now_tm = gmtime(&now);  // NOLINT
   return mktime(now_tm);
 }
 
@@ -263,10 +272,75 @@ char *st_get_datetime_str(char buffer[64]) {
   memset(buffer, 0, 64);
 
   time_t t = time(NULL);
-  struct tm *tm = localtime(&t); // NOLINT
+  struct tm *tm = localtime(&t);  // NOLINT
   strftime(buffer, 64, "%c", tm);
 
   return buffer;
+}
+
+int st_hue2rgb(double hue) {
+  double r = 0, g = 0, b = 0;
+
+  if (hue >= 360) hue = 0;
+
+  hue /= 60.00;
+
+  long i = (long)hue;
+  double f, q, t;
+  f = hue - i;
+
+  q = 1.0 - f;
+  t = 1.0 - (1.0 - f);
+
+  switch (i) {
+    case 0:
+      r = 1.00;
+      g = t;
+      b = 0.00;
+      break;
+
+    case 1:
+      r = q;
+      g = 1.00;
+      b = 0.00;
+      break;
+
+    case 2:
+      r = 0.00;
+      g = 1.00;
+      b = t;
+      break;
+
+    case 3:
+      r = 0.00;
+      g = q;
+      b = 1.00;
+      break;
+
+    case 4:
+      r = t;
+      g = 0.00;
+      b = 1.00;
+      break;
+
+    default:
+      r = 1.00;
+      g = 0.00;
+      b = q;
+      break;
+  }
+
+  int rgb = 0;
+
+  rgb |= (unsigned char)(r * 255.00);
+  rgb <<= 8;
+
+  rgb |= (unsigned char)(g * 255.00);
+  rgb <<= 8;
+
+  rgb |= (unsigned char)(b * 255.00);
+
+  return rgb;
 }
 
 #ifdef __BCRYPT
