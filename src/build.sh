@@ -148,6 +148,10 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
+   "n_srw_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
    "rgbw_wroom")
       FLASH_SIZE="2048"
       DEP_LIBS="-lpwm -lssl"
