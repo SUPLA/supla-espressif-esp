@@ -92,6 +92,7 @@ char CFG_ICACHE_FLASH_ATTR supla_esp_write_state(char *message);
 char CFG_ICACHE_FLASH_ATTR supla_esp_read_state(char *message);
 
 char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_init(void);
+char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_ready_to_connect(void);
 char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_save(SuplaEspCfg *cfg);
 void CFG_ICACHE_FLASH_ATTR supla_esp_save_state(int delay);
 void CFG_ICACHE_FLASH_ATTR factory_defaults(char save);
