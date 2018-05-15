@@ -19,6 +19,7 @@
 #ifndef SUPLA_RS_MODULE_H_
 #define SUPLA_RS_MODULE_H_
 
+#define _ROLLERSHUTTER_SUPPORT
 
 #define DS18B20
 #define USE_GPIO16_OUTPUT

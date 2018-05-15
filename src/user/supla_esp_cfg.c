@@ -117,6 +117,19 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 
 }
 
+char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_ready_to_connect(void) {
+	
+	if (strnlen(supla_esp_cfg.Server, SERVER_MAXSIZE) == 0
+		|| strnlen(supla_esp_cfg.Email, SUPLA_EMAIL_MAXSIZE) == 0
+		|| strnlen(supla_esp_cfg.WIFI_SSID, WIFI_SSID_MAXSIZE) == 0
+		|| strnlen(supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE) == 0) {
+		
+		return 0;
+	}
+	
+	return 1;
+}
+
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_init(void) {
 
@@ -124,10 +137,18 @@ supla_esp_cfg_init(void) {
 	char mac[6];
 	int a;
 
+	char AuthKey[SUPLA_AUTHKEY_SIZE];
+	memset(AuthKey, 0, SUPLA_AUTHKEY_SIZE);
+
+	char GUID[SUPLA_GUID_SIZE];
+	memset(GUID, 0, SUPLA_GUID_SIZE);
+
 	os_timer_disarm(&supla_esp_cfg_timer1);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_read(CFG_SECTOR * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_cfg, sizeof(SuplaEspCfg)) ) {
-	   if ( memcmp(supla_esp_cfg.TAG, TAG, 6) == 0 ) {
+	   if ( memcmp(supla_esp_cfg.TAG, TAG, 6) == 0
+			&& memcmp(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE) != 0
+			&& memcmp(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE) != 0 ) {
 
 		   supla_log(LOG_DEBUG, "CFG READ SUCCESS!");
 

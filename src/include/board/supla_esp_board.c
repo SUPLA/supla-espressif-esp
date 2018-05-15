@@ -65,6 +65,8 @@
 
 #elif defined(__BOARD_dimmer)
 
+#include "board/dimmer.c"
+
 #elif defined(__BOARD_EgyIOT)
 
 #elif defined(__BOARD_zam_row_01)
@@ -83,7 +85,8 @@
 
 #include "board/acs_zam_row_07.c"
 
-#elif defined(__BOARD_zam_srw_01)
+#elif defined(__BOARD_zam_srw_01) \
+      || defined(__BOARD_n_srw_01)
 
 #include "board/acs_zam_srw_01.c"
 

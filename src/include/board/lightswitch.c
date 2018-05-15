@@ -78,10 +78,10 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
 	channels[1].Number = 1;
-	channels[1].Type = srd->channels[0].Type;
-	channels[1].FuncList = srd->channels[0].FuncList;
-	channels[1].Default = srd->channels[0].Default;
-	srd->channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
+	channels[1].Type = channels[0].Type;
+	channels[1].FuncList = channels[0].FuncList;
+	channels[1].Default = channels[0].Default;
+	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
 	channels[2].Number = 2;
 

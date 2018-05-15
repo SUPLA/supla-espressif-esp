@@ -112,6 +112,10 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
+   "zam_srw_01_tester")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
    "zam_row_07")
       FLASH_SIZE="2048"
       FOTA=1
@@ -141,6 +145,10 @@ case $1 in
       FOTA=1
    ;;
    "n_sbp_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "n_srw_01")
       FLASH_SIZE="2048"
       FOTA=1
    ;;

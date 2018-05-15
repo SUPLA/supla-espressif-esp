@@ -91,7 +91,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[3].Default = 0;
 	channels[3].value[0] = 0;
 
-	srd->channels[4].Number = 4;
+	channels[4].Number = 4;
 
 	#if defined(__BOARD_gate_module_dht11)
 		channels[4].Type = SUPLA_CHANNELTYPE_DHT11;

@@ -141,7 +141,7 @@ supla_esp_check_updates(void *srpc) {
 	}
 }
 
-char ICACHE_FLASH_ATTR supal_esp_update_flash_write(void) {
+char ICACHE_FLASH_ATTR supla_esp_update_flash_write(void) {
 
 	int a;
 
@@ -194,7 +194,7 @@ supal_esp_update_download(char *content, unsigned short content_len) {
 
 		if ( update->buff_pos == SPI_FLASH_SEC_SIZE ) {
 
-			if ( supal_esp_update_flash_write() == 0 )
+			if ( supla_esp_update_flash_write() == 0 )
 				return;
 
 		}
@@ -205,7 +205,7 @@ supal_esp_update_download(char *content, unsigned short content_len) {
 
 	if ( update->buff_pos > 0 && update->downloaded_data_size == update->expected_file_size ) {
 
-		if ( supal_esp_update_flash_write() == 0 )
+		if ( supla_esp_update_flash_write() == 0 )
 			return;
 
 	}

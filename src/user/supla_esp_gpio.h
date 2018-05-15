@@ -140,10 +140,12 @@ char supla_esp_gpio_relay_on(int port);
 void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
 
+#ifdef _ROLLERSHUTTER_SUPPORT
 void supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg);
 void supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
 supla_roller_shutter_cfg_t  *supla_esp_gpio_get_rs__cfg(int port);
+#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 #endif /* SUPLA_ESP_GPIO_H_ */
 
