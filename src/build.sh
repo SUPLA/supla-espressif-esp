@@ -124,6 +124,14 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
+   "n_srw_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "k_srw_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
    "zam_pnw_01")
       FLASH_SIZE="2048"
       FOTA=1
@@ -140,15 +148,15 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
-   "zam_slw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
    "n_sbp_01")
       FLASH_SIZE="2048"
       FOTA=1
    ;;
-   "n_srw_01")
+   "k_sbp_01")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
+   "zam_slw_01")
       FLASH_SIZE="2048"
       FOTA=1
    ;;

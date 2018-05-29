@@ -86,7 +86,8 @@
 #include "board/acs_zam_row_07.c"
 
 #elif defined(__BOARD_zam_srw_01) \
-      || defined(__BOARD_n_srw_01)
+      || defined(__BOARD_n_srw_01) \
+	  || defined(__BOARD_k_srw_01) 
 
 #include "board/acs_zam_srw_01.c"
 
@@ -98,13 +99,11 @@
 
 #include "board/acs_zam_srw_03.c"
 
-#elif defined(__BOARD_zam_sbp_02)
+#elif defined(__BOARD_zam_sbp_01) \
+	  || defined(__BOARD_n_sbp_01) \
+	  || defined(__BOARD_k_sbp_01)
 
-#include "board/acs_zam_sbp_02.c"
-
-#elif defined(__BOARD_n_sbp_01)
-
-#include "board/acs_n_sbp_01.c"
+#include "board/acs_zam_sbp_01.c"
 
 #elif defined(__BOARD_zam_slw_01)
 
