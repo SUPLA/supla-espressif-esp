@@ -89,6 +89,10 @@
 
 #include "board/acs_zam_row_02.h"
 
+#elif defined(__BOARD_zam_row_04)
+
+#include "board/acs_zam_row_04.h"
+
 #elif defined(__BOARD_zam_row_07)
 
 #include "board/acs_zam_row_07.h"
@@ -103,15 +107,19 @@
 
 #include "board/acs_zam_srw_01_tester.h"
 
+#elif defined(__BOARD_zam_srw_02)
+	
+#include "board/acs_zam_srw_02.h"
+
+#elif defined(__BOARD_zam_srw_03)
+
+#include "board/acs_zam_srw_03.h"
+
 #elif defined(__BOARD_zam_sbp_01) \
 	  || defined(__BOARD_n_sbp_01) \
 	  || defined(__BOARD_k_sbp_01) 
 
 #include "board/acs_zam_sbp_01.h"
-
-#elif defined(__BOARD_zam_srw_03)
-
-#include "board/acs_zam_srw_03.h"
 
 #elif defined(__BOARD_zam_slw_01)
 

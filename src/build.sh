@@ -128,6 +128,10 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
+   "zam_srw_02")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
    "n_srw_01")
       FLASH_SIZE="2048"
       FOTA=1
