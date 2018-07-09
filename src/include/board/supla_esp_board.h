@@ -129,6 +129,10 @@
 
 #include "board/acs_zam_pnw_01.h"
 
+#elif defined(__BOARD_zam_mew_01)
+
+#include "board/acs_zam_mew_01.h"
+
 #elif defined(__BOARD_h801)
 
 #include "board/h801.h"
