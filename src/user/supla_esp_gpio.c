@@ -1120,14 +1120,18 @@ supla_esp_gpio_init(void) {
 
 			  //supla_log(LOG_DEBUG, "relay init %i", supla_relay_cfg[a].gpio_id);
 
-			if ( supla_relay_cfg[a].gpio_id <= 16
+			if ( supla_relay_cfg[a].gpio_id <= 15
 				 && !(supla_relay_cfg[a].flags & RELAY_FLAG_VIRTUAL_GPIO ) ) {
 
 				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_relay_cfg[a].gpio_id));
 				gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_PIN_INTR_DISABLE);
 				gpio_output_set(0, GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), 0);
 
+			} else if (supla_relay_cfg[a].gpio_id == 16) {
+				gpio16_output_conf();
 			}
+
+
 
 			supla_relay_cfg[a].last_time = 2147483647;
 
