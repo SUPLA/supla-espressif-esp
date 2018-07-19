@@ -151,7 +151,11 @@ supla_ds18b20_read_temperatureB(void *timer_arg) {
 
     if ( supla_ds18b20_last_temp != t ) {
     	supla_ds18b20_last_temp = t;
-    	supla_esp_devconn_on_temp_humidity_changed(t);
+
+    	char value[SUPLA_CHANNELVALUE_SIZE];
+    	memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+    	supla_get_temperature(value);
+    	supla_esp_channel_value__changed(TEMPERATURE_CHANNEL, value);
     };
 
 }

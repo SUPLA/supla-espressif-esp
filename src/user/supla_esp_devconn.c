@@ -449,6 +449,16 @@ supla_esp_channel_set_activity_timeout_result(TSDC_SuplaSetActivityTimeoutResult
 }
 
 void DEVCONN_ICACHE_FLASH
+supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVALUE_SIZE]) {
+
+	if ( devconn->srpc != NULL
+		 && devconn->registered == 1 ) {
+		srpc_ds_async_channel_value_changed(devconn->srpc, channel_number, value);
+	}
+
+}
+
+void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value_changed(int channel_number, char v) {
 
 	if ( devconn->srpc != NULL
@@ -1413,40 +1423,6 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 	}
 }
-
-#if defined(TEMPERATURE_CHANNEL) || defined(TEMPERATURE_HUMIDITY_CHANNEL)
-
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_temp_humidity_changed(char humidity) {
-
-	if ( devconn->srpc != NULL
-		 && devconn->registered == 1 ) {
-
-		char value[SUPLA_CHANNELVALUE_SIZE];
-
-        #if defined(TEMPERATURE_CHANNEL)
-
-		    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-
-			supla_get_temperature(value);
-			srpc_ds_async_channel_value_changed(devconn->srpc, TEMPERATURE_CHANNEL, value);
-
-		#endif
-
-        #if defined(TEMPERATURE_HUMIDITY_CHANNEL)
-
-			memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-
-			supla_get_temp_and_humidity(value);
-			srpc_ds_async_channel_value_changed(devconn->srpc, TEMPERATURE_HUMIDITY_CHANNEL, value);
-
-		#endif
-
-
-	}
-
-}
-
-#endif
 
 
 

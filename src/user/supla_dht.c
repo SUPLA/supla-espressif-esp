@@ -70,7 +70,11 @@ supla_dht_read_th(void *timer_arg) {
 			
 			supla_dht_last_temp = output.temperature;
 			supla_dht_last_humidity = output.humidity;
-			supla_esp_devconn_on_temp_humidity_changed(1);
+
+	    	char value[SUPLA_CHANNELVALUE_SIZE];
+	    	memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	    	supla_get_temp_and_humidity(value);
+	    	supla_esp_channel_value__changed(TEMPERATURE_HUMIDITY_CHANNEL, value);
 
             #ifdef DS18B20
 			os_timer_disarm(&supla_ds18b20_timer1);
