@@ -77,7 +77,7 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 
 		if ( time >= full_time ) {
 			*rs_cfg->position = pos;
-			supla_esp_save_state(0);
+			supla_esp_save_state(RS_SAVE_STATE_DELAY);
 		}
 	};
 
@@ -225,7 +225,7 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 		}
 
 		if ( last_pos != *rs_cfg->position ) {
-			supla_esp_save_state(0);
+			supla_esp_save_state(RS_SAVE_STATE_DELAY);
 		}
 
 
@@ -418,7 +418,7 @@ supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg) {
 	rs_cfg->task.percent = 0;
 	rs_cfg->task.direction = RS_DIRECTION_NONE;
 
-	supla_esp_save_state(0);
+	supla_esp_save_state(RS_SAVE_STATE_DELAY);
 }
 
 
@@ -438,7 +438,7 @@ void supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 	supla_rs_cfg[idx].task.direction = RS_DIRECTION_NONE;
 	supla_rs_cfg[idx].task.active = 1;
 
-	supla_esp_save_state(0);
+	supla_esp_save_state(RS_SAVE_STATE_DELAY);
 
 }
 

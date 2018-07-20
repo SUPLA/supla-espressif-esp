@@ -54,6 +54,10 @@
 #define RS_MAX_COUNT            2
 #endif /*RS_MAX_COUNT*/
 
+#ifndef RS_SAVE_STATE_DELAY
+#define RS_SAVE_STATE_DELAY     0
+#endif /*RS_SAVE_STATE_DELAY*/
+
 #ifndef CFG_TIME1_COUNT
 #define CFG_TIME1_COUNT         2
 #endif /*CFG_TIME1_COUNT*/
