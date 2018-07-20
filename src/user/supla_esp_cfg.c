@@ -55,9 +55,9 @@ void CFG_ICACHE_FLASH_ATTR
 _supla_esp_save_state(void *timer_arg) {
 
 	ets_intr_lock();
-	spi_flash_erase_sector(CFG_SECTOR+1);
+	spi_flash_erase_sector(CFG_SECTOR+STATE_SECTOR_OFFSET);
 
-	if ( SPI_FLASH_RESULT_OK == spi_flash_write((CFG_SECTOR+1) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
+	if ( SPI_FLASH_RESULT_OK == spi_flash_write((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
 		//supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
 		ets_intr_unlock();
 		return;
@@ -167,7 +167,7 @@ supla_esp_cfg_init(void) {
 		   supla_log(LOG_DEBUG, "InputCfgTriggerOff: %i", supla_esp_cfg.InputCfgTriggerOff);
 		   */
 
-			if ( SPI_FLASH_RESULT_OK == spi_flash_read((CFG_SECTOR+1) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
+			if ( SPI_FLASH_RESULT_OK == spi_flash_read((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
 			    supla_log(LOG_DEBUG, "STATE READ SUCCESS!");
 			} else {
 				supla_log(LOG_DEBUG, "STATE READ FAIL!");

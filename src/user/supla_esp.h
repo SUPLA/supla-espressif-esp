@@ -27,6 +27,10 @@
 
 #define SUPLA_ESP_SOFTVER "2.7.0"
 
+#ifndef STATE_SECTOR_OFFSET
+#define STATE_SECTOR_OFFSET 1
+#endif /*STATE_SECTOR_OFFSET*/
+
 #define LO_VALUE  0
 #define HI_VALUE  1
 
