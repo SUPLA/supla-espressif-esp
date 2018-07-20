@@ -26,13 +26,19 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_init(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void);
 char * DEVCONN_ICACHE_FLASH supla_esp_devconn_laststate(void);
+char DEVCONN_ICACHE_FLASH supla_esp_devconn_is_registered(void);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value_changed(int channel_number, char v);
+void DEVCONN_ICACHE_FLASH supla_esp_channel_extendedvalue_changed(unsigned char channel_number, TSuplaChannelExtendedValue *value);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_channel_values_with_delay(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_system_restart(void);
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_cfgmode_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
+
+#ifdef ELECTRICITY_METER
+void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *ev);
+#endif /*ELECTRICITY_METER*/
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
     || defined(RGBW_CONTROLLER_CHANNEL) \

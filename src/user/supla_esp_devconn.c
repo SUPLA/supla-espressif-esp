@@ -37,6 +37,10 @@
 #include "supla-dev/srpc.h"
 #include "supla-dev/log.h"
 
+#ifdef ELECTRICITY_METER
+#include "supla_esp_electricity_meter.h"
+#endif
+
 #ifdef __FOTA
 #include "supla_update.h"
 #endif
@@ -319,8 +323,7 @@ supla_esp_on_version_error(TSDC_SuplaVersionError *version_error) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_send_channel_values_cb(void *ptr) {
 
-	if ( devconn->srpc != NULL
-		 && devconn->registered == 1 ) {
+	if ( supla_esp_devconn_is_registered() == 1 ) {
 
 		int a;
 
@@ -406,6 +409,10 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 		supla_esp_devconn_send_channel_values_with_delay();
 
+		#ifdef ELECTRICITY_METER
+		supla_esp_em_device_registered();
+		#endif
+
 		#ifdef BOARD_ON_DEVICE_REGISTERED
 			BOARD_ON_DEVICE_REGISTERED;
 		#endif
@@ -448,11 +455,15 @@ supla_esp_channel_set_activity_timeout_result(TSDC_SuplaSetActivityTimeoutResult
 	devconn->server_activity_timeout = result->activity_timeout;
 }
 
+char DEVCONN_ICACHE_FLASH supla_esp_devconn_is_registered(void) {
+	return devconn->srpc != NULL
+			&& devconn->registered == 1 ? 1 : 0;
+}
+
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVALUE_SIZE]) {
 
-	if ( devconn->srpc != NULL
-		 && devconn->registered == 1 ) {
+	if ( supla_esp_devconn_is_registered() ) {
 		srpc_ds_async_channel_value_changed(devconn->srpc, channel_number, value);
 	}
 
@@ -461,8 +472,7 @@ supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVAL
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value_changed(int channel_number, char v) {
 
-	if ( devconn->srpc != NULL
-		 && devconn->registered == 1 ) {
+	if ( supla_esp_devconn_is_registered() == 1 ) {
 
 		//supla_log(LOG_DEBUG, "supla_esp_channel_value_changed(%i, %i)", channel_number, v);
 
@@ -473,6 +483,14 @@ supla_esp_channel_value_changed(int channel_number, char v) {
 		srpc_ds_async_channel_value_changed(devconn->srpc, channel_number, value);
 	}
 
+}
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_extendedvalue_changed(unsigned char channel_number, TSuplaChannelExtendedValue *value) {
+
+	if ( supla_esp_devconn_is_registered() == 1 ) {
+		srpc_ds_async_channel_extendedvalue_changed(devconn->srpc, channel_number, value);
+	}
 }
 
 #if defined(RGBW_CONTROLLER_CHANNEL) \
@@ -493,12 +511,11 @@ supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, 
 
 }
 
+
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value_changed_delayed_cb(void *timer_arg) {
 	
-	if ( devconn->srpc != NULL
-		 && devconn->registered == 1 ) {
-
+	if ( supla_esp_devconn_is_registered() ) {
 		srpc_ds_async_channel_value_changed(devconn->srpc, ((channel_value_delayed*)timer_arg)->channel_number, ((channel_value_delayed*)timer_arg)->value);
 	}
 	
@@ -1394,7 +1411,7 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 	//supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
-	if ( devconn->registered == 1
+	if ( supla_esp_devconn_is_registered() == 1
 		 && devconn->server_activity_timeout > 0
 		 && devconn->srpc != NULL ) {
 
@@ -1424,5 +1441,10 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 	}
 }
 
+#ifdef ELECTRICITY_METER
+void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *ev) {
+
+}
+#endif /*ELECTRICITY_METER*/
 
 
