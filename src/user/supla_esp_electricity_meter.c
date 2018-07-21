@@ -74,11 +74,11 @@ void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(TElectricityMeter_Ext
 	TElectricityMeter_Value v;
 	memset(&v, 0, sizeof(TElectricityMeter_Value));
 	
-	unsigned _supla_int64_t fae_sum = ev->forward_active_energy_sum[0] +
-	                                  ev->forward_active_energy_sum[1] +
-	                                  ev->forward_active_energy_sum[2];
+	unsigned _supla_int64_t fae_sum = ev->total_forward_active_energy[0] +
+	                                  ev->total_forward_active_energy[1] +
+	                                  ev->total_forward_active_energy[2];
 	
-	v.forward_active_energy_sum = fae_sum/1000;
+	v.total_forward_active_energy = fae_sum/1000;
 													  
 	if (ev->m_count 
 			&& ev->measured_values & EM_VAR_VOLTAGE) {
