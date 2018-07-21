@@ -28,6 +28,7 @@
 #ifdef ELECTRICITY_METER
 
 ETSTimer supla_em_timer1;
+void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(TElectricityMeter_ExtendedValue *ev, char *value);
 
 void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
 	
@@ -36,11 +37,15 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
 	}
 	
 	unsigned char channel_number = 0;
+	char value[SUPLA_CHANNELVALUE_SIZE];
 	TElectricityMeter_ExtendedValue ev;
 	memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
 	
 	while(channel_number < 100
 		  && supla_esp_board_get_measurements(channel_number, &ev) == 1) {
+
+		supla_esp_em_extendedvalue_to_value(&ev, value);
+		supla_esp_channel_value__changed(channel_number, value);
 		supla_esp_channel_em_value_changed(channel_number, &ev);
 		memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
 		channel_number++;
@@ -55,7 +60,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_init(void) {
 void ICACHE_FLASH_ATTR supla_esp_em_start(void) {
 	os_timer_disarm(&supla_em_timer1);
 	os_timer_setfn(&supla_em_timer1, (os_timer_func_t *)supla_esp_em_on_timer, NULL);
-	os_timer_arm(&supla_em_timer1, 10000, 1);
+	os_timer_arm(&supla_em_timer1, 5000, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_em_device_registered(void) {
