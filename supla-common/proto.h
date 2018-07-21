@@ -762,16 +762,15 @@ typedef struct {
 
 typedef struct {
   // 3 phases
-  unsigned _supla_int_t freq;                            // * 0.01 Hz
-  unsigned _supla_int_t voltage[3];                      // * 0.01 V
-  unsigned _supla_int_t current[3];                      // * 0.001 A
-  unsigned _supla_int_t power_active[3];                 // * 0.00001 W
-  _supla_int_t power_reactive[3];                        // * 0.00001 var
-  unsigned _supla_int_t power_apparent[3];               // * 0.00001 VA
-  _supla_int_t power_factor[3];                          // * 0.001
-  unsigned _supla_int_t phase_angle[3];                  // * 0.00001 kW
-  unsigned _supla_int64_t forward_active_energy[3];      // * 0.00001 kW
-} TElectricityMeter_Measurement;  // v. >= 10
+  unsigned _supla_int_t freq;                          // * 0.01 Hz
+  unsigned _supla_int_t voltage[3];                    // * 0.01 V
+  unsigned _supla_int_t current[3];                    // * 0.001 A
+  unsigned _supla_int_t power_active[3];               // * 0.00001 kW
+  _supla_int_t power_reactive[3];                      // * 0.00001 kvar
+  unsigned _supla_int_t power_apparent[3];             // * 0.00001 kVA
+  _supla_int_t power_factor[3];                        // * 0.001
+  unsigned _supla_int_t phase_angle[3];                // * 0.00001 
+} TElectricityMeter_Measurement;                       // v. >= 10
 
 #define EM_VAR_FREQ 0x0001
 #define EM_VAR_VOLTAGE 0x0002
@@ -782,13 +781,20 @@ typedef struct {
 #define EM_VAR_POWER_FACTOR 0x0040
 #define EM_VAR_PHASE_ANGLE 0x0080
 #define EM_VAR_FORWARD_ACTIVE_ENERGY 0x0100
+#define EM_VAR_REVERSE_ACTIVE_ENERGY 0x0200
+#define EM_VAR_FORWARD_REACTIVE_ENERGY 0x0400
+#define EM_VAR_REVERSE_REACTIVE_ENERGY 0x0800
 #define EM_VAR_ALL 0xFFFF
 
-#define EM_MEASUREMENT_COUNT 10
+#define EM_MEASUREMENT_COUNT 5
 
 typedef struct {
-   unsigned _supla_int64_t forward_active_energy_sum[3];  // * 0.00001 kW
-	  
+
+  unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kW
+  unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kW
+  unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvar
+  unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvar
+ 
   _supla_int_t measured_values;
   _supla_int_t period;  // Approximate period between measurements in seconds
   _supla_int_t m_count;
@@ -802,7 +808,7 @@ typedef struct {
 
 typedef struct {
   char flags;
-  unsigned _supla_int_t forward_active_energy_sum;  // * 0.01 kW
+  unsigned _supla_int_t total_forward_active_energy;  // * 0.01 kW
 } TElectricityMeter_Value;
 
 #pragma pack(pop)
