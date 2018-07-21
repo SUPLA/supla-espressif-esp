@@ -80,10 +80,9 @@ typedef struct {
 
 	char laststate[STATE_MAXSIZE];
 
-	char autoconnect;
-
 	unsigned int last_response;
 	unsigned int last_sent;
+	unsigned int next_wd_soft_timeout_challenge;
 	int server_activity_timeout;
 
 	uint8 last_wifi_status;
@@ -139,9 +138,9 @@ devconn_smooth smooth[SMOOTH_MAX_COUNT];
 
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_timer1_cb(void *timer_arg);
-void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(char autoconnect);
-void DEVCONN_ICACHE_FLASH supla_esp_srpc_free(void);
+void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_system_restart(void) {
@@ -149,7 +148,8 @@ supla_esp_devconn_system_restart(void) {
     if ( supla_esp_cfgmode_started() == 0 ) {
 
     	os_timer_disarm(&devconn->supla_watchdog_timer);
-    	supla_esp_srpc_free();
+    	os_timer_disarm(&devconn->supla_devconn_timer1);
+    	os_timer_disarm(&devconn->supla_iterate_timer);
 
 		#ifdef BOARD_GPIO_BEFORE_REBOOT
 		supla_esp_board_before_reboot();
@@ -446,7 +446,6 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		break;
 	}
 
-	devconn->autoconnect = 0;
 	supla_esp_devconn_stop();
 }
 
@@ -1113,16 +1112,8 @@ supla_esp_devconn_iterate(void *timer_arg) {
 
 }
 
-
 void DEVCONN_ICACHE_FLASH
 supla_esp_srpc_free(void) {
-
-	os_timer_disarm(&devconn->supla_iterate_timer);
-
-	devconn->registered = 0;
-	devconn->last_response = 0;
-	devconn->last_sent = 0;
-
 	if ( devconn->srpc != NULL ) {
 		srpc_free(devconn->srpc);
 		devconn->srpc = NULL;
@@ -1161,31 +1152,22 @@ supla_espconn_disconnect(struct espconn *espconn) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_connect_cb(void *arg) {
-	//supla_log(LOG_DEBUG, "devconn_connect_cb\r\n");
-	supla_esp_srpc_init();	
-	devconn->autoconnect = 1;
+	supla_log(LOG_DEBUG, "devconn_connect_cb");
+	supla_esp_srpc_init();
 }
 
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_disconnect_cb(void *arg){
-	//supla_log(LOG_DEBUG, "devconn_disconnect_cb\r\n");
-
-	devconn->autoconnect = 1;
-
-	 if ( supla_esp_cfgmode_started() == 0
-		  && supla_esp_devconn_update_started() == 0 ) {
-
-			supla_esp_srpc_free();
-			supla_esp_wifi_check_status(devconn->autoconnect);
-
-	 }
-
+	supla_log(LOG_DEBUG, "devconn_disconnect_cb");
+    supla_esp_devconn_reconnect();
 }
 
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
+
+	supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
 
 	if ( ip == NULL ) {
 		supla_esp_set_state(LOG_NOTICE, "Domain not found.");
@@ -1206,11 +1188,6 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 		devconn->ESPConn.proto.tcp->remote_port = 2015;
 	#else
 		devconn->ESPConn.proto.tcp->remote_port = 2016;
-
-		//espconn_secure_set_size(2, 0);
-		//espconn_secure_set_size(1, 3072);
-		//supla_log(LOG_DEBUG, "getsize: %i, %i, %i", espconn_secure_get_size(1), espconn_secure_get_size(2), espconn_secure_get_size(3));
-
 	#endif
 
 	espconn_regist_recvcb(&devconn->ESPConn, supla_esp_devconn_recv_cb);
@@ -1224,8 +1201,7 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_resolvandconnect(void) {
 
-	devconn->autoconnect = 0;
-
+	supla_log(LOG_DEBUG, "supla_esp_devconn_resolvandconnect");
 	supla_espconn_disconnect(&devconn->ESPConn);
 
 	uint32_t _ip = ipaddr_addr(supla_esp_cfg.Server);
@@ -1249,9 +1225,19 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 
 			unsigned int t = system_get_time();
 
-			if ( t > devconn->last_response && t-devconn->last_response > WATCHDOG_TIMEOUT ) {
-				supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
-				supla_esp_devconn_system_restart();
+			if ( t > devconn->last_response ) {
+				if ( t-devconn->last_response > WATCHDOG_TIMEOUT ) {
+					supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
+					supla_esp_devconn_system_restart();
+				} else {
+					unsigned int t2 = abs((t-devconn->last_response)/1000000);
+					if ( t2 >= WATCHDOG_SOFT_TIMEOUT
+						 && t2 > devconn->server_activity_timeout
+						 && t > devconn->next_wd_soft_timeout_challenge ) {
+						supla_log(LOG_DEBUG, "WATCHDOG SOFT TIMEOUT");
+						supla_esp_devconn_reconnect();
+					}
+				}
 			}
 
 	 }
@@ -1291,31 +1277,21 @@ supla_esp_devconn_before_update_start(void) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_init(void) {
 
-	if ( devconn == NULL ) {
-		devconn = (devconn_params*)malloc(sizeof(devconn_params));
-		memset(devconn, 0, sizeof(devconn_params));
-	}
-
-
+	devconn = (devconn_params*)malloc(sizeof(devconn_params));
+	memset(devconn, 0, sizeof(devconn_params));
 	memset(&devconn->ESPConn, 0, sizeof(struct espconn));
 	memset(&devconn->ESPTCP, 0, sizeof(esp_tcp));
 	
-	devconn->last_response = 0;
-	devconn->last_sent = 0;
-	devconn->autoconnect = 1;
-	devconn->last_wifi_status = STATION_GOT_IP+1;
-
-	ets_snprintf(devconn->laststate, STATE_MAXSIZE, "WiFi - Connecting...");
-	//sys_wait_for_restart = 0;
-
 	os_timer_disarm(&devconn->supla_watchdog_timer);
 	os_timer_setfn(&devconn->supla_watchdog_timer, (os_timer_func_t *)supla_esp_devconn_watchdog_cb, NULL);
 	os_timer_arm(&devconn->supla_watchdog_timer, 1000, 1);
-
 }
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_start(void) {
+
+	devconn->last_wifi_status = STATION_GOT_IP+1;
+	ets_snprintf(devconn->laststate, STATE_MAXSIZE, "WiFi - Connecting...");
 	
 	wifi_station_disconnect();
 	
@@ -1352,8 +1328,27 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_stop(void) {
 	
 	os_timer_disarm(&devconn->supla_devconn_timer1);
+	os_timer_disarm(&devconn->supla_iterate_timer);
+
 	supla_espconn_disconnect(&devconn->ESPConn);
-	supla_esp_wifi_check_status(0);
+	supla_esp_wifi_check_status();
+
+	devconn->registered = 0;
+	supla_esp_srpc_free();
+
+}
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_devconn_reconnect(void) {
+
+	devconn->next_wd_soft_timeout_challenge = system_get_time() + WATCHDOG_SOFT_TIMEOUT*1000000;
+
+    if ( supla_esp_cfgmode_started() == 0
+		  && supla_esp_devconn_update_started() == 0 ) {
+
+			supla_esp_devconn_stop();
+			supla_esp_devconn_start();
+	 }
 }
 
 char * DEVCONN_ICACHE_FLASH
@@ -1362,13 +1357,15 @@ supla_esp_devconn_laststate(void) {
 }
 
 void DEVCONN_ICACHE_FLASH
-supla_esp_wifi_check_status(char autoconnect) {
+supla_esp_wifi_check_status(void) {
 
 	uint8 status = wifi_station_get_connect_status();
 
-	if ( status != devconn->last_wifi_status )
-		supla_log(LOG_DEBUG, "WiFi Status: %i", status);
+	if (devconn->last_wifi_status == status) {
+		return;
+	}
 
+	supla_log(LOG_DEBUG, "WiFi Status: %i", status);
 	devconn->last_wifi_status = status;
 
 	if ( STATION_GOT_IP == status ) {
@@ -1376,11 +1373,8 @@ supla_esp_wifi_check_status(char autoconnect) {
 		if ( devconn->srpc == NULL ) {
 
 			supla_esp_gpio_state_ipreceived();
-
-			 if ( autoconnect == 1 )
-				 supla_esp_devconn_resolvandconnect();
+			supla_esp_devconn_resolvandconnect();
 		}
-
 
 	} else {
 
@@ -1403,7 +1397,7 @@ supla_esp_wifi_check_status(char autoconnect) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_timer1_cb(void *timer_arg) {
 
-	supla_esp_wifi_check_status(devconn->autoconnect);
+	supla_esp_wifi_check_status();
 
 	unsigned int t1;
 	unsigned int t2;
@@ -1423,8 +1417,7 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 		    	supla_log(LOG_DEBUG, "Activity timeout %i, %i, %i, %i",  t1, devconn->last_response, (t1-devconn->last_response)/1000000, devconn->server_activity_timeout+10);
 
-		    	supla_esp_srpc_free();
-		    	supla_esp_wifi_check_status(devconn->autoconnect);
+		    	supla_esp_devconn_reconnect();
 
 		    } else if ( ( t2 >= (devconn->server_activity_timeout-5)
 		    		      && t2 <= devconn->server_activity_timeout )
