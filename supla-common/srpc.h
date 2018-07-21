@@ -236,6 +236,13 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_channel_value_b(
     void *_srpc, TCS_SuplaChannelNewValue_B *value);
 #endif /*SRPC_EXCLUDE_CLIENT*/
 
+#ifndef SRPC_EXCLUDE_EXTENDEDVALUE_TOOLS
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_emextended2extended(
+    TElectricityMeter_ExtendedValue *em_ev, TSuplaChannelExtendedValue *ev);
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2emextended(
+		TSuplaChannelExtendedValue *ev, TElectricityMeter_ExtendedValue *em_ev);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

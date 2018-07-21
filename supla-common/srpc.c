@@ -632,8 +632,7 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
                   sizeof(TDS_SuplaDeviceChannelValue));
 
         break;
-        
-        
+
       case SUPLA_DS_CALL_DEVICE_CHANNEL_EXTENDEDVALUE_CHANGED:
 
         if (srpc->sdp.data_size <= sizeof(TDS_SuplaDeviceChannelExtendedValue))
@@ -1477,3 +1476,55 @@ srpc_cs_async_set_value(void *_srpc, TCS_SuplaNewValue *value) {
 }
 
 #endif /*SRPC_EXCLUDE_CLIENT*/
+
+#ifndef SRPC_EXCLUDE_EXTENDEDVALUE_TOOLS
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_emextended2extended(
+    TElectricityMeter_ExtendedValue *em_ev, TSuplaChannelExtendedValue *ev) {
+  if (em_ev == NULL || ev == NULL || em_ev->m_count > EM_MEASUREMENT_COUNT) {
+    return 0;
+  }
+
+  memset(ev, 0, sizeof(TSuplaChannelExtendedValue));
+  ev->type = EV_TYPE_ELECTRICITY_METER_MEASUREMENT_V1;
+
+  ev->size = sizeof(TElectricityMeter_ExtendedValue) -
+             sizeof(TElectricityMeter_Measurement) * EM_MEASUREMENT_COUNT +
+             sizeof(TElectricityMeter_Measurement) * em_ev->m_count;
+
+  if (ev->size > 0 && ev->size <= SUPLA_CHANNELEXTENDEDVALUE_SIZE) {
+    memcpy(ev->value, em_ev, ev->size);
+    return 1;
+  }
+
+  ev->size = 0;
+  return 0;
+}
+
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2emextended(
+    TSuplaChannelExtendedValue *ev, TElectricityMeter_ExtendedValue *em_ev) {
+  if (em_ev == NULL || ev == NULL ||
+      ev->type != EV_TYPE_ELECTRICITY_METER_MEASUREMENT_V1 || ev->size == 0 ||
+      ev->size > sizeof(TElectricityMeter_ExtendedValue)) {
+    return 0;
+  }
+
+  memset(em_ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+  memcpy(em_ev, ev->value, ev->size);
+
+  _supla_int_t expected_size = 0;
+
+  if (em_ev->m_count <= EM_MEASUREMENT_COUNT) {
+    expected_size =
+        sizeof(TElectricityMeter_ExtendedValue) -
+        sizeof(TElectricityMeter_Measurement) * EM_MEASUREMENT_COUNT +
+        sizeof(TElectricityMeter_Measurement) * em_ev->m_count;
+  }
+
+  if (ev->size != expected_size) {
+    memset(em_ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+    return 0;
+  }
+
+  return 1;
+}
+#endif
