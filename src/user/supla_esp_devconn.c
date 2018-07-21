@@ -45,7 +45,6 @@
 #include "supla_update.h"
 #endif
 
-#define SEND_BUFFER_SIZE 500
 #define CVD_MAX_COUNT 4
 
 typedef struct {
@@ -1152,14 +1151,14 @@ supla_espconn_disconnect(struct espconn *espconn) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_connect_cb(void *arg) {
-	supla_log(LOG_DEBUG, "devconn_connect_cb");
+	//supla_log(LOG_DEBUG, "devconn_connect_cb");
 	supla_esp_srpc_init();
 }
 
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_disconnect_cb(void *arg){
-	supla_log(LOG_DEBUG, "devconn_disconnect_cb");
+	//supla_log(LOG_DEBUG, "devconn_disconnect_cb");
     supla_esp_devconn_reconnect();
 }
 
@@ -1167,7 +1166,7 @@ supla_esp_devconn_disconnect_cb(void *arg){
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 
-	supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
+	//supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
 
 	if ( ip == NULL ) {
 		supla_esp_set_state(LOG_NOTICE, "Domain not found.");
@@ -1201,7 +1200,7 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_resolvandconnect(void) {
 
-	supla_log(LOG_DEBUG, "supla_esp_devconn_resolvandconnect");
+	//supla_log(LOG_DEBUG, "supla_esp_devconn_resolvandconnect");
 	supla_espconn_disconnect(&devconn->ESPConn);
 
 	uint32_t _ip = ipaddr_addr(supla_esp_cfg.Server);
@@ -1435,8 +1434,10 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 }
 
 #ifdef ELECTRICITY_METER
-void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *ev) {
-
+void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev) {
+	TSuplaChannelExtendedValue ev;
+	srpc_evtool_v1_emextended2extended(em_ev, &ev);
+	supla_esp_channel_extendedvalue_changed(channel_number, &ev);
 }
 #endif /*ELECTRICITY_METER*/
 
