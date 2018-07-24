@@ -1132,6 +1132,8 @@ supla_esp_srpc_init(void) {
 
 	devconn->srpc = srpc_init(&srpc_params);
 	
+	srpc_set_proto_version(devconn->srpc, ESP8266_SUPLA_PROTO_VERSION);
+
 	os_timer_setfn(&devconn->supla_iterate_timer, (os_timer_func_t *)supla_esp_devconn_iterate, NULL);
 	os_timer_arm(&devconn->supla_iterate_timer, 100, 1);
 
