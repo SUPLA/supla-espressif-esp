@@ -71,7 +71,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(TElectricityMeter_Ext
 	
 	memset(value, 0, SUPLA_CHANNELVALUE_SIZE);	
 			
-	if (sizeof(TElectricityMeter_Value) <= SUPLA_CHANNELVALUE_SIZE) {
+	if (sizeof(TElectricityMeter_Value) > SUPLA_CHANNELVALUE_SIZE) {
 		return;
 	}
 	
