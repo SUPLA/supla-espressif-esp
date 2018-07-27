@@ -58,7 +58,7 @@ _supla_esp_save_state(void *timer_arg) {
 	spi_flash_erase_sector(CFG_SECTOR+STATE_SECTOR_OFFSET);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_write((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
-		//supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
+		supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
 		ets_intr_unlock();
 		return;
 	}
@@ -133,9 +133,10 @@ char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_ready_to_connect(void) {
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_init(void) {
 
-	char TAG[6] = {'S','U','P','L','A', 6}; // 6 == v6
+	char TAG[6] = {'S','U','P','L','A', 7}; // 7 == v7
 	char mac[6];
 	int a;
+	char migrated = 0;
 
 	char AuthKey[SUPLA_AUTHKEY_SIZE];
 	memset(AuthKey, 0, SUPLA_AUTHKEY_SIZE);
@@ -143,39 +144,135 @@ supla_esp_cfg_init(void) {
 	char GUID[SUPLA_GUID_SIZE];
 	memset(GUID, 0, SUPLA_GUID_SIZE);
 
+	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
+
 	os_timer_disarm(&supla_esp_cfg_timer1);
 
 	if ( SPI_FLASH_RESULT_OK == spi_flash_read(CFG_SECTOR * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_cfg, sizeof(SuplaEspCfg)) ) {
-	   if ( memcmp(supla_esp_cfg.TAG, TAG, 6) == 0
-			&& memcmp(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE) != 0
-			&& memcmp(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE) != 0 ) {
+		if (memcmp(supla_esp_cfg.TAG, TAG, 5) == 0) {
+			if (supla_esp_cfg.TAG[5] == 5 && sizeof(SuplaEspCfg_old_v5B) <= sizeof(SuplaEspCfg)) {
 
-		   supla_log(LOG_DEBUG, "CFG READ SUCCESS!");
+				SuplaEspCfg_old_v5A *oldA = (SuplaEspCfg_old_v5A*)&supla_esp_cfg;
+				SuplaEspCfg_old_v5B *oldB = (SuplaEspCfg_old_v5B*)&supla_esp_cfg;
+				SuplaEspCfg new;
+				memset(&new, 0, sizeof(SuplaEspCfg));
+				memcpy(new.TAG, TAG, 6);
+				new.TAG[5] = 6;
 
-		   /*
-		   supla_log(LOG_DEBUG, "SSID: %s", supla_esp_cfg.WIFI_SSID);
-		   //supla_log(LOG_DEBUG, "Wifi PWD: %s", supla_esp_cfg.WIFI_PWD);
-		   supla_log(LOG_DEBUG, "SVR: %s", supla_esp_cfg.Server);
-		   supla_log(LOG_DEBUG, "Location ID: %i", supla_esp_cfg.LocationID);
-		   //supla_log(LOG_DEBUG, "Location PWD: %s", supla_esp_cfg.LocationPwd);
-		   supla_log(LOG_DEBUG, "CFG BUTTON TYPE: %s", supla_esp_cfg.CfgButtonType == BTN_TYPE_MONOSTABLE ? "button" : "switch");
+				memcpy(new.GUID, oldB->GUID, SUPLA_GUID_SIZE);
+				memcpy(new.Server, oldB->Server, SERVER_MAXSIZE);
+				new.LocationID = oldB->LocationID;
+				memcpy(new.LocationPwd, oldB->LocationPwd, SUPLA_LOCATION_PWD_MAXSIZE);
 
-		   supla_log(LOG_DEBUG, "BUTTON1 TYPE: %s", supla_esp_cfg.Button1Type == BTN_TYPE_MONOSTABLE ? "button" : "switch");
-		   supla_log(LOG_DEBUG, "BUTTON2 TYPE: %s", supla_esp_cfg.Button2Type == BTN_TYPE_MONOSTABLE ? "button" : "switch");
-		   
-		   supla_log(LOG_DEBUG, "LedOff: %i", supla_esp_cfg.StatusLedOff);
-		   supla_log(LOG_DEBUG, "InputCfgTriggerOff: %i", supla_esp_cfg.InputCfgTriggerOff);
-		   */
+				memcpy(new.WIFI_SSID, oldB->WIFI_SSID, WIFI_SSID_MAXSIZE);
+				memcpy(new.WIFI_PWD, oldB->WIFI_PWD, WIFI_PWD_MAXSIZE);
 
-			if ( SPI_FLASH_RESULT_OK == spi_flash_read((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
-			    supla_log(LOG_DEBUG, "STATE READ SUCCESS!");
-			} else {
-				supla_log(LOG_DEBUG, "STATE READ FAIL!");
+				new.CfgButtonType = oldB->CfgButtonType ;
+				new.Button1Type = oldB->Button1Type;
+				new.Button2Type = oldB->Button2Type;
+
+				new.StatusLedOff = oldB->StatusLedOff;
+				new.InputCfgTriggerOff = oldB->InputCfgTriggerOff;
+
+				new.FirmwareUpdate = oldB->FirmwareUpdate;
+				new.Test = oldB->Test;
+
+				if (memcmp(oldB->AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE) == 0
+					|| (strchr(oldA->Email, '@') && strchr(oldA->Email, '.')
+							&& (strchr(oldB->Email, '@') == NULL || strchr(oldB->Email, '.') == NULL) ) ) {
+						supla_log(LOG_DEBUG, "CONFIG MIGRATION 5A->6");
+					memcpy(new.AuthKey, oldA->AuthKey, SUPLA_AUTHKEY_SIZE);
+					memcpy(new.Email, oldA->Email, SUPLA_EMAIL_MAXSIZE);
+					new.UpsideDown = oldA->UpsideDown;
+
+					memcpy(&new.Time1, &oldA->FullOpeningTime, sizeof(int)*2);
+					memcpy(&new.Time2, &oldA->FullClosingTime, sizeof(int)*2);
+					new.Trigger = 0;
+
+				} else {
+					supla_log(LOG_DEBUG, "CONFIG MIGRATION 5B->6");
+					memcpy(new.AuthKey, oldB->AuthKey, SUPLA_AUTHKEY_SIZE);
+					memcpy(new.Email, oldB->Email, SUPLA_EMAIL_MAXSIZE);
+
+					new.UpsideDown = oldB->UpsideDown;
+
+					memcpy(&new.Time1, &oldB->Time1, sizeof(int)*2);
+					memcpy(&new.Time2, &oldB->Time2, sizeof(int)*2);
+
+				    new.Trigger = oldB->Trigger;
+				}
+
+
+			    memcpy(&supla_esp_cfg, &new, sizeof(SuplaEspCfg));
+
+			    migrated = 1;
+
+			    supla_log(LOG_DEBUG, "Test 2=%i",  memcmp(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE));
+			    supla_log(LOG_DEBUG, "Test 3=%i",  memcmp(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE));
 			}
 
-		   return 1;
-	   }
+			if (supla_esp_cfg.TAG[5] == 6 && sizeof(SuplaEspCfg_old_v6) <= sizeof(SuplaEspCfg)) {
+
+			    supla_log(LOG_DEBUG, "CONFIG MIGRATION 6->7");
+
+				SuplaEspCfg_old_v6 *old = (SuplaEspCfg_old_v6*)&supla_esp_cfg;
+				SuplaEspCfg new;
+				memcpy(&new, old, sizeof(SuplaEspCfg_old_v6));
+				new.TAG[5] = 7;
+
+				memset(&new.Time1, 0, sizeof(int)*CFG_TIME1_COUNT);
+				memset(&new.Time2, 0, sizeof(int)*CFG_TIME2_COUNT);
+
+				new.Time1[0] = old->Time1[0];
+				new.Time1[1] = old->Time1[1];
+				new.Time2[0] = old->Time2[0];
+				new.Time2[1] = old->Time2[1];
+
+				new.Trigger = old->Trigger;
+				memcpy(&supla_esp_cfg, &new, sizeof(SuplaEspCfg));
+
+				migrated = 1;
+			}
+
+			if (migrated) {
+				memset(supla_esp_cfg.zero, 0, sizeof(supla_esp_cfg.zero));
+				supla_esp_cfg_save(&supla_esp_cfg);
+	         	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+		        supla_esp_save_state(0);
+			}
+		}
 	}
+
+   if ( memcmp(supla_esp_cfg.TAG, TAG, 6) == 0
+		&& memcmp(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE) != 0
+		&& memcmp(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE) != 0 ) {
+
+	   supla_log(LOG_DEBUG, "CFG READ SUCCESS!");
+
+	   /*
+	   supla_log(LOG_DEBUG, "SSID: %s", supla_esp_cfg.WIFI_SSID);
+	   //supla_log(LOG_DEBUG, "Wifi PWD: %s", supla_esp_cfg.WIFI_PWD);
+	   supla_log(LOG_DEBUG, "SVR: %s", supla_esp_cfg.Server);
+	   supla_log(LOG_DEBUG, "Location ID: %i", supla_esp_cfg.LocationID);
+	   //supla_log(LOG_DEBUG, "Location PWD: %s", supla_esp_cfg.LocationPwd);
+	   supla_log(LOG_DEBUG, "CFG BUTTON TYPE: %s", supla_esp_cfg.CfgButtonType == BTN_TYPE_MONOSTABLE ? "button" : "switch");
+
+	   supla_log(LOG_DEBUG, "BUTTON1 TYPE: %s", supla_esp_cfg.Button1Type == BTN_TYPE_MONOSTABLE ? "button" : "switch");
+	   supla_log(LOG_DEBUG, "BUTTON2 TYPE: %s", supla_esp_cfg.Button2Type == BTN_TYPE_MONOSTABLE ? "button" : "switch");
+
+	   supla_log(LOG_DEBUG, "LedOff: %i", supla_esp_cfg.StatusLedOff);
+	   supla_log(LOG_DEBUG, "InputCfgTriggerOff: %i", supla_esp_cfg.InputCfgTriggerOff);
+	   */
+
+		if ( SPI_FLASH_RESULT_OK == spi_flash_read((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
+			supla_log(LOG_DEBUG, "STATE READ SUCCESS!");
+		} else {
+			supla_log(LOG_DEBUG, "STATE READ FAIL!");
+		}
+
+	   return 1;
+   }
+
 
 	factory_defaults(0);
 	supla_esp_cfg.Test = 0;

@@ -65,6 +65,93 @@ typedef struct {
 
 typedef struct {
 
+	char TAG[6];
+	char GUID[SUPLA_GUID_SIZE];
+    char AuthKey[SUPLA_AUTHKEY_SIZE];
+
+	char Server[SERVER_MAXSIZE];
+	char Email[SUPLA_EMAIL_MAXSIZE];
+
+	int LocationID;
+    char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
+
+    char WIFI_SSID[WIFI_SSID_MAXSIZE];
+    char WIFI_PWD[WIFI_PWD_MAXSIZE];
+
+    char CfgButtonType;
+    char Button1Type;
+    char Button2Type;
+
+    char StatusLedOff;
+    char InputCfgTriggerOff;
+
+    char FirmwareUpdate;
+    char Test;
+
+    char UpsideDown;
+
+    unsigned int Time1[2];
+    unsigned int Time2[2];
+
+    char Trigger;
+
+    char zero[200];
+
+}SuplaEspCfg_old_v6;
+
+typedef struct {
+
+	char TAG[6];
+	char GUID[SUPLA_GUID_SIZE];
+	char Server[SERVER_MAXSIZE];
+	int LocationID;
+    char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
+    char WIFI_SSID[WIFI_SSID_MAXSIZE];
+    char WIFI_PWD[WIFI_PWD_MAXSIZE];
+    char CfgButtonType;
+    char Button1Type;
+    char Button2Type;
+    char StatusLedOff;
+    char InputCfgTriggerOff;
+    char FirmwareUpdate;
+    char Test;
+    char Email[SUPLA_EMAIL_MAXSIZE];
+    char AuthKey[SUPLA_AUTHKEY_SIZE];
+    char UpsideDown;
+    unsigned int Time1[2];
+    unsigned int Time2[2];
+    char Trigger;
+    char zero[200];
+
+}SuplaEspCfg_old_v5B;
+
+typedef struct {
+
+	char TAG[6];
+	char GUID[SUPLA_GUID_SIZE];
+	char Server[SERVER_MAXSIZE];
+	int LocationID;
+    char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
+    char WIFI_SSID[WIFI_SSID_MAXSIZE];
+    char WIFI_PWD[WIFI_PWD_MAXSIZE];
+    char CfgButtonType;
+    char Button1Type;
+    char Button2Type;
+    char StatusLedOff;
+    char InputCfgTriggerOff;
+    char FirmwareUpdate;
+    char Test;
+    unsigned int FullOpeningTime[2];
+    unsigned int FullClosingTime[2];
+    char Email[SUPLA_EMAIL_MAXSIZE];
+    char AuthKey[SUPLA_AUTHKEY_SIZE];
+    char UpsideDown;
+    char zero[200];
+
+}SuplaEspCfg_old_v5A;
+
+typedef struct {
+
 	char Relay[RELAY_MAX_COUNT];
 
     int color[4];

@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.0"
+#define SUPLA_ESP_SOFTVER "2.7.1"
 
 #ifndef ESP8266_SUPLA_PROTO_VERSION
 #define ESP8266_SUPLA_PROTO_VERSION SUPLA_PROTO_VERSION
@@ -63,7 +63,7 @@
 #endif /*RELAY_MAX_COUNT*/
 
 #ifndef RS_MAX_COUNT
-#define RS_MAX_COUNT            2
+#define RS_MAX_COUNT            8
 #endif /*RS_MAX_COUNT*/
 
 #ifndef RS_SAVE_STATE_DELAY
@@ -71,11 +71,11 @@
 #endif /*RS_SAVE_STATE_DELAY*/
 
 #ifndef CFG_TIME1_COUNT
-#define CFG_TIME1_COUNT         2
+#define CFG_TIME1_COUNT         8
 #endif /*CFG_TIME1_COUNT*/
 
 #ifndef CFG_TIME2_COUNT
-#define CFG_TIME2_COUNT         2
+#define CFG_TIME2_COUNT         8
 #endif /*CFG_TIME2_COUNT*/
 
 #ifndef SMOOTH_MAX_COUNT
