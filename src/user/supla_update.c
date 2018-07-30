@@ -76,6 +76,7 @@ typedef struct {
 
 static update_params *update = NULL;
 static char update_step;
+static unsigned int update_checking_start_time = 0;
 
 void supla_esp_update_init(void) {
 	
@@ -124,6 +125,7 @@ supla_esp_check_updates(void *srpc) {
 	
 	if ( update_step == FUPDT_STEP_CHECK ) {
 		update_step = FUPDT_STEP_CHECKING;
+		update_checking_start_time = system_get_time();
 
 		supla_esp_cfg.FirmwareUpdate = 0;
 		supla_esp_cfg_save(&supla_esp_cfg);
@@ -570,7 +572,13 @@ supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result) {
 
 char ICACHE_FLASH_ATTR
 supla_esp_update_started(void) {
-	return update_step >= FUPDT_STEP_CHECKING ? 1 : 0;
+	if ( update_checking_start_time > 0 &&
+			system_get_time() - update_checking_start_time < UPDATE_TIMEOUT &&
+			update_step >= FUPDT_STEP_CHECKING ) {
+		return 1;
+	}
+
+	return 0;
 }
 
 #endif

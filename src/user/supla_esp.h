@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.1"
+#define SUPLA_ESP_SOFTVER "2.7.2"
 
 #ifndef ESP8266_SUPLA_PROTO_VERSION
 #define ESP8266_SUPLA_PROTO_VERSION SUPLA_PROTO_VERSION
@@ -147,6 +147,11 @@ void supla_esp_board_gpio_init(void);
 
 
 #ifdef __FOTA
+
+#ifndef UPDATE_TIMEOUT
+// 120 sec.
+#define UPDATE_TIMEOUT 120000000
+#endif /* UPDATE_TIMEOUT */
 
 #define RSA_NUM_BYTES 512
 #define RSA_PUBLIC_EXPONENT 65537
