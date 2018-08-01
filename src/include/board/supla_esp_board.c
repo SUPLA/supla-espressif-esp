@@ -117,6 +117,10 @@
 
 #include "board/acs_zam_slw_01.c"
 
+#elif defined(__BOARD_zam_slw_02)
+
+#include "board/acs_zam_slw_02.c"
+
 #elif defined(__BOARD_zam_pnw_01)
 
 #include "board/acs_zam_pnw_01.c"

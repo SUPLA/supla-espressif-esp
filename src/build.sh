@@ -168,6 +168,10 @@ case $1 in
       FLASH_SIZE="2048"
       FOTA=1
    ;;
+   "zam_slw_02")
+      FLASH_SIZE="2048"
+      FOTA=1
+   ;;
    "zam_mew_01") 
       FLASH_SIZE="2048"
       FOTA=1
