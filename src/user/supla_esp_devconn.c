@@ -896,19 +896,20 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 		if ( ColorBrightness > 100 )
 			ColorBrightness = 0;
 
-		if ( new_value->ChannelNumber == rgb_cn ) {
+		if (new_value->ChannelNumber < RS_MAX_COUNT) {
+			if ( new_value->ChannelNumber == rgb_cn ) {
 
-			supla_esp_state.color[new_value->ChannelNumber] = Color;
-			supla_esp_state.color_brightness[new_value->ChannelNumber] = ColorBrightness;
-			supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
+				supla_esp_state.color[new_value->ChannelNumber] = Color;
+				supla_esp_state.color_brightness[new_value->ChannelNumber] = ColorBrightness;
+				supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
 
-		} else if ( new_value->ChannelNumber == dimmer_cn
-				RGBW_CHANNEl_CMP ) {
+			} else if ( new_value->ChannelNumber == dimmer_cn
+					RGBW_CHANNEl_CMP ) {
 
-			supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
+				supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
 
+			}
 		}
-
 
 		supla_esp_channel_set_rgbw_value(new_value->ChannelNumber, Color, ColorBrightness, Brightness, 1, 1);
 		supla_esp_save_state(1000);

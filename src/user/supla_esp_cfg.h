@@ -154,9 +154,9 @@ typedef struct {
 
 	char Relay[RELAY_MAX_COUNT];
 
-    int color[4];
-    char color_brightness[4];
-    char brightness[4];
+    int color[RS_MAX_COUNT];
+    char color_brightness[RS_MAX_COUNT];
+    char brightness[RS_MAX_COUNT];
 
     int rs_position[RS_MAX_COUNT];
     

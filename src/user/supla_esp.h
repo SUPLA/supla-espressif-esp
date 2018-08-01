@@ -242,6 +242,10 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define RELAY_DOUBLE_TRY 10000
 #endif
 
+#ifndef RS_MAX_COUNT
+#define RS_MAX_COUNT 4
+#endif
+
 #ifndef RGBW_CHANNEl_CMP
 #define RGBW_CHANNEl_CMP
 #endif
