@@ -242,4 +242,12 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define RELAY_DOUBLE_TRY 10000
 #endif
 
+#ifndef RGBW_CHANNEl_CMP
+#define RGBW_CHANNEl_CMP
+#endif
+
+#ifndef RGBW_CHANNEL_LIMIT
+#define RGBW_CHANNEL_LIMIT if ( ChannelNumber >= 2 ) return;
+#endif
+
 #endif /* SUPLA_ESP_H_ */

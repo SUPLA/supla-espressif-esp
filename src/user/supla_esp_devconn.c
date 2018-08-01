@@ -800,8 +800,7 @@ _supla_esp_devconn_smooth_cb(void) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightness, char Brightness, char smoothly, char send_value_changed) {
 
-	if ( ChannelNumber >= 2 )
-		return;
+	RGBW_CHANNEL_LIMIT
 	
 	if ( ColorBrightness < 0 ) {
 		ColorBrightness = 0;
@@ -877,7 +876,8 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 	#endif
 
 	if ( new_value->ChannelNumber == rgb_cn
-			|| new_value->ChannelNumber == dimmer_cn ) {
+			|| new_value->ChannelNumber == dimmer_cn
+			RGBW_CHANNEl_CMP ) {
 
 		int Color = 0;
 		char ColorBrightness = 0;
@@ -902,7 +902,8 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 			supla_esp_state.color_brightness[0] = ColorBrightness;
 			supla_esp_state.brightness[0] = Brightness;
 
-		} else if ( new_value->ChannelNumber == dimmer_cn ) {
+		} else if ( new_value->ChannelNumber == dimmer_cn
+				RGBW_CHANNEl_CMP ) {
 
 			supla_esp_state.brightness[1] = Brightness;
 
