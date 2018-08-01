@@ -898,14 +898,14 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 		if ( new_value->ChannelNumber == rgb_cn ) {
 
-			supla_esp_state.color[0] = Color;
-			supla_esp_state.color_brightness[0] = ColorBrightness;
-			supla_esp_state.brightness[0] = Brightness;
+			supla_esp_state.color[new_value->ChannelNumber] = Color;
+			supla_esp_state.color_brightness[new_value->ChannelNumber] = ColorBrightness;
+			supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
 
 		} else if ( new_value->ChannelNumber == dimmer_cn
 				RGBW_CHANNEl_CMP ) {
 
-			supla_esp_state.brightness[1] = Brightness;
+			supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
 
 		}
 
