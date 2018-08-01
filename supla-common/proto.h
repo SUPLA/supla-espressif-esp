@@ -95,6 +95,8 @@ extern "C" {
 #define SUPLA_CHANNELGROUP_CAPTION_MAXSIZE 401      // ver. >= 9
 #define SUPLA_CHANNELVALUE_PACK_MAXCOUNT 20         // ver. >= 9
 #define SUPLA_CHANNELEXTENDEDVALUE_PACK_MAXCOUNT 5  // ver. >= 10
+#define SUPLA_CHANNELEXTENDEDVALUE_PACK_MAXDATASIZE (SUPLA_MAX_DATA_SIZE - 50)
+#define SUPLA_CHANNELCALIBRATION_PARAMETERS_SIZE 256  // ver. >= 10
 
 #ifndef SUPLA_CHANNELGROUP_RELATION_PACK_MAXCOUNT
 #define SUPLA_CHANNELGROUP_RELATION_PACK_MAXCOUNT 100  // ver. >= 9
@@ -143,6 +145,8 @@ extern "C" {
 #define SUPLA_SC_CALL_CHANNELVALUE_PACK_UPDATE 400           // ver. >= 9
 #define SUPLA_SC_CALL_CHANNELEXTENDEDVALUE_PACK_UPDATE 405   // ver. >= 10
 #define SUPLA_CS_CALL_SET_VALUE 410                          // ver. >= 9
+#define SUPLA_CS_CALL_CHANNEL_CALIBRATE 420                  // ver. >= 10
+#define SUPLA_SD_CALL_CHANNEL_CALIBRATE 430                  // ver. >= 10
 
 #define SUPLA_RESULT_CALL_NOT_ALLOWED -5
 #define SUPLA_RESULT_DATA_TOO_LARGE -4
@@ -504,8 +508,6 @@ typedef struct {
 
 typedef struct {
   // server -> client
-
-  char EOL;  // End Of List
   _supla_int_t Id;
 
   TSuplaChannelExtendedValue value;  // Last variable in struct!
@@ -528,8 +530,9 @@ typedef struct {
   _supla_int_t total_left;
   _supla_int_t pack_size;
 
-  char pack[SUPLA_MAX_DATA_SIZE - 50];  // Last variable in struct!
-} TSC_SuplaChannelExtendedValuePack;    // ver. >= 10
+  char pack[SUPLA_CHANNELEXTENDEDVALUE_PACK_MAXDATASIZE];  // Last variable in
+                                                           // struct!
+} TSC_SuplaChannelExtendedValuePack;                       // ver. >= 10
 
 typedef struct {
   // server -> client
@@ -762,15 +765,15 @@ typedef struct {
 
 typedef struct {
   // 3 phases
-  unsigned _supla_int_t freq;                          // * 0.01 Hz
-  unsigned _supla_int_t voltage[3];                    // * 0.01 V
-  unsigned _supla_int_t current[3];                    // * 0.001 A
-  unsigned _supla_int_t power_active[3];               // * 0.00001 kW
-  _supla_int_t power_reactive[3];                      // * 0.00001 kvar
-  unsigned _supla_int_t power_apparent[3];             // * 0.00001 kVA
-  _supla_int_t power_factor[3];                        // * 0.001
-  unsigned _supla_int_t phase_angle[3];                // * 0.00001 
-} TElectricityMeter_Measurement;                       // v. >= 10
+  unsigned _supla_int_t freq;               // * 0.01 Hz
+  unsigned _supla_int_t voltage[3];         // * 0.01 V
+  unsigned _supla_int_t current[3];         // * 0.001 A
+  unsigned _supla_int_t power_active[3];    // * 0.00001 kW
+  _supla_int_t power_reactive[3];           // * 0.00001 kvar
+  unsigned _supla_int_t power_apparent[3];  // * 0.00001 kVA
+  _supla_int_t power_factor[3];             // * 0.001
+  unsigned _supla_int_t phase_angle[3];     // * 0.00001
+} TElectricityMeter_Measurement;            // v. >= 10
 
 #define EM_VAR_FREQ 0x0001
 #define EM_VAR_VOLTAGE 0x0002
@@ -789,12 +792,11 @@ typedef struct {
 #define EM_MEASUREMENT_COUNT 5
 
 typedef struct {
-
   unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kW
   unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kW
   unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvar
   unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvar
- 
+
   _supla_int_t measured_values;
   _supla_int_t period;  // Approximate period between measurements in seconds
   _supla_int_t m_count;
@@ -810,6 +812,20 @@ typedef struct {
   char flags;
   unsigned _supla_int_t total_forward_active_energy;  // * 0.01 kW
 } TElectricityMeter_Value;
+
+typedef struct {
+  // server -> device
+  _supla_int_t SenderID;
+  unsigned char ChannelNumber;
+
+  char parameters[SUPLA_CHANNELCALIBRATION_PARAMETERS_SIZE];
+} TSD_SuplaChannelCalibrate;
+
+typedef struct {
+  // client -> server
+  _supla_int_t ChannelId;
+  char parameters[SUPLA_CHANNELCALIBRATION_PARAMETERS_SIZE];
+} TCS_SuplaChannelCalibrate;
 
 #pragma pack(pop)
 

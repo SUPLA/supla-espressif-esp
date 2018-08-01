@@ -111,6 +111,8 @@ union TsrpcDataPacketData {
   TSC_SuplaChannelValuePack *sc_channelvalue_pack;
   TSC_SuplaChannelExtendedValuePack *sc_channelextendedvalue_pack;
   TCS_SuplaNewValue *cs_new_value;
+  TSD_SuplaChannelCalibrate *sd_channel_calibrate;
+  TCS_SuplaChannelCalibrate *cs_channel_calibrate;
 };
 
 typedef struct {
@@ -186,6 +188,8 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_get_firmware_update_url(
     void *_srpc, TDS_FirmwareUpdateParams *result);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_get_firmware_update_url_result(
     void *_srpc, TSD_FirmwareUpdate_UrlResult *result);
+_supla_int_t SRPC_ICACHE_FLASH
+srpc_sd_async_channel_calibrate(void *_srpc, TSD_SuplaChannelCalibrate *params);
 #endif /*SRPC_EXCLUDE_DEVICE*/
 
 #ifndef SRPC_EXCLUDE_CLIENT
@@ -234,13 +238,15 @@ _supla_int_t SRPC_ICACHE_FLASH
 srpc_cs_async_set_value(void *_srpc, TCS_SuplaNewValue *value);  // ver. >= 9
 _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_channel_value_b(
     void *_srpc, TCS_SuplaChannelNewValue_B *value);
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_channel_calibrate(
+    void *_srpc, TCS_SuplaChannelCalibrate *params);
 #endif /*SRPC_EXCLUDE_CLIENT*/
 
 #ifndef SRPC_EXCLUDE_EXTENDEDVALUE_TOOLS
 _supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_emextended2extended(
     TElectricityMeter_ExtendedValue *em_ev, TSuplaChannelExtendedValue *ev);
 _supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2emextended(
-		TSuplaChannelExtendedValue *ev, TElectricityMeter_ExtendedValue *em_ev);
+    TSuplaChannelExtendedValue *ev, TElectricityMeter_ExtendedValue *em_ev);
 #endif
 
 #ifdef __cplusplus

@@ -36,9 +36,17 @@
 #include "espmissingincludes.h"
 #endif
 
+#ifndef SRPC_BUFFER_SIZE
 #define SRPC_BUFFER_SIZE 1024
+#endif /*SRPC_BUFFER_SIZE*/
+
+#ifndef SRPC_QUEUE_SIZE
 #define SRPC_QUEUE_SIZE 2
+#endif /*SRPC_QUEUE_SIZE*/
+
+#ifndef SRPC_QUEUE_MIN_ALLOC_COUNT
 #define SRPC_QUEUE_MIN_ALLOC_COUNT 2
+#endif /* SRPC_QUEUE_MIN_ALLOC_COUNT */
 
 #elif defined(__AVR__)
 
@@ -683,6 +691,13 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
         }
 
         break;
+
+      case SUPLA_SD_CALL_CHANNEL_CALIBRATE:
+        if (srpc->sdp.data_size == sizeof(TSD_SuplaChannelCalibrate))
+          rd->data.sd_channel_calibrate = (TSD_SuplaChannelCalibrate *)malloc(
+              sizeof(TSD_SuplaChannelCalibrate));
+        break;
+
 #endif /*#ifndef SRPC_EXCLUDE_DEVICE*/
 
 #ifndef SRPC_EXCLUDE_CLIENT
@@ -807,6 +822,14 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
         }
         break;
 
+      case SUPLA_SC_CALL_CHANNELEXTENDEDVALUE_PACK_UPDATE:
+        if (srpc->sdp.data_size <= sizeof(TSC_SuplaChannelExtendedValuePack)) {
+          rd->data.sc_channelextendedvalue_pack =
+              (TSC_SuplaChannelExtendedValuePack *)malloc(
+                  sizeof(TSC_SuplaChannelExtendedValuePack));
+        }
+        break;
+
       case SUPLA_CS_CALL_CHANNEL_SET_VALUE:
 
         if (srpc->sdp.data_size == sizeof(TCS_SuplaChannelNewValue))
@@ -839,6 +862,14 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
             srpc->sdp.data_size <= sizeof(TSC_SuplaEvent)) {
           rd->data.sc_event = (TSC_SuplaEvent *)malloc(sizeof(TSC_SuplaEvent));
         }
+
+        break;
+
+      case SUPLA_CS_CALL_CHANNEL_CALIBRATE:
+
+        if (srpc->sdp.data_size == sizeof(TCS_SuplaChannelCalibrate))
+          rd->data.cs_channel_calibrate = (TCS_SuplaChannelCalibrate *)malloc(
+              sizeof(TCS_SuplaChannelCalibrate));
 
         break;
 
@@ -931,6 +962,9 @@ srpc_call_min_version_required(void *_srpc, unsigned _supla_int_t call_type) {
       return 9;
 
     case SUPLA_DS_CALL_DEVICE_CHANNEL_EXTENDEDVALUE_CHANGED:
+    case SUPLA_SC_CALL_CHANNELEXTENDEDVALUE_PACK_UPDATE:
+    case SUPLA_SD_CALL_CHANNEL_CALIBRATE:
+    case SUPLA_CS_CALL_CHANNEL_CALIBRATE:
       return 10;
   }
 
@@ -1223,6 +1257,12 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_channel_extendedvalue_changed(
           (SUPLA_CHANNELEXTENDEDVALUE_SIZE - ncsc.value.size));
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_sd_async_channel_calibrate(
+    void *_srpc, TSD_SuplaChannelCalibrate *params) {
+  return srpc_async_call(_srpc, SUPLA_SD_CALL_CHANNEL_CALIBRATE, (char *)params,
+                         sizeof(TSD_SuplaChannelCalibrate));
+}
+
 #endif /*SRPC_EXCLUDE_DEVICE*/
 
 #ifndef SRPC_EXCLUDE_CLIENT
@@ -1443,6 +1483,20 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_channelvalue_pack_update(
                          (char *)channelvalue_pack, size);
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_channelextendedvalue_pack_update(
+    void *_srpc, TSC_SuplaChannelExtendedValuePack *extendedvalue_pack) {
+  if (extendedvalue_pack == NULL ||
+      extendedvalue_pack->count > SUPLA_CHANNELEXTENDEDVALUE_PACK_MAXCOUNT ||
+      extendedvalue_pack->pack_size >
+          SUPLA_CHANNELEXTENDEDVALUE_PACK_MAXDATASIZE) {
+    return 0;
+  }
+
+  return srpc_async_call(_srpc, SUPLA_SC_CALL_CHANNELEXTENDEDVALUE_PACK_UPDATE,
+                         (char *)extendedvalue_pack,
+                         extendedvalue_pack->pack_size);
+}
+
 _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_get_next(void *_srpc) {
   return srpc_async_call(_srpc, SUPLA_CS_CALL_GET_NEXT, NULL, 0);
 }
@@ -1473,6 +1527,12 @@ _supla_int_t SRPC_ICACHE_FLASH
 srpc_cs_async_set_value(void *_srpc, TCS_SuplaNewValue *value) {
   return srpc_async_call(_srpc, SUPLA_CS_CALL_SET_VALUE, (char *)value,
                          sizeof(TCS_SuplaNewValue));
+}
+
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_channel_calibrate(
+    void *_srpc, TCS_SuplaChannelCalibrate *params) {
+  return srpc_async_call(_srpc, SUPLA_CS_CALL_CHANNEL_CALIBRATE, (char *)params,
+                         sizeof(TCS_SuplaChannelCalibrate));
 }
 
 #endif /*SRPC_EXCLUDE_CLIENT*/
@@ -1527,4 +1587,5 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2emextended(
 
   return 1;
 }
+
 #endif
