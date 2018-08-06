@@ -301,6 +301,7 @@ supla_esp_cfg_init(void) {
 	}
 
 	a = SUPLA_GUID_SIZE > SUPLA_AUTHKEY_SIZE ? SUPLA_AUTHKEY_SIZE : SUPLA_GUID_SIZE;
+	a--;
 	for(;a>0;a--) {
 		supla_esp_cfg.AuthKey[a] += supla_esp_cfg.GUID[a];
 	}
