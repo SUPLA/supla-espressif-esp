@@ -1447,7 +1447,7 @@ char __supla_esp_gpio_relay_is_hi(supla_relay_cfg_t *relay_cfg) {
 
 	char result = supla_esp_gpio_output_is_hi(relay_cfg->gpio_id);
 
-	if ( supla_relay_cfg->flags &  RELAY_FLAG_LO_LEVEL_TRIGGER ) {
+	if ( relay_cfg->flags & RELAY_FLAG_LO_LEVEL_TRIGGER ) {
 		result = result == HI_VALUE ? LO_VALUE : HI_VALUE;
 	}
 
