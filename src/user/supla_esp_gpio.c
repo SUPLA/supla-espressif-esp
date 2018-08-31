@@ -1162,7 +1162,7 @@ supla_esp_gpio_init(void) {
 
     for (a=0; a<INPUT_MAX_COUNT; a++)
       if ( supla_input_cfg[a].gpio_id != 255
-    	    && supla_input_cfg[a].gpio_id <= 16
+    	    && supla_input_cfg[a].gpio_id < 16
     		&& supla_input_cfg[a].type != 0 ) {
 
     	//supla_log(LOG_DEBUG, "input init %i", supla_input_cfg[a].gpio_id);
