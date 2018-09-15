@@ -106,27 +106,37 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
 
-	supla_esp_channel_set_rgbw_value(0, supla_esp_state.color[0], supla_esp_state.color_brightness[0], supla_esp_state.brightness[0], 0, 0);
-	supla_esp_channel_set_rgbw_value(1, 0, 0, supla_esp_state.brightness[1], 0, 0);
+	supla_esp_channel_set_rgbw_value(0, supla_esp_state.color[0], supla_esp_state.color_brightness[0], 0, 0, 0);
+	supla_esp_channel_set_rgbw_value(1, 0, 0, supla_esp_state.brightness[0], 0, 0);
+	supla_esp_channel_set_rgbw_value(2, 0, 0, supla_esp_state.brightness[1], 0, 0);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 
-	*channel_count = 2;
-	channels[0].Type = SUPLA_CHANNELTYPE_DIMMERANDRGBLED;
-	supla_esp_channel_rgbw_to_value(channels[0].value, supla_esp_state.color[0], supla_esp_state.color_brightness[0], supla_esp_state.brightness[0]);
-
+	*channel_count = 3;
+	channels[0].Type = SUPLA_CHANNELTYPE_RGBLEDCONTROLLER;
+	supla_esp_channel_rgbw_to_value(channels[0].value, supla_esp_state.color[0], supla_esp_state.color_brightness[0], 0);
 
 	channels[1].Type = SUPLA_CHANNELTYPE_DIMMER;
 	channels[1].Number = 1;
-	supla_esp_channel_rgbw_to_value(channels[1].value, 0, 0, supla_esp_state.brightness[1]);
+	supla_esp_channel_rgbw_to_value(channels[1].value, 0, 0, supla_esp_state.brightness[0]);
+
+	channels[2].Type = SUPLA_CHANNELTYPE_DIMMER;
+	channels[2].Number = 2;
+	supla_esp_channel_rgbw_to_value(channels[2].value, 0, 0, supla_esp_state.brightness[1]);
 
 
 }
 
 char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
 
-	uint8 n = ChannelNumber == 0 ? 0 : 1;
+	uint8 n = 0;
+			
+	if (ChannelNumber >= 0 && ChannelNumber <= 2) {
+		n = ChannelNumber;
+	} else {
+		return 0;
+	}
 
 	h801_brightness[n] = *Brightness;
 	h801_color = *Color;
@@ -148,14 +158,11 @@ char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Co
 		supla_esp_pwm_set_percent_duty(((h801_color & 0x00FF0000) >> 16) * 100 / 255, 100, 0); //RED
 		supla_esp_pwm_set_percent_duty(((h801_color & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
 		supla_esp_pwm_set_percent_duty((h801_color & 0x000000FF) * 100 / 255, 100, 2);        //BLUE
-
-		supla_esp_pwm_set_percent_duty(h801_brightness[0], 100, 3);
-
+		
 	} else if ( ChannelNumber ==  1 ) {
-
+		supla_esp_pwm_set_percent_duty(h801_brightness[0], 100, 3);
+	} else if ( ChannelNumber ==  2 ) {
 		supla_esp_pwm_set_percent_duty(h801_brightness[1], 100, 4);
-
-
 	}
 
 	return 1;
@@ -174,18 +181,14 @@ void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Co
 			*ColorBrightness = h801_color_brightness;
 		}
 
-		if ( Brightness != NULL ) {
+	} else if ( Brightness != NULL ) {
+		if ( ChannelNumber == 1 ) {
 			*Brightness = h801_brightness[0];
-		}
-
-	} else if ( ChannelNumber == 1 ) {
-
-		if ( Brightness != NULL ) {
+		} else if ( ChannelNumber == 2 ) {
 			*Brightness = h801_brightness[1];
 		}
-
 	}
-
+	
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {

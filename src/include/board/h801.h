@@ -19,6 +19,7 @@
 #ifndef H801_H_
 #define H801_H_
 
+#define ESP8266_SUPLA_PROTO_VERSION 7
 
 #define LED_RED_PORT     5
 #define SUPLA_PWM_COUNT  5
