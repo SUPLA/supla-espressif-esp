@@ -19,7 +19,7 @@
 #include "h801.h"
 #include "supla_esp_devconn.h"
 
-uint8 h801_brightness[2] = {0, 0};
+uint8 h801_brightness[3] = {0, 0, 0};
 int h801_color = 0x0FF00;
 uint8 h801_color_brightness = 0;
 
@@ -159,10 +159,10 @@ char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Co
 		supla_esp_pwm_set_percent_duty(((h801_color & 0x0000FF00) >> 8) * 100 / 255, 100, 1);  //GREEN
 		supla_esp_pwm_set_percent_duty((h801_color & 0x000000FF) * 100 / 255, 100, 2);        //BLUE
 		
-	} else if ( ChannelNumber ==  1 ) {
-		supla_esp_pwm_set_percent_duty(h801_brightness[0], 100, 3);
-	} else if ( ChannelNumber ==  2 ) {
-		supla_esp_pwm_set_percent_duty(h801_brightness[1], 100, 4);
+	} else if ( ChannelNumber == 1 ) {
+		supla_esp_pwm_set_percent_duty(h801_brightness[n], 100, 3);
+	} else if ( ChannelNumber == 2 ) {
+		supla_esp_pwm_set_percent_duty(h801_brightness[n], 100, 4);
 	}
 
 	return 1;
