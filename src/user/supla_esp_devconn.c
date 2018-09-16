@@ -814,6 +814,14 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 		Brightness = 100;
 	}
 
+#ifdef SUPLA_PWM_COUNT
+	float _ColorBrightness = ColorBrightness;
+	float _Brightness = Brightness;
+	supla_esp_board_set_rgbw_value(ChannelNumber, &Color, &_ColorBrightness, &_Brightness);
+	 if ( send_value_changed ) {
+		 supla_esp_channel_rgbw_value_changed(ChannelNumber, Color, ColorBrightness, Brightness);
+	 }
+#else
 	supla_esp_hw_timer_disarm();
 
 	devconn_smooth *_smooth = &smooth[ChannelNumber];
@@ -838,6 +846,7 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 
 	supla_esp_hw_timer_init(FRC1_SOURCE, 1, _supla_esp_devconn_smooth_cb);
 	supla_esp_hw_timer_arm(10000);
+#endif
 
 }
 
