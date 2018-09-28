@@ -118,4 +118,11 @@ void ICACHE_FLASH_ATTR supla_esp_em_send_base_value_enabled(char enabled) {
   supla_em_send_base_enabled = enabled;
 }
 
+void ICACHE_FLASH_ATTR supla_esp_em_set_measurement_frequency(int freq) {
+  os_timer_disarm(&supla_em_timer1);
+  if (freq >= 1000) {
+    os_timer_arm(&supla_em_timer1, freq, 1);
+  }
+}
+
 #endif /*ELECTRICITY_METER*/

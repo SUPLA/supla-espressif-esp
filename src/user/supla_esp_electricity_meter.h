@@ -29,6 +29,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_device_registered(void);
 void ICACHE_FLASH_ATTR supla_esp_em_get_value(
     unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
 void ICACHE_FLASH_ATTR supla_esp_em_send_base_value_enabled(char enabled);
+void ICACHE_FLASH_ATTR supla_esp_em_set_measurement_frequency(int freq);
 
 #endif /*ELECTRICITY_METER*/
 
