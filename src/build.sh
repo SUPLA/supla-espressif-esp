@@ -178,7 +178,6 @@ case $1 in
       EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
    ;;
    "zam_mew_01") 
-      SPI_MODE="QIO"
       FLASH_SIZE="2048"
       FOTA=1
    ;;
