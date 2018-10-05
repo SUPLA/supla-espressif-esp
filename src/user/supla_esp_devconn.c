@@ -1164,14 +1164,18 @@ supla_espconn_disconnect(struct espconn *espconn) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_connect_cb(void *arg) {
-	//supla_log(LOG_DEBUG, "devconn_connect_cb");
+	supla_log(LOG_DEBUG, "devconn_connect_cb");
 	supla_esp_srpc_init();
 }
 
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_disconnect_cb(void *arg){
-	//supla_log(LOG_DEBUG, "devconn_disconnect_cb");
+	supla_log(LOG_DEBUG, "devconn_disconnect_cb");
+
+	devconn->esp_send_buffer_len = 0;
+	devconn->recvbuff_size = 0;
+
     supla_esp_devconn_reconnect();
 }
 
@@ -1383,9 +1387,6 @@ supla_esp_wifi_check_status(void) {
 	if ( STATION_GOT_IP == status ) {
 
 		if ( devconn->srpc == NULL ) {
-
-			devconn->esp_send_buffer_len = 0;
-
 			supla_esp_gpio_state_ipreceived();
 			supla_esp_devconn_resolvandconnect();
 		}
