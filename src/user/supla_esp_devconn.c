@@ -1384,6 +1384,8 @@ supla_esp_wifi_check_status(void) {
 
 		if ( devconn->srpc == NULL ) {
 
+			devconn->esp_send_buffer_len = 0;
+
 			supla_esp_gpio_state_ipreceived();
 			supla_esp_devconn_resolvandconnect();
 		}
