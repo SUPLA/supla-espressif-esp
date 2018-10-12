@@ -62,4 +62,8 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 
 #endif
 
+#ifdef BOARD_CALIBRATION
+
+#endif /*BOARD_CALIBRATION*/
+void DEVCONN_ICACHE_FLASH supla_esp_calibration_result(TDS_DeviceCalibrationResult *result);
 #endif /* SUPLA_ESP_CLIENT_H_ */
