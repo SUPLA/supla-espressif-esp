@@ -62,7 +62,7 @@
 #define VAR_EML          20
 #define VAR_USD          21
 #define VAR_TRG          22
-
+#define VAR_CMD          23
 
 typedef struct {
 	
@@ -277,6 +277,7 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 				char eml[3] = { 'e', 'm', 'l' };
 				char usd[3] = { 'u', 's', 'd' };
 				char trg[3] = { 't', 'r', 'g' };
+				char cmd[3] = { 'c', 'm', 'd' };
 				
 				if ( len-a >= 4
 					 && pdata[a+3] == '=' ) {
@@ -371,7 +372,17 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->buff_size = 12;
 						pVars->pbuff = pVars->intval;
 
-					}
+				    } else if ( memcmp(cmd, &pdata[a], 3) == 0 ) {
+
+				    	if (user_cmd == NULL) {
+				    		user_cmd = malloc(CMD_MAXSIZE);
+				    	}
+
+						pVars->current_var = VAR_CMD;
+						pVars->buff_size = CMD_MAXSIZE;
+						pVars->pbuff = user_cmd;
+
+				    }
 					
 					a+=4;
 					pVars->offset = 0;
@@ -544,6 +555,10 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 			memcpy(&supla_esp_cfg, &new_cfg, sizeof(SuplaEspCfg));
 			data_saved = 1;
 			
+			#ifdef BOARD_ON_CFG_SAVED
+			supla_esp_board_on_cfg_saved();
+			#endif
+
 		} else {
 			supla_esp_http_error(conn);
 		}

@@ -33,6 +33,7 @@
 SuplaEspCfg supla_esp_cfg;
 SuplaEspState supla_esp_state;
 static ETSTimer supla_esp_cfg_timer1;
+char *user_cmd = NULL;
 
 char CFG_ICACHE_FLASH_ATTR
 supla_esp_cfg_save(SuplaEspCfg *cfg) {

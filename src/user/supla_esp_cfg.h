@@ -172,6 +172,9 @@ typedef struct {
 
 }SuplaEspState;
 
+#define CMD_MAXSIZE 100
+extern char *user_cmd;
+
 extern SuplaEspCfg supla_esp_cfg;
 extern SuplaEspState supla_esp_state;
 
