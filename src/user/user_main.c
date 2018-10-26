@@ -35,6 +35,7 @@
 #include "supla_ds18b20.h"
 #include "supla-dev/log.h"
 #include "supla_esp_electricity_meter.h"
+#include "supla_esp_impulse_counter.h"
 
 #include "board/supla_esp_board.c"
 
@@ -143,6 +144,10 @@ void MAIN_ICACHE_FLASH user_init(void)
 		 supla_esp_em_init();
 	#endif
 
+	#ifdef IMPULSE_COUNTER
+		 supla_esp_ic_init();
+	#endif
+
      if ( ( (supla_esp_cfg.LocationID == 0 || supla_esp_cfg.LocationPwd[0] == 0)
     		 && supla_esp_cfg.Email[0] == 0 )
     		|| supla_esp_cfg.Server[0] == 0
@@ -164,6 +169,10 @@ void MAIN_ICACHE_FLASH user_init(void)
 
 	#ifdef ELECTRICITY_METER
 		 supla_esp_em_start();
+	#endif
+
+	#ifdef IMPULSE_COUNTER
+		 supla_esp_ic_start();
 	#endif
 
 	supla_esp_devconn_start();
