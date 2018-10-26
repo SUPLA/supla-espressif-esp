@@ -41,6 +41,10 @@
 #include "supla_esp_electricity_meter.h"
 #endif
 
+#ifdef IMPULSE_COUNTER
+#include "supla_esp_impulse_counter.h"
+#endif
+
 #ifdef __FOTA
 #include "supla_update.h"
 #endif
@@ -410,6 +414,10 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 		#ifdef ELECTRICITY_METER
 		supla_esp_em_device_registered();
+		#endif
+
+		#ifdef IMPULSE_COUNTER
+		supla_esp_ic_device_registered();
 		#endif
 
 		#ifdef BOARD_ON_DEVICE_REGISTERED
@@ -1051,7 +1059,7 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 		#endif /*__FOTA*/
 		#ifdef BOARD_CALIBRATION
 		case SUPLA_SD_CALL_DEVICE_CALIBRATION_REQUEST:
-			supla_esp_board_calibration_request(rd.data.sd_device_calibration_request);
+			supla_esp_board_calcfg_request(rd.data.sd_device_calcfg_request);
 		#endif /*BOARD_CALIBRATION*/
 		}
 
@@ -1462,9 +1470,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char chann
 #endif /*ELECTRICITY_METER*/
 
 #ifdef BOARD_CALIBRATION
-void DEVCONN_ICACHE_FLASH supla_esp_calibration_result(TDS_DeviceCalibrationResult *result) {
+void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgnResult *result) {
 	if (supla_esp_devconn_is_registered() == 1) {
-		srpc_ds_async_device_calibration_result(devconn->srpc, result);
+		srpc_ds_async_device_calcfg_result(devconn->srpc, result);
 	}
 }
 #endif /*BOARD_CALIBRATION*/

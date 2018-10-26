@@ -143,4 +143,8 @@
 
 #include "board/lightswitch.c"
 
+#elif defined(__BOARD_impulse_counter)
+
+#include "board/impulse_counter.c"
+
 #endif

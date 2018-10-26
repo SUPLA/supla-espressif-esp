@@ -189,6 +189,10 @@ case $1 in
      DEP_LIBS="-lpwm -lssl"
      FOTA=1
    ;;
+   "impulse_counter")
+     FLASH_SIZE="2048"
+     FOTA=1
+   ;;
    *)
    echo "Usage:"
    echo "       build.sh BOARD_TYPE";
@@ -221,6 +225,7 @@ case $1 in
    echo "              lightswitch_x2_54_DHT11";
    echo "              lightswitch_x2_DHT22";
    echo "              lightswitch_x2_54_DHT22";
+   echo "              impulse_counter";
    echo 
    echo
    exit;
