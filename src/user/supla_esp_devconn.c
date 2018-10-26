@@ -1057,10 +1057,10 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 			supla_esp_update_url_result(rd.data.sc_firmware_update_url_result);
 			break;
 		#endif /*__FOTA*/
-		#ifdef BOARD_CALIBRATION
-		case SUPLA_SD_CALL_DEVICE_CALIBRATION_REQUEST:
+		#ifdef BOARD_CALCFG
+		case SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST:
 			supla_esp_board_calcfg_request(rd.data.sd_device_calcfg_request);
-		#endif /*BOARD_CALIBRATION*/
+		#endif /*BOARD_CALCFG*/
 		}
 
 		srpc_rd_free(&rd);
@@ -1469,10 +1469,10 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char chann
 }
 #endif /*ELECTRICITY_METER*/
 
-#ifdef BOARD_CALIBRATION
-void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgnResult *result) {
+#ifdef BOARD_CALCFG
+void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result) {
 	if (supla_esp_devconn_is_registered() == 1) {
 		srpc_ds_async_device_calcfg_result(devconn->srpc, result);
 	}
 }
-#endif /*BOARD_CALIBRATION*/
+#endif /*BOARD_CALCFG*/
