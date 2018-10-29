@@ -188,7 +188,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
   return 0;
 }
 
-void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels,
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
                                   unsigned char *channel_count) {
   *channel_count = 1;
 
