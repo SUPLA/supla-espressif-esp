@@ -1082,42 +1082,62 @@ supla_esp_devconn_iterate(void *timer_arg) {
 
 			if ( strlen(supla_esp_cfg.Email) > 0 ) {
 
-				TDS_SuplaRegisterDevice_D srd;
-				memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_C));
+				#if ESP8266_SUPLA_PROTO_VERSION >= 10
+					TDS_SuplaRegisterDevice_E srd;
+					memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_E));
 
-				srd.channel_count = 0;
-				ets_snprintf(srd.Email, SUPLA_EMAIL_MAXSIZE, "%s", supla_esp_cfg.Email);
-				ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
+					srd.ManufacturerID = MANUFACTURER_ID;
+					srd.ProductID = PRODUCT_ID;
+					srd.channel_count = 0;
+					ets_snprintf(srd.Email, SUPLA_EMAIL_MAXSIZE, "%s", supla_esp_cfg.Email);
+					ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
 
-				supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
+					supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
 
-				strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
-				os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
-				os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
+					strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
+					os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+					os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 
-				supla_esp_board_set_channels(srd.channels, &srd.channel_count);
+					supla_esp_board_set_channels(srd.channels, &srd.channel_count);
 
-				srpc_ds_async_registerdevice_d(devconn->srpc, &srd);
+					srpc_ds_async_registerdevice_e(devconn->srpc, &srd);
+				#else
+					TDS_SuplaRegisterDevice_D srd;
+					memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_C));
 
+					srd.channel_count = 0;
+					ets_snprintf(srd.Email, SUPLA_EMAIL_MAXSIZE, "%s", supla_esp_cfg.Email);
+					ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
+
+					supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+					strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
+					os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+					os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
+
+					supla_esp_board_set_channels(srd.channels, &srd.channel_count);
+
+					srpc_ds_async_registerdevice_d(devconn->srpc, &srd);
+				#endif
 			} else {
+				#if ESP8266_SUPLA_PROTO_VERSION < 10
+					TDS_SuplaRegisterDevice_C srd;
+					memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_B));
 
-				TDS_SuplaRegisterDevice_C srd;
-				memset(&srd, 0, sizeof(TDS_SuplaRegisterDevice_B));
+					srd.channel_count = 0;
+					srd.LocationID = supla_esp_cfg.LocationID;
+					ets_snprintf(srd.LocationPWD, SUPLA_LOCATION_PWD_MAXSIZE, "%s", supla_esp_cfg.LocationPwd);
+					ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
 
-				srd.channel_count = 0;
-				srd.LocationID = supla_esp_cfg.LocationID;
-				ets_snprintf(srd.LocationPWD, SUPLA_LOCATION_PWD_MAXSIZE, "%s", supla_esp_cfg.LocationPwd);
-				ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);
+					supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
 
-				supla_esp_board_set_device_name(srd.Name, SUPLA_DEVICE_NAME_MAXSIZE);
+					strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
+					os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 
-				strcpy(srd.SoftVer, SUPLA_ESP_SOFTVER);
-				os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+					supla_esp_board_set_channels(srd.channels, &srd.channel_count);
 
-				supla_esp_board_set_channels(srd.channels, &srd.channel_count);
-
-				srpc_ds_async_registerdevice_c(devconn->srpc, &srd);
-
+					srpc_ds_async_registerdevice_c(devconn->srpc, &srd);
+				#endif
 			}
 
 
