@@ -19,6 +19,7 @@
 #ifndef SUPLA_GATE_MODULE_H_
 #define SUPLA_GATE_MODULE_H_
 
+#define ESP8266_SUPLA_PROTO_VERSION 7
 
 #if defined(__BOARD_gate_module_dht11) \
     || defined(__BOARD_gate_module_dht22)

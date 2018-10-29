@@ -21,6 +21,7 @@
 #define WIFISOCKET_H_
 
 #define CFGBTN_TYPE_SELECTION
+#define ESP8266_SUPLA_PROTO_VERSION 7
 
 #ifdef __BOARD_wifisocket_x4
 

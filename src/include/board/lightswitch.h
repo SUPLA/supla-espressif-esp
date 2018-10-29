@@ -19,6 +19,7 @@
 #ifndef LIGHTSWITCH_H_
 #define LIGHTSWITCH_H_
 
+#define ESP8266_SUPLA_PROTO_VERSION 7
 #define B_RELAY2_PORT	13
 #define B_BTN2_PORT	12
 

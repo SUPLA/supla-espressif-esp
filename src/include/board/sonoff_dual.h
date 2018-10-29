@@ -19,6 +19,7 @@
 #ifndef SONOFF_DUAL_H_
 #define SONOFF_DUAL_H_
 
+#define ESP8266_SUPLA_PROTO_VERSION 7
 #define LED_RED_PORT    13
 #define B_RELAY1_PORT   20
 #define B_RELAY2_PORT   21

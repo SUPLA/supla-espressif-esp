@@ -19,6 +19,7 @@
 #ifndef SONOFF_SOCKET_H_
 #define SONOFF_SOCKET_H_
 
+#define ESP8266_SUPLA_PROTO_VERSION 7
 #define LED_RED_PORT    13
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
