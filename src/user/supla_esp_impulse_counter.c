@@ -49,7 +49,7 @@ void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
       memcpy(&last_icv, &icv, sizeof(TDS_ImpulseCounter_Value));
       supla_esp_channel_value__changed(channel_number, value);
 
-      supla_log(LOG_DEBUG, "Value changed %i", last_icv.counter);
+      //supla_log(LOG_DEBUG, "Value changed %i", last_icv.counter);
     }
 
     channel_number++;
@@ -79,7 +79,7 @@ void ICACHE_FLASH_ATTR supla_esp_ic_get_value(
   if (supla_esp_board_get_impulse_counter(channel_number, &icv) == 1) {
     memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
     memcpy(value, &icv, sizeof(TDS_ImpulseCounter_Value));
-    supla_log(LOG_DEBUG, "GET VALUE: %i", icv.counter);
+    //supla_log(LOG_DEBUG, "GET VALUE: %i", icv.counter);
   }
 }
 
