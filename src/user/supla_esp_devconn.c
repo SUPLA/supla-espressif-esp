@@ -261,17 +261,15 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 
 	int r;
 
-
-	if ( devconn->esp_send_buffer_len > 0
-		 && supla_espconn_sent(&devconn->ESPConn, (unsigned char*)devconn->esp_send_buffer, devconn->esp_send_buffer_len) == 0 ) {
-
-		    //supla_log(LOG_DEBUG, "sproto send count: %i", count);
-
+	if ( devconn->esp_send_buffer_len > 0 ) {
+		if ((r = supla_espconn_sent(&devconn->ESPConn,
+				(unsigned char*)devconn->esp_send_buffer, devconn->esp_send_buffer_len)) == 0) {
 			devconn->esp_send_buffer_len = 0;
 			devconn->last_sent = system_get_time();
+		}
 
+		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 	};
-
 
 	if ( devconn->esp_send_buffer_len > 0 ) {
 		return supla_esp_data_write_append_buffer(buf, count);
@@ -280,8 +278,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 	if ( count > 0 ) {
 
 		r = supla_espconn_sent(&devconn->ESPConn, buf, count);
-
-		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
+		supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 
 		if ( ESPCONN_INPROGRESS == r  ) {
 			return supla_esp_data_write_append_buffer(buf, count);
@@ -1471,8 +1468,8 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 		    		    || ( t3 >= (devconn->server_activity_timeout-5)
 		    		         && t3 <= devconn->server_activity_timeout ) ) {
 
-		    	//supla_log(LOG_DEBUG, "PING");
-		    	//system_print_meminfo();
+			    supla_log(LOG_DEBUG, "PING %i,%i", t1 / 1000000, t1 % 1000000);
+			    system_print_meminfo();
 
 				srpc_dcs_async_ping_server(devconn->srpc);
 				
