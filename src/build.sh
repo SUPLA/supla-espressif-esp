@@ -193,6 +193,11 @@ case $1 in
      FLASH_SIZE="2048"
      FOTA=1
    ;;
+   "vl_dimmer")
+     FLASH_SIZE="2048"
+     FOTA=1
+   ;;
+	
    *)
    echo "Usage:"
    echo "       build.sh BOARD_TYPE";

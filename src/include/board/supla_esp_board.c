@@ -67,6 +67,10 @@
 
 #include "board/dimmer.c"
 
+#elif defined(__BOARD_vl_dimmer)
+
+#include "board/acs_vl_dimmer.c"
+
 #elif defined(__BOARD_EgyIOT)
 
 #elif defined(__BOARD_zam_row_01)
