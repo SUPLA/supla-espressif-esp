@@ -52,3 +52,5 @@ valgrind-suppressions.cfg
 # Eclipse
 /RemoteSystemsTempFiles/
 
+# Build output
+../firmware
