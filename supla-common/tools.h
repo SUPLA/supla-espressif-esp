@@ -26,6 +26,12 @@
 extern "C" {
 #endif
 
+typedef struct {
+  double h;
+  double s;
+  double v;
+} _color_hsv_t;
+
 #define BCRYPT_HASH_MAXSIZE 65
 
 extern unsigned char st_app_terminate;
@@ -54,9 +60,15 @@ char st_read_authkey_from_file(char *file, char *AuthKey, char create);
 
 time_t st_get_utc_time(void);
 
+char *st_get_zulu_time(char buffer[64]);
 char *st_get_datetime_str(char buffer[64]);
 
+_color_hsv_t st_rgb2hsv(int rgb);
+int st_hsv2rgb(_color_hsv_t in);
 int st_hue2rgb(double hue);
+
+void st_random_alpha_string(char *buffer, int buffer_size);
+void st_uuid_v4(char buffer[37]);
 
 #ifdef __BCRYPT
 
@@ -66,6 +78,11 @@ char st_bcrypt_crypt(char *str, char *hash, int hash_buffer_size, char rounds);
 char st_bcrypt_check(char *str, char *hash, int hash_len);
 char *st_get_authkey_hash_hex(const char AuthKey[SUPLA_AUTHKEY_SIZE]);
 
+#endif
+
+#ifdef __OPENSSL_TOOLS
+char *st_openssl_base64_encode(char *src, int src_len);
+char *st_openssl_base64_decode(char *src, int src_len, int *dst_len);
 #endif
 
 #ifdef __cplusplus

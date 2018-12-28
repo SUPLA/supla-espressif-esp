@@ -676,6 +676,7 @@ typedef struct {
   _supla_int_t Id;
   _supla_int_t DeviceID;
   _supla_int_t LocationID;
+  _supla_int_t Type;
   _supla_int_t Func;
   _supla_int_t AltIcon;
   _supla_int_t UserIcon;
@@ -1024,6 +1025,18 @@ typedef struct {
   unsigned _supla_int_t DataSize;
   char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
 } TDS_DeviceCalCfgResult;                // v. >= 10
+
+#define RGBW_BRIGHTNESS_ONOFF 0x1
+#define RGBW_COLOR_ONOFF 0x2
+
+typedef struct {
+  char brightness;
+  char colorBrightness;
+  char R;
+  char G;
+  char B;
+  char onOff;
+} TRGBW_Value;  // v. >= 10
 
 #pragma pack(pop)
 

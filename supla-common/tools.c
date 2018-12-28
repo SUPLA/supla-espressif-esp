@@ -28,6 +28,12 @@
 #include "log.h"
 #include "tools.h"
 
+#ifdef __OPENSSL_TOOLS
+#include <openssl/bio.h>
+#include <openssl/buffer.h>
+#include <openssl/evp.h>
+#endif /*__OPENSSL_TOOLS*/
+
 #ifdef __BCRYPT
 #include "crypt_blowfish/ow-crypt.h"
 #define BCRYPT_RABD_SIZE 16
@@ -196,7 +202,7 @@ char st_read_randkey_from_file(char *file, char *KEY, int size, char create) {
         for (a = 0; a < size; a++)
           KEY[a] = (unsigned char)(rand() + tv.tv_usec);  // NOLINT
 #else
-        unsigned int seed = time(NULL);
+        unsigned int seed = tv.tv_sec + tv.tv_usec;
 
         for (a = 0; a < size; a++)
           KEY[a] = (unsigned char)(rand_r(&seed) + tv.tv_usec);
@@ -268,6 +274,16 @@ time_t st_get_utc_time(void) {
   return mktime(now_tm);
 }
 
+char *st_get_zulu_time(char buffer[64]) {
+  memset(buffer, 0, 64);
+
+  time_t now = time(0);
+  struct tm *tm = gmtime(&now);  // NOLINT
+  strftime(buffer, 64, "%Y-%m-%dT%H:%M:%SZ", tm);
+
+  return buffer;
+}
+
 char *st_get_datetime_str(char buffer[64]) {
   memset(buffer, 0, 64);
 
@@ -278,69 +294,190 @@ char *st_get_datetime_str(char buffer[64]) {
   return buffer;
 }
 
-int st_hue2rgb(double hue) {
-  double r = 0, g = 0, b = 0;
+_color_hsv_t st_rgb2hsv(int rgb) {
+  _color_hsv_t out;
+  double min, max, delta;
 
-  if (hue >= 360) hue = 0;
+  unsigned char r = (unsigned char)((rgb & 0x00FF0000) >> 16);
+  unsigned char g = (unsigned char)((rgb & 0x0000FF00) >> 8);
+  unsigned char b = (unsigned char)(rgb & 0x000000FF);
 
-  hue /= 60.00;
+  min = r < g ? r : g;
+  min = min < b ? min : b;
 
-  long i = (long)hue;
-  double f, q, t;
-  f = hue - i;
+  max = r > g ? r : g;
+  max = max > b ? max : b;
 
-  q = 1.0 - f;
-  t = 1.0 - (1.0 - f);
+  out.v = max / 255;
+  delta = max - min;
 
-  switch (i) {
-    case 0:
-      r = 1.00;
-      g = t;
-      b = 0.00;
-      break;
-
-    case 1:
-      r = q;
-      g = 1.00;
-      b = 0.00;
-      break;
-
-    case 2:
-      r = 0.00;
-      g = 1.00;
-      b = t;
-      break;
-
-    case 3:
-      r = 0.00;
-      g = q;
-      b = 1.00;
-      break;
-
-    case 4:
-      r = t;
-      g = 0.00;
-      b = 1.00;
-      break;
-
-    default:
-      r = 1.00;
-      g = 0.00;
-      b = q;
-      break;
+  if (delta < 0.00001) {
+    out.s = 0;
+    out.h = 0;
+    return out;
   }
+  if (max > 0.0) {
+    out.s = (delta / max);
+  } else {
+    out.s = 0.0;
+    out.h = -1;
+    return out;
+  }
+  if (r >= max)
+    out.h = (g - b) / delta;
+  else if (g >= max)
+    out.h = 2.0 + (b - r) / delta;
+  else
+    out.h = 4.0 + (r - g) / delta;
 
+  out.h *= 60.0;
+
+  if (out.h < 0.0) out.h += 360.0;
+
+  return out;
+}
+
+int st_hsv2rgb(_color_hsv_t in) {
+  double r = 0, g = 0, b = 0;
   int rgb = 0;
 
-  rgb |= (unsigned char)(r * 255.00);
-  rgb <<= 8;
+  if (in.s <= 0.0) {
+    r = g = b = in.v;
+  } else {
+    double hh = in.h;
 
-  rgb |= (unsigned char)(g * 255.00);
-  rgb <<= 8;
+    if (hh >= 360.0) {
+      hh = 0.0;
+    } else {
+      hh /= 60.0;
+    }
 
-  rgb |= (unsigned char)(b * 255.00);
+    _supla_int_t i = (int)hh;
+    double f = hh - i;
+    double p = in.v * (1.0 - in.s);
+    double q = in.v * (1.0 - in.s * f);
+    double t = in.v * (1.0 - in.s * (1 - f));
+
+    switch (i) {
+      case 0:
+        r = in.v;
+        g = t;
+        b = p;
+        break;
+      case 1:
+        r = q;
+        g = in.v;
+        b = p;
+        break;
+      case 2:
+        r = p;
+        g = in.v;
+        b = t;
+        break;
+      case 3:
+        r = p;
+        g = q;
+        b = in.v;
+        break;
+      case 4:
+        r = t;
+        g = p;
+        b = in.v;
+        break;
+      case 5:
+        r = in.v;
+        g = p;
+        b = q;
+        break;
+      default:
+        break;
+    }
+  }
+
+  rgb = (int)(r * 255.00) & 0xFF;
+  rgb <<= 8;
+  rgb |= (int)(g * 255.00) & 0xFF;
+  rgb <<= 8;
+  rgb |= (int)(b * 255.00) & 0xFF;
 
   return rgb;
+}
+
+int st_hue2rgb(double hue) {
+  if (hue >= 360) hue = 0;
+
+  _color_hsv_t hsv;
+  hsv.h = hue;
+  hsv.s = 1.0;
+  hsv.v = 1.0;
+
+  return st_hsv2rgb(hsv);
+}
+
+void st_random_alpha_string(char *buffer, int buffer_size) {
+  int a;
+
+  const char charset[] =
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+  char max = sizeof(charset) - 1;
+
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+
+#ifdef __ANDROID__
+  srand(tv.tv_usec);
+  gettimeofday(&tv, NULL);
+
+  for (a = 0; a < buffer_size - 1; a++) {
+    buffer[a] = charset[(rand() + tv.tv_usec) % max];  // NOLINT
+  }
+#else
+  unsigned int seed = tv.tv_sec + tv.tv_usec;
+  for (a = 0; a < buffer_size - 1; a++) {
+    buffer[a] = charset[rand_r(&seed) % max];
+  }
+#endif
+
+  buffer[buffer_size - 1] = 0;
+}
+
+void st_uuid_v4(char buffer[37]) {
+  unsigned char r[16];
+  r[0] = 0;
+  int a = 0;
+  int n = 0;
+
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+
+#ifdef __ANDROID__
+  srand(tv.tv_usec);
+  gettimeofday(&tv, NULL);
+
+  for (a = 0; a < 16; a++) {
+    r[a] = (rand() + tv.tv_usec) % 255;  // NOLINT
+  }
+#else
+  unsigned int seed = tv.tv_sec + tv.tv_usec;
+  for (a = 0; a < 16; a++) {
+    r[a] = rand_r(&seed) % 255;
+  }
+#endif
+
+  char hex[3];
+  hex[0] = 0;
+
+  for (a = 0; a < 16; a++) {
+    snprintf(hex, sizeof(hex), "%02x", r[a]);
+    memcpy(&buffer[n], hex, 2);
+    n += 2;
+    if (n == 8 || n == 13 || n == 18 || n == 23) {
+      buffer[n] = '-';
+      n++;
+    }
+  }
+
+  buffer[n] = 0;
 }
 
 #ifdef __BCRYPT
@@ -358,7 +495,7 @@ char st_bcrypt_gensalt(char *salt, int salt_buffer_size, char rounds) {
   struct timeval tv;
   gettimeofday(&tv, NULL);
 
-  unsigned int seed = time(NULL);
+  unsigned int seed = tv.tv_sec + tv.tv_usec;
 
   for (a = 0; a < BCRYPT_RABD_SIZE; a++) random[a] = rand_r(&seed) + tv.tv_usec;
 
@@ -426,4 +563,65 @@ char *st_get_authkey_hash_hex(const char AuthKey[SUPLA_AUTHKEY_SIZE]) {
   return NULL;
 }
 
-#endif
+#endif /* __BCRYPT*/
+
+#ifdef __OPENSSL_TOOLS
+
+char *st_openssl_base64_encode(char *src, int src_len) {
+  BIO *bio, *b64;
+  BUF_MEM *bufferPtr;
+  char *result = NULL;
+
+  if (src_len <= 0 || src == NULL) {
+    return NULL;
+  }
+
+  b64 = BIO_new(BIO_f_base64());
+  bio = BIO_new(BIO_s_mem());
+  bio = BIO_push(b64, bio);
+  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+  (void)BIO_set_close(bio, BIO_NOCLOSE);
+
+  BIO_write(bio, src, src_len);
+  (void)BIO_flush(bio);
+
+  BIO_get_mem_ptr(bio, &bufferPtr);
+
+  result = malloc(bufferPtr->length + 1);
+  memcpy(result, bufferPtr->data, bufferPtr->length);
+  result[bufferPtr->length] = 0;
+
+  BIO_free_all(bio);
+  BUF_MEM_free(bufferPtr);
+
+  return result;
+}
+
+char *st_openssl_base64_decode(char *src, int src_len, int *dst_len) {
+  BIO *bio, *b64;
+
+  char *buffer = (char *)malloc(src_len + 1);
+  memset(buffer, 0, src_len + 1);
+
+  b64 = BIO_new(BIO_f_base64());
+  bio = BIO_new_mem_buf(src, src_len);
+  bio = BIO_push(b64, bio);
+  BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
+
+  int r = BIO_read(bio, buffer, src_len);
+  BIO_free_all(bio);
+
+  if (r < 0) {
+    r = 0;
+  }
+
+  buffer = realloc(buffer, r + 1);
+
+  if (dst_len) {
+    *dst_len = r;
+  }
+
+  return buffer;
+}
+
+#endif /*__OPENSSL_TOOLS*/
