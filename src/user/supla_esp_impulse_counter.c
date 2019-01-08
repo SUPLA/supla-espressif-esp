@@ -67,6 +67,10 @@ void ICACHE_FLASH_ATTR supla_esp_ic_start(void) {
   os_timer_arm(&supla_ic_timer1, 5000, 1);
 }
 
+void ICACHE_FLASH_ATTR supla_esp_ic_stop(void) {
+  os_timer_disarm(&supla_ic_timer1);
+}
+
 void ICACHE_FLASH_ATTR supla_esp_ic_device_registered(void) {
   supla_esp_ic_on_timer(NULL);
 }

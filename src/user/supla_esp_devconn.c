@@ -154,6 +154,14 @@ supla_esp_devconn_system_restart(void) {
     	os_timer_disarm(&devconn->supla_devconn_timer1);
     	os_timer_disarm(&devconn->supla_iterate_timer);
 
+		#ifdef IMPULSE_COUNTER
+		supla_esp_ic_stop();
+		#endif /*IMPULSE_COUNTER*/
+
+		#ifdef ELECTRICITY_METER
+		supla_esp_em_stop();
+		#endif /*ELECTRICITY_METER*/
+
 		#ifdef BOARD_GPIO_BEFORE_REBOOT
 		supla_esp_board_before_reboot();
 		#endif

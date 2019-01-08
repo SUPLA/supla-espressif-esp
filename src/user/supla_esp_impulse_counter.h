@@ -25,6 +25,7 @@
 
 void ICACHE_FLASH_ATTR supla_esp_ic_init(void);
 void ICACHE_FLASH_ATTR supla_esp_ic_start(void);
+void ICACHE_FLASH_ATTR supla_esp_ic_stop(void);
 void ICACHE_FLASH_ATTR supla_esp_ic_device_registered(void);
 void ICACHE_FLASH_ATTR supla_esp_ic_get_value(
     unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
