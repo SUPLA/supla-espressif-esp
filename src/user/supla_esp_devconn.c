@@ -819,7 +819,7 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 		Brightness = 100;
 	}
 
-#ifdef SUPLA_PWM_COUNT
+#if defined(SUPLA_PWM_COUNT) || defined(SUPLA_SMOOTH_DISABLED)
 	float _ColorBrightness = ColorBrightness;
 	float _Brightness = Brightness;
 	supla_esp_board_set_rgbw_value(ChannelNumber, &Color, &_ColorBrightness, &_Brightness);
