@@ -153,6 +153,7 @@ supla_esp_devconn_system_restart(void) {
     	os_timer_disarm(&devconn->supla_watchdog_timer);
     	os_timer_disarm(&devconn->supla_devconn_timer1);
     	os_timer_disarm(&devconn->supla_iterate_timer);
+    	os_timer_disarm(&devconn->supla_value_timer);
 
 		#ifdef IMPULSE_COUNTER
 		supla_esp_ic_stop();
@@ -276,7 +277,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 			devconn->last_sent = system_get_time();
 		}
 
-		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
+		supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 	};
 
 	if ( devconn->esp_send_buffer_len > 0 ) {
