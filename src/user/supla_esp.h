@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.3"
+#define SUPLA_ESP_SOFTVER "2.7.4"
 
 #ifndef ESP8266_SUPLA_PROTO_VERSION
 #define ESP8266_SUPLA_PROTO_VERSION SUPLA_PROTO_VERSION

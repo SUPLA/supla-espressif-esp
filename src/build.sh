@@ -197,6 +197,10 @@ case $1 in
      FLASH_SIZE="2048"
      FOTA=1
    ;;
+   "hp_homeplus") 
+     FLASH_SIZE="2048"
+     FOTA=1
+   ;;
 	
    *)
    echo "Usage:"
