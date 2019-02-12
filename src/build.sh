@@ -200,6 +200,7 @@ case $1 in
    "hp_homeplus") 
      FLASH_SIZE="2048"
      FOTA=1
+     EXTRA_CCFLAGS="-DESP8266_LOG_DISABLED=1"
    ;;
 	
    *)
