@@ -1257,7 +1257,10 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_dcs_async_ping_server(void *_srpc) {
   ps.now.tv_usec[0] = 0;
   ps.now.tv_usec[1] = 0;
 #else
-  gettimeofday(&ps.now, NULL);
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  ps.now.tv_sec = now.tv_sec;
+  ps.now.tv_usec = now.tv_usec;
 #endif
 
   return srpc_async_call(_srpc, SUPLA_DCS_CALL_PING_SERVER, (char *)&ps,
@@ -1271,7 +1274,10 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sdc_async_ping_server_result(void *_srpc) {
   ps.now.tv_sec = 0;
   ps.now.tv_usec = 0;
 #else
-  gettimeofday(&ps.now, NULL);
+  struct timeval now;
+  gettimeofday(&now, NULL);
+  ps.now.tv_sec = now.tv_sec;
+  ps.now.tv_usec = now.tv_usec;
 #endif
 
   return srpc_async_call(_srpc, SUPLA_SDC_CALL_PING_SERVER_RESULT, (char *)&ps,
@@ -1885,6 +1891,60 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2emextended(
   }
 
   return 1;
+}
+
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2thermostatextended(
+    TSuplaChannelExtendedValue *ev, TThermostat_ExtendedValue *th_ev) {
+  if (ev == NULL || th_ev == NULL ||
+      ev->type != EV_TYPE_THERMOSTAT_DETAILS_V1 || ev->size == 0 ||
+      ev->size > sizeof(TThermostat_ExtendedValue)) {
+    return 0;
+  }
+
+  memset(th_ev, 0, sizeof(TThermostat_ExtendedValue));
+  memcpy(th_ev, ev->value, ev->size);
+
+  return 1;
+}
+
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_thermostatextended2extended(
+    TThermostat_ExtendedValue *th_ev, TSuplaChannelExtendedValue *ev) {
+  if (th_ev == NULL || ev == NULL) {
+    return 0;
+  }
+
+  memset(ev, 0, sizeof(TSuplaChannelExtendedValue));
+  ev->type = EV_TYPE_THERMOSTAT_DETAILS_V1;
+  ev->size = 0;
+
+  unsigned _supla_int_t size = sizeof(TThermostat_ExtendedValue);
+
+  if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Schedule)) {
+    size -= sizeof(th_ev->Shedule);
+    if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Time)) {
+      size -= sizeof(th_ev->Time);
+      if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Values)) {
+        size -= sizeof(th_ev->Values);
+        if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Flags)) {
+          size -= sizeof(th_ev->Flags);
+          if (0 == (th_ev->Fields & THERMOSTAT_FIELD_PresetTemperatures)) {
+            size -= sizeof(th_ev->PresetTemperature);
+            if (0 == (th_ev->Fields & THERMOSTAT_FIELD_MeasuredTemperatures)) {
+              size -= sizeof(th_ev->MeasuredTemperature);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (size > 0) {
+    ev->size = size;
+    memcpy(ev->value, th_ev, size);
+    return 1;
+  }
+
+  return 0;
 }
 
 #ifndef SRPC_EXCLUDE_CLIENT
