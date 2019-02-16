@@ -39,13 +39,6 @@
 #define LED_GREEN  0x2
 #define LED_BLUE   0x4
 
-#define STATE_UNKNOWN       0
-#define STATE_DISCONNECTED  1
-#define STATE_IPRECEIVED    2
-#define STATE_CONNECTED     4
-#define STATE_CFGMODE       5
-#define STATE_UPDATE        6
-
 #define INPUT_MIN_CYCLE_COUNT   5
 #define INPUT_CYCLE_TIME        20
 
@@ -1312,10 +1305,13 @@ supla_esp_gpio_state_disconnected(void) {
 	supla_last_state = STATE_DISCONNECTED;
 	supla_log(LOG_DEBUG, "Disconnected");
 
+	#ifdef BOARD_ESP_ON_STATE_CHANGED
+	supla_esp_board_on_state_changed(supla_last_state);
+	#endif
+
 	#ifdef LED_REINIT
 	supla_esp_gpio_reinit_led();
 	#endif
-
 
     #if defined(LED_RED_PORT) && defined(LED_GREEN_PORT) && defined(LED_BLUE_PORT)
 	supla_esp_gpio_set_led(1, 0, 0);
@@ -1336,6 +1332,10 @@ supla_esp_gpio_state_ipreceived(void) {
 	supla_last_state = STATE_IPRECEIVED;
 
 	supla_log(LOG_DEBUG, "IP Received");
+
+	#ifdef BOARD_ESP_ON_STATE_CHANGED
+	supla_esp_board_on_state_changed(supla_last_state);
+	#endif
 
 	#if defined(LED_RED_PORT) && defined(LED_GREEN_PORT) && defined(LED_BLUE_PORT)
 	supla_esp_gpio_set_led(0, 0, 1);
@@ -1377,6 +1377,9 @@ supla_esp_gpio_state_connected(void) {
 
 	supla_log(LOG_DEBUG, "Server connected");
 
+	#ifdef BOARD_ESP_ON_STATE_CHANGED
+	supla_esp_board_on_state_changed(supla_last_state);
+	#endif
 
 	#if defined(LED_RED_PORT) && defined(LED_GREEN_PORT) && defined(LED_BLUE_PORT)
 	supla_esp_gpio_set_led(0, 1, 0);
@@ -1401,6 +1404,10 @@ supla_esp_gpio_state_cfgmode(void) {
 
 	supla_last_state = STATE_CFGMODE;
 
+	#ifdef BOARD_ESP_ON_STATE_CHANGED
+	supla_esp_board_on_state_changed(supla_last_state);
+	#endif
+
 	#ifdef LED_REINIT
 	supla_esp_gpio_reinit_led();
 	#endif
@@ -1422,6 +1429,10 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void) {
 		return;
 
 	supla_last_state = STATE_UPDATE;
+
+	#ifdef BOARD_ESP_ON_STATE_CHANGED
+	supla_esp_board_on_state_changed(supla_last_state);
+	#endif
 
     #if defined(LED_RED_PORT)
 		supla_esp_gpio_led_blinking(LED_RED, 20);
