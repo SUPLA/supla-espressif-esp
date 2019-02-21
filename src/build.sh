@@ -107,10 +107,12 @@ case $1 in
    "zam_row_02")
       FLASH_SIZE="2048"
       FOTA=1
+      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
    ;;
    "zam_row_04")
       FLASH_SIZE="2048"
       FOTA=1
+      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
    ;;
    "zam_row_01_tester")
       FLASH_SIZE="2048"
@@ -200,7 +202,7 @@ case $1 in
    "hp_homeplus") 
      FLASH_SIZE="2048"
      FOTA=1
-     EXTRA_CCFLAGS="-DESP8266_LOG_DISABLED=1"
+     EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4 -DESP8266_LOG_DISABLED=1"
    ;;
 	
    *)
