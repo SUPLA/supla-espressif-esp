@@ -268,6 +268,7 @@ extern "C" {
 #define SUPLA_CHANNELTYPE_IMPULSE_COUNTER 5010    // ver. >= 10
 
 #define SUPLA_CHANNELTYPE_THERMOSTAT 6000  // ver. >= 11
+#define SUPLA_CHANNELTYPE_THERMOSTAT_HP_HOMEPLUS 6010  // ver. >= 11
 
 #define SUPLA_CHANNELDRIVER_MCP23008 2
 
@@ -308,6 +309,7 @@ extern "C" {
 #define SUPLA_CHANNELFNC_GAS_METER 320             // ver. >= 10
 #define SUPLA_CHANNELFNC_WATER_METER 330           // ver. >= 10
 #define SUPLA_CHANNELFNC_THERMOSTAT 400            // ver. >= 11
+#define SUPLA_CHANNELFNC_THERMOSTAT_HP_HOMEPLUS 410  // ver. >= 11
 
 #define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK 0x0001
 #define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE 0x0002
@@ -1106,7 +1108,6 @@ typedef struct {
 typedef struct {
   _supla_int16_t Index;  // BIT0 Temperature[0], BIT1 Temperature[1] etc...
   _supla_int16_t Temperature[10];
-
 } TThermostatTemperatureCfg;
 
 // Thermostat configuration commands - ver. >= 11
