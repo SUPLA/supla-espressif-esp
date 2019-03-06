@@ -198,6 +198,7 @@ case $1 in
    "vl_dimmer")
      FLASH_SIZE="2048"
      FOTA=1
+     EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4 -DESP8266_LOG_DISABLED=1"
    ;;
    "hp_homeplus") 
      FLASH_SIZE="2048"
