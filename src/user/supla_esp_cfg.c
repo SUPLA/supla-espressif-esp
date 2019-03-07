@@ -54,7 +54,7 @@ supla_esp_cfg_save(SuplaEspCfg *cfg) {
 
 void CFG_ICACHE_FLASH_ATTR
 _supla_esp_save_state(void *timer_arg) {
-
+#ifndef DONT_SAVE_STATE
 	ets_intr_lock();
 	spi_flash_erase_sector(CFG_SECTOR+STATE_SECTOR_OFFSET);
 
@@ -66,11 +66,12 @@ _supla_esp_save_state(void *timer_arg) {
 
 	ets_intr_unlock();
 	supla_log(LOG_DEBUG, "STATE WRITE FAIL!");
+#endif /*DONT_SAVE_STATE*/
 }
 
 void CFG_ICACHE_FLASH_ATTR
 supla_esp_save_state(int delay) {
-
+#ifndef DONT_SAVE_STATE
 	os_timer_disarm(&supla_esp_cfg_timer1);
 
 	if ( delay > 0 ) {
@@ -81,8 +82,7 @@ supla_esp_save_state(int delay) {
 	} else {
 		_supla_esp_save_state(NULL);
 	}
-
-
+#endif /*DONT_SAVE_STATE*/
 }
 
 void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
