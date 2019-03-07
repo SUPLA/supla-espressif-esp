@@ -98,6 +98,7 @@ typedef struct {
 
 static devconn_params *devconn = NULL;
 
+#ifndef SUPLA_SMOOTH_DISABLED
 #if defined(RGB_CONTROLLER_CHANNEL) \
     || defined(RGBW_CONTROLLER_CHANNEL) \
     || defined(RGBWW_CONTROLLER_CHANNEL) \
@@ -129,6 +130,7 @@ typedef struct {
 devconn_smooth smooth[SMOOTH_MAX_COUNT];
 
 #endif
+#endif /*SUPLA_SMOOTH_DISABLED*/
 
 #if NOSSL == 1
     #define supla_espconn_sent espconn_sent
@@ -578,32 +580,6 @@ void supla_esp_relay_timer_func(void *timer_arg) {
     || defined(RGBWW_CONTROLLER_CHANNEL) \
     || defined(DIMMER_CHANNEL)
 
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(float *brightness, float *dest_brightness, float *step) {
-
-	if ( *brightness > *dest_brightness ) {
-
-		 *brightness=*brightness - *step;
-
-		 if ( *brightness < 0 )
-			 *brightness = 0;
-
-		 if ( *brightness < *dest_brightness )
-			 *brightness = *dest_brightness;
-
-	 } else if ( *brightness < *dest_brightness ) {
-
-		 *brightness=*brightness + *step;
-
-		 if ( *brightness > 100 )
-			 *brightness = 100;
-
-		 if ( *brightness > *dest_brightness )
-			 *brightness = *dest_brightness;
-	 }
-
-	*step = (*step) * 1.05;
-	
-}
 
 hsv DEVCONN_ICACHE_FLASH rgb2hsv(int rgb)
 {
@@ -706,6 +682,34 @@ int DEVCONN_ICACHE_FLASH hsv2rgb(hsv in)
     rgb |= b & 0xFF;
 
     return rgb;
+}
+
+#ifndef SUPLA_SMOOTH_DISABLED
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(float *brightness, float *dest_brightness, float *step) {
+
+	if ( *brightness > *dest_brightness ) {
+
+		 *brightness=*brightness - *step;
+
+		 if ( *brightness < 0 )
+			 *brightness = 0;
+
+		 if ( *brightness < *dest_brightness )
+			 *brightness = *dest_brightness;
+
+	 } else if ( *brightness < *dest_brightness ) {
+
+		 *brightness=*brightness + *step;
+
+		 if ( *brightness > 100 )
+			 *brightness = 100;
+
+		 if ( *brightness > *dest_brightness )
+			 *brightness = *dest_brightness;
+	 }
+
+	*step = (*step) * 1.05;
+
 }
 
 
@@ -815,6 +819,8 @@ _supla_esp_devconn_smooth_cb(void) {
 	}
 
 }
+
+#endif /*SUPLA_SMOOTH_DISABLED*/
 
 #ifdef RGBW_ONOFF_SUPPORT
 void DEVCONN_ICACHE_FLASH
@@ -1361,6 +1367,7 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_cfgmode_start(void) {
 
+    #ifndef SUPLA_SMOOTH_DISABLED
 	#if defined(RGB_CONTROLLER_CHANNEL) \
 		|| defined(RGBW_CONTROLLER_CHANNEL) \
 		|| defined(RGBWW_CONTROLLER_CHANNEL) \
@@ -1375,6 +1382,7 @@ supla_esp_devconn_before_cfgmode_start(void) {
 		}
 
 	#endif
+    #endif /*SUPLA_SMOOTH_DISABLED*/
 
 	os_timer_disarm(&devconn->supla_watchdog_timer);
 
