@@ -163,6 +163,8 @@ typedef struct {
     unsigned int Time1Left[CFG_TIME1_COUNT];
     unsigned int Time2Left[CFG_TIME2_COUNT];
 
+    char turnedOff[RS_MAX_COUNT];
+
     char zero[200];
 /*
 	char ltag;
