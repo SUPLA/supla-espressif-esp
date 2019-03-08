@@ -166,7 +166,7 @@ supla_esp_devconn_system_restart(void) {
 		supla_esp_em_stop();
 		#endif /*ELECTRICITY_METER*/
 
-		#ifdef BOARD_GPIO_BEFORE_REBOOT
+		#ifdef BOARD_BEFORE_REBOOT
 		supla_esp_board_before_reboot();
 		#endif
 
