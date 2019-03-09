@@ -49,7 +49,13 @@
 #include "supla_update.h"
 #endif
 
+#ifndef CVD_MAX_COUNT
 #define CVD_MAX_COUNT 4
+#endif /*CVD_MAX_COUNT*/
+
+#if CVD_MAX_COUNT == 0
+#undef CVD_MAX_COUNT
+#endif
 
 typedef struct {
 	
@@ -90,8 +96,9 @@ typedef struct {
 
 	uint8 last_wifi_status;
 
+	#ifdef CVD_MAX_COUNT
 	channel_value_delayed cvd[CVD_MAX_COUNT];
-	
+	#endif /*CVD_MAX_COUNT*/
 
 }devconn_params;
 
@@ -536,6 +543,7 @@ supla_esp_channel_value_changed_delayed_cb(void *timer_arg) {
 	
 }
 
+#ifdef CVD_MAX_COUNT
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_brightness, char brightness) {
 
@@ -551,6 +559,7 @@ supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_b
 	os_timer_arm(&devconn->cvd[channel_number].timer, 1500, 0);
 
 }
+#endif /*CVD_MAX_COUNT*/
 
 #endif
 
@@ -852,9 +861,11 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	#else
 	  supla_esp_board_set_rgbw_value(ChannelNumber, &Color, &_ColorBrightness, &_Brightness);
 	#endif /*RGBW_ONOFF_SUPPORT*/
+    #ifdef CVD_MAX_COUNT
 	 if ( send_value_changed ) {
 		 supla_esp_channel_rgbw_value_changed(ChannelNumber, Color, ColorBrightness, Brightness);
 	 }
+    #endif /*CVD_MAX_COUNT*/
 #else
 	supla_esp_hw_timer_disarm();
 
@@ -875,9 +886,11 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 _smooth->dest_brightness = Brightness;
 	 _smooth->turn_onoff = TurnOnOff;
 
+     #ifdef CVD_MAX_COUNT
 	 if ( send_value_changed ) {
 		 supla_esp_channel_rgbw_value_changed(ChannelNumber, Color, ColorBrightness, Brightness);
 	 }
+     #endif /*CVD_MAX_COUNT*/
 
 	supla_esp_hw_timer_init(FRC1_SOURCE, 1, _supla_esp_devconn_smooth_cb);
 	supla_esp_hw_timer_arm(10000);
