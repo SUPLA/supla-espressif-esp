@@ -68,7 +68,7 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 #endif
 
 #ifdef BOARD_CALCFG
-
-#endif /*BOARD_CALCFG*/
 void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result);
+#endif /*BOARD_CALCFG*/
+
 #endif /* SUPLA_ESP_CLIENT_H_ */
