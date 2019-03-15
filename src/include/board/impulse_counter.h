@@ -24,6 +24,7 @@
 #define IMPULSE_PORT 4
 #define LED_RED_PORT 5
 #define B_CFG_PORT 0
+#define ESP8266_SUPLA_PROTO_VERSION 10
 
 #define BOARD_ESP_STARTING supla_esp_board_starting();
 #define BOARD_INTR_HANDLER \
