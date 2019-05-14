@@ -21,10 +21,13 @@
 
 #define IMPULSE_COUNTER
 
-#define IMPULSE_PORT 4
-#define LED_RED_PORT 5
-#define B_CFG_PORT 0
+#define IMPULSE_PORT 13  // (NodeMCU D7)
+#define LED_RED_PORT 14  // (NodeMCU D5)
+#define REF_LED_PORT 4   // (NodeMCU D2)
+#define B_CFG_PORT 0     // (NodeMCU flash btn)
+#define IMPULSE_TRIGGER_VALUE 0
 #define ESP8266_SUPLA_PROTO_VERSION 10
+#define BOARD_ON_CONNECT
 
 #define BOARD_ESP_STARTING supla_esp_board_starting();
 #define BOARD_INTR_HANDLER \
@@ -35,5 +38,6 @@ void ICACHE_FLASH_ATTR supla_esp_board_starting(void);
 uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
     unsigned char channel_number, TDS_ImpulseCounter_Value *icv);
 uint8 supla_esp_board_intr_handler(uint32 gpio_status);
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
 
 #endif
