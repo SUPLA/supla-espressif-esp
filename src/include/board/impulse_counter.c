@@ -25,6 +25,7 @@ typedef struct {
 
 uint8 storage_offset;
 
+ETSTimer ref_led_timer1;
 ETSTimer storage_timer1;
 _supla_int64_t counter;
 uint8 counter_changed;
@@ -138,6 +139,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_load(uint8 offset) {
   return 0;
 }
 
+void ICACHE_FLASH_ATTR supla_esp_ref_led_timer(void *ptr) {
+	supla_esp_gpio_set_hi(REF_LED_PORT, 0);
+}
+
 uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
   if (gpio_status & BIT(IMPULSE_PORT)) {
     gpio_pin_intr_state_set(GPIO_ID_PIN(IMPULSE_PORT), GPIO_PIN_INTR_DISABLE);
@@ -146,9 +151,14 @@ uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
 
     uint8 v = gpio__input_get(IMPULSE_PORT);
     if (v != input_last_value) {
-      if (v == 1 && system_get_time() - input_last_time > 50000) {
+      if (v == IMPULSE_TRIGGER_VALUE && system_get_time() - input_last_time > 50000) {
         counter++;
         counter_changed = 1;
+        supla_esp_gpio_set_hi(REF_LED_PORT, 1);
+
+    	os_timer_disarm(&ref_led_timer1);
+    	os_timer_setfn(&ref_led_timer1, (os_timer_func_t *)supla_esp_ref_led_timer, NULL);
+    	os_timer_arm(&ref_led_timer1, 100, 0);
       }
       input_last_value = v;
       input_last_time = system_get_time();
@@ -194,7 +204,12 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
 
   channels[0].Number = 0;
   channels[0].Type = SUPLA_CHANNELTYPE_IMPULSE_COUNTER;
+  channels[0].Default = SUPLA_CHANNELFNC_ELECTRICITY_METER;
   supla_esp_ic_get_value(0, channels[0].value);
 }
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc) {}
+
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void) {
+	supla_esp_gpio_set_led(1, 0, 0);
+}
