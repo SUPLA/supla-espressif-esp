@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.4"
+#define SUPLA_ESP_SOFTVER "2.7.5"
 
 #define STATE_UNKNOWN       0
 #define STATE_DISCONNECTED  1
@@ -180,6 +180,9 @@ void supla_esp_board_gpio_init(void);
 extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #endif
 
+#ifndef INTR_CLEAR_MASK
+#define INTR_CLEAR_MASK 0xFF
+#endif
 
 #ifndef GPIO_PORT_INIT
 #define GPIO_PORT_INIT \
