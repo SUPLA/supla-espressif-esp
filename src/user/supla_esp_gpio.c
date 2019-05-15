@@ -1002,16 +1002,16 @@ supla_esp_gpio_intr_handler(void *params) {
 
 		if ( input_cfg->gpio_id != 255
 			 && input_cfg->gpio_id < 16
-			 && input_cfg->type != INPUT_TYPE_CUSTOM
 			 && gpio_status & BIT(input_cfg->gpio_id) ) {
 
-			//supla_log(LOG_DEBUG, "INTR(b) %i", a);
+			ETS_GPIO_INTR_DISABLE();
 
             gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), GPIO_PIN_INTR_DISABLE);
             GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(input_cfg->gpio_id)); // //clear interrupt status
 
-            if ( input_cfg->step == 0
-            		|| input_cfg->step == 3 ) {
+            if ( input_cfg->type != INPUT_TYPE_CUSTOM &&
+            		( input_cfg->step == 0
+            		  || input_cfg->step == 3 ) ) {
 
             	if ( input_cfg->step == 0 )
                 	input_cfg->step = 1;
@@ -1022,6 +1022,22 @@ supla_esp_gpio_intr_handler(void *params) {
             }
 
             gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), GPIO_PIN_INTR_ANYEDGE);
+            gpio_status = gpio_status ^ BIT(input_cfg->gpio_id);
+
+            ETS_GPIO_INTR_ENABLE();
+		}
+	}
+
+
+	// Disable uncaught interrupts
+	if (gpio_status != 0) {
+		for(a=0;a<16;a++) {
+			if ( gpio_status & BIT(a) && INTR_CLEAR_MASK & BIT(a) ) {
+				ETS_GPIO_INTR_DISABLE();
+				gpio_pin_intr_state_set(GPIO_ID_PIN(a), GPIO_PIN_INTR_DISABLE);
+				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(a));
+				ETS_GPIO_INTR_ENABLE();
+			}
 		}
 	}
 
