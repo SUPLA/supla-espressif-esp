@@ -515,7 +515,7 @@ void  supla_esg_gpio_start_cfg_mode(void) {
 void
 supla_esp_gpio_enable_input_port(char port) {
 
-	if ( port < 1 || port > 16 ) return;
+	if ( port < 1 || port > 15 ) return;
 
     gpio_output_set(0, 0, 0, GPIO_ID_PIN(port));
 
@@ -540,7 +540,7 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 		input_cfg = &supla_input_cfg[a];
 
 		if ( input_cfg->gpio_id != 255
-				&& input_cfg->gpio_id <= 16
+				&& input_cfg->gpio_id < 16
 				&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 					 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
 					 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) ) {
@@ -1001,7 +1001,7 @@ supla_esp_gpio_intr_handler(void *params) {
 		input_cfg = &supla_input_cfg[a];
 
 		if ( input_cfg->gpio_id != 255
-			 && input_cfg->gpio_id <= 16
+			 && input_cfg->gpio_id < 16
 			 && input_cfg->type != INPUT_TYPE_CUSTOM
 			 && gpio_status & BIT(input_cfg->gpio_id) ) {
 
