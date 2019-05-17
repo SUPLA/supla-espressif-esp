@@ -18,19 +18,28 @@
 
 #include <gpio.h>
 
+#define STORAGE_COUNT 2
+
 typedef struct {
   char tag[3];
-  _supla_int64_t counter[4];
+  _supla_int64_t counter[COUNTER_COUNT];
+  _supla_int64_t copy[COUNTER_COUNT];
 } _ic_storage_t;
 
+typedef struct {
+  uint8 gpio;
+  _supla_int64_t counter;
+  uint8 input_last_value;
+  uint32 input_last_time;
+} _ic_counter;
+
 uint8 storage_offset;
+uint8 counter_changed;
 
 ETSTimer ref_led_timer1;
 ETSTimer storage_timer1;
-_supla_int64_t counter;
-uint8 counter_changed;
-uint8 input_last_value = 0;
-uint32 input_last_time = 0;
+
+_ic_counter counter[COUNTER_COUNT];
 
 const uint8_t rsa_public_key_bytes[512] = {
     0xf2, 0xd5, 0xab, 0xa5, 0x1a, 0x6b, 0x72, 0x3b, 0xc1, 0xb1, 0x6f, 0xc0,
@@ -77,8 +86,26 @@ const uint8_t rsa_public_key_bytes[512] = {
     0x30, 0x37, 0xae, 0xbd, 0x4b, 0xdd, 0xbc, 0x15, 0x07, 0x2c, 0x89, 0xa3,
     0xcc, 0x7f, 0x2d, 0x48, 0xf7, 0x56, 0xb9, 0x43};
 
+uint8 ICACHE_FLASH_ATTR supla_esp_board_load(uint8 offset);
+void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr);
+
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
   ets_snprintf(buffer, buffer_size, "IMPULSE COUNTER");
+}
+
+void ICACHE_FLASH_ATTR supla_esp_board_starting(void) {
+  memset(counter, 0, sizeof(_ic_counter));
+
+  counter[0].gpio = IMPULSE_PORT1;
+  counter[1].gpio = IMPULSE_PORT2;
+  counter[2].gpio = IMPULSE_PORT3;
+
+  storage_offset = 1;
+  counter_changed = 0;
+
+  if (supla_esp_board_load(1) == 0) {
+    supla_esp_board_load(2);
+  }
 }
 
 void supla_esp_board_gpio_init(void) {
@@ -86,8 +113,17 @@ void supla_esp_board_gpio_init(void) {
   supla_input_cfg[0].gpio_id = B_CFG_PORT;
   supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 
-  supla_input_cfg[1].type = INPUT_TYPE_CUSTOM;
-  supla_input_cfg[1].gpio_id = IMPULSE_PORT;
+  for (int a = 0; a < COUNTER_COUNT; a++) {
+    supla_input_cfg[a + 1].type = INPUT_TYPE_CUSTOM;
+    supla_input_cfg[a + 1].gpio_id = counter[a].gpio;
+
+    counter[a].input_last_value = gpio__input_get(counter[a].gpio);
+  }
+
+  os_timer_disarm(&storage_timer1);
+  os_timer_setfn(&storage_timer1,
+                 (os_timer_func_t *)supla_esp_board_on_storage_timer, NULL);
+  os_timer_arm(&storage_timer1, 1000, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr) {
@@ -95,16 +131,15 @@ void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr) {
     counter_changed = 0;
     storage_offset = storage_offset == 1 ? 2 : 1;
 
-    int a;
     _ic_storage_t storage;
     storage.tag[0] = 'I';
     storage.tag[1] = 'C';
-    storage.tag[2] = 1;
+    storage.tag[2] = 2;
 
-    _supla_int64_t c = counter;
-
-    for (a = 0; a < 4; a++) {
-      storage.counter[a] = c;
+    for (int a = 0; a < STORAGE_COUNT; a++) {
+      for (int b = 0; b < COUNTER_COUNT; b++) {
+        storage.counter[a] = counter[a].counter;
+      }
     }
 
     ets_intr_lock();
@@ -124,13 +159,13 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_load(uint8 offset) {
           (CFG_SECTOR + STATE_SECTOR_OFFSET + offset) * SPI_FLASH_SEC_SIZE,
           (uint32 *)&storage, sizeof(_ic_storage_t))) {
     if (storage.tag[0] == 'I' && storage.tag[1] == 'C' && storage.tag[2] == 1) {
-      for (int a = 1; a < 4; a++) {
-        if (storage.counter[0] != storage.counter[a]) {
+      for (int a = 0; a < COUNTER_COUNT; a++) {
+        if (storage.counter[a] != storage.copy[a]) {
           return 0;
         }
+        counter[a].counter = storage.counter[a];
       }
 
-      counter = storage.counter[0];
       counter_changed = 0;
       return 1;
     }
@@ -140,59 +175,53 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_load(uint8 offset) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_ref_led_timer(void *ptr) {
-	supla_esp_gpio_set_hi(REF_LED_PORT, 0);
+  supla_esp_gpio_set_hi(REF_LED_PORT, 0);
 }
 
 uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
-  if (gpio_status & BIT(IMPULSE_PORT)) {
-    gpio_pin_intr_state_set(GPIO_ID_PIN(IMPULSE_PORT), GPIO_PIN_INTR_DISABLE);
-    GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS,
-                   gpio_status & BIT(IMPULSE_PORT));  // clear interrupt status
+  uint8 result = 0;
 
-    uint8 v = gpio__input_get(IMPULSE_PORT);
-    if (v != input_last_value) {
-      if (v == IMPULSE_TRIGGER_VALUE && system_get_time() - input_last_time > 50000) {
-        counter++;
-        counter_changed = 1;
-        supla_esp_gpio_set_hi(REF_LED_PORT, 1);
+  for (int a = 0; a < COUNTER_COUNT; a++) {
+    if (gpio_status & BIT(counter[a].gpio)) {
+      gpio_pin_intr_state_set(GPIO_ID_PIN(counter[a].gpio),
+                              GPIO_PIN_INTR_DISABLE);
+      GPIO_REG_WRITE(
+          GPIO_STATUS_W1TC_ADDRESS,
+          gpio_status & BIT(counter[a].gpio));  // clear interrupt status
 
-    	os_timer_disarm(&ref_led_timer1);
-    	os_timer_setfn(&ref_led_timer1, (os_timer_func_t *)supla_esp_ref_led_timer, NULL);
-    	os_timer_arm(&ref_led_timer1, 100, 0);
+      uint8 v = gpio__input_get(counter[a].gpio);
+      if (v != counter[a].input_last_value) {
+        if (v == IMPULSE_TRIGGER_VALUE &&
+            system_get_time() - counter[a].input_last_time > 50000) {
+          counter[a].counter++;
+          counter_changed = 1;
+          if (a == 0) {
+            supla_esp_gpio_set_hi(REF_LED_PORT, 1);
+
+            os_timer_disarm(&ref_led_timer1);
+            os_timer_setfn(&ref_led_timer1,
+                           (os_timer_func_t *)supla_esp_ref_led_timer, NULL);
+            os_timer_arm(&ref_led_timer1, 100, 0);
+          }
+        }
+        counter[a].input_last_value = v;
+        counter[a].input_last_time = system_get_time();
       }
-      input_last_value = v;
-      input_last_time = system_get_time();
+
+      gpio_pin_intr_state_set(GPIO_ID_PIN(counter[a].gpio),
+                              GPIO_PIN_INTR_ANYEDGE);
+
+      result = 1;
     }
-
-    gpio_pin_intr_state_set(GPIO_ID_PIN(IMPULSE_PORT), GPIO_PIN_INTR_ANYEDGE);
-
-    return 1;
   }
 
-  return 0;
-}
-
-void ICACHE_FLASH_ATTR supla_esp_board_starting(void) {
-  counter = 0;
-  counter_changed = 0;
-  storage_offset = 1;
-
-  if (supla_esp_board_load(1) == 0) {
-    supla_esp_board_load(2);
-  }
-
-  input_last_value = gpio__input_get(IMPULSE_PORT);
-
-  os_timer_disarm(&storage_timer1);
-  os_timer_setfn(&storage_timer1,
-                 (os_timer_func_t *)supla_esp_board_on_storage_timer, NULL);
-  os_timer_arm(&storage_timer1, 1000, 1);
+  return result;
 }
 
 uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
     unsigned char channel_number, TDS_ImpulseCounter_Value *icv) {
-  if (channel_number == 0) {
-    icv->counter = counter;
+  if (channel_number < COUNTER_COUNT) {
+    icv->counter = counter[channel_number].counter;
     return 1;
   }
   return 0;
@@ -200,16 +229,20 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
 
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
                                   unsigned char *channel_count) {
-  *channel_count = 1;
+  *channel_count = COUNTER_COUNT;
 
-  channels[0].Number = 0;
-  channels[0].Type = SUPLA_CHANNELTYPE_IMPULSE_COUNTER;
+  for (int a = 0; a < COUNTER_COUNT; a++) {
+    channels[a].Number = a;
+    channels[a].Type = SUPLA_CHANNELTYPE_IMPULSE_COUNTER;
+
+    supla_esp_ic_get_value(a, channels[a].value);
+  }
+
   channels[0].Default = SUPLA_CHANNELFNC_ELECTRICITY_METER;
-  supla_esp_ic_get_value(0, channels[0].value);
 }
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc) {}
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void) {
-	supla_esp_gpio_set_led(1, 0, 0);
+  supla_esp_gpio_set_led(1, 0, 0);
 }

@@ -21,7 +21,11 @@
 
 #define IMPULSE_COUNTER
 
-#define IMPULSE_PORT 13  // (NodeMCU D7)
+#define COUNTER_COUNT 3
+#define IMPULSE_PORT1 13  // (NodeMCU D7)
+#define IMPULSE_PORT2 12  // (NodeMCU D6)
+#define IMPULSE_PORT3 5   // (NodeMCU D1)
+
 #define LED_RED_PORT 14  // (NodeMCU D5)
 #define REF_LED_PORT 4   // (NodeMCU D2)
 #define B_CFG_PORT 0     // (NodeMCU flash btn)
