@@ -123,7 +123,7 @@ void supla_esp_board_gpio_init(void) {
   os_timer_disarm(&storage_timer1);
   os_timer_setfn(&storage_timer1,
                  (os_timer_func_t *)supla_esp_board_on_storage_timer, NULL);
-  os_timer_arm(&storage_timer1, 1000, 1);
+  os_timer_arm(&storage_timer1, 20000, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr) {
