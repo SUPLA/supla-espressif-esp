@@ -32,8 +32,13 @@
 #define IMPULSE_TRIGGER_VALUE 0
 #define ESP8266_SUPLA_PROTO_VERSION 10
 #define BOARD_ON_CONNECT
+#define BOARD_ON_CFG_SAVED
+#define BOARD_CFG_HTML_TEMPLATE
 
 #define BOARD_ESP_STARTING supla_esp_board_starting();
+char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
+    char dev_name[25], const char mac[6], const char data_saved);
+
 #define BOARD_INTR_HANDLER \
   if (supla_esp_board_intr_handler(gpio_status)) return
 
@@ -43,5 +48,6 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
     unsigned char channel_number, TDS_ImpulseCounter_Value *icv);
 uint8 supla_esp_board_intr_handler(uint32 gpio_status);
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
+void ICACHE_FLASH_ATTR supla_esp_board_on_cfg_saved(void);
 
 #endif
