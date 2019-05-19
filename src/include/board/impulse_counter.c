@@ -22,8 +22,8 @@
 
 typedef struct {
   char tag[3];
-  _supla_int64_t counter[COUNTER_COUNT];
-  _supla_int64_t copy[COUNTER_COUNT];
+  _supla_int64_t counter[IMPULSE_COUNTER_COUNT];
+  _supla_int64_t copy[IMPULSE_COUNTER_COUNT];
 } _ic_storage_t;
 
 typedef struct {
@@ -39,7 +39,7 @@ uint8 counter_changed;
 ETSTimer ref_led_timer1;
 ETSTimer storage_timer1;
 
-_ic_counter counter[COUNTER_COUNT];
+_ic_counter counter[IMPULSE_COUNTER_COUNT];
 
 const uint8_t rsa_public_key_bytes[512] = {
     0xf2, 0xd5, 0xab, 0xa5, 0x1a, 0x6b, 0x72, 0x3b, 0xc1, 0xb1, 0x6f, 0xc0,
@@ -249,7 +249,7 @@ void supla_esp_board_gpio_init(void) {
   supla_input_cfg[0].gpio_id = B_CFG_PORT;
   supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 
-  for (int a = 0; a < COUNTER_COUNT; a++) {
+  for (int a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
     supla_input_cfg[a + 1].type = INPUT_TYPE_CUSTOM;
     supla_input_cfg[a + 1].gpio_id = counter[a].gpio;
 
@@ -273,7 +273,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr) {
     storage.tag[2] = 2;
 
     for (int a = 0; a < STORAGE_COUNT; a++) {
-      for (int b = 0; b < COUNTER_COUNT; b++) {
+      for (int b = 0; b < IMPULSE_COUNTER_COUNT; b++) {
         storage.counter[a] = counter[a].counter;
       }
     }
@@ -295,7 +295,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_load(uint8 offset) {
           (CFG_SECTOR + STATE_SECTOR_OFFSET + offset) * SPI_FLASH_SEC_SIZE,
           (uint32 *)&storage, sizeof(_ic_storage_t))) {
     if (storage.tag[0] == 'I' && storage.tag[1] == 'C' && storage.tag[2] == 1) {
-      for (int a = 0; a < COUNTER_COUNT; a++) {
+      for (int a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
         if (storage.counter[a] != storage.copy[a]) {
           return 0;
         }
@@ -315,7 +315,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_clear_measurements() {
   supla_esp_ic_set_measurement_frequency(0);  // Disabled
 
   int a;
-  for (a = 0; a < COUNTER_COUNT; a++) {
+  for (a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
     counter[a].counter = 0;
   }
 
@@ -332,7 +332,7 @@ void ICACHE_FLASH_ATTR supla_esp_ref_led_timer(void *ptr) {
 uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
   uint8 result = 0;
 
-  for (int a = 0; a < COUNTER_COUNT; a++) {
+  for (int a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
     if (gpio_status & BIT(counter[a].gpio)) {
       gpio_pin_intr_state_set(GPIO_ID_PIN(counter[a].gpio),
                               GPIO_PIN_INTR_DISABLE);
@@ -371,7 +371,7 @@ uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
 
 uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
     unsigned char channel_number, TDS_ImpulseCounter_Value *icv) {
-  if (channel_number < COUNTER_COUNT) {
+  if (channel_number < IMPULSE_COUNTER_COUNT) {
     icv->counter = counter[channel_number].counter;
     return 1;
   }
@@ -380,9 +380,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_get_impulse_counter(
 
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
                                   unsigned char *channel_count) {
-  *channel_count = COUNTER_COUNT;
+  *channel_count = IMPULSE_COUNTER_COUNT;
 
-  for (int a = 0; a < COUNTER_COUNT; a++) {
+  for (int a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
     channels[a].Number = a;
     channels[a].Type = SUPLA_CHANNELTYPE_IMPULSE_COUNTER;
 

@@ -25,10 +25,10 @@
 #include "supla_esp_devconn.h"
 #include "supla_esp_impulse_counter.h"
 
-#ifdef IMPULSE_COUNTER
+#ifdef IMPULSE_COUNTER_COUNT
 
 ETSTimer supla_ic_timer1;
-TDS_ImpulseCounter_Value last_icv;
+TDS_ImpulseCounter_Value last_icv[IMPULSE_COUNTER_COUNT];
 
 void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
   if (supla_esp_devconn_is_registered() != 1) {
@@ -41,15 +41,17 @@ void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
   TDS_ImpulseCounter_Value icv;
   memset(&icv, 0, sizeof(TDS_ImpulseCounter_Value));
 
-  while (channel_number < 100 &&
-         supla_esp_board_get_impulse_counter(channel_number, &icv) == 1) {
-    if (memcmp(&last_icv, &icv, sizeof(TDS_ImpulseCounter_Value) != 0)) {
+  while (channel_number < IMPULSE_COUNTER_COUNT) {
+    if (supla_esp_board_get_impulse_counter(channel_number, &icv) == 1 &&
+        memcmp(&last_icv[channel_number], &icv,
+               sizeof(TDS_ImpulseCounter_Value) != 0)) {
       memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
       memcpy(value, &icv, sizeof(TDS_ImpulseCounter_Value));
-      memcpy(&last_icv, &icv, sizeof(TDS_ImpulseCounter_Value));
+      memcpy(&last_icv[channel_number], &icv, sizeof(TDS_ImpulseCounter_Value));
       supla_esp_channel_value__changed(channel_number, value);
 
-      // supla_log(LOG_DEBUG, "Value changed %i", last_icv.counter);
+      // supla_log(LOG_DEBUG, "Value changed %i",
+      // last_icv[channel_number].counter);
     }
 
     channel_number++;
@@ -57,11 +59,11 @@ void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_ic_init(void) {
-  memset(&last_icv, 0, sizeof(TDS_ImpulseCounter_Value));
+  memset(last_icv, 0, sizeof(TDS_ImpulseCounter_Value) * IMPULSE_COUNTER_COUNT);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_ic_start(void) {
-	supla_esp_ic_set_measurement_frequency(5000);
+  supla_esp_ic_set_measurement_frequency(5000);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_ic_stop(void) {
@@ -93,4 +95,4 @@ void ICACHE_FLASH_ATTR supla_esp_ic_set_measurement_frequency(int freq) {
   }
 }
 
-#endif /*IMPULSE_COUNTER*/
+#endif /*IMPULSE_COUNTER_COUNT*/
