@@ -47,7 +47,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
   while (channel_number < ELECTRICITY_METER_COUNT) {
     if (supla_esp_board_get_measurements(channel_number, &ev) == 1 &&
         memcmp(&ev, &last_ev[channel_number],
-               sizeof(TElectricityMeter_ExtendedValue)) == 0) {
+               sizeof(TElectricityMeter_ExtendedValue)) != 0) {
       memcpy(&last_ev[channel_number], &ev,
              sizeof(TElectricityMeter_ExtendedValue));
       supla_esp_em_extendedvalue_to_value(&ev, value);
