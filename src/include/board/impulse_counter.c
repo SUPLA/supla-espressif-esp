@@ -230,12 +230,6 @@ void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_starting(void) {
-  memset(counter, 0, sizeof(_ic_counter));
-
-  counter[0].gpio = IMPULSE_PORT1;
-  counter[1].gpio = IMPULSE_PORT2;
-  counter[2].gpio = IMPULSE_PORT3;
-
   storage_offset = 1;
   counter_changed = 0;
 
@@ -245,6 +239,12 @@ void ICACHE_FLASH_ATTR supla_esp_board_starting(void) {
 }
 
 void supla_esp_board_gpio_init(void) {
+  memset(counter, 0, sizeof(_ic_counter));
+
+  counter[0].gpio = IMPULSE_PORT1;
+  counter[1].gpio = IMPULSE_PORT2;
+  counter[2].gpio = IMPULSE_PORT3;
+
   supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   supla_input_cfg[0].gpio_id = B_CFG_PORT;
   supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
@@ -259,7 +259,7 @@ void supla_esp_board_gpio_init(void) {
   os_timer_disarm(&storage_timer1);
   os_timer_setfn(&storage_timer1,
                  (os_timer_func_t *)supla_esp_board_on_storage_timer, NULL);
-  os_timer_arm(&storage_timer1, 20000, 1);
+  os_timer_arm(&storage_timer1, SAVE_INTERVAL, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr) {
@@ -272,10 +272,9 @@ void ICACHE_FLASH_ATTR supla_esp_board_on_storage_timer(void *ptr) {
     storage.tag[1] = 'C';
     storage.tag[2] = 2;
 
-    for (int a = 0; a < STORAGE_COUNT; a++) {
-      for (int b = 0; b < IMPULSE_COUNTER_COUNT; b++) {
-        storage.counter[a] = counter[a].counter;
-      }
+    for (int a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
+      storage.counter[a] = counter[a].counter;
+      storage.copy[a] = storage.counter[a];
     }
 
     ets_intr_lock();
@@ -294,7 +293,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_board_load(uint8 offset) {
       spi_flash_read(
           (CFG_SECTOR + STATE_SECTOR_OFFSET + offset) * SPI_FLASH_SEC_SIZE,
           (uint32 *)&storage, sizeof(_ic_storage_t))) {
-    if (storage.tag[0] == 'I' && storage.tag[1] == 'C' && storage.tag[2] == 1) {
+    if (storage.tag[0] == 'I' && storage.tag[1] == 'C' && storage.tag[2] == 2) {
       for (int a = 0; a < IMPULSE_COUNTER_COUNT; a++) {
         if (storage.counter[a] != storage.copy[a]) {
           return 0;

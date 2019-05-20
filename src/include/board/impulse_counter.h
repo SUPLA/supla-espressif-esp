@@ -22,6 +22,8 @@
 #define IMPULSE_COUNTER
 #define IMPULSE_COUNTER_COUNT 3
 
+#define SAVE_INTERVAL 5000
+
 #define IMPULSE_PORT1 13  // (NodeMCU D7)
 #define IMPULSE_PORT2 12  // (NodeMCU D6)
 #define IMPULSE_PORT3 5   // (NodeMCU D1)
