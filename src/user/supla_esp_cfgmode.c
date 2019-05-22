@@ -64,6 +64,13 @@
 #define VAR_TRG          22
 #define VAR_CMD          23
 
+#ifdef CFG_TIME_VARIABLES
+#define VAR_T10          24
+#define VAR_T11          25
+#define VAR_T20          26
+#define VAR_T21          27
+#endif /*CFG_TIME_VARIABLES*/
+
 typedef struct {
 	
 	char step;
@@ -201,6 +208,23 @@ HexToInt(char *str, int len) {
 
 };
 
+int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
+	int result = 0;
+
+	short s=0;
+	while(pVars->intval[s]!=0) {
+
+		if ( pVars->intval[s] >= '0' && pVars->intval[s] <= '9' ) {
+			result = result*10 + pVars->intval[s] - '0';
+		}
+
+		s++;
+	}
+
+	return result;
+}
+
+
 void ICACHE_FLASH_ATTR
 supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned short len, SuplaEspCfg *cfg, char *reboot) {
 	
@@ -278,6 +302,12 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 				char usd[3] = { 'u', 's', 'd' };
 				char trg[3] = { 't', 'r', 'g' };
 				char cmd[3] = { 'c', 'm', 'd' };
+#ifdef CFG_TIME_VARIABLES
+				char t10[3] = { 't', '1', '0' };
+				char t11[3] = { 't', '1', '1' };
+				char t20[3] = { 't', '2', '0' };
+				char t21[3] = { 't', '2', '1' };
+#endif /*CFG_TIME_VARIABLES*/
 				
 				if ( len-a >= 4
 					 && pdata[a+3] == '=' ) {
@@ -382,12 +412,39 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->buff_size = CMD_MAXSIZE;
 						pVars->pbuff = user_cmd;
 
+#ifndef CFG_TIME_VARIABLES
 				    }
-					
+#else
+				    } else if ( memcmp(t10, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_T10;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    } else if ( memcmp(t11, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_T11;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    } else if ( memcmp(t20, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_T20;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    } else if ( memcmp(t21, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_T21;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    }
+#endif /*CFG_TIME_VARIABLES*/
 					a+=4;
 					pVars->offset = 0;
 				}
-				
+
 			}
 			
 			if ( pVars->current_var != VAR_NONE ) {
@@ -429,17 +486,8 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 					
 					if ( pVars->current_var == VAR_LID ) {
 						
-						cfg->LocationID = 0;
+						cfg->LocationID = cfg_str2int(pVars);
 
-						short s=0;
-						while(pVars->intval[s]!=0) {
-
-							if ( pVars->intval[s] >= '0' && pVars->intval[s] <= '9' ) {
-								cfg->LocationID = cfg->LocationID*10 + pVars->intval[s] - '0';
-							}
-
-							s++;
-						}
 					} else if ( pVars->current_var == VAR_CFGBTN ) {
 
 						cfg->CfgButtonType = pVars->intval[0] - '0';
@@ -476,9 +524,27 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 					} else if ( pVars->current_var == VAR_TRG ) {
 
 						cfg->Trigger = pVars->intval[0] - '0';
+#ifndef CFG_TIME_VARIABLES
+				    }
+#else
+					} else if ( pVars->current_var == VAR_T10 ) {
+
+						cfg->Time1[0] = cfg_str2int(pVars);
+
+					} else if ( pVars->current_var == VAR_T11 ) {
+
+						cfg->Time1[1] = cfg_str2int(pVars);
+
+					} else if ( pVars->current_var == VAR_T20 ) {
+
+						cfg->Time2[0] = cfg_str2int(pVars);
+
+					} else if ( pVars->current_var == VAR_T21 ) {
+
+						cfg->Time2[1] = cfg_str2int(pVars);
 
 					}
-					
+#endif /*CFG_TIME_VARIABLES*/
 					pVars->matched++;
 					pVars->current_var = VAR_NONE;
 
