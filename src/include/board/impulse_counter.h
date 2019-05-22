@@ -23,13 +23,17 @@
 #define IMPULSE_COUNTER_COUNT 3
 
 #define SAVE_INTERVAL 5000
+#define CFG_TIME_VARIABLES
 
 #define IMPULSE_PORT1 13  // (NodeMCU D7)
 #define IMPULSE_PORT2 12  // (NodeMCU D6)
 #define IMPULSE_PORT3 5   // (NodeMCU D1)
 
 #define LED_RED_PORT 14  // (NodeMCU D5)
-#define REF_LED_PORT 4   // (NodeMCU D2)
+#define REF_LED_PORT1 4   // (NodeMCU D2)
+#define REF_LED_PORT2 15   // (NodeMCU D8)
+#define REF_LED_PORT3 16   // (NodeMCU D0)
+
 #define B_CFG_PORT 0     // (NodeMCU flash btn)
 #define IMPULSE_TRIGGER_VALUE 0
 #define ESP8266_SUPLA_PROTO_VERSION 10

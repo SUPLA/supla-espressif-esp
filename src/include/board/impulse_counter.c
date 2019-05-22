@@ -28,15 +28,17 @@ typedef struct {
 
 typedef struct {
   uint8 gpio;
+  uint8 ref_led_gpio;
   _supla_int64_t counter;
   uint8 input_last_value;
   uint32 input_last_time;
+  uint32 impulse_time;
+  ETSTimer ref_led_timer;
 } _ic_counter;
 
 uint8 storage_offset;
 uint8 counter_changed;
 
-ETSTimer ref_led_timer1;
 ETSTimer storage_timer1;
 
 _ic_counter counter[IMPULSE_COUNTER_COUNT];
@@ -174,11 +176,17 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       "class=\"w\"><h3>Supla Settings</h3><i><input name=\"svr\" "
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
       "value=\"%s\"><label>E-mail</label></i></div><div "
-      "class=\"w\"><h3>Additional Settings</h3><i><select name=\"led\"><option "
-      "value=\"0\" %s>LED ON<option value=\"1\" %s>LED "
-      "OFF</select><label>Status - connected</label></i><i><select "
-      "name=\"upd\"><option value=\"0\" %s>NO<option value=\"1\" "
-      "%s>YES</select><label>Firmware update</label></i><i><input name=\"cmd\" "
+      "class=\"w\"><h3>Additional Settings</h3><i><input name=\"t10\" "
+      "type=\"number\" value=\"%i\"><label>IMPULSE TIME(us.) "
+      "CH#0</label></i><i><input name=\"t11\" type=\"number\" "
+      "value=\"%i\"><label>IMPULSE TIME(us.) CH#1</label></i><i><input "
+      "name=\"t20\" "
+      "type=\"number\" value=\"%i\"><label>IMPULSE TIME(us.) "
+      "CH#2</label></i><i><select name=\"led\"><option value=\"0\" %s>LED "
+      "ON<option value=\"1\" %s>LED OFF</select><label>Status - "
+      "connected</label></i><i><select name=\"upd\"><option value=\"0\" "
+      "%s>NO<option value=\"1\" %s>YES</select><label>Firmware "
+      "update</label></i><i><input name=\"cmd\" "
       "value=\"%s\"><label>Reset</label></i></div><button "
       "type=\"submit\">SAVE</button></form></div><br><br>";
 
@@ -213,6 +221,9 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       (unsigned char)mac[1], (unsigned char)mac[2], (unsigned char)mac[3],
       (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
       supla_esp_cfg.Server, supla_esp_cfg.Email,
+      supla_esp_cfg.Time1[0] > 0 ? supla_esp_cfg.Time1[0] : 50000,
+      supla_esp_cfg.Time1[1] > 0 ? supla_esp_cfg.Time1[1] : 50000,
+      supla_esp_cfg.Time2[0] > 0 ? supla_esp_cfg.Time2[0] : 50000,
       supla_esp_cfg.StatusLedOff == 0 ? "selected" : "",
       supla_esp_cfg.StatusLedOff == 1 ? "selected" : "",
       supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
@@ -239,11 +250,31 @@ void ICACHE_FLASH_ATTR supla_esp_board_starting(void) {
 }
 
 void supla_esp_board_gpio_init(void) {
+
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
+
+  supla_esp_gpio_set_hi(REF_LED_PORT1, 0);
+  supla_esp_gpio_set_hi(REF_LED_PORT2, 0);
+  supla_esp_gpio_set_hi(REF_LED_PORT3, 0);
+
   memset(counter, 0, sizeof(_ic_counter));
 
   counter[0].gpio = IMPULSE_PORT1;
+  counter[0].ref_led_gpio = REF_LED_PORT1;
+  counter[0].impulse_time =
+      supla_esp_cfg.Time1[0] > 0 ? supla_esp_cfg.Time1[0] : 50000;
+
   counter[1].gpio = IMPULSE_PORT2;
+  counter[1].ref_led_gpio = REF_LED_PORT2;
+  counter[1].impulse_time =
+      supla_esp_cfg.Time1[1] > 0 ? supla_esp_cfg.Time1[1] : 50000;
+
   counter[2].gpio = IMPULSE_PORT3;
+  counter[2].ref_led_gpio = REF_LED_PORT3;
+  counter[2].impulse_time =
+      supla_esp_cfg.Time2[0] > 0 ? supla_esp_cfg.Time2[0] : 50000;
+
+  gpio16_output_conf();
 
   supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   supla_input_cfg[0].gpio_id = B_CFG_PORT;
@@ -325,7 +356,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_clear_measurements() {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_ref_led_timer(void *ptr) {
-  supla_esp_gpio_set_hi(REF_LED_PORT, 0);
+  supla_esp_gpio_set_hi(((_ic_counter *)ptr)->ref_led_gpio, 0);
 }
 
 uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
@@ -342,16 +373,19 @@ uint8 supla_esp_board_intr_handler(uint32 gpio_status) {
       uint8 v = gpio__input_get(counter[a].gpio);
       if (v != counter[a].input_last_value) {
         if (v == IMPULSE_TRIGGER_VALUE &&
-            system_get_time() - counter[a].input_last_time > 50000) {
+            system_get_time() - counter[a].input_last_time >=
+                counter[a].impulse_time) {
           counter[a].counter++;
           counter_changed = 1;
-          if (a == 0) {
-            supla_esp_gpio_set_hi(REF_LED_PORT, 1);
 
-            os_timer_disarm(&ref_led_timer1);
-            os_timer_setfn(&ref_led_timer1,
-                           (os_timer_func_t *)supla_esp_ref_led_timer, NULL);
-            os_timer_arm(&ref_led_timer1, 100, 0);
+          if (counter[a].ref_led_gpio <= 16) {
+            supla_esp_gpio_set_hi(counter[a].ref_led_gpio, 1);
+
+            os_timer_disarm(&counter[a].ref_led_timer);
+            os_timer_setfn(&counter[a].ref_led_timer,
+                           (os_timer_func_t *)supla_esp_ref_led_timer,
+                           &counter[a]);
+            os_timer_arm(&counter[a].ref_led_timer, 100, 0);
           }
         }
         counter[a].input_last_value = v;
