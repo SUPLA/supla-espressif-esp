@@ -21,7 +21,7 @@
 
 #include "supla_esp.h"
 
-#ifdef IMPULSE_COUNTER
+#ifdef IMPULSE_COUNTER_COUNT
 
 void ICACHE_FLASH_ATTR supla_esp_ic_init(void);
 void ICACHE_FLASH_ATTR supla_esp_ic_start(void);
@@ -29,7 +29,7 @@ void ICACHE_FLASH_ATTR supla_esp_ic_stop(void);
 void ICACHE_FLASH_ATTR supla_esp_ic_device_registered(void);
 void ICACHE_FLASH_ATTR supla_esp_ic_get_value(
     unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
-
-#endif /*IMPULSE_COUNTER*/
+void ICACHE_FLASH_ATTR supla_esp_ic_set_measurement_frequency(int freq);
+#endif /*IMPULSE_COUNTER_COUNT*/
 
 #endif

@@ -21,7 +21,7 @@
 
 #include "supla_esp.h"
 
-#ifdef ELECTRICITY_METER
+#ifdef ELECTRICITY_METER_COUNT
 
 void ICACHE_FLASH_ATTR supla_esp_em_init(void);
 void ICACHE_FLASH_ATTR supla_esp_em_start(void);
@@ -32,6 +32,6 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 void ICACHE_FLASH_ATTR supla_esp_em_send_base_value_enabled(char enabled);
 void ICACHE_FLASH_ATTR supla_esp_em_set_measurement_frequency(int freq);
 
-#endif /*ELECTRICITY_METER*/
+#endif /*ELECTRICITY_METER_COUNT*/
 
 #endif

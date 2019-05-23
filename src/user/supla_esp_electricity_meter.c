@@ -25,10 +25,11 @@
 #include "supla_esp_devconn.h"
 #include "supla_esp_electricity_meter.h"
 
-#ifdef ELECTRICITY_METER
+#ifdef ELECTRICITY_METER_COUNT
 
 ETSTimer supla_em_timer1;
 char supla_em_send_base_enabled = 1;
+TElectricityMeter_ExtendedValue last_ev[ELECTRICITY_METER_COUNT];
 
 void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
     TElectricityMeter_ExtendedValue *ev, char *value);
@@ -43,14 +44,20 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
   TElectricityMeter_ExtendedValue ev;
   memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
 
-  while (channel_number < 100 &&
-         supla_esp_board_get_measurements(channel_number, &ev) == 1) {
-    supla_esp_em_extendedvalue_to_value(&ev, value);
-    if (supla_em_send_base_enabled == 1) {
-      supla_esp_channel_value__changed(channel_number, value);
+  while (channel_number < ELECTRICITY_METER_COUNT) {
+    if (supla_esp_board_get_measurements(channel_number, &ev) == 1 &&
+        memcmp(&ev, &last_ev[channel_number],
+               sizeof(TElectricityMeter_ExtendedValue)) != 0) {
+      memcpy(&last_ev[channel_number], &ev,
+             sizeof(TElectricityMeter_ExtendedValue));
+      supla_esp_em_extendedvalue_to_value(&ev, value);
+      if (supla_em_send_base_enabled == 1) {
+        supla_esp_channel_value__changed(channel_number, value);
+      }
+      supla_esp_channel_em_value_changed(channel_number, &ev);
+      memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
     }
-    supla_esp_channel_em_value_changed(channel_number, &ev);
-    memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+
     channel_number++;
   }
 }
@@ -129,4 +136,4 @@ void ICACHE_FLASH_ATTR supla_esp_em_set_measurement_frequency(int freq) {
   }
 }
 
-#endif /*ELECTRICITY_METER*/
+#endif /*ELECTRICITY_METER_COUNT*/
