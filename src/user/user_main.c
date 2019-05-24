@@ -140,11 +140,11 @@ void MAIN_ICACHE_FLASH user_init(void)
 	     supla_esp_pwm_init();
 	#endif
 
-	#ifdef ELECTRICITY_METER
+	#ifdef ELECTRICITY_METER_COUNT
 		 supla_esp_em_init();
 	#endif
 
-	#ifdef IMPULSE_COUNTER
+	#ifdef IMPULSE_COUNTER_COUNT
 		 supla_esp_ic_init();
 	#endif
 
@@ -167,11 +167,11 @@ void MAIN_ICACHE_FLASH user_init(void)
 		supla_dht_start();
 	#endif
 
-	#ifdef ELECTRICITY_METER
+	#ifdef ELECTRICITY_METER_COUNT
 		 supla_esp_em_start();
 	#endif
 
-	#ifdef IMPULSE_COUNTER
+	#ifdef IMPULSE_COUNTER_COUNT
 		 supla_esp_ic_start();
 	#endif
 
