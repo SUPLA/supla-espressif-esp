@@ -36,9 +36,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_system_restart(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_cfgmode_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
 
-#ifdef ELECTRICITY_METER
+#ifdef ELECTRICITY_METER_COUNT
 void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev);
-#endif /*ELECTRICITY_METER*/
+#endif /*ELECTRICITY_METER_COUNT*/
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
     || defined(RGBW_CONTROLLER_CHANNEL) \
