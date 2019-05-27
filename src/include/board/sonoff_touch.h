@@ -17,18 +17,45 @@
  */
 
 #ifndef SONOFF_TOUCH_H_
-#define SONOFF_TOUCHH_
+#define SONOFF_TOUCH_H_
 
-#define LED_RED_PORT    13
 #define ESP8285
+
+#define USE_GPIO9
+
+//#define GPIO_INIT_DELAY
+
+#define USE_GPIO14
+
+#define LED_INVERT
+
+#define _RASING_EDGE
+
 #define ESP8266_SUPLA_PROTO_VERSION 7
-#define DS18B20
+
+#define SUPLA_ESP_SOFTVER "2.7.4.0"
+
+#ifdef __BOARD_sonoff_touch
+	#define AP_SSID "SONOFF-TOUCH"
+#endif
 
 #ifdef __BOARD_sonoff_touch_dual
-#define TEMPERATURE_CHANNEL 2
-#else /*#ifdef __BOARD_sonoff_touch_dual*/
-#define TEMPERATURE_CHANNEL 1
+	#define AP_SSID "TOUCH-DUAL"
 #endif
+
+#ifdef __BOARD_sonoff_touch_triple
+	#define AP_SSID "TOUCH-TRIPLE"
+#endif
+
+#define LED_RED_PORT    13
+
+#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
+ 	supla_log(LOG_DEBUG, "update, port = %i", port); \
+	supla_esp_devconn_stop(); \
+	os_delay_us(200); \
+	system_restart(); };  }; 
+
+
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
 
