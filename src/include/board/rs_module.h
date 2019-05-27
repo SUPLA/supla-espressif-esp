@@ -20,15 +20,35 @@
 #define SUPLA_RS_MODULE_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
+
+#define SUPLA_ESP_SOFTVER "2.7.4.0"
+
 #define _ROLLERSHUTTER_SUPPORT
 
-#define DS18B20
+#ifdef __BOARD_rs_module
+	#define AP_SSID "ROLETY"
+#endif
+
+#ifdef __BOARD_rs_module_DHT22
+	#define DHTSENSOR
+   	#define TEMPERATURE_HUMIDITY_CHANNEL 1
+	#define AP_SSID "ROLETY_DHT22"
+#endif
+
+#ifdef __BOARD_rs_module_ds18b20
+	#define DS18B20
+	#define TEMPERATURE_CHANNEL 1
+	#define AP_SSID "ROLETY_DS18B20"
+#endif
+
 #define USE_GPIO16_OUTPUT
 
-#define TEMPERATURE_CHANNEL 2
+
 #define LED_RED_PORT   16
 #define WATCHDOG_TIMEOUT 90000000
 
-void supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+void ICACHE_FLASH_ATTR
+	 supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif
