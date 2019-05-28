@@ -36,17 +36,39 @@
 #include "board/gate_module_wroom.c"
 
 #elif defined(__BOARD_rs_module) \
-      || defined(__BOARD_rs_module_wroom)
+      || defined(__BOARD_rs_module_wroom) \
+      || defined(__BOARD_rs_module_ds18b20) \
+      || defined(__BOARD_rs_module_DHT22) \
 
 #include "board/rs_module.c"
 
 #elif defined(__BOARD_sonoff) \
-      || defined(__BOARD_sonoff_ds18b20)
+      || defined(__BOARD_sonoff_ds18b20)	\
+      || defined(__BOARD_sonoff_DHT22)		\
 
 #include "board/sonoff.c"
 
-#elif defined(__BOARD_sonoff_touch) || \
-	  defined(__BOARD_sonoff_touch_dual)
+#elif defined(__BOARD_socket) \
+      || defined(__BOARD_socket_ds18b20)	\
+      || defined(__BOARD_socket_DHT22)		\
+
+#include "board/socket.c"
+
+#elif defined(__BOARD_socket_dual) \
+      || defined(__BOARD_socket_dual_ds18b20)	\
+      || defined(__BOARD_socket_dual_DHT22)		\
+
+#include "board/socket_dual.c"
+
+#elif defined(__BOARD_smoke_module) \
+      || defined(__BOARD_smoke_module_ds18b20)	\
+      || defined(__BOARD_smoke_module_DHT22)		\
+
+#include "board/smoke_module.c"
+
+#elif defined(__BOARD_sonoff_touch) \
+      ||  defined(__BOARD_sonoff_touch_dual) \
+      || defined(__BOARD_sonoff_touch_triple) \
 
 #include "board/sonoff_touch.c"
 
@@ -57,6 +79,14 @@
 #elif defined(__BOARD_sonoff_socket)
 
 #include "board/sonoff_socket.c"
+
+#elif defined(__BOARD_gniazdko_neo)
+
+#include "board/gniazdko_neo.c"
+
+#elif defined(__BOARD_yunschan)
+
+#include "board/yunschan.c"
 
 #elif defined(__BOARD_sonoff_th10) \
 	  || defined(__BOARD_sonoff_th16)
