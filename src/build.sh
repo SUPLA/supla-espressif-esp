@@ -46,7 +46,15 @@ case $1 in
    ;;
    "rs_module")
       FOTA=1
-      FLASH_SIZE="2048"
+      FLASH_SIZE="4096"
+   ;;
+   "rs_module_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "rs_module_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
    ;;
    "lightswitch_x2")
      FLASH_SIZE="4096"
@@ -69,10 +77,67 @@ case $1 in
    "sonoff")
       FOTA=1
    ;;
+   "sonoff_ds18b20")
+      FOTA=1
+   ;;
+   "sonoff_DHT22")
+      FOTA=1
+   ;;
+   "socket")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "socket_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "socket_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "socket_dual")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "socket_dual_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "socket_dual_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "smoke_module")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "smoke_module_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "smoke_module_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;; 
    "sonoff_socket")
       FOTA=1
    ;;
+   "gniazdko_neo")
+      FOTA=1
+   ;;
+   "yunschan")
+      FLASH_SIZE="4096"
+      FOTA=1
+   ;;
    "sonoff_touch")
+      SPI_MODE="DOUT"
+      FOTA=1
+   ;;
+   "sonoff_touch_dual")
+      SPI_MODE="DOUT"
+      FOTA=1
+   ;;
+   "sonoff_touch_triple")
       SPI_MODE="DOUT"
       FOTA=1
    ;;
@@ -225,9 +290,25 @@ case $1 in
    echo "              gate_module_wroom";
    echo "              gate_module2_wroom";
    echo "              rs_module";
+   echo "              rs_module_ds18b20";
+   echo "              rs_module_DHT22";
+   echo "              gniazdko_neo";
+   echo "              yunschan";
+   echo "              socket";
+   echo "              socket_ds18b20";
+   echo "              socket_DHT22";   
+   echo "              socket_dual";
+   echo "              socket_dual_ds18b20";
+   echo "              socket_dual_DHT22";
+   echo "              smoke_module";
+   echo "              smoke_module_ds18b20";
+   echo "              smoke_module_DHT22";      
    echo "              sonoff";
    echo "              sonoff_ds18b20";
+   echo "              sonoff_DHT22";
    echo "              sonoff_touch";
+   echo "              sonoff_touch_dual";
+   echo "              sonoff_touch_triple";
    echo "              sonoff_dual";
    echo "              sonoff_socket";
    echo "              sonoff_th10";
