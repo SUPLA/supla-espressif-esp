@@ -21,7 +21,7 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.4.0"
+#define SUPLA_ESP_SOFTVER "2.7.8.0"
 
 #ifdef __BOARD_smoke_module_ds18b20
 	#define DS18B20
