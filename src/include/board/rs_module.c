@@ -102,8 +102,8 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 
 
-void ICACHE_FLASH_ATTR
-	supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
+void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
+	
 	#if defined __BOARD_rs_module_ds18b20
 		ets_snprintf(buffer, buffer_size, "ROLETY-DS18B20");
 	#elif defined __BOARD_rs_module_DHT22
@@ -113,10 +113,9 @@ void ICACHE_FLASH_ATTR
 	#endif
 }
 
-void ICACHE_FLASH_ATTR
-	supla_esp_board_gpio_init(void) {
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 		
-        supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[0].gpio_id = B_CFG_PORT;
 	supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 	
@@ -127,7 +126,7 @@ void ICACHE_FLASH_ATTR
 	
 	supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[1].gpio_id = B_BTN1_PORT;
-        supla_input_cfg[1].relay_gpio_id = B_RELAY1_PORT;
+    supla_input_cfg[1].relay_gpio_id = B_RELAY1_PORT;
 
 	supla_input_cfg[2].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[2].gpio_id = B_BTN2_PORT;
