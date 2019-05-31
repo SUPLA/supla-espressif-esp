@@ -241,8 +241,6 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
       supla_esp_cfg.Server, supla_esp_cfg.Email,
       supla_esp_cfg.Time1[0] > 0 ? supla_esp_cfg.Time1[0] : 50000,
-      //supla_esp_cfg.Time1[1] > 0 ? supla_esp_cfg.Time1[1] : 50000,
-      //supla_esp_cfg.Time2[0] > 0 ? supla_esp_cfg.Time2[0] : 50000,
       supla_esp_cfg.StatusLedOff == 0 ? "selected" : "",
       supla_esp_cfg.StatusLedOff == 1 ? "selected" : "",
       supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
@@ -273,8 +271,6 @@ void supla_esp_board_gpio_init(void) {
   PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15);
 
   supla_esp_gpio_set_hi(REF_LED_PORT1, 0);
-  //supla_esp_gpio_set_hi(REF_LED_PORT2, 0);
-  //supla_esp_gpio_set_hi(REF_LED_PORT3, 0);
 
   memset(counter, 0, sizeof(_ic_counter));
 
@@ -283,17 +279,8 @@ void supla_esp_board_gpio_init(void) {
   counter[0].impulse_time =
       supla_esp_cfg.Time1[0] > 0 ? supla_esp_cfg.Time1[0] : 50000;
 
-  /*counter[1].gpio = IMPULSE_PORT2;
-  counter[1].ref_led_gpio = REF_LED_PORT2;
-  counter[1].impulse_time =
-      supla_esp_cfg.Time1[1] > 0 ? supla_esp_cfg.Time1[1] : 50000;
-
-  counter[2].gpio = IMPULSE_PORT3;
-  counter[2].ref_led_gpio = REF_LED_PORT3;
-  counter[2].impulse_time =
-      supla_esp_cfg.Time2[0] > 0 ? supla_esp_cfg.Time2[0] : 50000;*/
-
-  gpio16_output_conf();
+  
+  //gpio16_output_conf();
 
   supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   supla_input_cfg[0].gpio_id = B_CFG_PORT;
