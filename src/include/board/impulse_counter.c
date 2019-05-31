@@ -202,9 +202,9 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       "class=\"w\"><h3>Additional Settings</h3><i><input name=\"t10\" "
       "type=\"number\" value=\"%i\"><label>IMPULSE TIME(us.) "
       "CH#0</label></i><i><input name=\"t11\" type=\"number\" "
-      "value=\"%i\"><label>IMPULSE TIME(us.) CH#1</label></i><i><input "
+      "value=\"%i\"><label>IMPULSE TIME(us.) /*CH#1</label></i><i><input "
       "name=\"t20\" "
-      "type=\"number\" value=\"%i\"><label>IMPULSE TIME(us.) "
+      "type=\"number\" value=\"%i\"><label>IMPULSE TIME(us.)*/ "
       "CH#2</label></i><i><select name=\"led\"><option value=\"0\" %s>LED "
       "ON<option value=\"1\" %s>LED OFF</select><label>Status - "
       "connected</label></i><i><select name=\"upd\"><option value=\"0\" "
@@ -245,8 +245,8 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
       supla_esp_cfg.Server, supla_esp_cfg.Email,
       supla_esp_cfg.Time1[0] > 0 ? supla_esp_cfg.Time1[0] : 50000,
-      supla_esp_cfg.Time1[1] > 0 ? supla_esp_cfg.Time1[1] : 50000,
-      supla_esp_cfg.Time2[0] > 0 ? supla_esp_cfg.Time2[0] : 50000,
+      //supla_esp_cfg.Time1[1] > 0 ? supla_esp_cfg.Time1[1] : 50000,
+      //supla_esp_cfg.Time2[0] > 0 ? supla_esp_cfg.Time2[0] : 50000,
       supla_esp_cfg.StatusLedOff == 0 ? "selected" : "",
       supla_esp_cfg.StatusLedOff == 1 ? "selected" : "",
       supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
