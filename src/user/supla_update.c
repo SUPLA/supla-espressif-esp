@@ -127,7 +127,7 @@ supla_esp_check_updates(void *srpc) {
 		update_step = FUPDT_STEP_CHECKING;
 		update_checking_start_time = system_get_time();
 		
-    #ifdefined _ROLLERSHUTTER_SUPPORT
+    #if defined _ROLLERSHUTTER_SUPPORT
 		supla_esp_cfg.FirmwareUpdate = 1;	
 	#else
 		supla_esp_cfg.FirmwareUpdate = 0;
