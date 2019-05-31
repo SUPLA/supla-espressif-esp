@@ -40,7 +40,7 @@ void DHT_ICACHE_FLASH supla_dht_init(void) {
 	supla_w1_init();
 }
 
-void
+void DHT_ICACHE_FLASH
 supla_dht_read_th(void *timer_arg) {
 	
 	DHT_Sensor sensor;
