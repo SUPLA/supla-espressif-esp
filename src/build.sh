@@ -265,6 +265,10 @@ case $1 in
      FLASH_SIZE="2048"
      FOTA=1
    ;;
+   "impulse_counter_3")
+     FLASH_SIZE="2048"
+     FOTA=1
+   ;;
    "vl_dimmer")
      FLASH_SIZE="2048"
      FOTA=1
@@ -325,6 +329,7 @@ case $1 in
    echo "              lightswitch_x2_DHT22";
    echo "              lightswitch_x2_54_DHT22";
    echo "              impulse_counter";
+   echo "              impulse_counter_3";
    echo 
    echo
    exit;
