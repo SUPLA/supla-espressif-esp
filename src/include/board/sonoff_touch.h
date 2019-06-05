@@ -19,10 +19,12 @@
 #ifndef SONOFF_TOUCH_H_
 #define SONOFF_TOUCHH_
 
-#define LED_RED_PORT    13
+#define LED_RED_PORT 13
 #define ESP8285
 #define ESP8266_SUPLA_PROTO_VERSION 7
 #define DS18B20
+#define BOARD_ON_CONNECT
+#define BOARD_CFG_HTML_TEMPLATE
 
 #ifdef __BOARD_sonoff_touch_dual
 #define TEMPERATURE_CHANNEL 2
@@ -30,6 +32,10 @@
 #define TEMPERATURE_CHANNEL 1
 #endif
 
-void supla_esp_board_send_channel_values_with_delay(void *srpc);
+char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
+    char dev_name[25], const char mac[6], const char data_saved);
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
+void ICACHE_FLASH_ATTR
+supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif
