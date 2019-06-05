@@ -19,7 +19,7 @@
 #ifndef SONOFF_TOUCH_H_
 #define SONOFF_TOUCHH_
 
-#define LED_RED_PORT    13
+#define LED_RED_PORT 13
 #define ESP8285
 #define ESP8266_SUPLA_PROTO_VERSION 7
 #define DS18B20
