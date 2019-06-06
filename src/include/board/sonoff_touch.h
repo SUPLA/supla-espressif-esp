@@ -20,6 +20,8 @@
 #define SONOFF_TOUCH_H_
 
 #define ESP8285
+#define BOARD_ON_CONNECT
+#define BOARD_CFG_HTML_TEMPLATE
 
 #define USE_GPIO9
 
@@ -33,7 +35,7 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.4.0"
+#define SUPLA_ESP_SOFTVER "2.7.9.0"
 
 #ifdef __BOARD_sonoff_touch
 	#define AP_SSID "SONOFF-TOUCH"
@@ -56,7 +58,10 @@
 	system_restart(); };  }; 
 
 
-
-void supla_esp_board_send_channel_values_with_delay(void *srpc);
+char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
+    char dev_name[25], const char mac[6], const char data_saved);
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
+void ICACHE_FLASH_ATTR
+supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif
