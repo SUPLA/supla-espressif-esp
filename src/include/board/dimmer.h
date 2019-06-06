@@ -19,9 +19,12 @@
 #ifndef DIMMER_H_
 #define DIMMER_H_
 
-#define LED_RED_PORT     5
+#define LED_RED_PORT     2
 #define SUPLA_PWM_COUNT  1
 #define DIMMER_CHANNEL  0
+
+#define SUPLA_ESP_SOFTVER "2.7.9.0"
+#define AP_SSID "DIMMER"
 
 #define PWM_0_OUT_IO_MUX PERIPHS_IO_MUX_MTDO_U
 #define PWM_0_OUT_IO_NUM 15
