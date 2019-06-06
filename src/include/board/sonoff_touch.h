@@ -53,9 +53,9 @@
 
 #define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
  	supla_log(LOG_DEBUG, "update, port = %i", port); \
-	supla_esp_devconn_stop(); \
-	os_delay_us(200); \
-	system_restart(); };  }; 
+	supla_esp_cfg.FirmwareUpdate = 1;\
+	supla_esp_cfg_save(&supla_esp_cfg);\
+	supla_esp_devconn_system_restart(); };  }; 
 
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
