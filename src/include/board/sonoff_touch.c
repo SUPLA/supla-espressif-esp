@@ -387,6 +387,8 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void) {
   supla_esp_gpio_set_led(supla_esp_cfg.StatusLedOff, 0, 0);
+  
+}
 
 void ICACHE_FLASH_ATTR
 	supla_esp_board_send_channel_values_with_delay(void *srpc) {
