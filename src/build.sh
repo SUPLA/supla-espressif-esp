@@ -162,6 +162,8 @@ case $1 in
      NOSSL=1
    ;;
    "dimmer")
+	 FLASH_SIZE="4096"
+	 FOTA=1
      DEP_LIBS="-lpwm"
      NOSSL=1
    ;;
