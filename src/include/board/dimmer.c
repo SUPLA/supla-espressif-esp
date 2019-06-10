@@ -102,6 +102,10 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[0].gpio_id = B_CFG_PORT;
 	supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
+	
+	supla_relay_cfg[1].gpio_id = B_RELAY1_PORT;
+    supla_relay_cfg[1].flags = RELAY_FLAG_RESTORE_FORCE;
+    supla_relay_cfg[1].channel = 1;
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
@@ -110,12 +114,18 @@ void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 
-	*channel_count = 1;
+	*channel_count = 2;
 
 	channels[0].Type = SUPLA_CHANNELTYPE_DIMMER;
 	channels[0].Number = 0;
 	supla_esp_channel_rgbw_to_value(channels[0].value, 0, 0, supla_esp_state.brightness[0]);
 
+	channels[1].Number = 1;
+	channels[1].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[1].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
+	channels[1].Default = SUPLA_CHANNELFNC_POWERSWITCH;
+	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 }
 
 char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
@@ -142,5 +152,8 @@ void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Co
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
-
+	
+	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY1_PORT));
+	
 }
+
