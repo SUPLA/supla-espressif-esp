@@ -21,7 +21,7 @@
 
 #define LED_RED_PORT     2
 #define SUPLA_PWM_COUNT  1
-#define DIMMER_CHANNEL  0
+#define DIMMER_CHANNEL   0
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 

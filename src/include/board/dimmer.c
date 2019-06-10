@@ -91,6 +91,7 @@ const uint8_t rsa_public_key_bytes[512] = {
 uint8 dimmer_brightness = 0;
 
 #define B_CFG_PORT         0
+#define B_RELAY1_PORT      4
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	ets_snprintf(buffer, buffer_size, "Dimmer");
