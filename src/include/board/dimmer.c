@@ -133,12 +133,10 @@ char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Co
 
 	dimmer_brightness = *Brightness;
 	
-	hi = supla_esp_gpio_output_is_hi(B_RELAY1_PORT);
-	
 	if ( dimmer_brightness > 100 )
 		dimmer_brightness = 100;
 	
-	if ( hi = 1 )
+	if ( supla_esp_gpio_output_is_hi(B_RELAY1_PORT) = 1 )
 		supla_esp_pwm_set_percent_duty(50, 100, 0);
 	
 	supla_esp_pwm_set_percent_duty(dimmer_brightness, 100, 0);
