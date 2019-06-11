@@ -18,6 +18,8 @@
 
 #include "supla_esp_pwm.h"
 
+#include "supla_esp_gpio.h"
+
 #ifdef SUPLA_PWM_COUNT
 
 #include "supla-dev/log.h"
