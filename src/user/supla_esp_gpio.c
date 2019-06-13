@@ -1269,9 +1269,9 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	#endif
 	
 	char _hi;
-	_hi = hi == 1 ? 1 : 0;
+	_hi = hi == 0 ? 1 : 0;
 	supla_log(LOG_DEBUG, "_hi = %i", _hi);
-	_hi = supla_esp_gpio_relay_is_hi(4);
+	//_hi = supla_esp_gpio_relay_is_hi(4);
 	supla_log(LOG_DEBUG, "po odczycie portu _hi = %i", _hi);
 	if ( _hi == 1 )  {
 		supla_log(LOG_DEBUG, "warunek hi = %i", _hi); 
