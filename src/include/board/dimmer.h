@@ -32,8 +32,8 @@
 #define PWM_0_OUT_IO_NUM 15
 #define PWM_0_OUT_IO_FUNC  FUNC_GPIO15
 
-#define BOARD_GPIO_OUTPUT_SET_HI if (port == 4) { hi = supla_esp_gpio_output_is_hi(4);	\
-supla_log(LOG_DEBUG, "port 4, hi = %i", hi);};
+/*#define BOARD_GPIO_OUTPUT_SET_HI if (port == 4) { hi = supla_esp_gpio_output_is_hi(4);	\
+supla_log(LOG_DEBUG, "port 4, hi = %i", hi);};*/
 	
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void);

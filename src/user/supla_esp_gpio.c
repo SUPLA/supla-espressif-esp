@@ -1270,7 +1270,7 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	
 	if (port ==  4)  {
 		supla_log(LOG_DEBUG, "moj test port = %i, hi = %i", port, hi); 
-		if (hi == 1) 
+		if (hi == '1') 
 	{ supla_log(LOG_DEBUG, "test if port = %i, hi = %i", port, hi); }
 	}
 
