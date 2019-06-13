@@ -1268,10 +1268,12 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	BOARD_GPIO_OUTPUT_SET_HI
 	#endif
 	
+	char _hi;
+	_hi = hi;
 	if (port ==  4)  {
 		supla_log(LOG_DEBUG, "moj test port = %i, hi = %i", port, hi); 
-		if (hi == '1') 
-	{ supla_log(LOG_DEBUG, "test if port = %i, hi = %i", port, hi); }
+		if (_hi == '1') 
+	{ supla_log(LOG_DEBUG, "test if port = %i, _hi = %i", port, _hi); }
 	}
 
 	if ( port == 16 ) {
