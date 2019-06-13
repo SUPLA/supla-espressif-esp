@@ -1273,10 +1273,10 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	supla_log(LOG_DEBUG, "_hi = %i", _hi);
 	_hi = supla_esp_gpio_relay_is_hi(4);
 	supla_log(LOG_DEBUG, "po odczycie portu _hi = %i", _hi);
-	/*if (supla_esp_gpio_output_is_hi(4) >  0)  {
-		supla_log(LOG_DEBUG, "moj test port = %i, hi = %i", port, hi); 
+	if ( _hi == 1 )  {
+		supla_log(LOG_DEBUG, "warunek hi = %i", _hi); 
 
-	}*/
+	}
 
 	if ( port == 16 ) {
 		gpio16_output_set(hi == 1 ? 1 : 0);
