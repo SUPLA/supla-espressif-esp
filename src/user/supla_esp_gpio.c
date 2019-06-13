@@ -30,6 +30,7 @@
 #include "supla_esp_cfg.h"
 #include "supla_esp_devconn.h"
 #include "supla_esp_cfgmode.h"
+#include "supla_esp_pwm.h"
 
 #include "supla-dev/log.h"
 
@@ -1268,15 +1269,11 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	BOARD_GPIO_OUTPUT_SET_HI
 	#endif
 	
-	/*char _hi;
-	_hi = hi == 1 ? 1 : 0;
-	supla_log(LOG_DEBUG, "_hi = %i", _hi);
-	//_hi = supla_esp_gpio_relay_is_hi(4);
-	supla_log(LOG_DEBUG, "po odczycie portu _hi = %i", _hi);*/
 	if ( hi == 1 )  {
 		supla_log(LOG_DEBUG, "warunek hi = %i", hi); 
 	if ( port == 4 )  {
 		supla_log(LOG_DEBUG, "warunek port = %i", port);
+		supla_esp_pwm_set_percent_duty(50, 100, 0);
 	}
 	}
 
