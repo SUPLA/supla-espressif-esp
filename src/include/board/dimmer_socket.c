@@ -91,7 +91,7 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 #define B_CFG_PORT          0
 #define B_RELAY1_PORT       4
-#define B_RELAY1_PORT       5
+#define B_RELAY2_PORT       5
 
 #define B_SENSOR_PORT1     12
 
