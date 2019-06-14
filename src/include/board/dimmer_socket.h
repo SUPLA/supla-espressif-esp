@@ -32,6 +32,8 @@
 #define PWM_0_OUT_IO_NUM 15
 #define PWM_0_OUT_IO_FUNC  FUNC_GPIO15
 
+void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void);
+char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness);
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif
