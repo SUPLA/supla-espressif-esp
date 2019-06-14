@@ -105,6 +105,10 @@
 
 #include "board/dimmer.h"
 
+#elif defined(__BOARD_dimmer_socket)
+
+#include "board/dimmer_socket.h"
+
 #elif defined(__BOARD_vl_dimmer)
 
 #include "board/acs_vl_dimmer.h"
