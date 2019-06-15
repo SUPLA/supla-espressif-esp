@@ -22,7 +22,7 @@
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
 #define LED_LED_PORT  2
-#define SUPLA_PWM_COUNT  1
+//#define SUPLA_PWM_COUNT  1
 //#define DIMMER_CHANNEL   0
 
 #define SUPLA_ESP_SOFTVER "2.7.9.0"
