@@ -22,6 +22,8 @@
 
 //#ifdef SUPLA_PWM_COUNT
 
+#define SUPLA_PWM_COUNT 1
+
 #include "supla-dev/log.h"
 
 #include <ets_sys.h>
