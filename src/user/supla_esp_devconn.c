@@ -852,8 +852,7 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	} else if ( Brightness > 100 ) {
 		Brightness = 100;
 	}
-//#if defined(SUPLA_PWM_COUNT) || defined(SUPLA_SMOOTH_DISABLED)
-#if defined(SUPLA_SMOOTH_DISABLED)
+#if defined(SUPLA_PWM_COUNT) || defined(SUPLA_SMOOTH_DISABLED)
 	float _ColorBrightness = ColorBrightness;
 	float _Brightness = Brightness;
 	#ifdef RGBW_ONOFF_SUPPORT
