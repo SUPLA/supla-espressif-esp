@@ -89,6 +89,8 @@ const uint8_t rsa_public_key_bytes[512] = {
  
 //#include "supla_esp.h"
 
+uint8 dimmer_brightness = 0;
+
 #define B_CFG_PORT          0
 #define B_RELAY1_PORT       4
 #define B_RELAY2_PORT       5
