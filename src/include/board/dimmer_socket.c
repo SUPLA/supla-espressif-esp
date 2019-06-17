@@ -87,7 +87,7 @@ const uint8_t rsa_public_key_bytes[512] = {
 #include "dimmer_socket.h"
 #include "supla_esp_devconn.h" 
  
-#include "supla_esp.h"
+//#include "supla_esp.h"
 
 #define B_CFG_PORT          0
 #define B_RELAY1_PORT       4
@@ -156,6 +156,19 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[2].value[0] = 0;
 
 
+}
+
+char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
+
+	dimmer_brightness = *Brightness;
+	
+	if ( dimmer_brightness > 100 )
+		dimmer_brightness = 100;
+	
+	supla_esp_pwm_set_percent_duty(dimmer_brightness, 100, 0);
+	supla_log(LOG_DEBUG, "Set dimmer : %i", dimmer_brightness);
+	
+	return 1;
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
