@@ -158,14 +158,14 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 
 }
 
-/*char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
+char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
 
-	dimmer_brightness = *Brightness;
+	/*dimmer_brightness = *Brightness;
 	
 	if ( dimmer_brightness > 100 )
 		dimmer_brightness = 100;
 	
-	supla_esp_pwm_set_percent_duty(dimmer_brightness, 100, 0);
+	supla_esp_pwm_set_percent_duty(dimmer_brightness, 100, 0);*/
 	supla_log(LOG_DEBUG, "Set dimmer : %i", dimmer_brightness);
 	
 	return 1;
