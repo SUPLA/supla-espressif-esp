@@ -121,9 +121,9 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
     supla_relay_cfg[0].channel = 0;
     
-	supla_relay_cfg[0].gpio_id = B_RELAY2_PORT;
-    supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
-    supla_relay_cfg[0].channel = 1;
+	supla_relay_cfg[1].gpio_id = B_RELAY2_PORT;
+    supla_relay_cfg[1].flags = RELAY_FLAG_RESET;
+    supla_relay_cfg[1].channel = 1;
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
