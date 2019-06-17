@@ -30,7 +30,7 @@
 #include <eagle_soc.h>
 #include <osapi.h>
 #include <pwm.h>
-#include <esp_common.h>
+
 
 
 void ICACHE_FLASH_ATTR supla_esp_pwm_init(void) {
