@@ -18,7 +18,7 @@
 
 #include "supla_esp.h"
 
-//#ifdef SUPLA_PWM_COUNT
+#ifdef SUPLA_PWM_COUNT
 
 #ifndef SUPLA_ESP_PWM_H_
 #define SUPLA_ESP_PWM_H_
@@ -34,4 +34,4 @@ void ICACHE_FLASH_ATTR supla_esp_pwm_on(char on);
 
 #endif /* SUPLA_PWM_COUNT */
 
-//#endif /* SUPLA_PWM_H_ */
+#endif /* SUPLA_PWM_H_ */

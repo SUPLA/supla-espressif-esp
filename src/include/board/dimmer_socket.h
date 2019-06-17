@@ -22,8 +22,8 @@
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
 #define LED_LED_PORT  2
-//#define SUPLA_PWM_COUNT  1
-//#define DIMMER_CHANNEL   0
+#define SUPLA_PWM_COUNT  1
+#define DIMMER_CHANNEL   0
 
 #define SUPLA_ESP_SOFTVER "2.7.9.0"
 #define AP_SSID "SOCKET_DIMMER"
@@ -34,6 +34,6 @@
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void);
 //char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness);
-//void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
+void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif

@@ -20,9 +20,7 @@
 
 #include "supla_esp_gpio.h"
 
-//#ifdef SUPLA_PWM_COUNT
-
-#define SUPLA_PWM_COUNT 1
+#ifdef SUPLA_PWM_COUNT
 
 #include "supla-dev/log.h"
 
@@ -99,4 +97,4 @@ void ICACHE_FLASH_ATTR supla_esp_pwm_on(char on) {
 }
 
      
-//#endif
+#endif
