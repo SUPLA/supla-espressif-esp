@@ -176,6 +176,7 @@ char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Co
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
-	supla_esp_channel_value_changed(2, gpio__input_get(B_SENSOR_PORT1));
+	supla_esp_channel_value_changed(0, gpio__input_get(B_SENSOR_PORT1));
+	supla_esp_channel_value_changed(1, gpio__input_get(B_SENSOR_PORT2));
 
 }
