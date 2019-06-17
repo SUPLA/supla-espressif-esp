@@ -23,7 +23,7 @@
 
 #define LED_LED_PORT  2
 #define SUPLA_PWM_COUNT  1
-#define DIMMER_CHANNEL   0
+#define DIMMER_CHANNEL   3
 
 #define SUPLA_ESP_SOFTVER "2.7.9.0"
 #define AP_SSID "SOCKET_DIMMER"
