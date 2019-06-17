@@ -174,7 +174,7 @@ char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Co
 	supla_log(LOG_DEBUG, "Set dimmer : %i", dimmer_brightness);
 	
 	return 1;
-}*/
+}
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
