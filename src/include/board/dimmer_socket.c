@@ -133,7 +133,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
-    *channel_count = 4;
+    *channel_count = 3;
 
 	channels[0].Number = 0;
 	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
@@ -157,9 +157,9 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[2].Default = 0;
 	channels[2].value[0] = 0;
 
-	channels[3].Type = SUPLA_CHANNELTYPE_DIMMER;
+	/*channels[3].Type = SUPLA_CHANNELTYPE_DIMMER;
 	channels[3].Number = 0;
-	supla_esp_channel_rgbw_to_value(channels[3].value, 0, 0, supla_esp_state.brightness[3]);
+	supla_esp_channel_rgbw_to_value(channels[3].value, 0, 0, supla_esp_state.brightness[3]); */
 
 }
 
