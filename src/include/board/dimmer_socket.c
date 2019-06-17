@@ -125,8 +125,8 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
-	supla_esp_channel_set_rgbw_value(0, 0, 0, supla_esp_state.brightness[0], 0, 0);
-	//supla_esp_pwm_set_percent_duty(0, 100, 0);
+	//supla_esp_channel_set_rgbw_value(0, 0, 0, supla_esp_state.brightness[0], 0, 0);
+	supla_esp_pwm_set_percent_duty(0, 100, 0);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
