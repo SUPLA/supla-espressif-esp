@@ -35,7 +35,7 @@
 #define BOARD_GPIO_OUTPUT_SET_HI if ( port == 4 )  {supla_log(LOG_DEBUG, "warunek port = %i", port);\
 if ( hi == 1 )  {\
 supla_log(LOG_DEBUG, "warunek hi = %i", hi);\
-supla_esp_pwm_set_percent_duty(50, 100, 0);\
+supla_esp_pwm_set_percent_duty(100, 100, 0);\
 } else\
 { supla_esp_pwm_set_percent_duty(0, 100, 0); }\
 }
