@@ -156,7 +156,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[2].value[0] = 0;
 
 	channels[3].Type = SUPLA_CHANNELTYPE_DIMMER;
-	channels[3].Number = 0;
+	channels[3].Number = 3;
 	supla_esp_channel_rgbw_to_value(channels[3].value, 0, 0, supla_esp_state.brightness[3]); 
 
 }
