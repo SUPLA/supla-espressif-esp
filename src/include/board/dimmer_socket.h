@@ -32,6 +32,16 @@
 #define PWM_0_OUT_IO_NUM 15
 #define PWM_0_OUT_IO_FUNC  FUNC_GPIO15
 
+#define BOARD_GPIO_OUTPUT_SET_HI	\
+	if ( port == 4 )  {	\
+		supla_log(LOG_DEBUG, "warunek port = %i", port);\		
+	if ( hi == 1 )  {\
+		supla_log(LOG_DEBUG, "warunek hi = %i", hi);\
+		supla_esp_pwm_set_percent_duty(50, 100, 0);\
+	} else\
+	{ supla_esp_pwm_set_percent_duty(0, 100, 0); }\
+	}
+
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void);
 char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness);
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);

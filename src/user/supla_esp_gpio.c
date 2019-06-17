@@ -1269,14 +1269,14 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	BOARD_GPIO_OUTPUT_SET_HI
 	#endif
 	
-	if ( port == 4 )  {
+/*	if ( port == 4 )  {
 		supla_log(LOG_DEBUG, "warunek port = %i", port); 
 	if ( hi == 1 )  {
 		supla_log(LOG_DEBUG, "warunek hi = %i", hi);
 		supla_esp_pwm_set_percent_duty(50, 100, 0);
 	} else
 	{ supla_esp_pwm_set_percent_duty(0, 100, 0); }
-	}
+	} */
 
 	if ( port == 16 ) {
 		gpio16_output_set(hi == 1 ? 1 : 0);
