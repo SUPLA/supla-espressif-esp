@@ -134,30 +134,32 @@ void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
     *channel_count = 4;
-
-	channels[0].Number = 0;
-	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-	channels[0].FuncList =  SUPLA_BIT_RELAYFUNC_POWERSWITCH \
-								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
-	channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
-	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 	
+	channels[0].Type = SUPLA_CHANNELTYPE_DIMMER;
+	channels[0].Number = 0;
+	supla_esp_channel_rgbw_to_value(channels[0].value, 0, 0, supla_esp_state.brightness[0]); 
+
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_RELAY;
-	channels[1].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+	channels[1].FuncList =  SUPLA_BIT_RELAYFUNC_POWERSWITCH \
 								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
 	channels[1].Default = SUPLA_CHANNELFNC_POWERSWITCH;
-	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
-
+	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
+	
 	channels[2].Number = 2;
-	channels[2].Type = SUPLA_CHANNELTYPE_SENSORNO;
-	channels[2].FuncList = 0;
-	channels[2].Default = 0;
-	channels[2].value[0] = 0;
+	channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
+								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
+	channels[2].Default = SUPLA_CHANNELFNC_POWERSWITCH;
+	channels[2].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
-	channels[3].Type = SUPLA_CHANNELTYPE_DIMMER;
 	channels[3].Number = 3;
-	supla_esp_channel_rgbw_to_value(channels[3].value, 0, 0, supla_esp_state.brightness[3]); 
+	channels[3].Type = SUPLA_CHANNELTYPE_SENSORNO;
+	channels[3].FuncList = 0;
+	channels[3].Default = 0;
+	channels[3].value[0] = 0;
+
+	
 
 }
 
@@ -168,15 +170,24 @@ char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Co
 	if ( dimmer_brightness > 100 )
 		dimmer_brightness = 100;
 	
-	supla_esp_pwm_set_percent_duty(dimmer_brightness, 100, 3);
+	supla_esp_pwm_set_percent_duty(dimmer_brightness, 100, 0);
 	supla_log(LOG_DEBUG, "Set dimmer : %i", dimmer_brightness);
 	
 	return 1;
 }
 
+void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness) {
+
+	if ( Brightness != NULL ) {
+			*Brightness = dimmer_brightness;
+			supla_log(LOG_DEBUG, "Get dimmer : %i", dimmer_brightness);
+	}
+
+}
+
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
-	supla_esp_channel_value_changed(0, supla_esp_gpio_relay_on(B_RELAY1_PORT));
-	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY2_PORT));
+	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY1_PORT));
+	supla_esp_channel_value_changed(2, supla_esp_gpio_relay_on(B_RELAY2_PORT));
 
 }

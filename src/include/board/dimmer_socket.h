@@ -23,7 +23,7 @@
 
 #define LED_LED_PORT  2
 #define SUPLA_PWM_COUNT  1
-#define DIMMER_CHANNEL   3
+#define DIMMER_CHANNEL   0
 
 #define SUPLA_ESP_SOFTVER "2.7.9.0"
 #define AP_SSID "SOCKET_DIMMER"
@@ -35,13 +35,14 @@
 #define BOARD_GPIO_OUTPUT_SET_HI if ( port == 4 )  {supla_log(LOG_DEBUG, "warunek port = %i", port);\
 if ( hi == 1 )  {\
 supla_log(LOG_DEBUG, "warunek hi = %i", hi);\
-supla_esp_pwm_set_percent_duty(100, 100, 3);\
+supla_esp_pwm_set_percent_duty(50, 100, 0);\
 } else\
-{ supla_esp_pwm_set_percent_duty(0, 100, 3); }\
+{ supla_esp_pwm_set_percent_duty(0, 100, 0); }\
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void);
 char ICACHE_FLASH_ATTR supla_esp_board_set_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness);
+void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Color, float *ColorBrightness, float *Brightness);
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif
