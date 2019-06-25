@@ -188,6 +188,6 @@ void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Co
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
 	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY1_PORT));
-	supla_esp_channel_value_changed(2, supla_esp_gpio_relay_on(B_RELAY2_PORT));
+	//supla_esp_channel_value_changed(2, supla_esp_gpio_relay_on(B_RELAY2_PORT));
 
 }
