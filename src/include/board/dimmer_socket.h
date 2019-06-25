@@ -17,7 +17,7 @@
  */
 
 #ifndef DIMMER_SOCKET_H_
-#define SUPLA_GATE_MODULE_H_
+#define DIMMER_SOCKET_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
