@@ -95,7 +95,7 @@ uint8 dimmer_brightness = 0;
 #define B_RELAY1_PORT       4
 #define B_RELAY2_PORT       5
 
-#define B_SENSOR_PORT1     12
+//#define B_SENSOR_PORT1     12
 
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
@@ -106,7 +106,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffe
 
 void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 		
-	supla_input_cfg[0].type = supla_esp_cfg.CfgButtonType == BTN_TYPE_BISTABLE ? INPUT_TYPE_BTN_BISTABLE : INPUT_TYPE_BTN_MONOSTABLE;
+	supla_input_cfg[0].type = supla_esp_cfg.CfgButtonType = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[0].gpio_id = B_CFG_PORT;
 	supla_input_cfg[0].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 	
@@ -133,7 +133,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
-    *channel_count = 4;
+    *channel_count = 3;
 	
 	channels[0].Type = SUPLA_CHANNELTYPE_DIMMER;
 	channels[0].Number = 0;
@@ -153,11 +153,11 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[2].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 	channels[2].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
-	channels[3].Number = 3;
+	/*channels[3].Number = 3;
 	channels[3].Type = SUPLA_CHANNELTYPE_SENSORNO;
 	channels[3].FuncList = 0;
 	channels[3].Default = 0;
-	channels[3].value[0] = 0;
+	channels[3].value[0] = 0;*/
 
 	
 
