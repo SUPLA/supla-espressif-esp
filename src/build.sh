@@ -169,7 +169,6 @@ case $1 in
    ;;
    "dimmer_socket")
 	 FLASH_SIZE="4096"
-	 FOTA=1
      DEP_LIBS="-lpwm"
 	 NOSSL=1
    ;;
