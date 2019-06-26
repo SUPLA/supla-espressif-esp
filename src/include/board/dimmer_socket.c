@@ -119,11 +119,11 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
     supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
-    supla_relay_cfg[0].channel = 0;
+    supla_relay_cfg[0].channel = 1;
     
 	supla_relay_cfg[1].gpio_id = B_RELAY2_PORT;
     supla_relay_cfg[1].flags = RELAY_FLAG_RESET;
-    supla_relay_cfg[1].channel = 1;
+    supla_relay_cfg[1].channel = 2;
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_pwm_init(void) {
@@ -188,6 +188,6 @@ void ICACHE_FLASH_ATTR supla_esp_board_get_rgbw_value(int ChannelNumber, int *Co
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc) {
 
 	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY1_PORT));
-	//supla_esp_channel_value_changed(2, supla_esp_gpio_relay_on(B_RELAY2_PORT));
+	supla_esp_channel_value_changed(2, supla_esp_gpio_relay_on(B_RELAY2_PORT));
 
 }
