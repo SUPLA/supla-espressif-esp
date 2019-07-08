@@ -177,6 +177,7 @@ extern "C" {
 #define SUPLA_CS_CALL_SUPERUSER_AUTHORIZATION_REQUEST 420    // ver. >= 10
 #define SUPLA_SC_CALL_SUPERUSER_AUTHORIZATION_RESULT 430     // ver. >= 10
 #define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST 440              // ver. >= 10
+#define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST_B 445            // ver. >= 11
 #define SUPLA_SC_CALL_DEVICE_CALCFG_RESULT 450               // ver. >= 10
 #define SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST 460              // ver. >= 10
 #define SUPLA_DS_CALL_DEVICE_CALCFG_RESULT 470               // ver. >= 10
@@ -338,8 +339,8 @@ extern "C" {
 #define SUPLA_PLATFORM_UNKNOWN 0
 #define SUPLA_PLATFORM_ESP8266 1
 
-#define SUPLA_NEW_VALUE_TARGET_CHANNEL 0
-#define SUPLA_NEW_VALUE_TARGET_GROUP 1
+#define SUPLA_TARGET_CHANNEL 0
+#define SUPLA_TARGET_GROUP 1
 
 #define SUPLA_MFR_UNKNOWN 0
 #define SUPLA_MFR_ACSOFTWARE 1
@@ -955,10 +956,10 @@ typedef struct {
 
 // [IODevice->Server->Client]
 typedef struct {
-  unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kW
-  unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kW
-  unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvar
-  unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvar
+  unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kWh
+  unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kWh
+  unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvarh
+  unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvarh
 
   // The price per unit, total cost and currency is overwritten by the server
   // total_cost == SUM(total_forward_active_energy[n] * price_per_unit
@@ -1024,6 +1025,16 @@ typedef struct {
   char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
 } TCS_DeviceCalCfgRequest;               // v. >= 10
 
+// CALCFG == CALIBRATION / CONFIG
+typedef struct {
+  _supla_int_t Id;
+  char Target;  // SUPLA_NEW_VALUE_TARGET_
+  _supla_int_t Command;
+  _supla_int_t DataType;
+  unsigned _supla_int_t DataSize;
+  char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
+} TCS_DeviceCalCfgRequest_B;             // v. >= 11
+
 typedef struct {
   _supla_int_t ChannelID;
   _supla_int_t Command;
@@ -1041,6 +1052,16 @@ typedef struct {
   unsigned _supla_int_t DataSize;
   char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
 } TSD_DeviceCalCfgRequest;               // v. >= 10
+
+typedef struct {
+  _supla_int_t SenderID;
+  _supla_int_t ChannelNumber;
+  _supla_int_t Command;
+  char SuperUserAuthorized;
+  _supla_int_t DataType;
+  unsigned _supla_int_t DataSize;
+  char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
+} TSD_DeviceCalCfgRequest_B;             // v. >= 11
 
 typedef struct {
   _supla_int_t ReceiverID;
@@ -1185,7 +1206,7 @@ typedef struct {
   unsigned _supla_int_t
       timezoneSize;  // including the terminating null byte ('\0')
   char timezone[SUPLA_TIMEZONE_MAXSIZE];  // Last variable in struct!
-} TSDC_UserLocalTime;
+} TSDC_UserLocalTimeResult;
 
 #pragma pack(pop)
 
