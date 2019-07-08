@@ -1146,6 +1146,10 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 		case SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST:
 			supla_esp_board_calcfg_request(rd.data.sd_device_calcfg_request);
 		#endif /*BOARD_CALCFG*/
+		#ifdef BOARD_ON_USER_LOCALTIME_RESULT
+		case SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT:
+			supla_esp_board_on_user_localtime_result(rd.data.sdc_user_localtime_result);
+		#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
 		}
 
 		srpc_rd_free(&rd);
