@@ -1035,13 +1035,14 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
         }
         break;
       case SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST_B:
-          if (srpc->sdp.data_size <= sizeof(TCS_DeviceCalCfgRequest_B) &&
-              srpc->sdp.data_size >=
-                  (sizeof(TCS_DeviceCalCfgRequest_B) - SUPLA_CALCFG_DATA_MAXSIZE)) {
-            rd->data.cs_device_calcfg_request_b = (TCS_DeviceCalCfgRequest_B *)malloc(
-                sizeof(TCS_DeviceCalCfgRequest_B));
-          }
-          break;
+        if (srpc->sdp.data_size <= sizeof(TCS_DeviceCalCfgRequest_B) &&
+            srpc->sdp.data_size >= (sizeof(TCS_DeviceCalCfgRequest_B) -
+                                    SUPLA_CALCFG_DATA_MAXSIZE)) {
+          rd->data.cs_device_calcfg_request_b =
+              (TCS_DeviceCalCfgRequest_B *)malloc(
+                  sizeof(TCS_DeviceCalCfgRequest_B));
+        }
+        break;
       case SUPLA_SC_CALL_DEVICE_CALCFG_RESULT:
         if (srpc->sdp.data_size <= sizeof(TSC_DeviceCalCfgResult) &&
             srpc->sdp.data_size >=
@@ -1975,7 +1976,7 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_thermostatextended2extended(
   unsigned _supla_int_t size = sizeof(TThermostat_ExtendedValue);
 
   if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Schedule)) {
-    size -= sizeof(th_ev->Shedule);
+    size -= sizeof(th_ev->Schedule);
     if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Time)) {
       size -= sizeof(th_ev->Time);
       if (0 == (th_ev->Fields & THERMOSTAT_FIELD_Values)) {

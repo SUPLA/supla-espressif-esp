@@ -1088,16 +1088,16 @@ typedef struct {
   unsigned char sec;        // 0-59
   unsigned char min;        // 0-59
   unsigned char hour;       // 0-24
-  unsigned char dayOfWeek;  // 0-6
+  unsigned char dayOfWeek;  // 1 = Sunday, 2 = Monday, …, 7 = Saturday
 } TThermostat_Time;         // v. >= 11
 
-#define THERMOSTAT_SCHEDULE_DAY_MONDAY 0x01
-#define THERMOSTAT_SCHEDULE_DAY_TUESDAY 0x02
-#define THERMOSTAT_SCHEDULE_DAY_WEDNESDAY 0x04
-#define THERMOSTAT_SCHEDULE_DAY_THURSDAY 0x08
-#define THERMOSTAT_SCHEDULE_DAY_FRIDAY 0x10
-#define THERMOSTAT_SCHEDULE_DAY_SATURDAY 0x20
-#define THERMOSTAT_SCHEDULE_DAY_SUNDAY 0x40
+#define THERMOSTAT_SCHEDULE_DAY_SUNDAY 0x01
+#define THERMOSTAT_SCHEDULE_DAY_MONDAY 0x02
+#define THERMOSTAT_SCHEDULE_DAY_TUESDAY 0x04
+#define THERMOSTAT_SCHEDULE_DAY_WEDNESDAY 0x08
+#define THERMOSTAT_SCHEDULE_DAY_THURSDAY 0x10
+#define THERMOSTAT_SCHEDULE_DAY_FRIDAY 0x20
+#define THERMOSTAT_SCHEDULE_DAY_SATURDAY 0x40
 #define THERMOSTAT_SCHEDULE_DAY_ALL 0xFF
 
 #define THERMOSTAT_SCHEDULE_HOURVALUE_TYPE_TEMPERATURE 0
@@ -1106,13 +1106,14 @@ typedef struct {
 typedef struct {
   unsigned char ValueType;  // THERMOSTAT_SCHEDULE_HOURVALUE_TYPE_
   char HourValue[7][24];    // 7 days x 24h
+                            // 0 = Sunday, 1 = Monday, …, 6 = Saturday
 } TThermostat_Schedule;     // v. >= 11
 
 typedef struct {
   unsigned char ValueType;  // THERMOSTAT_SCHEDULE_HOURVALUE_TYPE_
   unsigned char Days;       // THERMOSTAT_SCHEDULE_DAY_
-  char HourValue[24];
-} TThermostatValueGroup;  // v. >= 11
+  char HourValue[24];       // 0 = Sunday, 1 = Monday, …, 6 = Saturday
+} TThermostatValueGroup;    // v. >= 11
 
 typedef struct {
   TThermostatValueGroup Group[4];
@@ -1185,8 +1186,8 @@ typedef struct {
   _supla_int16_t Flags[8];
   _supla_int16_t Values[8];
   TThermostat_Time Time;
-  TThermostat_Schedule Shedule;  // 7 days x 24h (4bit/hour)
-} TThermostat_ExtendedValue;     // v. >= 11
+  TThermostat_Schedule Schedule;  // 7 days x 24h (4bit/hour)
+} TThermostat_ExtendedValue;      // v. >= 11
 
 typedef struct {
   unsigned char IsOn;
@@ -1199,7 +1200,7 @@ typedef struct {
   unsigned _supla_int16_t year;
   unsigned char month;
   unsigned char day;
-  unsigned char dayOfWeek;
+  unsigned char dayOfWeek;  // 1 = Sunday, 2 = Monday, …, 7 = Saturday
   unsigned char hour;
   unsigned char min;
   unsigned char sec;
