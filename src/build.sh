@@ -92,6 +92,9 @@ case $1 in
    "sonoff_ds18b20")
       FOTA=1
    ;;
+   "sonoff_pow_R2")
+      FOTA=1
+   ;;
    "EgyIOT")
      DEP_LIBS="-lpwm"
      NOSSL=1
@@ -233,6 +236,7 @@ case $1 in
    echo "              sonoff_th10";
    echo "              sonoff_th16";
    echo "              sonoff_dual";
+   echo "              sonoff_pow_R2";
    echo "              EgyIOT";
    echo "              dimmer";
    echo "              rgbw_wroom";

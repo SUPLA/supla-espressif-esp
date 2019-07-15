@@ -32,6 +32,8 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_value_changed(int channel_number, ch
 void DEVCONN_ICACHE_FLASH supla_esp_channel_extendedvalue_changed(unsigned char channel_number, TSuplaChannelExtendedValue *value);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_channel_values_with_delay(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_system_restart(void);
+void ICACHE_FLASH_ATTR supla_esp_em_get_value(
+    unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_cfgmode_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
@@ -39,6 +41,16 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
 #ifdef ELECTRICITY_METER_COUNT
 void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev);
 #endif /*ELECTRICITY_METER_COUNT*/
+
+#if defined(POWSENSOR2)
+void ICACHE_FLASH_ATTR supla_pow_R2_setup(void);
+void ICACHE_FLASH_ATTR supla_getVoltage(char value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR supla_getCurrent(char value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR supla_getPower(char value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR uart_status(unsigned int relay_laststate);
+void ICACHE_FLASH_ATTR supla_micros();
+#endif
+
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
     || defined(RGBW_CONTROLLER_CHANNEL) \

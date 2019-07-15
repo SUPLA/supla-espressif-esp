@@ -25,6 +25,7 @@
 #include <osapi.h>
 #include <mem.h>
 #include <stdlib.h>
+#include <sntp.h>
 
 #include "supla_esp_devconn.h"
 #include "supla_esp_cfgmode.h"
@@ -36,6 +37,11 @@
 #include "supla_dht.h"
 #include "supla-dev/srpc.h"
 #include "supla-dev/log.h"
+
+#if defined(POWSENSOR2)
+#include "supla_esp_electricity_meter.h"
+#endif
+
 
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
@@ -52,10 +58,42 @@
 #ifndef CVD_MAX_COUNT
 #define CVD_MAX_COUNT 4
 #endif /*CVD_MAX_COUNT*/
+#define CZAS_POMIARU 20
+#define WATCHDOG_SOFT_TIMEOUT 65
 
 #if CVD_MAX_COUNT == 0
 #undef CVD_MAX_COUNT
 #endif
+
+#define LEAP_YEAR(Y) ( ((1970+Y)>0) && !((1970+Y)%4) && ( ((1970+Y)%100) || !((1970+Y)%400) ) )
+
+static const uint8_t monthDays[] = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 }; // API starts months from 1, this array starts from 0
+
+typedef struct {
+  uint8_t Second;
+  uint8_t Minute;
+  uint8_t Hour;
+  uint8_t Wday;   // day of week, sunday is day 1
+  uint8_t Day;
+  uint8_t Month;
+  uint16_t Year;
+  unsigned long Valid;
+}TIME_T;
+
+TIME_T rtcTime;
+uint32_t myrtc = 0;
+uint8_t ntpsync = 0;
+uint8_t last_minute = 0;
+int init_rtc = 0;
+int set_rtc = 0;
+int status_ok = 0;
+int sel_prad = 0;
+int pomiar_start = 0;
+int licznik20 = CZAS_POMIARU;
+ETSTimer supla_pow_timer_1usec;
+int value1 = 1;
+uint32_t last_seconds;
+uint8_t Last_Day = 0;
 
 typedef struct {
 	
@@ -89,6 +127,8 @@ typedef struct {
 
 	char laststate[STATE_MAXSIZE];
 
+	unsigned int last_state;
+	unsigned int last_relay_state;
 	unsigned int last_response;
 	unsigned int last_sent;
 	unsigned int next_wd_soft_timeout_challenge;
@@ -102,6 +142,32 @@ typedef struct {
 
 }devconn_params;
 
+unsigned int next_t = 1;
+#if defined(POWSENSOR2)
+unsigned int relay_laststate;
+unsigned int last_voltage = -1000;
+unsigned int last_current;
+unsigned int last_power;
+unsigned int last_fullenergy = 0;
+unsigned int voltage_before;
+unsigned int current_before;
+unsigned int power_before;
+unsigned int last_voltage2 = 0;
+unsigned int last_current2 = 0;
+unsigned int last_power2 = 0;
+unsigned int last_state2 = 0;
+unsigned int send_last_state = 0;
+unsigned int send_daily_power = 0;
+unsigned int last_dif_power = 0;
+unsigned int last_dif_current = 0;
+unsigned int snd_daily_power = 0;
+unsigned int snd_voltage = 0;
+unsigned int snd_current = 0;
+unsigned int snd_power = 0;
+unsigned int snd_energy = 0;
+TDS_ImpulseCounter_Value last_icv;
+void DEVCONN_ICACHE_FLASH supla_get_parameters();
+#endif
 
 static devconn_params *devconn = NULL;
 
@@ -149,11 +215,132 @@ devconn_smooth smooth[SMOOTH_MAX_COUNT];
 	#define supla_espconn_connect espconn_secure_connect
 #endif
 
+#if defined(POWSENSOR2)
+void DEVCONN_ICACHE_FLASH supla_get_voltage();
+void DEVCONN_ICACHE_FLASH supla_get_current();
+void DEVCONN_ICACHE_FLASH supla_get_power();
+void ICACHE_FLASH_ATTR sel_pin_voltage();
+void DEVCONN_ICACHE_FLASH supla_esp_em_extendedvalue_to_value(TElectricityMeter_ExtendedValue *ev, char *value);
+
+_supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_channel_extendedvalue_changed(
+    void *_srpc, unsigned char channel_number,
+    TSuplaChannelExtendedValue *value);
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_emextended2extended(
+    TElectricityMeter_ExtendedValue *em_ev, TSuplaChannelExtendedValue *ev);
+_supla_int_t SRPC_ICACHE_FLASH srpc_evtool_v1_extended2emextended(
+    TSuplaChannelExtendedValue *ev, TElectricityMeter_ExtendedValue *em_ev);
+#endif
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_timer1_cb(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
+
+#ifndef _RTC_H_
+#define _RTC_H_
+
+#define NTP_SERVER "pl.pool.ntp.org"
+
+void DEVCONN_ICACHE_FLASH rtc_init(uint8_t timezone);
+void DEVCONN_ICACHE_FLASH rtc_timezone(uint8_t timezone);
+void DEVCONN_ICACHE_FLASH rtc_second();
+
+#endif
+
+void DEVCONN_ICACHE_FLASH
+convertTime()
+{
+
+  uint8_t year;
+  uint8_t month, monthLength;
+  uint32_t time;
+  unsigned long days;
+
+  time = (uint32_t) myrtc;
+  rtcTime.Second = time % 60;
+  time /= 60; // now it is minutes
+  rtcTime.Minute = time % 60;
+  time /= 60; // now it is hours
+  rtcTime.Hour = time % 24;
+  time /= 24; // now it is days
+  rtcTime.Wday = ((time + 4) % 7) + 1;  // Sunday is day 1
+
+  year = 0;
+  days = 0;
+  while ((unsigned) (days += (LEAP_YEAR(year) ? 366 : 365)) <= time) {
+    year++;
+  }
+  rtcTime.Year = year; // year is offset from 1970
+
+  days -= LEAP_YEAR(year) ? 366 : 365;
+  time -= days; // now it is days in this year, starting at 0
+
+  days = 0;
+  month = 0;
+  monthLength = 0;
+  for (month = 0; month < 12; month++) {
+    if (month == 1) { // february
+      if (LEAP_YEAR(year)) {
+        monthLength = 29;
+      }
+      else {
+        monthLength = 28;
+      }
+    }
+    else {
+      monthLength = monthDays[month];
+    }
+
+    if (time >= monthLength) {
+      time -= monthLength;
+    }
+    else {
+      break;
+    }
+  }
+  rtcTime.Month = month + 1;  // jan is month 1
+  rtcTime.Day = time + 1;     // day of month
+  rtcTime.Year = rtcTime.Year + 1970;
+}
+
+void DEVCONN_ICACHE_FLASH
+rtc_second()
+{
+	if (init_rtc == 1) {
+		// NTP Synchronicja co godzinę (xx:00:10)
+		if (rtcTime.Minute == 0) {
+			if ((rtcTime.Second == 10) && !ntpsync) {
+				ntpsync = 1;
+				myrtc = sntp_get_current_timestamp() -1;
+				supla_log(LOG_DEBUG, "RTC: sntp %d, %s \n", myrtc, sntp_get_real_time(myrtc));
+			}
+			if (rtcTime.Second == 40) ntpsync = 0;
+		}
+		myrtc++;
+		convertTime();
+	}
+}
+
+void DEVCONN_ICACHE_FLASH
+rtc_timezone(uint8_t timezone)
+{
+	sntp_stop();
+//  if (true == sntp_set_timezone(sysCfg.timezone))
+	sntp_set_timezone(timezone);
+	sntp_init();
+	myrtc = sntp_get_current_timestamp();
+}
+
+void DEVCONN_ICACHE_FLASH
+rtc_init(uint8_t timezone)
+{
+	sntp_setservername(0, NTP_SERVER);
+	sntp_stop();
+	sntp_set_timezone(timezone);
+	sntp_init();
+	myrtc = 0;
+	init_rtc = 1;
+}
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_system_restart(void) {
@@ -412,6 +599,7 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		devconn->registered = 1;
 
 		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
+		status_ok = 1;
 		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 		if ( devconn->server_activity_timeout != ACTIVITY_TIMEOUT ) {
@@ -497,6 +685,9 @@ supla_esp_channel_value_changed(int channel_number, char v) {
 	if ( supla_esp_devconn_is_registered() == 1 ) {
 
 		//supla_log(LOG_DEBUG, "supla_esp_channel_value_changed(%i, %i)", channel_number, v);
+		if ( channel_number == 0 ) {
+			relay_laststate = v;
+		}
 
 		char value[SUPLA_CHANNELVALUE_SIZE];
 		memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
@@ -1302,6 +1493,7 @@ supla_esp_devconn_disconnect_cb(void *arg){
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 
+    int rel;
 	//supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
 
 	if ( ip == NULL ) {
@@ -1329,7 +1521,15 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 	espconn_regist_connectcb(&devconn->ESPConn, supla_esp_devconn_connect_cb);
 	espconn_regist_disconcb(&devconn->ESPConn, supla_esp_devconn_disconnect_cb);
 
-	supla_espconn_connect(&devconn->ESPConn);
+	rel = supla_espconn_connect(&devconn->ESPConn);
+	devconn->last_state = rel;
+	if (rel == 0) {
+		supla_log(LOG_DEBUG, "Connected to Supla server (%i)", rel);
+		pomiar_start = 1;
+	} else if (rel == -15)
+		supla_log(LOG_DEBUG, "Already connected to Supla server (%i)", rel);
+	else
+		supla_log(LOG_DEBUG, "No connection to Supla server (%i)", rel);
 
 }
 
@@ -1413,6 +1613,10 @@ supla_esp_devconn_before_update_start(void) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_init(void) {
+
+	#ifdef POWSENSOR2
+		uart_div_modify(0, UART_CLK_FREQ / 4800);
+	#endif
 
 	devconn = (devconn_params*)malloc(sizeof(devconn_params));
 	memset(devconn, 0, sizeof(devconn_params));
@@ -1498,6 +1702,30 @@ supla_esp_wifi_check_status(void) {
 
 	uint8 status = wifi_station_get_connect_status();
 
+	if (( status == 5 ) && ( next_t == 1)) {
+		next_t--;
+		rtc_init(1);
+		rtc_second();
+		#if defined(TEMPERATURE_CHANNEL) || defined(TEMPERATURE_HUMIDITY_CHANNEL)
+			if ( rtcTime.Minute < 10) last_minute = 10;
+			else if ( rtcTime.Minute < 20) last_minute = 20;
+			else if ( rtcTime.Minute < 30) last_minute = 30;
+			else if ( rtcTime.Minute < 40) last_minute = 40;
+			else if ( rtcTime.Minute < 50) last_minute = 50;
+			else if ( rtcTime.Minute > 50) last_minute = 0;
+		#endif
+		#if defined(POWSENSOR2)
+			if ( rtcTime.Minute < 15) last_minute = 15;
+			else if ( rtcTime.Minute < 30) last_minute = 30;
+			else if ( rtcTime.Minute < 45) last_minute = 45;
+			else if ( rtcTime.Minute > 45) last_minute = 0;
+		#endif
+		supla_log(LOG_DEBUG, "Time: %i:%i > time synchronization",rtcTime.Hour, rtcTime.Minute);
+		#ifdef POWSENSOR2
+			snd_power = 1;
+		#endif
+	}
+
 	if (devconn->last_wifi_status == status) {
 		return;
 	}
@@ -1533,6 +1761,36 @@ supla_esp_wifi_check_status(void) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_timer1_cb(void *timer_arg) {
 
+	rtc_second();
+	#if defined(POWSENSOR2)
+		if (licznik20 > 0) licznik20--;
+		if ((pomiar_start == 1) && (licznik20 == 0)) {
+			licznik20 = CZAS_POMIARU;
+			supla_log(LOG_DEBUG, "Zerowanie licznika energii: %i", supla_esp_cfg.ZeroInitialEnergy);
+			if (supla_esp_cfg.ZeroInitialEnergy == 1)
+			{
+				supla_esp_state.daily_power = 0;
+				supla_esp_state.full_energy = 0;
+				supla_esp_save_state(0);
+				supla_esp_cfg.ZeroInitialEnergy = 0;
+				supla_esp_cfg_save(&supla_esp_cfg);
+			}
+			os_printf("Start pomiaru\n");
+			uart_status(relay_laststate);	// Cykl pomiarowy napięcia, prądu i mocy
+		}
+
+		//-----------------------------------------------
+		// Wysłanie dziennego zużycia energii (kWh) o godzinie 22.50 (wynik podzielić przez 100)
+		if (( rtcTime.Hour == 22 ) && ( rtcTime.Minute == 50 ) && ( rtcTime.Day != Last_Day )) {
+			snd_daily_power = (unsigned int)(supla_esp_state.daily_power/36000);
+			supla_log(LOG_DEBUG, "Dzienna Energia: %i", snd_daily_power);
+			snd_energy = 1;
+			supla_esp_state.daily_power = 0;
+			Last_Day = rtcTime.Day;
+			supla_esp_save_state(0);
+		}
+	#endif	
+
 	supla_esp_wifi_check_status();
 
 	unsigned int t1;
@@ -1540,6 +1798,12 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 	unsigned int t3;
 
 	//supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
+
+	#ifdef POWSENSOR2
+		if ((status_ok == 1) && (pomiar_start == 1) && (licznik20 == CZAS_POMIARU))  {
+			supla_get_parameters();
+		}
+	#endif
 
 	if ( supla_esp_devconn_is_registered() == 1
 		 && devconn->server_activity_timeout > 0
@@ -1585,3 +1849,140 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 	}
 }
 #endif /*BOARD_CALCFG*/
+
+#if defined(POWSENSOR2)
+void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(TElectricityMeter_ExtendedValue *ev, char *value) {
+  memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
+
+  if (sizeof(TElectricityMeter_Value) > SUPLA_CHANNELVALUE_SIZE) {
+    return;
+  }
+
+  TElectricityMeter_Measurement *m = NULL;
+  TElectricityMeter_Value v;
+  memset(&v, 0, sizeof(TElectricityMeter_Value));
+
+  unsigned _supla_int64_t fae_sum = ev->total_forward_active_energy[0] +
+                                    ev->total_forward_active_energy[1] +
+                                    ev->total_forward_active_energy[2];
+
+  v.total_forward_active_energy = fae_sum / 1000;
+
+  if (ev->m_count && ev->measured_values & EM_VAR_VOLTAGE) {
+    m = &ev->m[ev->m_count - 1];
+
+    if (m->voltage[0] > 0) {
+      v.flags |= EM_VALUE_FLAG_PHASE1_ON;
+    }
+
+    if (m->voltage[1] > 0) {
+      v.flags |= EM_VALUE_FLAG_PHASE2_ON;
+    }
+
+    if (m->voltage[2] > 0) {
+      v.flags |= EM_VALUE_FLAG_PHASE3_ON;
+    }
+  }
+
+  memcpy(value, &v, sizeof(TElectricityMeter_Value));
+}
+
+void ICACHE_FLASH_ATTR supla_esp_em_get_value(unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]) {
+  TElectricityMeter_ExtendedValue ev;
+  memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+}
+
+void DEVCONN_ICACHE_FLASH  supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev) {
+	TSuplaChannelExtendedValue ev;
+	srpc_evtool_v1_emextended2extended(em_ev, &ev);
+	supla_esp_channel_extendedvalue_changed(channel_number, &ev);
+}
+#endif
+
+#if defined(POWSENSOR2) && defined (ELECTRICITIMETER)
+void DEVCONN_ICACHE_FLASH
+supla_get_parameters() {
+
+	unsigned int napiecie;
+	unsigned int prad;
+	unsigned int power;
+
+	unsigned int current_difference = 0;
+    uint32_t sekundy;
+    uint32_t time_difference;
+	unsigned int power_difference = 0;
+    unsigned char channel_number;
+	char value[SUPLA_CHANNELVALUE_SIZE];
+    TElectricityMeter_ExtendedValue ev;
+    TElectricityMeter_Value v;
+
+    memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+	memset(&v, 0, sizeof(TElectricityMeter_Value));
+
+	channel_number = 1;
+    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	supla_getVoltage(value);
+	memcpy(&napiecie, value, sizeof(uint32_t));
+	last_voltage = (int)(napiecie);
+	if ( relay_laststate == 0) last_voltage = 0;
+	supla_log(LOG_DEBUG, "Voltage: %i", last_voltage);
+    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	supla_getCurrent(value);
+	memcpy(&prad, value, sizeof(_supla_int64_t));
+	last_current = (int)(prad);
+	if ( relay_laststate == 0 ) last_current = 0;
+	if ( abs(last_dif_current - last_current) > 0) {
+		if ( last_current >= last_dif_current )  current_difference = (int)(((last_current - last_dif_current)*100)/last_current);
+		else  current_difference = (int)(((last_dif_current - last_current)*100)/last_dif_current);
+		if ( current_difference >= 10 ) {
+			snd_current = 1;
+		}
+	}
+	supla_log(LOG_DEBUG, "Current: %i", last_current);
+	last_dif_current = last_current;
+    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	supla_getPower(value);
+	memcpy(&power, value, sizeof(_supla_int64_t));
+	last_power = (int)(power);
+	if ( relay_laststate == 0 ) last_power = 0;
+	supla_log(LOG_DEBUG, "Power: %i", last_power);
+	sekundy = (uint32_t)(sntp_get_current_timestamp());
+	time_difference = sekundy - last_seconds;
+	last_seconds = sekundy;
+	if ( time_difference > 10*CZAS_POMIARU )  time_difference = CZAS_POMIARU;
+	if (last_power*time_difference > 0) {
+		supla_esp_state.daily_power = supla_esp_state.daily_power + last_power*time_difference;
+		supla_esp_state.full_energy = supla_esp_state.full_energy + last_power*time_difference;
+		supla_esp_save_state(0);
+	}
+	if ( abs(last_dif_power - last_power) > 0) {
+		if ( last_power >= last_dif_power )  power_difference = (int)(((last_power - last_dif_power)*100)/last_power);
+		else  power_difference = (int)(((last_dif_power - last_power)*100)/last_dif_power);
+		if ( power_difference >= 10 ) {
+			snd_power =1;
+		}
+	}
+	last_dif_power = last_power;
+	supla_log(LOG_DEBUG, "power_difference: %i, last_power: %i W, last_dif_power: %i W, interval: %i sec", power_difference, last_power, last_dif_power, time_difference);
+	supla_log(LOG_DEBUG, "=== Daily Power: %u, snd_daily_power: %u, Next time: %i", supla_esp_state.daily_power, snd_daily_power, last_minute);
+	
+    v.flags = EM_VALUE_FLAG_PHASE1_ON;
+	v.total_forward_active_energy = (unsigned int)supla_esp_state.full_energy/36000;
+    memcpy(value, &v, sizeof(TElectricityMeter_Value));
+    supla_esp_channel_value__changed(channel_number, value);
+	
+    ev.total_forward_active_energy[0]   = supla_esp_state.full_energy/36;
+
+	ev.m->voltage[0] = last_voltage*10;
+	ev.m->current[0] = last_current;
+	ev.m->power_active[0] = last_power*100000;
+	
+	ev.measured_values = EM_VAR_VOLTAGE | EM_VAR_CURRENT | EM_VAR_POWER_ACTIVE | EM_VAR_FORWARD_ACTIVE_ENERGY;
+	ev.m_count = 1;
+	ev.period  = 0;
+
+    supla_esp_channel_em_value_changed(channel_number, &ev);
+}
+
+#endif
+

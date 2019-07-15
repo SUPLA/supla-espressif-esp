@@ -71,6 +71,10 @@
 
 #include "board/sonoff_th.h"
 
+#elif defined(__BOARD_sonoff_pow_R2)
+
+#include "board/sonoff_pow_R2.h"
+
 #elif defined(__BOARD_dimmer)
 
 #include "board/dimmer.h"
