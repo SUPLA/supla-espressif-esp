@@ -754,10 +754,19 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 
 		//supla_log(LOG_DEBUG, "RELAY HI");
 		#ifdef _ROLLERSHUTTER_SUPPORT
+		
 			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
 			if ( rs_cfg != NULL ) {
-				supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
+
+                if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
+					supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);	
+                }			
+				else {
+
+					supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
+				}
 			}
+		
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
@@ -789,10 +798,10 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 
 		//supla_log(LOG_DEBUG, "RELAY LO");
 		#ifdef _ROLLERSHUTTER_SUPPORT
-			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-			if ( rs_cfg != NULL ) {
-				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
-			}
+			//supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+			//if ( rs_cfg != NULL ) {
+				//supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+			//}
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
