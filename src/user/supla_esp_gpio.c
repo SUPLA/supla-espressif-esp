@@ -769,7 +769,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 		
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 
-	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
+	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
 
 		//supla_log(LOG_DEBUG, "RELAY");
 		supla_esp_gpio_relay_switch(input_cfg, 255);
@@ -807,7 +807,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 
-		supla_esp_gpio_relay_switch(input_cfg, 255);
+		//supla_esp_gpio_relay_switch(input_cfg, 255);
 
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 			    &&  input_cfg->channel != 255 ) {
