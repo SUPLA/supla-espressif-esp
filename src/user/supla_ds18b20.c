@@ -150,12 +150,18 @@ supla_ds18b20_read_temperatureB(void *timer_arg) {
     }
 
     if ( supla_ds18b20_last_temp != t ) {
-    	supla_ds18b20_last_temp = t;
-
-    	char value[SUPLA_CHANNELVALUE_SIZE];
-    	memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-    	supla_get_temperature(value);
-    	supla_esp_channel_value__changed(TEMPERATURE_CHANNEL, value);
+    	if((t >= -55 && t <= 125) || t == -275){
+            supla_ds18b20_last_temp = t;
+        
+        	char value[SUPLA_CHANNELVALUE_SIZE];
+        	memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+        	supla_get_temperature(value);
+        #ifdef TEMPERATURE_PORT_CHANNEL
+        	supla_esp_channel_value__changed(temperature_channel, value);
+        #else
+        	supla_esp_channel_value__changed(TEMPERATURE_CHANNEL, value);
+        #endif
+        }
     };
 
 }

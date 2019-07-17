@@ -18,11 +18,12 @@
 
 #ifndef INCAN_H_
 #define INCAN_H_
-
+uint8 temperature_channel;
 #define BOARD_CFG_HTML_TEMPLATE
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
 #define CHECK_GPIO_FOR_UART
+#define TEMPERATURE_PORT_CHANNEL
 
 #define LED_RED_PORT 2
 #define USE_GPIO16_INPUT
@@ -30,7 +31,7 @@
 #if defined(__BOARD_inCan_DS) || defined(__BOARD_inCanRS_DS)
 
 #define DS18B20
-#define TEMPERATURE_CHANNEL 1
+//#define TEMPERATURE_CHANNEL 1
 
 #elif defined(__BOARD_inCan_DHT11) || defined(__BOARD_inCanRS_DHT11)
 

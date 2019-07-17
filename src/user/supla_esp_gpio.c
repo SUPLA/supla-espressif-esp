@@ -33,6 +33,8 @@
 
 #include "supla-dev/log.h"
 
+#include "supla_w1.h"
+
 #define GPIO_OUTPUT_GET(gpio_no)     ((gpio_output_get()>>gpio_no)&BIT0)
 
 #define LED_RED    0x1
@@ -1195,6 +1197,13 @@ supla_esp_gpio_init(void) {
         #ifdef CHECK_GPIO_FOR_UART
         if (  supla_input_cfg[a].type == INPUT_TYPE_SENSOR ){
             check_gpio_for_uart_and_pullup(supla_input_cfg[a].gpio_id, GPIO_INPUT);
+        }
+        #endif
+
+        #ifdef TEMPERATURE_PORT_CHANNEL
+        if (  supla_input_cfg[a].type == INPUT_TYPE_TEMPERATURE || supla_input_cfg[a].type == INPUT_TYPE_TEMPERATURE_HUMIDITY){
+            supla_w1_pin = GPIO_ID_PIN(supla_input_cfg[a].gpio_id);
+            temperature_channel = supla_input_cfg[a].channel;
         }
         #endif
     }

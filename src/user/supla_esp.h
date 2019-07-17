@@ -102,6 +102,8 @@
 #define INPUT_TYPE_BTN_MONOSTABLE_RS     3
 #define INPUT_TYPE_BTN_BISTABLE          4
 #define INPUT_TYPE_BTN_BISTABLE_RS       5
+#define INPUT_TYPE_TEMPERATURE           6
+#define INPUT_TYPE_TEMPERATURE_HUMIDITY  7
 #define INPUT_TYPE_CUSTOM                200
 
 // milliseconds

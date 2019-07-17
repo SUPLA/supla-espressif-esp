@@ -27,6 +27,7 @@
 #define B_SENSOR1_PORT 4
 #define B_SENSOR2_PORT 16
 #define B_WEJSCIE 13
+#define B_TEMPERATURE   2
 
 void supla_esp_board_set_device_name(char* buffer, uint8 buffer_size)
 {
@@ -92,6 +93,18 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void)
 */
     supla_input_cfg[5].type = INPUT_TYPE_SENSOR;
     supla_input_cfg[5].gpio_id = B_WEJSCIE;
+
+#if defined(__BOARD_inCan_DS)
+    supla_input_cfg[6].type = INPUT_TYPE_TEMPERATURE;
+    supla_input_cfg[6].gpio_id = B_TEMPERATURE;
+    supla_input_cfg[6].channel = 1;
+
+#elif defined(__BOARD_inCan_DHT11) || defined(__BOARD_inCan_DHT22)
+    supla_input_cfg[6].type = INPUT_TYPE_TEMPERATURE_HUMIDITY;
+    supla_input_cfg[6].gpio_id = B_TEMPERATURE;
+    supla_input_cfg[6].channel = 1;
+#endif
+
     // -----------------------------------------------------------
 
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
