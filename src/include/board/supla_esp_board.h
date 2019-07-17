@@ -163,6 +163,17 @@
 
 #include "board/acs_hp_homeplus.h"
 
+#elif defined(__BOARD_inCan_DS) \
+    ||  defined(__BOARD_inCan_DHT11)\
+    ||  defined(__BOARD_inCan_DHT22)\
+    ||  defined(__BOARD_inCanRS_DS) \
+    ||  defined(__BOARD_inCanRS_DHT11)\
+    ||  defined(__BOARD_inCanRS_DHT22)
+
+#include "board/inCan.h"
+
 #endif
+
+
 
 #endif
