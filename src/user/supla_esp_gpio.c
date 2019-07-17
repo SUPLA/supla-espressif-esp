@@ -1136,6 +1136,10 @@ supla_esp_gpio_init(void) {
 				gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_PIN_INTR_DISABLE);
 				gpio_output_set(0, GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), 0);
 
+            #ifdef CHECK_GPIO_FOR_UART
+                check_gpio_for_uart_and_pullup(supla_relay_cfg[a].gpio_id, GPIO_OUTPUT);
+            #endif
+
 			} else if (supla_relay_cfg[a].gpio_id == 16) {
 				gpio16_output_conf();
 			}
@@ -1188,6 +1192,11 @@ supla_esp_gpio_init(void) {
         	gpio_pin_intr_state_set(GPIO_ID_PIN(supla_input_cfg[a].gpio_id), GPIO_PIN_INTR_ANYEDGE);
         } 
 
+        #ifdef CHECK_GPIO_FOR_UART
+        if (  supla_input_cfg[a].type == INPUT_TYPE_SENSOR ){
+            check_gpio_for_uart_and_pullup(supla_input_cfg[a].gpio_id, GPIO_INPUT);
+        }
+        #endif
     }
 
     ETS_GPIO_INTR_ENABLE();
@@ -1376,8 +1385,9 @@ supla_esp_gpio_enable_sensors(void *timer_arg) {
 			 && supla_input_cfg[a].type == INPUT_TYPE_SENSOR )
 
 		supla_esp_gpio_enable_input_port(supla_input_cfg[a].gpio_id);
+       
 
-
+        
 	ETS_GPIO_INTR_ENABLE();
 
 }
@@ -1503,6 +1513,72 @@ char  supla_esp_gpio_relay_on(int port) {
 	return supla_esp_gpio_output_is_hi(port) == HI_VALUE ? 1 : 0;
 }
 
+#ifdef CHECK_GPIO_FOR_UART
+void check_gpio_for_uart_and_pullup(char check_gpio, uint8 inout) {
 
+	if (check_gpio == 0) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);		
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO0_U);
+	}
+	else if (check_gpio == 1) {
+        system_uart_swap ();
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_U0TXD_U);		
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
+	}
+	else if (check_gpio == 2) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO2_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO2_U);
+	}
+
+	else if (check_gpio == 3) {
+        system_uart_swap ();
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_U0RXD_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0RXD_U);
+	}
+
+	else if (check_gpio == 4) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO4_U);
+	}
+
+	else if (check_gpio == 5) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO5_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO5_U);
+	}
+
+	else if (check_gpio == 9) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_SD_DATA2_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_SD_DATA2_U);
+	}
+
+	else if (check_gpio == 10) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_SD_DATA3_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_SD_DATA3_U);
+	}
+
+	else if (check_gpio == 12) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_MTDI_U);
+	}
+
+	else if (check_gpio == 13) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_MTCK_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_MTCK_U);
+	}
+
+	else if (check_gpio == 14) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_MTMS_U);
+	}
+
+	else if (check_gpio == 15) {
+		if (inout == GPIO_INPUT) PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDO_U);
+		else PIN_PULLUP_DIS(PERIPHS_IO_MUX_MTDO_U);
+	}
+	if (inout == GPIO_OUTPUT) {
+		GPIO_OUTPUT_SET(GPIO_ID_PIN(check_gpio), 0);
+	}
+}
+#endif
 
 
