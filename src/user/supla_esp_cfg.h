@@ -50,7 +50,6 @@ typedef struct {
     char InputCfgTriggerOff;
 
     char FirmwareUpdate;
-    char ZeroInitialEnergy;
     char Test;
 
     char UpsideDown;
@@ -59,6 +58,7 @@ typedef struct {
     unsigned int Time2[CFG_TIME2_COUNT];
 
     char Trigger;
+    char ZeroInitialEnergy;
     char zero[200];
 
 }SuplaEspCfg;
@@ -162,7 +162,6 @@ typedef struct {
     
     unsigned int Time1Left[CFG_TIME1_COUNT];
     unsigned int Time2Left[CFG_TIME2_COUNT];
-	unsigned int daily_power;
 	unsigned int full_energy;
 
     char turnedOff[RS_MAX_COUNT];
