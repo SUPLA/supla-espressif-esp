@@ -33,38 +33,18 @@
 const uint8_t rsa_public_key_bytes[512] = {
 	};
 
-
-typedef struct {
-  char tag[3];
-  _supla_int64_t counter[4];
-} _ic_storage_t;
-
-uint8 storage_offset;
-
-ETSTimer storage_timer1;
 _supla_int64_t counter;
-uint8 counter_changed;
-uint8 input_last_value = 0;
-uint32 input_last_time = 0;
 
 #define B_RELAY1_PORT    12
 #define B_CFG_PORT        0
 
-int test_sel = 0;
-uint32_t voltage_time;
-int supla_micros_gpio_state = 0;
 uint8_t buffer[128];
-
 uint32_t voltage = 0;
 uint32_t current = 0;
 uint32_t power   = 0;
-
-uint8_t cse_receive_flag = 0;
-
 long voltage_cycle = 0;
 long current_cycle = 0;
 long power_cycle = 0;
-unsigned long power_cycle_first = 0;
 long cf_pulses = 0;
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
@@ -210,12 +190,6 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
 
 void Cse_Rec(int start, unsigned int relay_laststate)
 {
-  uint8_t header = buffer[0+start];
-  if ((header & 0xFC) == 0xFC) {
-    supla_log(LOG_DEBUG, "Abnormal hardware");
-    return;
-  }
-
 	if ( relay_laststate == 1) {
 		long voltage_coefficient;
 		voltage_coefficient = buffer[2+start]*65536 + buffer[3+start]*256 + buffer[4+start];
@@ -292,17 +266,12 @@ UART_Recv(uint8 uart_no, uint8_t *buffer, int max_buf_len)
     if (fifo_len)
     {
         max_unload = (fifo_len<max_buf_len ? fifo_len : max_buf_len);
-        os_printf("Rx Fifo contains %d characters. To unload %d\r\n", fifo_len , max_unload);
-
         for (index=0;index<max_unload; index++)
         {
             *(buffer+index) = READ_PERI_REG(UART_FIFO(UART0)) & 0xFF;
         }
         WRITE_PERI_REG(UART_INT_CLR(uart_no), UART_RXFIFO_FULL_INT_CLR);
     }
-	else
-        os_printf("Rx Fifo is empty\r\n");
-
     return index;
 }
 
@@ -346,9 +315,9 @@ void supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
     supla_relay_cfg[0].channel = 0;
 
-    sntp_setservername(0, NTP_SERVER);
-    sntp_stop();
-    sntp_init();
+//    sntp_setservername(0, NTP_SERVER);
+//    sntp_stop();
+//    sntp_init();
 
 }
 

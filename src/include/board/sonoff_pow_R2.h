@@ -44,7 +44,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 #define LED_RED_PORT    13
 #define ELECTRICITIMETER
 #define BOARD_CFG_HTML_TEMPLATE
-#define NTP_SERVER "pl.pool.ntp.org"
+//#define NTP_SERVER "pl.pool.ntp.org"
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
     char dev_name[25], const char mac[6], const char data_saved);
