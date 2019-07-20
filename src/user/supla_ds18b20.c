@@ -31,8 +31,9 @@
 
 #include "supla_esp_devconn.h"
 
-#ifdef DS18B20
+#if defined DS18B20 || defined TEMPERATURE_PORT_CHANNEL
 
+int supla_ds18b20_pin;
 
 static double supla_ds18b20_last_temp = -275;
 
@@ -53,6 +54,63 @@ void supla_ds18b20_init(void) {
 
 	supla_w1_init();
 }
+
+#ifdef TEMPERATURE_PORT_CHANNEL
+
+void supla_ds18b20_reset(void)
+{
+    uint8_t retries = 125;
+    GPIO_DIS_OUTPUT( supla_ds18b20_pin );
+    do {
+        if (--retries == 0) return;
+        os_delay_us(2);
+    } while ( !GPIO_INPUT_GET( supla_ds18b20_pin ));
+
+    GPIO_OUTPUT_SET( supla_ds18b20_pin, 0 );
+    os_delay_us(480);
+    GPIO_DIS_OUTPUT( supla_ds18b20_pin );
+    os_delay_us(480);
+}
+
+void supla_ds18b20_write_bit( int v )
+{
+    GPIO_OUTPUT_SET( supla_ds18b20_pin, 0 );
+    if( v ) {
+        os_delay_us(10);
+        GPIO_OUTPUT_SET( supla_ds18b20_pin, 1 );
+        os_delay_us(55);
+    } else {
+        os_delay_us(65);
+        GPIO_OUTPUT_SET( supla_ds18b20_pin, 1 );
+        os_delay_us(5);
+    }
+}
+
+
+int supla_ds18b20_read_bit(void)
+{
+    int r;
+    GPIO_OUTPUT_SET( supla_ds18b20_pin, 0 );
+    os_delay_us(3);
+    GPIO_DIS_OUTPUT( supla_ds18b20_pin );
+    os_delay_us(10);
+    r = GPIO_INPUT_GET( supla_ds18b20_pin );
+    os_delay_us(53);
+    return r;
+}
+
+void supla_ds18b20_write( uint8_t v, int power ) {
+    uint8_t bitMask;
+    for (bitMask = 0x01; bitMask; bitMask <<= 1) {
+    	supla_ds18b20_write_bit( (bitMask & v)?1:0);
+    }
+    if ( !power) {
+        GPIO_DIS_OUTPUT( supla_ds18b20_pin );
+        GPIO_OUTPUT_SET( supla_ds18b20_pin, 0 );
+    }
+}
+
+#else
 
 void supla_ds18b20_reset(void)
 {
@@ -106,6 +164,7 @@ void supla_ds18b20_write( uint8_t v, int power ) {
         GPIO_OUTPUT_SET( supla_w1_pin, 0 );
     }
 }
+#endif
 
 uint8_t  supla_ds18b20_read() {
     uint8_t bitMask;
