@@ -287,6 +287,30 @@ case $1 in
      FOTA=1
      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4 -DESP8266_LOG_DISABLED=1"
    ;;
+   "inCan_DS")  
+	SPI_MODE="QIO"
+    FLASH_SIZE="4096"       
+   ;;
+   "inCan_DHT11")      
+	SPI_MODE="QIO"
+    FLASH_SIZE="4096"       
+   ;;
+   "inCan_DHT22")      
+	SPI_MODE="QIO"
+    FLASH_SIZE="4096"       
+   ;;
+   "inCanRS_DS") 
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"     
+   ;;
+   "inCanRS_DHT11")  
+ 	SPI_MODE="QIO"
+    FLASH_SIZE="4096"       
+   ;;
+   "inCanRS_DHT22") 
+	SPI_MODE="QIO"
+    FLASH_SIZE="4096"       
+  ;;
 	
    *)
    echo "Usage:"
@@ -338,6 +362,12 @@ case $1 in
    echo "              lightswitch_x2_54_DHT22";
    echo "              impulse_counter";
    echo "              impulse_counter_3";
+   echo "              inCan_DS";
+   echo "              inCan_DHT11";
+   echo "              inCan_DHT22";
+   echo "              inCanRS_DS";
+   echo "              inCanRS_DHT11";
+   echo "              inCanRS_DHT22";
    echo 
    echo
    exit;

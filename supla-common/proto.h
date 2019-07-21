@@ -177,6 +177,7 @@ extern "C" {
 #define SUPLA_CS_CALL_SUPERUSER_AUTHORIZATION_REQUEST 420    // ver. >= 10
 #define SUPLA_SC_CALL_SUPERUSER_AUTHORIZATION_RESULT 430     // ver. >= 10
 #define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST 440              // ver. >= 10
+#define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST_B 445            // ver. >= 11
 #define SUPLA_SC_CALL_DEVICE_CALCFG_RESULT 450               // ver. >= 10
 #define SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST 460              // ver. >= 10
 #define SUPLA_DS_CALL_DEVICE_CALCFG_RESULT 470               // ver. >= 10
@@ -338,8 +339,8 @@ extern "C" {
 #define SUPLA_PLATFORM_UNKNOWN 0
 #define SUPLA_PLATFORM_ESP8266 1
 
-#define SUPLA_NEW_VALUE_TARGET_CHANNEL 0
-#define SUPLA_NEW_VALUE_TARGET_GROUP 1
+#define SUPLA_TARGET_CHANNEL 0
+#define SUPLA_TARGET_GROUP 1
 
 #define SUPLA_MFR_UNKNOWN 0
 #define SUPLA_MFR_ACSOFTWARE 1
@@ -955,10 +956,10 @@ typedef struct {
 
 // [IODevice->Server->Client]
 typedef struct {
-  unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kW
-  unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kW
-  unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvar
-  unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvar
+  unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kWh
+  unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kWh
+  unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvarh
+  unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvarh
 
   // The price per unit, total cost and currency is overwritten by the server
   // total_cost == SUM(total_forward_active_energy[n] * price_per_unit
@@ -1024,6 +1025,16 @@ typedef struct {
   char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
 } TCS_DeviceCalCfgRequest;               // v. >= 10
 
+// CALCFG == CALIBRATION / CONFIG
+typedef struct {
+  _supla_int_t Id;
+  char Target;  // SUPLA_NEW_VALUE_TARGET_
+  _supla_int_t Command;
+  _supla_int_t DataType;
+  unsigned _supla_int_t DataSize;
+  char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
+} TCS_DeviceCalCfgRequest_B;             // v. >= 11
+
 typedef struct {
   _supla_int_t ChannelID;
   _supla_int_t Command;
@@ -1041,6 +1052,16 @@ typedef struct {
   unsigned _supla_int_t DataSize;
   char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
 } TSD_DeviceCalCfgRequest;               // v. >= 10
+
+typedef struct {
+  _supla_int_t SenderID;
+  _supla_int_t ChannelNumber;
+  _supla_int_t Command;
+  char SuperUserAuthorized;
+  _supla_int_t DataType;
+  unsigned _supla_int_t DataSize;
+  char Data[SUPLA_CALCFG_DATA_MAXSIZE];  // Last variable in struct!
+} TSD_DeviceCalCfgRequest_B;             // v. >= 11
 
 typedef struct {
   _supla_int_t ReceiverID;
@@ -1067,16 +1088,16 @@ typedef struct {
   unsigned char sec;        // 0-59
   unsigned char min;        // 0-59
   unsigned char hour;       // 0-24
-  unsigned char dayOfWeek;  // 0-6
+  unsigned char dayOfWeek;  // 1 = Sunday, 2 = Monday, …, 7 = Saturday
 } TThermostat_Time;         // v. >= 11
 
-#define THERMOSTAT_SCHEDULE_DAY_MONDAY 0x01
-#define THERMOSTAT_SCHEDULE_DAY_TUESDAY 0x02
-#define THERMOSTAT_SCHEDULE_DAY_WEDNESDAY 0x04
-#define THERMOSTAT_SCHEDULE_DAY_THURSDAY 0x08
-#define THERMOSTAT_SCHEDULE_DAY_FRIDAY 0x10
-#define THERMOSTAT_SCHEDULE_DAY_SATURDAY 0x20
-#define THERMOSTAT_SCHEDULE_DAY_SUNDAY 0x40
+#define THERMOSTAT_SCHEDULE_DAY_SUNDAY 0x01
+#define THERMOSTAT_SCHEDULE_DAY_MONDAY 0x02
+#define THERMOSTAT_SCHEDULE_DAY_TUESDAY 0x04
+#define THERMOSTAT_SCHEDULE_DAY_WEDNESDAY 0x08
+#define THERMOSTAT_SCHEDULE_DAY_THURSDAY 0x10
+#define THERMOSTAT_SCHEDULE_DAY_FRIDAY 0x20
+#define THERMOSTAT_SCHEDULE_DAY_SATURDAY 0x40
 #define THERMOSTAT_SCHEDULE_DAY_ALL 0xFF
 
 #define THERMOSTAT_SCHEDULE_HOURVALUE_TYPE_TEMPERATURE 0
@@ -1085,13 +1106,14 @@ typedef struct {
 typedef struct {
   unsigned char ValueType;  // THERMOSTAT_SCHEDULE_HOURVALUE_TYPE_
   char HourValue[7][24];    // 7 days x 24h
+                            // 0 = Sunday, 1 = Monday, …, 6 = Saturday
 } TThermostat_Schedule;     // v. >= 11
 
 typedef struct {
   unsigned char ValueType;  // THERMOSTAT_SCHEDULE_HOURVALUE_TYPE_
-  unsigned char Days;       // THERMOSTAT_SCHEDULE_DAY_
+  unsigned char WeekDays;   // THERMOSTAT_SCHEDULE_DAY_
   char HourValue[24];
-} TThermostatValueGroup;  // v. >= 11
+} TThermostatValueGroup;    // v. >= 11
 
 typedef struct {
   TThermostatValueGroup Group[4];
@@ -1164,8 +1186,8 @@ typedef struct {
   _supla_int16_t Flags[8];
   _supla_int16_t Values[8];
   TThermostat_Time Time;
-  TThermostat_Schedule Shedule;  // 7 days x 24h (4bit/hour)
-} TThermostat_ExtendedValue;     // v. >= 11
+  TThermostat_Schedule Schedule;  // 7 days x 24h (4bit/hour)
+} TThermostat_ExtendedValue;      // v. >= 11
 
 typedef struct {
   unsigned char IsOn;
@@ -1178,14 +1200,14 @@ typedef struct {
   unsigned _supla_int16_t year;
   unsigned char month;
   unsigned char day;
-  unsigned char dayOfWeek;
+  unsigned char dayOfWeek;  // 1 = Sunday, 2 = Monday, …, 7 = Saturday
   unsigned char hour;
   unsigned char min;
   unsigned char sec;
   unsigned _supla_int_t
       timezoneSize;  // including the terminating null byte ('\0')
   char timezone[SUPLA_TIMEZONE_MAXSIZE];  // Last variable in struct!
-} TSDC_UserLocalTime;
+} TSDC_UserLocalTimeResult;
 
 #pragma pack(pop)
 

@@ -26,7 +26,7 @@
 #include "espmissingincludes.h"
 
 #ifndef SUPLA_ESP_SOFTVER
-#define SUPLA_ESP_SOFTVER "2.7.9.0"
+#define SUPLA_ESP_SOFTVER "2.7.10"
 #endif
 
 #define STATE_UNKNOWN       0

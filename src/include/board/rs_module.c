@@ -173,7 +173,7 @@ void ICACHE_FLASH_ATTR
 	channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;*/
 
 	#ifdef __BOARD_rs_module_ds18b20
-	channels[1].Number = 1;
+  channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 	channels[1].FuncList = 0;
 	channels[1].Default = 0;
