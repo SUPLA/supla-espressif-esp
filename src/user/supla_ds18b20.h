@@ -24,6 +24,7 @@
 
 #if defined DS18B20 || defined TEMPERATURE_PORT_CHANNEL
 
+#define NUMBER_OF_ERRORS    4
 extern int supla_ds18b20_pin;
 
 extern ETSTimer supla_ds18b20_timer1;

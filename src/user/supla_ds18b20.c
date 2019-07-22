@@ -166,6 +166,13 @@ void supla_ds18b20_write( uint8_t v, int power ) {
 }
 #endif
 
+char* float2String(char* buffer, float value)
+{
+  os_sprintf(buffer, "%d.%d", (int)(value),(int)((value - (int)value)*100));
+  return buffer;
+}
+
+
 uint8_t  supla_ds18b20_read() {
     uint8_t bitMask;
     uint8_t r = 0;
@@ -208,20 +215,32 @@ supla_ds18b20_read_temperatureB(void *timer_arg) {
     	t = -275;
     }
 
+    char buff[20];
+    supla_log(LOG_DEBUG, "t = %s",  float2String(buff, t));
+
+    static uint8_t error;
+    if (error >= NUMBER_OF_ERRORS) t = -275;
+    //if (error != 0) supla_log(LOG_DEBUG, "supla_ds18b20_ERROR = %s",  error);
+
     if ( supla_ds18b20_last_temp != t ) {
     	if((t >= -55 && t <= 125) || t == -275){
             int difference_temp = supla_ds18b20_last_temp - t;
             
+            
             if (( difference_temp <-10 || difference_temp > 10) && t != -275 && supla_ds18b20_last_temp != -275 ) {
+                error++;
+                
                 supla_ds18b20_last_temp = t;
-                supla_log(LOG_DEBUG, "ds18b20 error difference!  = %i",  difference_temp);
+                supla_log(LOG_DEBUG, "ds18b20 error difference!  = %i error = %i",  difference_temp, error);
             }
             else {
+                error = 0;
                 supla_ds18b20_last_temp = t;
             
             	char value[SUPLA_CHANNELVALUE_SIZE];
             	memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
             	supla_get_temperature(value);
+                supla_log(LOG_DEBUG, "supla_ds18b20_last_temp = %s", float2String(buff, supla_ds18b20_last_temp));
             #ifdef TEMPERATURE_PORT_CHANNEL
             	supla_esp_channel_value__changed(temperature_channel, value);
             #else
