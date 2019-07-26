@@ -24,10 +24,7 @@
 
 #if defined DS18B20 || defined TEMPERATURE_PORT_CHANNEL
 
-#define NUMBER_OF_ERRORS    4
-#define MAX_ERROR_SIZE      10
-#define MIN_MEASURING_RANGE_DS18B20     -55
-#define MAX_MEASURING_RANGE_DS18B20     125
+
 
 extern int supla_ds18b20_pin;
 
