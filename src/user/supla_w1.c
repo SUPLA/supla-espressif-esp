@@ -23,6 +23,7 @@
 #include <gpio.h>
 
 #include "supla_w1.h"
+#include "supla_esp_gpio.h"
 
 #ifdef W1_GPIO0
   int supla_w1_pin = GPIO_ID_PIN(0);
@@ -34,10 +35,15 @@
   int supla_w1_pin = GPIO_ID_PIN(3);
 #elif defined(W1_GPIO14)
   int supla_w1_pin = GPIO_ID_PIN(14);
+#elif defined(TEMPERATURE_PORT_CHANNEL)
+  int supla_w1_pin;
 #else
   int supla_w1_pin = GPIO_ID_PIN(2);
 #endif
+
   
+
+
 void ICACHE_FLASH_ATTR supla_w1_init(void) {
 
 	#ifdef W1_GPIO0
@@ -58,6 +64,8 @@ void ICACHE_FLASH_ATTR supla_w1_init(void) {
 	#elif defined(W1_GPIO14)
 		PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 		PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);
+    #elif defined(TEMPERATURE_PORT_CHANNEL)
+        check_gpio_for_uart_and_pullup(supla_w1_pin, GPIO_INPUT);
     #else
 		PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO2_U, FUNC_GPIO2);
 		PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO2_U);

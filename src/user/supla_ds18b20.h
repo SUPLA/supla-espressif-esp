@@ -22,7 +22,11 @@
 #include "supla_esp.h"
 #include "supla-dev/proto.h"
 
-#ifdef DS18B20
+#if defined DS18B20 || defined TEMPERATURE_PORT_CHANNEL
+
+
+
+extern int supla_ds18b20_pin;
 
 extern ETSTimer supla_ds18b20_timer1;
 extern ETSTimer supla_ds18b20_timer2;
