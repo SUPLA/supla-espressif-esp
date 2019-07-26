@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.9"
+#define SUPLA_ESP_SOFTVER "2.7.10"
 
 #define STATE_UNKNOWN       0
 #define STATE_DISCONNECTED  1
@@ -102,6 +102,9 @@
 #define INPUT_TYPE_BTN_MONOSTABLE_RS     3
 #define INPUT_TYPE_BTN_BISTABLE          4
 #define INPUT_TYPE_BTN_BISTABLE_RS       5
+#define INPUT_TYPE_TEMPERATURE_DS18B20          6
+#define INPUT_TYPE_TEMPERATURE_HUMIDITY_DHT11   7
+#define INPUT_TYPE_TEMPERATURE_HUMIDITY_DHT22   8
 #define INPUT_TYPE_CUSTOM                200
 
 // milliseconds
