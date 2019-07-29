@@ -40,6 +40,16 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev);
 #endif /*ELECTRICITY_METER_COUNT*/
 
+#if defined(POWSENSOR2)
+void ICACHE_FLASH_ATTR supla_pow_R2_setup(void);
+void ICACHE_FLASH_ATTR supla_getVoltage(char value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR supla_getCurrent(char value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR supla_getPower(char value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR uart_status(unsigned int relay_laststate);
+void ICACHE_FLASH_ATTR supla_micros();
+#endif
+
+
 #if defined(RGB_CONTROLLER_CHANNEL) \
     || defined(RGBW_CONTROLLER_CHANNEL) \
     || defined(RGBWW_CONTROLLER_CHANNEL) \
