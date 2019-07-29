@@ -38,6 +38,10 @@
 
 #include "board/gate_module.h"
 
+#elif defined(__BOARD_k_gate_module) 
+
+#include "board/k_gate_module.h"
+
 #elif defined(__BOARD_gate_module_wroom)    \
       || defined(__BOARD_gate_module2_wroom)
 

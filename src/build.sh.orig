@@ -33,10 +33,6 @@ case $1 in
    ;;
    "gate_module")
    ;;
-   "k_gate_module")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
    "gate_module_dht11")
    ;;
    "gate_module_dht22")
@@ -325,7 +321,6 @@ case $1 in
    echo "              wifisocket_x4";
    echo "              wifisocket_54";
    echo "              gate_module";
-   echo "              k_gate_module";
    echo "              gate_module_dht11";
    echo "              gate_module_dht22";
    echo "              gate_module_wroom";
@@ -366,13 +361,16 @@ case $1 in
    echo "              lightswitch_x2_DHT22";
    echo "              lightswitch_x2_54_DHT22";
    echo "              impulse_counter";
+<<<<<<< HEAD
    echo "              impulse_counter_3";
+=======
    echo "              inCan_DS";
    echo "              inCan_DHT11";
    echo "              inCan_DHT22";
    echo "              inCanRS_DS";
    echo "              inCanRS_DHT11";
    echo "              inCanRS_DHT22";
+>>>>>>> supla/master
    echo 
    echo
    exit;
