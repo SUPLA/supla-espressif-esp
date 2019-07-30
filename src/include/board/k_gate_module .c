@@ -111,7 +111,6 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	supla_input_cfg[1].channel = 2;
 	
 	// ---------------------------------------
-	// ---------------------------------------
 
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
     supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
