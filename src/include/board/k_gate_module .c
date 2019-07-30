@@ -85,8 +85,8 @@ const uint8_t rsa_public_key_bytes[512] = {
 };		
  
 #include "supla_esp.h"
-#include "supla_dht.h"
-#include "supla_ds18b20.h"
+//#include "supla_dht.h"
+//#include "supla_ds18b20.h"
 
 #define B_CFG_PORT          5
 #define B_RELAY1_PORT       4
