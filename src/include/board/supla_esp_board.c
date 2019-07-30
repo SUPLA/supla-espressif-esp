@@ -30,7 +30,7 @@
 
 #include "board/gate_module.c"
 
-#elif defined(__BOARD_k_gate_module) 
+#elif defined(__BOARD_k_gate_module)   //moja plytka nice
 
 #include "board/k_gate_module.c"
 
