@@ -88,10 +88,10 @@ const uint8_t rsa_public_key_bytes[512] = {
 //#include "supla_dht.h"
 //#include "supla_ds18b20.h"
 
-#define B_CFG_PORT          5
+#define B_CFG_PORT          0
 #define B_RELAY1_PORT       4
 
-#define B_SENSOR_PORT1     12
+#define B_SENSOR_PORT1      5
 
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
@@ -115,6 +115,8 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
     supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
     supla_relay_cfg[0].channel = 0;
+	
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);
         
 }
 
