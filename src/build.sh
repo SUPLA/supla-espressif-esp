@@ -35,7 +35,7 @@ case $1 in
    ;;
    "k_gate_module")		
       FOTA=1
-      FLASH_SIZE="2048"
+      FLASH_SIZE="4096"
    ;;
    "gate_module_dht11")
    ;;
