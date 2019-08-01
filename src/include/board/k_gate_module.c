@@ -116,7 +116,10 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
     supla_relay_cfg[0].channel = 0;
 	
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);
+	// ---------------------------------------
+	
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO5_U);	// pullup gpio 5
         
 }
 
