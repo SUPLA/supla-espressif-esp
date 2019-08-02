@@ -29,6 +29,18 @@
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDO_U, FUNC_GPIO15)
 #endif
 
+#define POWSENSOR2
+#define ESP8266_SUPLA_PROTO_VERSION 10
+#define MANUFACTURER_ID 0
+#define PRODUCT_ID 0
+#define LED_RED_PORT    13
+#define ELECTRICITY_METER_COUNT 1
+#define BOARD_CFG_HTML_TEMPLATE
+
+uint32_t voltageR2;
+uint32_t currentR2;
+uint32_t powerR2;
+
 #include "supla_esp.h"
 #include "supla-dev/proto.h"
 #include <sntp.h>
@@ -36,15 +48,6 @@
 void ICACHE_FLASH_ATTR supla_esp_em_get_value(
     unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
 
-#define ESP8266_SUPLA_PROTO_VERSION 10
-#define MANUFACTURER_ID 0
-#define PRODUCT_ID 0
-
-#define POWSENSOR2
-#define LED_RED_PORT    13
-#define ELECTRICITIMETER
-#define BOARD_CFG_HTML_TEMPLATE
-//#define NTP_SERVER "pl.pool.ntp.org"
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
     char dev_name[25], const char mac[6], const char data_saved);

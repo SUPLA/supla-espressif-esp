@@ -39,9 +39,6 @@ _supla_int64_t counter;
 #define B_CFG_PORT        0
 
 uint8_t buffer[128];
-uint32_t voltage = 0;
-uint32_t current = 0;
-uint32_t power   = 0;
 long voltage_cycle = 0;
 long current_cycle = 0;
 long power_cycle = 0;
@@ -195,20 +192,20 @@ void Cse_Rec(int start, unsigned int relay_laststate)
 		voltage_coefficient = buffer[2+start]*65536 + buffer[3+start]*256 + buffer[4+start];
 		voltage_cycle = buffer[5+start]*65536 + buffer[6+start]*256 + buffer[7+start];
 		if ((buffer[start] & 0xF8) == 0xF8) {
-			voltage = 0;
+			voltageR2 = 0;
 		} else {
-			voltage = (voltage_coefficient * 10) / voltage_cycle;
+			voltageR2 = (voltage_coefficient * 10) / voltage_cycle;
 		}
 
 		long current_coefficient;
 		current_coefficient = buffer[8+start]*65536 + buffer[9+start]*256 + buffer[10+start];
 		current_cycle = buffer[11+start]*65536 + buffer[12+start]*256 + buffer[13+start];
 		if ((buffer[start] & 0xF4) == 0xF4) {
-		current = 0;
+		currentR2 = 0;
 		} else {
-		current = (current_coefficient * 1000) / current_cycle;
+		currentR2 = (current_coefficient * 1000) / current_cycle;
 		}
-		if (current < 100) current = 0;
+		if (currentR2 < 100) current = 0;
 
 		long power_coefficient;
 		power_coefficient = buffer[14+start]*65536 + buffer[15+start]*256 + buffer[16+start];
@@ -217,36 +214,18 @@ void Cse_Rec(int start, unsigned int relay_laststate)
 		cf_pulses = buffer[21+start]*256 + buffer[22+start];
 		if (adjustment & 0x10) {
 		if ((buffer[start] & 0xF2) == 0xF2) {
-			power = 0;
+			powerR2 = 0;
 		} else {
-			power = power_coefficient / power_cycle;
+			powerR2 = power_coefficient / power_cycle;
 		}
 		} else {
-			power = 0;  
+			powerR2 = 0;  
 		}
 	} else {
-		voltage = 0;
-		current = 0;
-		power = 0;  
+		voltageR2 = 0;
+		currentR2 = 0;
+		powerR2 = 0;  
 	}
-}
-
-//-------------------------------------------------------
-void ICACHE_FLASH_ATTR
-supla_getVoltage(char value[SUPLA_CHANNELVALUE_SIZE]) {
-	memcpy(value, &voltage, sizeof(uint32_t));
-}
-
-//-------------------------------------------------------
-void ICACHE_FLASH_ATTR
-supla_getCurrent(char value[SUPLA_CHANNELVALUE_SIZE]) {
-	memcpy(value, &current, sizeof(uint32_t));
-}
-
-//-------------------------------------------------------
-void ICACHE_FLASH_ATTR
-supla_getPower(char value[SUPLA_CHANNELVALUE_SIZE]) {
-	memcpy(value, &power, sizeof(uint32_t));
 }
 
 void ICACHE_FLASH_ATTR
@@ -315,10 +294,6 @@ void supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
     supla_relay_cfg[0].channel = 0;
 
-//    sntp_setservername(0, NTP_SERVER);
-//    sntp_stop();
-//    sntp_init();
-
 }
 
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count) {
@@ -327,8 +302,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned c
 
 	channels[0].Number = 0;
 	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
-	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
-								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
+	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
 	channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
     
@@ -337,6 +311,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned c
 	supla_esp_em_get_value(1, channels[1].value);
 
 }
+
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc) {
 

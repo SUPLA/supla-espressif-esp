@@ -37,11 +37,6 @@
 #include "supla-dev/srpc.h"
 #include "supla-dev/log.h"
 
-#if defined(POWSENSOR2)
-#include "supla_esp_electricity_meter.h"
-#endif
-
-
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
 #endif
@@ -1701,55 +1696,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 #endif /*BOARD_CALCFG*/
 
 #if defined(POWSENSOR2)
-void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(TElectricityMeter_ExtendedValue *ev, char *value) {
-  memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
-
-  if (sizeof(TElectricityMeter_Value) > SUPLA_CHANNELVALUE_SIZE) {
-    return;
-  }
-
-  TElectricityMeter_Measurement *m = NULL;
-  TElectricityMeter_Value v;
-  memset(&v, 0, sizeof(TElectricityMeter_Value));
-
-  unsigned _supla_int64_t fae_sum = ev->total_forward_active_energy[0] +
-                                    ev->total_forward_active_energy[1] +
-                                    ev->total_forward_active_energy[2];
-
-  v.total_forward_active_energy = fae_sum / 1000;
-
-  if (ev->m_count && ev->measured_values & EM_VAR_VOLTAGE) {
-    m = &ev->m[ev->m_count - 1];
-
-    if (m->voltage[0] > 0) {
-      v.flags |= EM_VALUE_FLAG_PHASE1_ON;
-    }
-
-    if (m->voltage[1] > 0) {
-      v.flags |= EM_VALUE_FLAG_PHASE2_ON;
-    }
-
-    if (m->voltage[2] > 0) {
-      v.flags |= EM_VALUE_FLAG_PHASE3_ON;
-    }
-  }
-
-  memcpy(value, &v, sizeof(TElectricityMeter_Value));
-}
-
-void ICACHE_FLASH_ATTR supla_esp_em_get_value(unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]) {
-  TElectricityMeter_ExtendedValue ev;
-  memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
-}
-
-void DEVCONN_ICACHE_FLASH  supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev) {
-	TSuplaChannelExtendedValue ev;
-	srpc_evtool_v1_emextended2extended(em_ev, &ev);
-	supla_esp_channel_extendedvalue_changed(channel_number, &ev);
-}
-#endif
-
-#if defined(POWSENSOR2) && defined (ELECTRICITIMETER)
 void DEVCONN_ICACHE_FLASH
 supla_get_parameters() {
 
@@ -1758,27 +1704,25 @@ supla_get_parameters() {
 	unsigned int power;
 
 	unsigned int current_difference = 0;
-    uint32_t sekundy;
+    uint32_t seconds;
     uint32_t time_difference;
 	unsigned int power_difference = 0;
     unsigned char channel_number;
 	char value[SUPLA_CHANNELVALUE_SIZE];
     TElectricityMeter_ExtendedValue ev;
     TElectricityMeter_Value v;
-
-    memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+ 
+       memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
 	memset(&v, 0, sizeof(TElectricityMeter_Value));
 
 	channel_number = 1;
-    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-	supla_getVoltage(value);
-	memcpy(&napiecie, value, sizeof(uint32_t));
+	memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	memcpy(&napiecie, &voltageR2, sizeof(uint32_t));
 	last_voltage = (int)(napiecie);
 	if ( relay_laststate == 0) last_voltage = 0;
 	supla_log(LOG_DEBUG, "Voltage: %i", last_voltage);
-    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-	supla_getCurrent(value);
-	memcpy(&prad, value, sizeof(_supla_int64_t));
+       memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	memcpy(&prad, &currentR2, sizeof(_supla_int64_t));
 	last_current = (int)(prad);
 	if ( relay_laststate == 0 ) last_current = 0;
 	if ( abs(last_dif_current - last_current) > 0) {
@@ -1790,15 +1734,14 @@ supla_get_parameters() {
 	}
 	supla_log(LOG_DEBUG, "Current: %i", last_current);
 	last_dif_current = last_current;
-    memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-	supla_getPower(value);
-	memcpy(&power, value, sizeof(_supla_int64_t));
+       memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+	memcpy(&power, &powerR2, sizeof(_supla_int64_t));
 	last_power = (int)(power);
 	if ( relay_laststate == 0 ) last_power = 0;
 	supla_log(LOG_DEBUG, "Power: %i", last_power);
-	sekundy = (uint32_t)(sntp_get_current_timestamp());
-	time_difference = sekundy - last_seconds;
-	last_seconds = sekundy;
+	seconds = (uint32_t)(sntp_get_current_timestamp());
+	time_difference = seconds - last_seconds;
+	last_seconds = seconds;
 	if ( time_difference == 0 ) time_difference = MEASUREMENT_TIME;
 	if ( time_difference > 10*MEASUREMENT_TIME )  time_difference = MEASUREMENT_TIME;
 	if (last_power*time_difference > 0) {
