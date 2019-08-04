@@ -151,7 +151,9 @@ void supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 supla_roller_shutter_cfg_t  *supla_esp_gpio_get_rs__cfg(int port);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
+#ifdef CHECK_GPIO_FOR_UART
 void check_gpio_for_uart_and_pullup(char check_gpio, uint8 inout);
+#endif /*CHECK_GPIO_FOR_UART*/
 
 #endif /* SUPLA_ESP_GPIO_H_ */
 
