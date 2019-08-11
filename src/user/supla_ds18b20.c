@@ -170,13 +170,11 @@ void supla_ds18b20_write(uint8_t v, int power)
 }
 #endif
 
-/*
 char* float2String(char* buffer, float value)
 {
-  os_sprintf(buffer, "%d.%d", (int)(value), (int)((value - (int)value) * 100));
-  return buffer;
+    os_sprintf(buffer, "%d.%d", (int)(value), (int)((value - (int)value) * 100));
+    return buffer;
 }
-*/
 
 uint8_t supla_ds18b20_read()
 {
@@ -231,44 +229,52 @@ void supla_ds18b20_read_temperatureB(void* timer_arg)
             d = 1;
     }
 
+    static uint8_t error_count = 0;
+
     if (supla_ds18b20_crc8(data, 8) != data[8]) {
 
         supla_log(LOG_DEBUG, "DS18B20_ERROR_CRC");
+        error_count++;
+        d = 2;
+        if (error_count >= 5) {
+            d = 0;
+        }
+    }
+
+    double t = -275;
+
+    if (d == 1) {
+        t = ((((int8_t)data[1]) << 8) | data[0]) / supla_ds18b20_divider;
+        error_count = 0;
+#ifndef TEMPERATURE_PORT_CHANNEL
+#ifdef DHTSENSOR
+        os_timer_disarm(&supla_dht_timer1);
+#endif
+#endif
+    }
+    else if (d == 2) {
+        t = supla_ds18b20_last_temp;
     }
     else {
-
-        // supla_log(LOG_DEBUG, "DS18B20_ERROR_OK");
-
-        double t = -275;
-
-        if (d == 1) {
-            t = ((((int8_t)data[1]) << 8) | data[0]) / supla_ds18b20_divider;
-
-#ifdef DHTSENSOR
-            os_timer_disarm(&supla_dht_timer1);
-#endif
-        }
-        else {
-            t = -275;
-        }
-
-        //    char buff[20];
-        //    supla_log(LOG_DEBUG, "t = %s", float2String(buff, t));
-
-        if (supla_ds18b20_last_temp != t) {
-            supla_ds18b20_last_temp = t;
-
-            char value[SUPLA_CHANNELVALUE_SIZE];
-            memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
-            supla_get_temperature(value);
-//      supla_log(LOG_DEBUG, "supla_ds18b20_last_temp = %s", float2String(buff,supla_ds18b20_last_temp));
-#ifdef TEMPERATURE_PORT_CHANNEL
-            supla_esp_channel_value__changed(temperature_channel, value);
-#else
-            supla_esp_channel_value__changed(TEMPERATURE_CHANNEL, value);
-#endif
-        };
+        t = -275;
     }
+
+    char buff[20];
+    supla_log(LOG_DEBUG, "t = %s", float2String(buff, t));
+
+    if (supla_ds18b20_last_temp != t) {
+        supla_ds18b20_last_temp = t;
+
+        char value[SUPLA_CHANNELVALUE_SIZE];
+        memset(value, 0, sizeof(SUPLA_CHANNELVALUE_SIZE));
+        supla_get_temperature(value);
+        supla_log(LOG_DEBUG, "supla_ds18b20_last_temp = %s", float2String(buff, supla_ds18b20_last_temp));
+#ifdef TEMPERATURE_PORT_CHANNEL
+        supla_esp_channel_value__changed(temperature_channel, value);
+#else
+        supla_esp_channel_value__changed(TEMPERATURE_CHANNEL, value);
+#endif
+    };
 }
 
 void supla_ds18b20_read_temperatureA(void* timer_arg)
@@ -303,9 +309,42 @@ void supla_ds18b20_read_temperatureA(void* timer_arg)
     }
 }
 
+#ifdef DS18B20_RESOLUTION
+void supla_ds18b20_resolution(int resolution)
+{
+
+    if (resolution == 9) {
+        resolution = 0x1F;
+    }
+    else if (resolution == 10) {
+        resolution = 0x3F;
+    }
+    else if (resolution == 11) {
+        resolution = 0x5F;
+    }
+    else {
+        resolution = 0x7F; // 12_bit
+    }
+
+    supla_ds18b20_reset();
+    supla_ds18b20_write(0xcc, 1);
+    supla_ds18b20_write(0x4E, 1);
+    supla_ds18b20_write(0, 1);
+    supla_ds18b20_write(0, 1);
+    supla_ds18b20_write(resolution, 1);
+    supla_ds18b20_reset();
+    supla_ds18b20_write(0x48, 1);
+    os_delay_us(300);
+}
+#endif /*DS18B20_RESOLUTION*/
+
 void supla_ds18b20_start(void)
 {
     supla_ds18b20_last_temp = -275;
+
+#ifdef DS18B20_RESOLUTION
+    supla_ds18b20_resolution(DS18B20_RESOLUTION);
+#endif
 
     os_timer_disarm(&supla_ds18b20_timer1);
     os_timer_setfn(&supla_ds18b20_timer1, supla_ds18b20_read_temperatureA, NULL);
