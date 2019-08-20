@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ###
 # This program is free software; you can redistribute it and/or
@@ -20,10 +20,16 @@
 DEP_LIBS="-lssl"
 NOSSL=0
 SPI_MODE="DIO"
+BOARD_SELECTED=0
 
 export PATH=/hdd2/Espressif/xtensa-lx106-elf/bin:$PATH
 export COMPILE=gcc
 
+if [ -e ./build_include.sh ]; then
+  source "./build_include.sh"
+fi
+
+if [ $BOARD_SELECTED = 0 ]; then
 case $1 in
    "wifisocket")
    ;;
@@ -100,94 +106,6 @@ case $1 in
      DEP_LIBS="-lpwm"
      NOSSL=1
    ;;
-   "zam_row_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_row_02")
-      FLASH_SIZE="2048"
-      FOTA=1
-      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
-   ;;
-   "zam_row_04")
-      FLASH_SIZE="2048"
-      FOTA=1
-      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
-   ;;
-   "zam_row_01_tester")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_srw_01_tester")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_row_07")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_row_07_demo")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_srw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_srw_02")
-      FLASH_SIZE="2048"
-      FOTA=1
-      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
-   ;;
-   "n_srw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "k_srw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_pnw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_srw_01_tester")
-      #FLASH_SIZE="2048"
-      #FOTA=1
-   ;;
-   "zam_srw_03")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_sbw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_sbw_02")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "n_sbp_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "k_sbw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_slw_01")
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
-   "zam_slw_02")
-      FLASH_SIZE="2048"
-      FOTA=1
-      EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4"
-   ;;
-   "zam_mew_01") 
-      FLASH_SIZE="2048"
-      FOTA=1
-   ;;
    "rgbw_wroom")
       FLASH_SIZE="2048"
       DEP_LIBS="-lpwm -lssl"
@@ -200,41 +118,31 @@ case $1 in
      FLASH_SIZE="2048"
      FOTA=1
    ;;
-   "vl_dimmer")
-     FLASH_SIZE="2048"
-     FOTA=1
-     EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4 -DESP8266_LOG_DISABLED=1"
-   ;;
-   "hp_homeplus") 
-     FLASH_SIZE="2048"
-     FOTA=1
-     EXTRA_CCFLAGS="-DSRPC_QUEUE_SIZE=4 -DSRPC_QUEUE_MIN_ALLOC_COUNT=4 -DESP8266_LOG_DISABLED=1"
-   ;;
-   "inCan_DS")  
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
-   ;;
-   "inCan_DHT11")      
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
-   ;;
-   "inCan_DHT22")      
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
-   ;;
-   "inCanRS_DS") 
+   "inCan_DS")
     SPI_MODE="QIO"
-    FLASH_SIZE="4096"     
+    FLASH_SIZE="4096"
    ;;
-   "inCanRS_DHT11")  
- 	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
+   "inCan_DHT11")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
    ;;
-   "inCanRS_DHT22") 
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
+   "inCan_DHT22")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
+   ;;
+   "inCanRS_DS")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
+   ;;
+   "inCanRS_DHT11")
+     SPI_MODE="QIO"
+    FLASH_SIZE="4096"
+   ;;
+   "inCanRS_DHT22")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
   ;;
-	
+    
    *)
    echo "Usage:"
    echo "       build.sh BOARD_TYPE";
@@ -274,12 +182,13 @@ case $1 in
    echo "              inCanRS_DS";
    echo "              inCanRS_DHT11";
    echo "              inCanRS_DHT22";
-   echo 
+   echo
    echo
    exit;
    ;;
    
-esac 
+esac
+fi
 
 CFG_SECTOR=0x3C
 
