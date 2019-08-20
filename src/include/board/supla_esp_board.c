@@ -86,5 +86,5 @@
 #endif
 
 #ifdef SUPLA_ESP_BOARD_SUBDEF
-#include "board/supla_esp_board_subdef.h"
+#include "board/supla_esp_board_subdef.c"
 #endif
