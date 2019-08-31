@@ -181,10 +181,6 @@
 
 #include "board/impulse_counter.c"
 
-#elif defined(__BOARD_impulse_counter_3)
-
-#include "board/impulse_counter_3.c"
-
 #elif defined(__BOARD_hp_homeplus)
 
 #include "board/acs_hp_homeplus.c"
@@ -215,5 +211,9 @@
 #elif defined(__BOARD_k_impulse_counter)
 
 #include "board/k_impulse_counter.c"
+
+#elif defined(__BOARD_k_impulse_counter_3)
+
+#include "board/k_impulse_counter_3.c"
 
 #endif

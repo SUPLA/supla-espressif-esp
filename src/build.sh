@@ -370,7 +370,6 @@ case $1 in
    echo "              lightswitch_x2_DHT22";
    echo "              lightswitch_x2_54_DHT22";
    echo "              impulse_counter";
-   echo "              impulse_counter_3";
    echo "              inCan_DS";
    echo "              inCan_DHT11";
    echo "              inCan_DHT22";
@@ -383,7 +382,8 @@ case $1 in
    echo "              k_gate_module";
    echo "              k_dimmer";
    echo "              k_gniazdko_neo";
-   echo "              k_impulse_counter";   
+   echo "              k_impulse_counter";
+   echo "              k_impulse_counter_3";   
    echo
    echo   
    exit;
