@@ -37,6 +37,10 @@ case $1 in
    ;;
    "k_gniazdko_neo")
       FOTA=1
+   ;;
+   "k_impulse_counter")
+     FLASH_SIZE="2048"
+     FOTA=1
    ;;   
    "wifisocket")
    ;;
@@ -279,10 +283,6 @@ case $1 in
      DEP_LIBS="-lpwm -lssl"
      FOTA=1
    ;;
-   "impulse_counter")
-     FLASH_SIZE="2048"
-     FOTA=1
-   ;;
    "impulse_counter_3")
      FLASH_SIZE="2048"
      FOTA=1
@@ -382,7 +382,8 @@ case $1 in
    echo 
    echo "              k_gate_module";
    echo "              k_dimmer";
-   echo "              k_gniazdko_neo";   
+   echo "              k_gniazdko_neo";
+   echo "              k_impulse_counter";   
    echo
    echo   
    exit;

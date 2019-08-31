@@ -212,4 +212,8 @@
 
 #include "board/k_gniazdko_neo.c"
 
+#elif defined(__BOARD_k_impulse_counter)
+
+#include "board/k_impulse_counter.c"
+
 #endif

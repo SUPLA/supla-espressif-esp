@@ -220,6 +220,10 @@
 
 #include "board/k_gniazdko_neo.h"
 
+#elif defined(__BOARD_k_impulse_counter)
+
+#include "board/k_impulse_counter.h"
+
 #endif
 
 
