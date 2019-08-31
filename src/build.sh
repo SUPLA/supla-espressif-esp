@@ -35,6 +35,9 @@ case $1 in
      DEP_LIBS="-lpwm"
      NOSSL=1
    ;;
+   "k_gniazdko_neo")
+      FOTA=1
+   ;;   
    "wifisocket")
    ;;
    "wifisocket_x4")
@@ -130,9 +133,6 @@ case $1 in
       FLASH_SIZE="4096"
    ;; 
    "sonoff_socket")
-      FOTA=1
-   ;;
-   "gniazdko_neo")
       FOTA=1
    ;;
    "yunschan")
