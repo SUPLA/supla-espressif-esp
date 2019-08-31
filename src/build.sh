@@ -338,7 +338,6 @@ case $1 in
    echo "              rs_module";
    echo "              rs_module_ds18b20";
    echo "              rs_module_DHT22";
-   echo "              gniazdko_neo";
    echo "              yunschan";
    echo "              socket";
    echo "              socket_ds18b20";
@@ -383,6 +382,7 @@ case $1 in
    echo 
    echo "              k_gate_module";
    echo "              k_dimmer";
+   echo "              k_gniazdko_neo";   
    echo
    echo   
    exit;

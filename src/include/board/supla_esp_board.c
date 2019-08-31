@@ -80,10 +80,6 @@
 
 #include "board/sonoff_socket.c"
 
-#elif defined(__BOARD_gniazdko_neo)
-
-#include "board/gniazdko_neo.c"
-
 #elif defined(__BOARD_yunschan)
 
 #include "board/yunschan.c"
@@ -211,5 +207,9 @@
 #elif defined(__BOARD_k_dimmer)
 
 #include "board/k_dimmer.c"
+
+#elif defined(__BOARD_k_gniazdko_neo)
+
+#include "board/k_gniazdko_neo.c"
 
 #endif

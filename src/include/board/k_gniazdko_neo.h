@@ -16,25 +16,33 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SUPLA_GATE_MODULE_H_
-#define SUPLA_GATE_MODULE_H_
+#ifndef K_GNIAZDKO_NEO_H_
+#define K_GNIAZDKO_NEO_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#if defined(__BOARD_gate_module_dht11) \
-    || defined(__BOARD_gate_module_dht22)
-   #define DHTSENSOR
-   #define TEMPERATURE_HUMIDITY_CHANNEL 4
-#else
-   #define DS18B20
-   #define TEMPERATURE_CHANNEL 4
-#endif
+//#define LED_INVERT
 
+#define SUPLA_ESP_SOFTVER "2.7.4.1"
 
-#define LED_GREEN_PORT  12
-#define LED_BLUE_PORT   14
-#define LED_REINIT
+#define _RASING_EDGE
 
-void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
+#define LED_RED_PORT     4
+#define B_RELAY1_PORT    12
+#define B_CFG_PORT       13
+
+#define AP_SSID "GNIAZDKO_NEO"
+
+#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == LED_RED_PORT) {hi =!supla_esp_gpio_output_is_hi(B_RELAY1_PORT);\
+ } else if (port==B_RELAY1_PORT) {\
+ supla_esp_gpio_set_led(hi, 1, 1); }\
+   else if (port == 20) { \
+ 	supla_log(LOG_DEBUG, "update, port = %i", port);\
+	supla_esp_cfg.FirmwareUpdate = 1;\
+	supla_esp_cfg_save(&supla_esp_cfg);\
+	supla_esp_devconn_system_restart(); };\
+};
+
+void supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 #endif
