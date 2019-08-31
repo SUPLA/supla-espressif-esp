@@ -38,10 +38,6 @@
 
 #include "board/gate_module.h"
 
-#elif defined(__BOARD_k_gate_module) //moja plytka nice
-
-#include "board/k_gate_module.h"
-
 #elif defined(__BOARD_gate_module_wroom)    \
       || defined(__BOARD_gate_module2_wroom)
 
@@ -213,6 +209,16 @@
     ||  defined(__BOARD_inCanRS_DHT22)
 
 #include "board/inCan.h"
+
+// Moje Plytki
+
+#elif defined(__BOARD_k_gate_module) // nice
+
+#include "board/k_gate_module.h"
+
+#elif defined(__BOARD_k_dimmer)
+
+#include "board/k_dimmer.h"
 
 #endif
 

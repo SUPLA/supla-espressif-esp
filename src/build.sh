@@ -25,6 +25,16 @@ export PATH=/hdd2/Espressif/xtensa-lx106-elf/bin:$PATH
 export COMPILE=gcc
 
 case $1 in
+   "k_gate_module")		
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_dimmer")
+	 FLASH_SIZE="4096"
+	 FOTA=1
+     DEP_LIBS="-lpwm"
+     NOSSL=1
+   ;;
    "wifisocket")
    ;;
    "wifisocket_x4")
@@ -32,10 +42,6 @@ case $1 in
    "wifisocket_54")
    ;;
    "gate_module")
-   ;;
-   "k_gate_module")		
-      FOTA=1
-      FLASH_SIZE="4096"
    ;;
    "gate_module_dht11")
    ;;
@@ -325,7 +331,6 @@ case $1 in
    echo "              wifisocket_x4";
    echo "              wifisocket_54";
    echo "              gate_module";
-   echo "              k_gate_module";
    echo "              gate_module_dht11";
    echo "              gate_module_dht22";
    echo "              gate_module_wroom";
@@ -374,7 +379,12 @@ case $1 in
    echo "              inCanRS_DHT11";
    echo "              inCanRS_DHT22";
    echo 
+   echo "		MOJE PLYTKI:";
+   echo 
+   echo "              k_gate_module";
+   echo "              k_dimmer";
    echo
+   echo   
    exit;
    ;;
    

@@ -85,7 +85,7 @@ const uint8_t rsa_public_key_bytes[512] = {
     0x26, 0xb3, 0x92, 0x90, 0xa5, 0xd7, 0x4c, 0xd7
 };
  
-#include "dimmer.h"
+#include "k_dimmer.h"
 #include "supla_esp_devconn.h"
 
 uint8 dimmer_brightness = 0;

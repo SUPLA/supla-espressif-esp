@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef DIMMER_H_
-#define DIMMER_H_
+#ifndef K_DIMMER_H_
+#define K_DIMMER_H_
 
 #define LED_RED_PORT     2
 #define SUPLA_PWM_COUNT  1
