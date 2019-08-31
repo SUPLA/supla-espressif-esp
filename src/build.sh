@@ -57,7 +57,19 @@ case $1 in
    "k_rs_module_DHT22")
       FOTA=1
       FLASH_SIZE="4096"
-   ;;   
+   ;;
+   "k_smoke_module")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_smoke_module_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_smoke_module_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;    
    "wifisocket")
    ;;
    "wifisocket_x4")
@@ -128,18 +140,6 @@ case $1 in
       FOTA=1
       FLASH_SIZE="4096"
    ;;
-   "smoke_module")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "smoke_module_ds18b20")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "smoke_module_DHT22")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;; 
    "sonoff_socket")
       FOTA=1
    ;;
@@ -341,10 +341,7 @@ case $1 in
    echo "              socket_DHT22";   
    echo "              socket_dual";
    echo "              socket_dual_ds18b20";
-   echo "              socket_dual_DHT22";
-   echo "              smoke_module";
-   echo "              smoke_module_ds18b20";
-   echo "              smoke_module_DHT22";      
+   echo "              socket_dual_DHT22";      
    echo "              sonoff";
    echo "              sonoff_ds18b20";
    echo "              sonoff_DHT22";
@@ -383,7 +380,10 @@ case $1 in
    echo "              k_impulse_counter_3";
    echo "              k_rs_module";
    echo "              k_rs_module_ds18b20";
-   echo "              k_rs_module_DHT22";   
+   echo "              k_rs_module_DHT22";
+   echo "              k_smoke_module";
+   echo "              k_smoke_module_ds18b20";
+   echo "              k_smoke_module_DHT22";   
    echo
    echo   
    exit;

@@ -16,14 +16,14 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SMOKE_MODULE_H_
-#define SMOKE_MODULE_H_
+#ifndef K_SMOKE_MODULE_H_
+#define K_SMOKE_MODULE_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
 #define SUPLA_ESP_SOFTVER "2.7.8.0"
 
-#ifdef __BOARD_smoke_module_ds18b20
+#ifdef __BOARD_k_smoke_module_ds18b20
 	#define DS18B20
 	#define TEMPERATURE_CHANNEL 1
 	#define AP_SSID "SMOKE-MODULE_DS18B20"
@@ -32,7 +32,7 @@
 
 #endif
 
-#ifdef __BOARD_smoke_module_DHT22
+#ifdef __BOARD_k_smoke_module_DHT22
 	#define DHTSENSOR
    	#define TEMPERATURE_HUMIDITY_CHANNEL 1
 	#define AP_SSID "SMOKE-MODULE_DHT22"
@@ -41,7 +41,7 @@
 
 #endif
 
-#ifdef __BOARD_smoke_module
+#ifdef __BOARD_k_smoke_module
 	#define AP_SSID "SMOKE-MODULE"
 #endif
 

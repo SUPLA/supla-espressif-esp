@@ -90,9 +90,9 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
-	#if defined __BOARD_smoke_module_ds18b20
+	#if defined __BOARD_k_smoke_module_ds18b20
 		ets_snprintf(buffer, buffer_size, "SMOKE-MODULE-DS18B20");
-	#elif defined __BOARD_smoke_module_DHT22
+	#elif defined __BOARD_k_smoke_module_DHT22
 		ets_snprintf(buffer, buffer_size, "SMOKE-MODULE-DHT22");
 	#else
 		ets_snprintf(buffer, buffer_size, "SMOKE-MODULE");
@@ -129,15 +129,15 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
-    #ifdef __BOARD_smoke_module_ds18b20
+    #ifdef __BOARD_k_smoke_module_ds18b20
     	*channel_count = 5;	
 	#endif
 
-	#ifdef __BOARD_smoke_module_DHT22
+	#ifdef __BOARD_k_smoke_module_DHT22
     	*channel_count = 5;
 	#endif
 
-	#ifdef __BOARD_smoke_module
+	#ifdef __BOARD_k_smoke_module
     	*channel_count = 4;
 	#endif
 
@@ -163,7 +163,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[2].Default = 0;
 	channels[2].value[0] = 0;
 
-	#ifdef __BOARD_smoke_module_ds18b20
+	#ifdef __BOARD_k_smoke_module_ds18b20
 		channels[3].Number = 3;
 		channels[3].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 
@@ -173,7 +173,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 		supla_get_temperature(channels[3].value);
 	#endif
 
-	#ifdef __BOARD_smoke_module_DHT22
+	#ifdef __BOARD_k_smoke_module_DHT22
 		channels[3].Number = 3;
 		channels[3].Type = SUPLA_CHANNELTYPE_DHT22;
 
@@ -183,7 +183,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 		supla_get_temp_and_humidity(channels[3].value);
 	#endif
 
-	#if defined( __BOARD_smoke_module_ds18b20) || defined(__BOARD_smoke_module_DHT22)
+	#if defined( __BOARD_k_smoke_module_ds18b20) || defined(__BOARD_k_smoke_module_DHT22)
 		channels[4].Number = 4;
 		channels[4].Type = SUPLA_CHANNELTYPE_RELAY;
 		channels[4].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;

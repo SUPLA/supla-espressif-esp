@@ -61,12 +61,6 @@
 
 #include "board/socket_dual.h"
 
-#elif defined(__BOARD_smoke_module) \
-      || defined(__BOARD_smoke_module_ds18b20)	\
-      || defined(__BOARD_smoke_module_DHT22)
-
-#include "board/smoke_module.h"
-
 #elif defined(__BOARD_sonoff_touch)  \
       ||  defined(__BOARD_sonoff_touch_dual)  \
       ||  defined(__BOARD_sonoff_touch_triple)  \
@@ -222,6 +216,12 @@
       || defined(__BOARD_k_rs_module_DHT22)
 	  
 #include "board/k_rs_module.h"
+
+#elif defined(__BOARD_k_smoke_module) \
+      || defined(__BOARD_k_smoke_module_ds18b20)	\
+      || defined(__BOARD_k_smoke_module_DHT22)
+
+#include "board/k_smoke_module.h"
 
 #endif
 
