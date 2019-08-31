@@ -43,13 +43,6 @@
 
 #include "board/gate_module_wroom.h"
 
-#elif defined(__BOARD_rs_module) \
-      || defined(__BOARD_rs_module_wroom) \
-      || defined(__BOARD_rs_module_ds18b20) \
-      || defined(__BOARD_rs_module_DHT22)
-	  
-#include "board/rs_module.h"
-
 #elif defined(__BOARD_sonoff) \
       || defined(__BOARD_sonoff_ds18b20)	\
       || defined(__BOARD_sonoff_DHT22)
@@ -223,6 +216,12 @@
 #elif defined(__BOARD_k_impulse_counter_3)
 
 #include "board/k_impulse_counter_3.h"
+
+#elif defined(__BOARD_k_rs_module) \
+      || defined(__BOARD_k_rs_module_ds18b20) \
+      || defined(__BOARD_k_rs_module_DHT22)
+	  
+#include "board/k_rs_module.h"
 
 #endif
 

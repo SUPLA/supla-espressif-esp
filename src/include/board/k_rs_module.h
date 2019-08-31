@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SUPLA_RS_MODULE_H_
-#define SUPLA_RS_MODULE_H_
+#ifndef K_RS_MODULE_H_
+#define K_RS_MODULE_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
@@ -25,17 +25,17 @@
 
 #define _ROLLERSHUTTER_SUPPORT
 
-#ifdef __BOARD_rs_module
+#ifdef __BOARD_k_rs_module
 	#define AP_SSID "ROLETY"
 #endif
 
-#ifdef __BOARD_rs_module_DHT22
+#ifdef __BOARD_k_rs_module_DHT22
 	#define DHTSENSOR
    	#define TEMPERATURE_HUMIDITY_CHANNEL 1
 	#define AP_SSID "ROLETY_DHT22"
 #endif
 
-#ifdef __BOARD_rs_module_ds18b20
+#ifdef __BOARD_k_rs_module_ds18b20
 	#define DS18B20
 	#define TEMPERATURE_CHANNEL 1
 	#define AP_SSID "ROLETY_DS18B20"
@@ -43,7 +43,6 @@
 
 #define USE_GPIO16_OUTPUT
 
-<<<<<<< HEAD
 
 #define LED_RED_PORT   16
 #define WATCHDOG_TIMEOUT 90000000
@@ -51,13 +50,5 @@
 
 void ICACHE_FLASH_ATTR
 	 supla_esp_board_send_channel_values_with_delay(void *srpc);
-=======
-#define TEMPERATURE_CHANNEL 2
-#define LED_RED_PORT 16
-#define WATCHDOG_TIMEOUT 90000000
-
-void ICACHE_FLASH_ATTR
-supla_esp_board_send_channel_values_with_delay(void *srpc);
->>>>>>> supla/master
 
 #endif

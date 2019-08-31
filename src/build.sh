@@ -45,6 +45,18 @@ case $1 in
    "k_impulse_counter_3")
      FLASH_SIZE="2048"
      FOTA=1
+   ;;
+   "k_rs_module")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_rs_module_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_rs_module_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
    ;;   
    "wifisocket")
    ;;
@@ -64,18 +76,6 @@ case $1 in
    "gate_module2_wroom")
       FOTA=1
       FLASH_SIZE="2048"
-   ;;
-   "rs_module")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "rs_module_ds18b20")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "rs_module_DHT22")
-      FOTA=1
-      FLASH_SIZE="4096"
    ;;
    "lightswitch_x2")
      FLASH_SIZE="4096"
@@ -335,9 +335,6 @@ case $1 in
    echo "              gate_module_dht22";
    echo "              gate_module_wroom";
    echo "              gate_module2_wroom";
-   echo "              rs_module";
-   echo "              rs_module_ds18b20";
-   echo "              rs_module_DHT22";
    echo "              yunschan";
    echo "              socket";
    echo "              socket_ds18b20";
@@ -383,7 +380,10 @@ case $1 in
    echo "              k_dimmer";
    echo "              k_gniazdko_neo";
    echo "              k_impulse_counter";
-   echo "              k_impulse_counter_3";   
+   echo "              k_impulse_counter_3";
+   echo "              k_rs_module";
+   echo "              k_rs_module_ds18b20";
+   echo "              k_rs_module_DHT22";   
    echo
    echo   
    exit;

@@ -85,11 +85,11 @@ const uint8_t rsa_public_key_bytes[512] = {
 };
 
 #include "supla_esp.h"
-#if defined __BOARD_rs_module_ds18b20
+#if defined __BOARD_k_rs_module_ds18b20
 	#include "supla_ds18b20.h"
 #endif
 
-#if defined __BOARD_rs_module_DHT22
+#if defined __BOARD_k_rs_module_DHT22
 	#include "supla_dht.h"
 #endif
 
@@ -104,9 +104,9 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
-	#if defined __BOARD_rs_module_ds18b20
+	#if defined __BOARD_k_rs_module_ds18b20
 		ets_snprintf(buffer, buffer_size, "ROLETY-DS18B20");
-	#elif defined __BOARD_rs_module_DHT22
+	#elif defined __BOARD_k_rs_module_DHT22
 		ets_snprintf(buffer, buffer_size, "ROLETY-DHT22");
 	#else
 		ets_snprintf(buffer, buffer_size, "ROLETY");
@@ -151,15 +151,15 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 void ICACHE_FLASH_ATTR
    supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
-    #ifdef __BOARD_rs_module_ds18b20
+    #ifdef __BOARD_k_rs_module_ds18b20
     *channel_count = 2;
     #endif
 
-    #ifdef __BOARD_rs_module_DHT22
+    #ifdef __BOARD_k_rs_module_DHT22
     *channel_count = 2;
     #endif
 
-    #ifdef __BOARD_rs_module
+    #ifdef __BOARD_k_rs_module
     *channel_count = 1;
     #endif
 
@@ -172,7 +172,7 @@ void ICACHE_FLASH_ATTR
 	/*channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;*/
 
-	#ifdef __BOARD_rs_module_ds18b20
+	#ifdef __BOARD_k_rs_module_ds18b20
   channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 	channels[1].FuncList = 0;
@@ -181,7 +181,7 @@ void ICACHE_FLASH_ATTR
 	supla_get_temperature(channels[1].value);
 	#endif
 
-	#ifdef __BOARD_rs_module_DHT22
+	#ifdef __BOARD_k_rs_module_DHT22
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
 	channels[1].FuncList = 0;
