@@ -41,6 +41,10 @@ case $1 in
    "k_impulse_counter")
      FLASH_SIZE="2048"
      FOTA=1
+   ;;
+   "k_impulse_counter_3")
+     FLASH_SIZE="2048"
+     FOTA=1
    ;;   
    "wifisocket")
    ;;
@@ -281,10 +285,6 @@ case $1 in
    ;;
    "h801")
      DEP_LIBS="-lpwm -lssl"
-     FOTA=1
-   ;;
-   "impulse_counter_3")
-     FLASH_SIZE="2048"
      FOTA=1
    ;;
    "vl_dimmer")
