@@ -84,7 +84,7 @@
     0x26, 0xb3, 0x92, 0x90, 0xa5, 0xd7, 0x4c, 0xd7
 };*/
 
-#include ”public_key_in_c_code”
+#include "public_key_in_c_code"
 
 #include "supla_esp.h"
 #if defined __BOARD_k_rs_module_ds18b20
