@@ -27,10 +27,10 @@
 
 <<<<<<< HEAD
 #ifndef SUPLA_ESP_SOFTVER
-#define SUPLA_ESP_SOFTVER "2.7.9.0"
+#define SUPLA_ESP_SOFTVER "2.7.10"
 #endif
 =======
-#define SUPLA_ESP_SOFTVER "2.7.10"
+#define SUPLA_ESP_SOFTVER "2.7.12"
 >>>>>>> supla/master
 
 #define STATE_UNKNOWN       0

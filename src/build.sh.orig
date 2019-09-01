@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 ###
 # This program is free software; you can redistribute it and/or
@@ -20,11 +20,111 @@
 DEP_LIBS="-lssl"
 NOSSL=0
 SPI_MODE="DIO"
+BOARD_SELECTED=0
 
 export PATH=/hdd2/Espressif/xtensa-lx106-elf/bin:$PATH
 export COMPILE=gcc
 
+if [ -e ./build_include.sh ]; then
+  source "./build_include.sh"
+fi
+
+if [ $BOARD_SELECTED = 0 ]; then
 case $1 in
+   "k_gate_module")		
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_dimmer")
+	 FLASH_SIZE="4096"
+	 FOTA=1
+     DEP_LIBS="-lpwm"
+     NOSSL=1
+   ;;
+   "k_gniazdko_neo")
+      FOTA=1
+   ;;
+   "k_impulse_counter")
+     FLASH_SIZE="2048"
+     FOTA=1
+   ;;
+   "k_impulse_counter_3")
+     FLASH_SIZE="2048"
+     FOTA=1
+   ;;
+   "k_rs_module")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_rs_module_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_rs_module_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_smoke_module")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_smoke_module_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_smoke_module_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_socket")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_socket_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_socket_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_socket_dual")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_socket_dual_ds18b20")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_socket_dual_DHT22")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
+   "k_sonoff")
+      FOTA=1
+   ;;
+   "k_sonoff_ds18b20")
+      FOTA=1
+   ;;
+   "k_sonoff_DHT22")
+      FOTA=1
+   ;;
+   "k_sonoff_touch")
+      SPI_MODE="DOUT"
+      FOTA=1
+   ;;
+   "k_sonoff_touch_dual")
+      SPI_MODE="DOUT"
+      FOTA=1
+   ;;
+   "k_sonoff_touch_triple")
+      SPI_MODE="DOUT"
+      FOTA=1
+   ;;
+   "k_yunschan")
+      FLASH_SIZE="4096"
+      FOTA=1
+   ;;   
    "wifisocket")
    ;;
    "wifisocket_x4")
@@ -44,18 +144,6 @@ case $1 in
       FOTA=1
       FLASH_SIZE="2048"
    ;;
-   "rs_module")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "rs_module_ds18b20")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "rs_module_DHT22")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
    "lightswitch_x2")
      FLASH_SIZE="4096"
    ;;
@@ -74,75 +162,7 @@ case $1 in
    "lightswitch_x2_54_DHT22")
      FLASH_SIZE="4096"
    ;;
-   "sonoff")
-      FOTA=1
-   ;;
-   "sonoff_ds18b20")
-      FOTA=1
-   ;;
-   "sonoff_DHT22")
-      FOTA=1
-   ;;
-   "socket")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "socket_ds18b20")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "socket_DHT22")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "socket_dual")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "socket_dual_ds18b20")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "socket_dual_DHT22")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "smoke_module")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "smoke_module_ds18b20")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;;
-   "smoke_module_DHT22")
-      FOTA=1
-      FLASH_SIZE="4096"
-   ;; 
    "sonoff_socket")
-      FOTA=1
-   ;;
-   "gniazdko_neo")
-      FOTA=1
-   ;;
-   "yunschan")
-      FLASH_SIZE="4096"
-      FOTA=1
-   ;;
-   "sonoff_touch")
-      SPI_MODE="DOUT"
-      FOTA=1
-   ;;
-   "sonoff_touch_dual")
-      SPI_MODE="DOUT"
-      FOTA=1
-   ;;
-   "sonoff_touch_triple")
-      SPI_MODE="DOUT"
-      FOTA=1
-   ;;
-   "sonoff_touch_dual")
-      SPI_MODE="DOUT"
       FOTA=1
    ;;
    "sonoff_dual")
@@ -161,18 +181,7 @@ case $1 in
      DEP_LIBS="-lpwm"
      NOSSL=1
    ;;
-   "dimmer")
-	 FLASH_SIZE="4096"
-	 FOTA=1
-     DEP_LIBS="-lpwm"
-     NOSSL=1
-   ;;
-   "dimmer_socket")
-	 FLASH_SIZE="4096"
-	 FOTA=1
-     DEP_LIBS="-lpwm"
-	 NOSSL=1
-   ;;
+<<<<<<< HEAD
    "zam_row_01")
       FLASH_SIZE="2048"
       FOTA=1
@@ -260,6 +269,11 @@ case $1 in
    "zam_mew_01") 
       FLASH_SIZE="2048"
       FOTA=1
+=======
+   "dimmer")
+     DEP_LIBS="-lpwm"
+     NOSSL=1
+>>>>>>> supla/master
    ;;
    "rgbw_wroom")
       FLASH_SIZE="2048"
@@ -269,14 +283,7 @@ case $1 in
      DEP_LIBS="-lpwm -lssl"
      FOTA=1
    ;;
-   "impulse_counter")
-     FLASH_SIZE="2048"
-     FOTA=1
-   ;;
-   "impulse_counter_3")
-     FLASH_SIZE="2048"
-     FOTA=1
-   ;;
+<<<<<<< HEAD
    "vl_dimmer")
      FLASH_SIZE="2048"
      FOTA=1
@@ -290,28 +297,37 @@ case $1 in
    "inCan_DS")  
 	SPI_MODE="QIO"
     FLASH_SIZE="4096"       
+=======
+   "impulse_counter")
+     FLASH_SIZE="2048"
+     FOTA=1
    ;;
-   "inCan_DHT11")      
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
-   ;;
-   "inCan_DHT22")      
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
-   ;;
-   "inCanRS_DS") 
+   "inCan_DS")
     SPI_MODE="QIO"
-    FLASH_SIZE="4096"     
+    FLASH_SIZE="4096"
+>>>>>>> supla/master
    ;;
-   "inCanRS_DHT11")  
- 	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
+   "inCan_DHT11")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
    ;;
-   "inCanRS_DHT22") 
-	SPI_MODE="QIO"
-    FLASH_SIZE="4096"       
+   "inCan_DHT22")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
+   ;;
+   "inCanRS_DS")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
+   ;;
+   "inCanRS_DHT11")
+     SPI_MODE="QIO"
+    FLASH_SIZE="4096"
+   ;;
+   "inCanRS_DHT22")
+    SPI_MODE="QIO"
+    FLASH_SIZE="4096"
   ;;
-	
+    
    *)
    echo "Usage:"
    echo "       build.sh BOARD_TYPE";
@@ -325,26 +341,6 @@ case $1 in
    echo "              gate_module_dht22";
    echo "              gate_module_wroom";
    echo "              gate_module2_wroom";
-   echo "              rs_module";
-   echo "              rs_module_ds18b20";
-   echo "              rs_module_DHT22";
-   echo "              gniazdko_neo";
-   echo "              yunschan";
-   echo "              socket";
-   echo "              socket_ds18b20";
-   echo "              socket_DHT22";   
-   echo "              socket_dual";
-   echo "              socket_dual_ds18b20";
-   echo "              socket_dual_DHT22";
-   echo "              smoke_module";
-   echo "              smoke_module_ds18b20";
-   echo "              smoke_module_DHT22";      
-   echo "              sonoff";
-   echo "              sonoff_ds18b20";
-   echo "              sonoff_DHT22";
-   echo "              sonoff_touch";
-   echo "              sonoff_touch_dual";
-   echo "              sonoff_touch_triple";
    echo "              sonoff_dual";
    echo "              sonoff_socket";
    echo "              sonoff_th10";
@@ -361,22 +357,50 @@ case $1 in
    echo "              lightswitch_x2_DHT22";
    echo "              lightswitch_x2_54_DHT22";
    echo "              impulse_counter";
-<<<<<<< HEAD
-   echo "              impulse_counter_3";
-=======
    echo "              inCan_DS";
    echo "              inCan_DHT11";
    echo "              inCan_DHT22";
    echo "              inCanRS_DS";
    echo "              inCanRS_DHT11";
    echo "              inCanRS_DHT22";
->>>>>>> supla/master
+<<<<<<< HEAD
    echo 
+   echo "		MOJE PLYTKI:";
+   echo 
+   echo "              k_gate_module";
+   echo "              k_dimmer";
+   echo "              k_gniazdko_neo";
+   echo "              k_impulse_counter";
+   echo "              k_impulse_counter_3";
+   echo "              k_rs_module";
+   echo "              k_rs_module_ds18b20";
+   echo "              k_rs_module_DHT22";
+   echo "              k_smoke_module";
+   echo "              k_smoke_module_ds18b20";
+   echo "              k_smoke_module_DHT22";
+   echo "              k_socket";
+   echo "              k_socket_ds18b20";
+   echo "              k_socket_DHT22"; 
+   echo "              k_socket_dual";
+   echo "              k_socket_dual_ds18b20";
+   echo "              k_socket_dual_DHT22";
+   echo "              k_sonoff";
+   echo "              k_sonoff_ds18b20";
+   echo "              k_sonoff_DHT22";
+   echo "              k_sonoff_touch";
+   echo "              k_sonoff_touch_dual";
+   echo "              k_sonoff_touch_triple"; 
+   echo "              k_yunschan";   
+=======
    echo
+>>>>>>> supla/master
+   echo
+   echo   
    exit;
    ;;
    
-esac 
+esac
+fi
 
 CFG_SECTOR=0x3C
 
