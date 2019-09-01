@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SOCKET_DUAL_H_
-#define SOCKET_DUAL_H_
+#ifndef K_SOCKET_DUAL_H_
+#define K_SOCKET_DUAL_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
@@ -28,7 +28,7 @@
 #define USE_GPIO9
 #define USE_GPIO14
 
-#ifdef __BOARD_socket_dual_ds18b20
+#ifdef __BOARD_k_socket_dual_ds18b20
 	#define DS18B20
 	#define TEMPERATURE_CHANNEL 2
 	#define AP_SSID "SOCKET_DUAL_DS18B20"
@@ -37,7 +37,7 @@
 
 #endif
 
-#ifdef __BOARD_socket_dual_DHT22
+#ifdef __BOARD_k_socket_dual_DHT22
 	#define DHTSENSOR
    	#define TEMPERATURE_HUMIDITY_CHANNEL 2
 	#define AP_SSID "SOCKET_DUAL_DHT22"
@@ -46,7 +46,7 @@
 
 #endif
 
-#ifdef __BOARD_socket_dual
+#ifdef __BOARD_k_socket_dual
 	#define AP_SSID "SOCKET_DUAL"
 #endif
 

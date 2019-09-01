@@ -90,9 +90,9 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
-	#if defined __BOARD_socket_dual_ds18b20
+	#if defined __BOARD_k_socket_dual_ds18b20
 		ets_snprintf(buffer, buffer_size, "SOCKET_DUAL-DS18B20");
-	#elif defined __BOARD_socket_dual_DHT22
+	#elif defined __BOARD_k_socket_dual_DHT22
 		ets_snprintf(buffer, buffer_size, "SOCKET_DUAL-DHT22");
 	#else
 		ets_snprintf(buffer, buffer_size, "SOCKET_DUAL");
@@ -125,15 +125,15 @@ void supla_esp_board_gpio_init(void) {
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
 
-	#ifdef __BOARD_socket_dual_ds18b20
+	#ifdef __BOARD_k_socket_dual_ds18b20
     	*channel_count = 3;	
 	#endif
 
-	#ifdef __BOARD_socket_dual_DHT22
+	#ifdef __BOARD_k_socket_dual_DHT22
     	*channel_count = 3;
 	#endif
 
-	#ifdef __BOARD_socket_dual
+	#ifdef __BOARD_k_socket_dual
     	*channel_count = 2;
 	#endif
 
@@ -151,7 +151,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 	channels[1].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 	channels[1].value[0] = supla_esp_gpio_relay_on(B_RELAY2_PORT);
 
-	#ifdef __BOARD_socket_dual_ds18b20
+	#ifdef __BOARD_k_socket_dual_ds18b20
 		channels[2].Number = 2;
 		channels[2].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 
@@ -161,7 +161,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 		supla_get_temperature(channels[2].value);
 	#endif
 
-	#ifdef __BOARD_socket_dual_DHT22
+	#ifdef __BOARD_k_socket_dual_DHT22
 		channels[2].Number = 2;
 		channels[2].Type = SUPLA_CHANNELTYPE_DHT22;
 

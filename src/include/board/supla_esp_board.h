@@ -49,12 +49,6 @@
 
 #include "board/sonoff.h"
 
-#elif defined(__BOARD_socket_dual) \
-      || defined(__BOARD_socket_dual_ds18b20)	\
-      || defined(__BOARD_socket_dual_DHT22)
-
-#include "board/socket_dual.h"
-
 #elif defined(__BOARD_sonoff_touch)  \
       ||  defined(__BOARD_sonoff_touch_dual)  \
       ||  defined(__BOARD_sonoff_touch_triple)  \
@@ -223,8 +217,13 @@
 
 #include "board/k_socket.h"
 
-#endif
+#elif defined(__BOARD_k_socket_dual) \
+      || defined(__BOARD_k_socket_dual_ds18b20)	\
+      || defined(__BOARD_k_socket_dual_DHT22)
 
+#include "board/k_socket_dual.h"
+
+#endif
 
 
 #endif
