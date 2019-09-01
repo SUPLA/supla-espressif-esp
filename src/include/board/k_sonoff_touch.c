@@ -95,9 +95,9 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
-		#if defined __BOARD_sonoff_touch_triple
+		#if defined __BOARD_k_sonoff_touch_triple
 			ets_snprintf(buffer, buffer_size, "SONOFF-TOUCH-TRIPLE");
-		#elif defined __BOARD_sonoff_touch_dual
+		#elif defined __BOARD_k_sonoff_touch_dual
 			ets_snprintf(buffer, buffer_size, "SONOFF-TOUCH-DUAL");
 		#else
 			ets_snprintf(buffer, buffer_size, "SONOFF-TOUCH");
@@ -250,7 +250,7 @@ void supla_esp_board_gpio_init(void) {
    	supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
     	supla_relay_cfg[0].channel = 0;
 
-#ifdef __BOARD_sonoff_touch_dual
+#ifdef __BOARD_k_sonoff_touch_dual
 
 	supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[1].gpio_id = B_INPUT2_PORT;
@@ -262,9 +262,9 @@ void supla_esp_board_gpio_init(void) {
     	supla_relay_cfg[1].flags = RELAY_FLAG_RESTORE_FORCE;
     	supla_relay_cfg[1].channel = 1;
 
-#endif /*__BOARD_sonoff_touch_dual*/
+#endif /*__BOARD_k_sonoff_touch_dual*/
 
-#ifdef __BOARD_sonoff_touch_triple
+#ifdef __BOARD_k_sonoff_touch_triple
 
 	supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[1].gpio_id = B_INPUT2_PORT;
@@ -287,7 +287,7 @@ void supla_esp_board_gpio_init(void) {
     	supla_relay_cfg[2].channel = 2;
 
 
-#endif /*__BOARD_sonoff_touch_triple*/
+#endif /*__BOARD_k_sonoff_touch_triple*/
 
 //---------------------------------------
 
@@ -298,7 +298,7 @@ void supla_esp_board_gpio_init(void) {
 
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
-#ifdef __BOARD_sonoff_touch
+#ifdef __BOARD_k_sonoff_touch
 
 	*channel_count = 2;
 
@@ -322,7 +322,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 
 #endif
 
-#ifdef __BOARD_sonoff_touch_dual
+#ifdef __BOARD_k_sonoff_touch_dual
 
 	*channel_count = 3;
 
@@ -349,7 +349,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 
 #endif
 
-#ifdef __BOARD_sonoff_touch_triple
+#ifdef __BOARD_k_sonoff_touch_triple
 
 	*channel_count = 4;
 
@@ -395,13 +395,13 @@ void ICACHE_FLASH_ATTR
 
 	supla_esp_channel_value_changed(0, supla_esp_gpio_relay_on(B_RELAY1_PORT));
 
-#ifdef __BOARD_sonoff_touch_dual
+#ifdef __BOARD_k_sonoff_touch_dual
 
 	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY2_PORT));
 
 #endif
 
-#ifdef __BOARD_sonoff_touch_triple
+#ifdef __BOARD_k_sonoff_touch_triple
 
 	supla_esp_channel_value_changed(1, supla_esp_gpio_relay_on(B_RELAY2_PORT));
 	supla_esp_channel_value_changed(2, supla_esp_gpio_relay_on(B_RELAY3_PORT));

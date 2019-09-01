@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SONOFF_TOUCH_H_
-#define SONOFF_TOUCH_H_
+#ifndef K_SONOFF_TOUCH_H_
+#define K_SONOFF_TOUCH_H_
 
 #define ESP8285
 #define BOARD_ON_CONNECT
@@ -37,15 +37,15 @@
 
 #define SUPLA_ESP_SOFTVER "2.7.9.0"
 
-#ifdef __BOARD_sonoff_touch
+#ifdef __BOARD_k_sonoff_touch
 	#define AP_SSID "SONOFF-TOUCH"
 #endif
 
-#ifdef __BOARD_sonoff_touch_dual
+#ifdef __BOARD_k_sonoff_touch_dual
 	#define AP_SSID "TOUCH-DUAL"
 #endif
 
-#ifdef __BOARD_sonoff_touch_triple
+#ifdef __BOARD_k_sonoff_touch_triple
 	#define AP_SSID "TOUCH-TRIPLE"
 #endif
 
