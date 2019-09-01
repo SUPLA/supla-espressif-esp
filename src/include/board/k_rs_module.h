@@ -19,10 +19,13 @@
 #ifndef K_RS_MODULE_H_
 #define K_RS_MODULE_H_
 
+#define STATE_SECTOR_OFFSET 2		// zmiana sektora zapisu
+#define RS_SAVE_STATE_DELAY 500		// zmiana czestotliwosci zapisu
+
 #define ESP8266_SUPLA_PROTO_VERSION 7
 #define BOARD_CFG_HTML_TEMPLATE
 
-#define SUPLA_ESP_SOFTVER "2.7.12.0"
+#define SUPLA_ESP_SOFTVER "2.7.12.1"
 
 #define _ROLLERSHUTTER_SUPPORT
 
