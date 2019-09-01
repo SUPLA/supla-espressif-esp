@@ -59,7 +59,7 @@
 #define B_RELAY1_PORT    12
 #define B_CFG_PORT        0
 
-#define BOARD_ESP_STARTED {GPIO_OUTPUT_SET(GPIO_ID_PIN(LED_RED_PORT),  1);};
+//#define BOARD_ESP_STARTED {GPIO_OUTPUT_SET(GPIO_ID_PIN(LED_RED_PORT),  1);};
 
 #define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == LED_RED_PORT) {hi =!supla_esp_gpio_output_is_hi(B_RELAY1_PORT);\
  } else if (port==B_RELAY1_PORT) {\
