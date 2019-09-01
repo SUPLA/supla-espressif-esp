@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SONOFF_H_
-#define SONOFF_H_
+#ifndef K_SONOFF_H_
+#define K_SONOFF_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
@@ -27,7 +27,7 @@
 
 //#define LED_INVERT
 
-#ifdef __BOARD_sonoff_ds18b20
+#ifdef __BOARD_k_sonoff_ds18b20
 	#define DS18B20
 	#define TEMPERATURE_CHANNEL 1
 	#define AP_SSID "SONOFF_DS18B20"
@@ -37,7 +37,7 @@
 
 #endif
 
-#ifdef __BOARD_sonoff_DHT22
+#ifdef __BOARD_k_sonoff_DHT22
 	#define DHTSENSOR
    	#define TEMPERATURE_HUMIDITY_CHANNEL 1
 	#define AP_SSID "SONOFF_DHT22"
@@ -50,7 +50,7 @@
 
 #endif
 
-#ifdef __BOARD_sonoff
+#ifdef __BOARD_k_sonoff
 	#define AP_SSID "SONOFF"
 #endif
 

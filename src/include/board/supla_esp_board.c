@@ -35,12 +35,6 @@
 
 #include "board/gate_module_wroom.c"
 
-#elif defined(__BOARD_sonoff) \
-      || defined(__BOARD_sonoff_ds18b20)	\
-      || defined(__BOARD_sonoff_DHT22)		\
-
-#include "board/sonoff.c"
-
 #elif defined(__BOARD_sonoff_touch) \
       ||  defined(__BOARD_sonoff_touch_dual) \
       || defined(__BOARD_sonoff_touch_triple) \
@@ -214,5 +208,11 @@
       || defined(__BOARD_k_socket_dual_DHT22)		\
 
 #include "board/k_socket_dual.c"
+
+#elif defined(__BOARD_k_sonoff) \
+      || defined(__BOARD_k_sonoff_ds18b20)	\
+      || defined(__BOARD_k_sonoff_DHT22)		\
+
+#include "board/k_sonoff.c"
 
 #endif

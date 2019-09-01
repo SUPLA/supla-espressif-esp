@@ -93,6 +93,15 @@ case $1 in
    "k_socket_dual_DHT22")
       FOTA=1
       FLASH_SIZE="4096"
+   ;;
+   "k_sonoff")
+      FOTA=1
+   ;;
+   "k_sonoff_ds18b20")
+      FOTA=1
+   ;;
+   "k_sonoff_DHT22")
+      FOTA=1
    ;;   
    "wifisocket")
    ;;
@@ -130,15 +139,6 @@ case $1 in
    ;;
    "lightswitch_x2_54_DHT22")
      FLASH_SIZE="4096"
-   ;;
-   "sonoff")
-      FOTA=1
-   ;;
-   "sonoff_ds18b20")
-      FOTA=1
-   ;;
-   "sonoff_DHT22")
-      FOTA=1
    ;;
    "sonoff_socket")
       FOTA=1
@@ -336,9 +336,6 @@ case $1 in
    echo "              gate_module_wroom";
    echo "              gate_module2_wroom";
    echo "              yunschan";
-   echo "              sonoff";
-   echo "              sonoff_ds18b20";
-   echo "              sonoff_DHT22";
    echo "              sonoff_touch";
    echo "              sonoff_touch_dual";
    echo "              sonoff_touch_triple";
@@ -383,7 +380,10 @@ case $1 in
    echo "              k_socket_DHT22"; 
    echo "              k_socket_dual";
    echo "              k_socket_dual_ds18b20";
-   echo "              k_socket_dual_DHT22";         
+   echo "              k_socket_dual_DHT22";
+   echo "              k_sonoff";
+   echo "              k_sonoff_ds18b20";
+   echo "              k_sonoff_DHT22";   
    echo
    echo   
    exit;
