@@ -51,10 +51,6 @@
 
 #include "board/sonoff_socket.h"
 
-#elif defined(__BOARD_yunschan)
-
-#include "board/yunschan.h"
-
 #elif defined(__BOARD_sonoff_th10) \
 	  || defined(__BOARD_sonoff_th16)
 
@@ -223,7 +219,10 @@
 
 #include "board/k_sonoff_touch.h"
 
-#endif
+#elif defined(__BOARD_k_yunschan)
 
+#include "board/k_yunschan.h"
+
+#endif
 
 #endif

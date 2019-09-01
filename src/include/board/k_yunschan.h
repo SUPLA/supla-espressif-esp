@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef YUNSCHAN_H_
-#define YUNSCHAN_H_
+#ifndef K_YUNSCHAN_H_
+#define K_YUNSCHAN_H_
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 

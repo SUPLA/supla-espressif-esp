@@ -43,10 +43,6 @@
 
 #include "board/sonoff_socket.c"
 
-#elif defined(__BOARD_yunschan)
-
-#include "board/yunschan.c"
-
 #elif defined(__BOARD_sonoff_th10) \
 	  || defined(__BOARD_sonoff_th16)
 
@@ -214,5 +210,9 @@
       || defined(__BOARD_k_sonoff_touch_triple) \
 
 #include "board/k_sonoff_touch.c"
+
+#elif defined(__BOARD_k_yunschan)
+
+#include "board/k_yunschan.c"
 
 #endif
