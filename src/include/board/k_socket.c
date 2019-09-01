@@ -90,9 +90,9 @@ const uint8_t rsa_public_key_bytes[512] = {
 
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
-	#if defined __BOARD_socket_ds18b20
+	#if defined __BOARD_k_socket_ds18b20
 		ets_snprintf(buffer, buffer_size, "SOCKET-DS18B20");
-	#elif defined __BOARD_socket_DHT22
+	#elif defined __BOARD_k_socket_DHT22
 		ets_snprintf(buffer, buffer_size, "SOCKET-DHT22");
 	#else
 		ets_snprintf(buffer, buffer_size, "SOCKET");
@@ -126,15 +126,15 @@ void supla_esp_board_gpio_init(void) {
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count) {
 	
 
-	#ifdef __BOARD_socket_ds18b20
+	#ifdef __BOARD_k_socket_ds18b20
     	*channel_count = 3;	
 	#endif
 
-	#ifdef __BOARD_socket_DHT22
+	#ifdef __BOARD_k_socket_DHT22
     	*channel_count = 3;
 	#endif
 
-	#ifdef __BOARD_socket
+	#ifdef __BOARD_k_socket
     	*channel_count = 2;
 	#endif
 
@@ -148,7 +148,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 
 	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
-	#ifdef __BOARD_socket_ds18b20
+	#ifdef __BOARD_k_socket_ds18b20
 		channels[1].Number = 1;
 		channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 
@@ -158,7 +158,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 		supla_get_temperature(channels[1].value);
 	#endif
 
-	#ifdef __BOARD_socket_DHT22
+	#ifdef __BOARD_k_socket_DHT22
 		channels[1].Number = 1;
 		channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
 

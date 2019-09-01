@@ -49,12 +49,6 @@
 
 #include "board/sonoff.h"
 
-#elif defined(__BOARD_socket) \
-      || defined(__BOARD_socket_ds18b20)	\
-      || defined(__BOARD_socket_DHT22)
-
-#include "board/socket.h"
-
 #elif defined(__BOARD_socket_dual) \
       || defined(__BOARD_socket_dual_ds18b20)	\
       || defined(__BOARD_socket_dual_DHT22)
@@ -222,6 +216,12 @@
       || defined(__BOARD_k_smoke_module_DHT22)
 
 #include "board/k_smoke_module.h"
+
+#elif defined(__BOARD_k_socket) \
+      || defined(__BOARD_k_socket_ds18b20)	\
+      || defined(__BOARD_k_socket_DHT22)
+
+#include "board/k_socket.h"
 
 #endif
 
