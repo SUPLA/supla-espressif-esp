@@ -250,10 +250,9 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
         (unsigned char)supla_esp_cfg.GUID[15], (unsigned char)mac[0],
         (unsigned char)mac[1], (unsigned char)mac[2], (unsigned char)mac[3],
         (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
-        supla_esp_cfg.Server, supla_esp_cfg.Email
+        supla_esp_cfg.Server, supla_esp_cfg.Email,
 		supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
-        supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : "",
-    );
+        supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : "");
 
     return buffer;
 }
