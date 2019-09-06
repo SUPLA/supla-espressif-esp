@@ -216,9 +216,15 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
                                   "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
                                   "value=\"%s\"><label>E-mail</label></i></div><div "
                                   "class=\"w\"><h3>Additional Settings</h3>"
+								  "<i><select name=\"upd\"><option value=\"0\" %s>NO<option "
+								  "value=\"1\" %s>YES</select><label>Firmware update</label></i>"
                                   "</div><button type=\"submit\">SAVE</button></form></div><br><br>";
 
-    int bufflen = strlen(supla_esp_devconn_laststate()) + strlen(dev_name) + strlen(SUPLA_ESP_SOFTVER) + strlen(supla_esp_cfg.WIFI_SSID) + strlen(supla_esp_cfg.Server) + strlen(supla_esp_cfg.Email) + strlen(html_template_header) + strlen(html_template) + 200;
+    int bufflen = strlen(supla_esp_devconn_laststate()) + 
+	strlen(dev_name) + strlen(SUPLA_ESP_SOFTVER) + 
+	strlen(supla_esp_cfg.WIFI_SSID) + strlen(supla_esp_cfg.Server) + 
+	strlen(supla_esp_cfg.Email) + strlen(html_template_header) + 
+	strlen(html_template) + 200;
 
     char* buffer = (char*)malloc(bufflen);
 
@@ -245,6 +251,8 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
         (unsigned char)mac[1], (unsigned char)mac[2], (unsigned char)mac[3],
         (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
         supla_esp_cfg.Server, supla_esp_cfg.Email
+		supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
+        supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : "",
     );
 
     return buffer;
