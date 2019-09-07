@@ -124,6 +124,9 @@ case $1 in
    "k_yunschan")
       FLASH_SIZE="4096"
       FOTA=1
+   ;;
+   "k_socket_01")
+      FLASH_SIZE="512"
    ;;   
    "wifisocket")
    ;;

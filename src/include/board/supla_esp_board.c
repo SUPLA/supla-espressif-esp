@@ -145,6 +145,10 @@
 
 #include "board/k_yunschan.c"
 
+#elif defined(__BOARD_k_socket_01)
+
+#include "board/k_socket_01.c"
+
 #endif
 
 #ifdef SUPLA_ESP_BOARD_SUBDEF

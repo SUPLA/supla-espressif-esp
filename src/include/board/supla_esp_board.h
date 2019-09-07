@@ -149,6 +149,10 @@
 
 #include "board/k_yunschan.h"
 
+#elif defined(__BOARD_k_socket_01)
+
+#include "board/k_socket_01.h"
+
 #endif
 
 #endif
