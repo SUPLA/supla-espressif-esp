@@ -278,7 +278,8 @@ case $1 in
    echo "              k_sonoff_touch";
    echo "              k_sonoff_touch_dual";
    echo "              k_sonoff_touch_triple"; 
-   echo "              k_yunschan";   
+   echo "              k_yunschan";
+   echo "              k_socket_01";   
    echo
    echo   
    exit;
