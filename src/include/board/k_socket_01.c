@@ -34,8 +34,12 @@ void supla_esp_board_gpio_init(void) {
 	// ---------------------------------------
 
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
-    supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
+    supla_relay_cfg[0].flags = RELAY_FLAG_RESET;
     supla_relay_cfg[0].channel = 0;
+	
+	// ---------------------------------------
+	
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
 
 }
 
@@ -46,7 +50,11 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 	channels[0].Number = 0;
 	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
 	channels[0].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH \
-								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH;
+								| SUPLA_BIT_RELAYFUNC_LIGHTSWITCH \
+								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK \
+								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
+								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
+								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK;
 	channels[0].Default = SUPLA_CHANNELFNC_POWERSWITCH;
 	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
