@@ -15,7 +15,8 @@
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
- 
+
+#include "public_key_in_c_code" 
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 		ets_snprintf(buffer, buffer_size, "SOCKET-01");
