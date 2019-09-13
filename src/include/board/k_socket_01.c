@@ -39,7 +39,7 @@ void supla_esp_board_gpio_init(void) {
 	
 	// ---------------------------------------
 	
-	//PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
 
 }
 

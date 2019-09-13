@@ -126,6 +126,7 @@ case $1 in
       FOTA=1
    ;;
    "k_socket_01")
+	  FOTA=1
    ;;   
    "wifisocket")
    ;;
