@@ -27,8 +27,8 @@
 
 #define AP_SSID "SOCKET-01"
 
-//#define LED_RED_PORT      2
-#define B_RELAY1_PORT     2
+#define LED_RED_PORT      2
+#define B_RELAY1_PORT     3
 #define B_CFG_PORT        0
 
 
