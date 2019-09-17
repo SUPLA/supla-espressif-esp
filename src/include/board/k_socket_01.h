@@ -23,6 +23,8 @@
 
 #define SUPLA_ESP_SOFTVER "2.7.12.0"
 
+#define USE_GPIO3
+
 //#define _RASING_EDGE
 
 #define AP_SSID "SOCKET-01"
