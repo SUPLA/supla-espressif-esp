@@ -16,8 +16,8 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef K_SONOFF_POW2_H_
-#define K_SONOFF_POW2_H_
+#ifndef K_SONOFF_POW_R2_H_
+#define K_SONOFF_POW_R2_H_
 
 #define GPIO_PORT_INIT \
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0); \

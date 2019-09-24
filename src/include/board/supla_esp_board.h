@@ -153,9 +153,9 @@
 
 #include "board/k_socket_01.h"
 
-#elif defined(__BOARD_k_sonoff_pow_r2)
+#elif defined(__BOARD_k_sonoff_pow_R2)
 
-#include "board/k_sonoff_pow_r2.h"
+#include "board/k_sonoff_pow_R2.h"
 
 #endif
 
