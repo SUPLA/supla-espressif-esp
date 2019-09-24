@@ -137,8 +137,11 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
       "value=\"%s\"><label>E-mail</label></i></div><div "
       "class=\"w\"><h3>Additional Settings</h3>"
-      "<i><select name=\"zre\"><option value=\"0\" %s>NO<option value=\"1\" %s>YES</select><label>Zero Initial Energy</label></i>"
-      "</div><button type=\"submit\">SAVE</button></form></div><br><br>";
+      "<i><select name=\"zre\"><option value=\"0\" %s>NO<option "
+	  "value=\"1\" %s>YES</select><label>Zero Initial Energy</label></i>"
+	  "<i><select name=\"upd\"><option value=\"0\" "
+      "%s>NO<option value=\"1\" %s>YES</select><label>Firmware "
+      "update</label></i></div><button type=\"submit\">SAVE</button></form></div><br><br>";
 
   int bufflen = strlen(supla_esp_devconn_laststate())
 				+strlen(dev_name)
@@ -181,7 +184,9 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
       supla_esp_cfg.WIFI_SSID,
       supla_esp_cfg.Server, supla_esp_cfg.Email,
       supla_esp_cfg.ZeroInitialEnergy == 0 ? "selected" : "",
-      supla_esp_cfg.ZeroInitialEnergy == 1 ? "selected" : ""
+      supla_esp_cfg.ZeroInitialEnergy == 1 ? "selected" : "",
+	  supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
+      supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : ""
       );
 
   return buffer;
