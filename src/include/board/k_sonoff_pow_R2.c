@@ -21,7 +21,7 @@
 #include <eagle_soc.h>
 #include <ets_sys.h>
 
-#include "sonoff_pow_R2.h"
+#include "k_sonoff_pow_R2.h"
 #include "supla_esp_gpio.h"
 #include "supla_w1.h"
 #include "supla-dev/log.h"
