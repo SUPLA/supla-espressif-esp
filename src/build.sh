@@ -127,6 +127,9 @@ case $1 in
    ;;
    "k_socket_01")
 	  FOTA=1
+   ;;
+   "k_sonoff_pow_r2")
+      FOTA=1
    ;;   
    "wifisocket")
    ;;
@@ -279,7 +282,8 @@ case $1 in
    echo "              k_sonoff_touch_dual";
    echo "              k_sonoff_touch_triple"; 
    echo "              k_yunschan";
-   echo "              k_socket_01";   
+   echo "              k_socket_01";
+   echo "              k_sonoff_pow_r2";   
    echo
    echo   
    exit;

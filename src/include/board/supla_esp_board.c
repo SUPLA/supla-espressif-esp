@@ -149,6 +149,10 @@
 
 #include "board/k_socket_01.c"
 
+#elif defined(__BOARD_k_sonoff_pow_r2)
+
+#include "board/k_sonoff_pow_r2.c"
+
 #endif
 
 #ifdef SUPLA_ESP_BOARD_SUBDEF

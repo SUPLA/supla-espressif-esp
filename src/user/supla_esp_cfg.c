@@ -276,6 +276,7 @@ supla_esp_cfg_init(void) {
 
 
 	factory_defaults(0);
+	supla_esp_state.full_energy = 0;
 	supla_esp_cfg.Test = 0;
 	memcpy(supla_esp_cfg.TAG, TAG, 6);
 
