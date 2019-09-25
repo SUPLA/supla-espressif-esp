@@ -322,6 +322,13 @@ void supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
     supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
     supla_relay_cfg[0].channel = 0;
+	
+	//---------------------------------------
+
+	supla_relay_cfg[1].gpio_id = 20;
+	supla_relay_cfg[1].channel = 2;
+	
+	//---------------------------------------
 
     sntp_setservername(0, NTP_SERVER);
     sntp_stop();
@@ -343,11 +350,17 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned c
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_ELECTRICITY_METER;
 	supla_esp_em_get_value(1, channels[1].value);
+	
+	channels[2].Number = 2;
+	channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
+	channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
+	channels[2].Default = 0;
+	channels[2].value[0] = supla_esp_gpio_relay_on(20);
 
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void) {
-  supla_esp_gpio_set_led(!supla_esp_cfg.StatusLedOff, 0, 0);
+  supla_esp_gpio_set_led(supla_esp_cfg.StatusLedOff, 0, 0);
 }
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc) {
