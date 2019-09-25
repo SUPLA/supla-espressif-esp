@@ -46,6 +46,9 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 #define BOARD_CFG_HTML_TEMPLATE
 #define NTP_SERVER "pl.pool.ntp.org"
 
+#define BOARD_ON_CONNECT
+#define BOARD_ON_CFG_SAVED
+
 #define AP_SSID "SONOFF_POW_R2"
 
 #define SUPLA_ESP_SOFTVER "2.7.12.0"
@@ -57,3 +60,5 @@ extern ETSTimer supla_pow_timer1;
 int status_ok;
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
