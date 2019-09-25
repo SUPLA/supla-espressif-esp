@@ -47,7 +47,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 #define NTP_SERVER "pl.pool.ntp.org"
 
 #define BOARD_ON_CONNECT
-#define BOARD_ON_CFG_SAVED
+//#define BOARD_ON_CFG_SAVED
 
 #define AP_SSID "SONOFF_POW_R2"
 
