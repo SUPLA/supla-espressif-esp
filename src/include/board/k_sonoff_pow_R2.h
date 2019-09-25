@@ -48,7 +48,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 
 #define AP_SSID "SONOFF_POW_R2"
 
-#define SUPLA_ESP_SOFTVER "2.7.4.0"
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
     char dev_name[25], const char mac[6], const char data_saved);

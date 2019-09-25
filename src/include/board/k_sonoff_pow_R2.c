@@ -319,9 +319,9 @@ void supla_esp_board_gpio_init(void) {
     supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
     supla_relay_cfg[0].channel = 0;
 
-//    sntp_setservername(0, NTP_SERVER);
-//    sntp_stop();
-//    sntp_init();
+    sntp_setservername(0, NTP_SERVER);
+    sntp_stop();
+    sntp_init();
 
 }
 
