@@ -489,9 +489,9 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		devconn->registered = 1;
 
 		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
-//#ifdef POWSENSOR2
-//		status_ok = 1;
-//#endif		
+#ifdef POWSENSOR2
+		supla_esp_check_updates(devconn->srpc);
+#endif		
 		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 		if ( devconn->server_activity_timeout != ACTIVITY_TIMEOUT ) {
@@ -1399,7 +1399,7 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 #ifdef POWSENSOR2
 	int rel;
 #endif
-	//supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
+	supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
 
 	if ( ip == NULL ) {
 		supla_esp_set_state(LOG_NOTICE, "Domain not found.");
@@ -1418,8 +1418,10 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 
 	#if NOSSL == 1
 		devconn->ESPConn.proto.tcp->remote_port = 2015;
+		supla_log(LOG_DEBUG, "NO SSL port 2015");
 	#else
 		devconn->ESPConn.proto.tcp->remote_port = 2016;
+		supla_log(LOG_DEBUG, "SSL port 2016");
 	#endif
 
 	espconn_regist_recvcb(&devconn->ESPConn, supla_esp_devconn_recv_cb);
@@ -1431,6 +1433,7 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 	devconn->last_state = rel;
 	if (rel == 0) {
 		supla_log(LOG_DEBUG, "Connected to Supla server (%i)", rel);
+		supla_esp_check_updates(devconn->srpc);
 		measurement_start = 1;
 	} else if (rel == -15)
 		supla_log(LOG_DEBUG, "Already connected to Supla server (%i)", rel);
