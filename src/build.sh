@@ -129,6 +129,7 @@ case $1 in
 	  FOTA=1
    ;;
    "k_sonoff_pow_R2")
+      FLASH_SIZE="2048"
       FOTA=1
    ;;   
    "wifisocket")
