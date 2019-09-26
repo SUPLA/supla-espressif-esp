@@ -489,9 +489,9 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		devconn->registered = 1;
 
 		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
-#ifdef POWSENSOR2
-		status_ok = 1;
-#endif		
+//#ifdef POWSENSOR2
+//		status_ok = 1;
+//#endif		
 		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 		if ( devconn->server_activity_timeout != ACTIVITY_TIMEOUT ) {
@@ -505,6 +505,10 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		#ifdef __FOTA
 		supla_esp_check_updates(devconn->srpc);
 		#endif
+		
+#ifdef POWSENSOR2
+		status_ok = 1;
+#endif
 
 		supla_esp_devconn_send_channel_values_with_delay();
 
