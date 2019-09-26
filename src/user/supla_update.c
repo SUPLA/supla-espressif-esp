@@ -123,9 +123,11 @@ supla_esp_update_reboot(char uf_finish) {
 void ICACHE_FLASH_ATTR
 supla_esp_check_updates(void *srpc) {
 	
+	supla_log(LOG_DEBUG, "supla_esp_check_updates");
 	if ( update_step == FUPDT_STEP_CHECK ) {
 		update_step = FUPDT_STEP_CHECKING;
 		update_checking_start_time = system_get_time();
+		supla_log(LOG_DEBUG, "if - supla_esp_check_updates");
 		
     #if defined _ROLLERSHUTTER_SUPPORT
 		supla_esp_cfg.FirmwareUpdate = 1;	
