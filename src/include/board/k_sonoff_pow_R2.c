@@ -331,7 +331,7 @@ void supla_esp_board_gpio_init(void) {
 	//---------------------------------------
 
     sntp_setservername(0, NTP_SERVER);
-	sntp_set_timezone(1);
+	sntp_set_timezone(2);
     sntp_stop();
     sntp_init();
 
