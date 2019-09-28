@@ -50,7 +50,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 
 #define AP_SSID "SONOFF_POW_R2"
 
-#define SUPLA_ESP_SOFTVER "2.7.12.1"
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 #define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
  	supla_log(LOG_DEBUG, "update, port = %i", port); \

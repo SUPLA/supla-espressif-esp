@@ -1653,7 +1653,7 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 	#if defined(POWSENSOR2)
 		if (counter20 > 0) counter20--;
-		if ((measurement_start == 1) && (counter20 == 0)) {
+		if ((measurement_start == 1) && (counter20 == 0) && (supla_esp_devconn_update_started() == 0) {
 			counter20 = MEASUREMENT_TIME;
 			supla_log(LOG_DEBUG, "ZeroInitialEnergy: %i", supla_esp_cfg.ZeroInitialEnergy);
 			if (supla_esp_cfg.ZeroInitialEnergy == 1)
