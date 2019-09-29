@@ -1676,7 +1676,7 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 	//supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 	#ifdef POWSENSOR2
-		if ((status_ok == 1) && (measurement_start == 1) && (counter20 == MEASUREMENT_TIME))  {
+		if ((status_ok == 1) && (measurement_start == 1) && (counter20 == MEASUREMENT_TIME) && (supla_esp_devconn_update_started() == 0))  {
 			supla_get_parameters();
 		}
 	#endif
