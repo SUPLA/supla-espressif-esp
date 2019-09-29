@@ -1428,7 +1428,7 @@ supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
 #if defined (POWSENSOR2)
 	rel = supla_espconn_connect(&devconn->ESPConn);
 	devconn->last_state = rel;
-	if ((rel == 0) && (supla_esp_devconn_update_started() == 0)) {
+	if (rel == 0) && (supla_esp_devconn_update_started() == 0) {
 		supla_log(LOG_DEBUG, "Connected to Supla server (%i)", rel);
 		measurement_start = 1;
 	} else if (rel == -15)
