@@ -1825,6 +1825,7 @@ supla_get_parameters() {
 	sekundy = (uint32_t)(sntp_get_current_timestamp());
 	time_difference = sekundy - last_seconds;
 	last_seconds = sekundy;
+	supla_log(LOG_DEBUG, "last_seconds : %i", last_seconds);
 	if ( time_difference == 0 ) time_difference = MEASUREMENT_TIME;
 	if ( time_difference > 10*MEASUREMENT_TIME )  time_difference = MEASUREMENT_TIME;
 	if (last_power*time_difference > 0) {
