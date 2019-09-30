@@ -257,11 +257,11 @@ supla_getPower(char value[SUPLA_CHANNELVALUE_SIZE]) {
 	memcpy(value, &power, sizeof(uint32_t));
 }
 
-void ICACHE_FLASH_ATTR
+/*void ICACHE_FLASH_ATTR
 supla_pow_R2_init(void) {
 	uart_div_modify(0, UART_CLK_FREQ / 4800);
 	os_printf("UART Init\n");
-}
+}*/
 
 int ICACHE_FLASH_ATTR
 UART_Recv(uint8 uart_no, uint8_t *buffer, int max_buf_len)
@@ -333,7 +333,7 @@ void supla_esp_board_gpio_init(void) {
     sntp_setservername(0, NTP_SERVER);
 	sntp_set_timezone(2);
     sntp_stop();
-    //sntp_init();
+    sntp_init();
 
 }
 
