@@ -260,8 +260,8 @@ supla_getPower(char value[SUPLA_CHANNELVALUE_SIZE]) {
 /*void ICACHE_FLASH_ATTR
 supla_pow_R2_init(void) {
 	uart_div_modify(0, UART_CLK_FREQ / 4800);
-	os_printf("UART Init\n");
-}*/
+	os_printf("UART Init\n");*/
+}
 
 int ICACHE_FLASH_ATTR
 UART_Recv(uint8 uart_no, uint8_t *buffer, int max_buf_len)
@@ -339,7 +339,7 @@ void supla_esp_board_gpio_init(void) {
 
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count) {
 	
-    *channel_count = 3;
+    *channel_count = 2;
 
 	channels[0].Number = 0;
 	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
@@ -352,11 +352,11 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned c
 	channels[1].Type = SUPLA_CHANNELTYPE_ELECTRICITY_METER;
 	supla_esp_em_get_value(1, channels[1].value);
 	
-	channels[2].Number = 2;
+/*	channels[2].Number = 2;
 	channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
 	channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
 	channels[2].Default = 0;
-	channels[2].value[0] = supla_esp_gpio_relay_on(20);
+	channels[2].value[0] = supla_esp_gpio_relay_on(20);  */
 
 }
 

@@ -52,11 +52,11 @@ void ICACHE_FLASH_ATTR supla_esp_em_get_value(
 
 #define SUPLA_ESP_SOFTVER "2.7.12.0"
 
-#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
+/*#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
  	supla_log(LOG_DEBUG, "update, port = %i", port); \
 	supla_esp_cfg.FirmwareUpdate = 1;\
 	supla_esp_cfg_save(&supla_esp_cfg);\
-	supla_esp_devconn_system_restart(); };  }; 
+	supla_esp_devconn_system_restart(); };  }; */
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
     char dev_name[25], const char mac[6], const char data_saved);
