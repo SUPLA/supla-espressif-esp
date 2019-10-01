@@ -260,8 +260,8 @@ supla_getPower(char value[SUPLA_CHANNELVALUE_SIZE]) {
 /*void ICACHE_FLASH_ATTR
 supla_pow_R2_init(void) {
 	uart_div_modify(0, UART_CLK_FREQ / 4800);
-	os_printf("UART Init\n");*/
-}
+	os_printf("UART Init\n");
+} */
 
 int ICACHE_FLASH_ATTR
 UART_Recv(uint8 uart_no, uint8_t *buffer, int max_buf_len)
