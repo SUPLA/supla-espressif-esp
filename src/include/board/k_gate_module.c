@@ -67,13 +67,13 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE \
 								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR \
 								| SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK;
-	channels[0].Default = 0;
+	channels[0].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEGATE;
 	channels[0].value[0] = supla_esp_gpio_relay_on(B_RELAY1_PORT);
 
 	channels[1].Number = 1;
-	channels[1].Type = SUPLA_CHANNELTYPE_SENSORNC;
+	channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;
 	channels[1].FuncList = 0;
-	channels[1].Default = 0;
+	channels[1].Default = SUPLA_CHANNELFNC_SENSORNO;
 	channels[1].value[0] = 0;
 
 }
