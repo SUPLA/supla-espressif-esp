@@ -23,6 +23,8 @@
 
 #define SUPLA_ESP_SOFTVER "2.7.12.0"
 
+#define AP_SSID "SUPLA-NICE"
+
 #define LED_RED_PORT  2
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
