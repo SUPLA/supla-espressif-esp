@@ -73,7 +73,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *ch
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;
 	channels[1].FuncList = 0;
-	channels[1].Default = SUPLA_CHANNELFNC_SENSORNO;
+	channels[1].Default = 0;
 	channels[1].value[0] = 0;
 
 }
