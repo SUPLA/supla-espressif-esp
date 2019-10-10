@@ -21,7 +21,7 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.10.0"
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 #define LED_RED_PORT  2
 
