@@ -884,7 +884,10 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 _smooth->dest_color = Color;
 	 _smooth->dest_color_brightness = ColorBrightness;
 	 _smooth->dest_brightness = Brightness;
+	 
+	 #ifdef RGBW_ONOFF_SUPPORT
 	 _smooth->turn_onoff = TurnOnOff;
+	 #endif /*RGBW_ONOFF_SUPPORT*/
 
      #ifdef CVD_MAX_COUNT
 	 if ( send_value_changed ) {
