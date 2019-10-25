@@ -23,7 +23,7 @@
 
 //#define LED_INVERT
 
-#define SUPLA_ESP_SOFTVER "2.7.4.1"
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 #define _RASING_EDGE
 
@@ -44,5 +44,7 @@
 };
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
 
 #endif
