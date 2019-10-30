@@ -60,6 +60,11 @@
 	supla_esp_cfg.FirmwareUpdate = 1;\
 	supla_esp_cfg_save(&supla_esp_cfg);\
 	supla_esp_devconn_system_restart(); };  }; 
+	
+char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
+    char dev_name[25], const char mac[6], const char data_saved);
+	
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
 
