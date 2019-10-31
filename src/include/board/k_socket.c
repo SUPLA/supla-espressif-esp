@@ -18,7 +18,8 @@
 
 // moj klucz
 #include "public_key_in_c_code"
- 
+
+#include "supla_esp.h" 
 #include "supla_dht.h"
 #include "supla_ds18b20.h"
 //#include "supla_esp_gpio.h"
