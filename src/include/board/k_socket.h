@@ -23,7 +23,7 @@
 
 #define SUPLA_ESP_SOFTVER "2.7.12.0"
 
-//#define _RASING_EDGE
+//#define _RASING_EDGE	-	juz niepotrzebne
 
 #define BOARD_CFG_HTML_TEMPLATE
 
