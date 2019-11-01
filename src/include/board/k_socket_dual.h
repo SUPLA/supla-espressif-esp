@@ -21,12 +21,9 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.4.0"
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
-//#define _RASING_EDGE
-
-#define USE_GPIO9
-#define USE_GPIO14
+#define BOARD_CFG_HTML_TEMPLATE
 
 #ifdef __BOARD_k_socket_dual_ds18b20
 	#define DS18B20
@@ -55,6 +52,16 @@
 #define B_RELAY2_PORT    12
 #define B_CFG_PORT        0
 
+#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
+ 	supla_log(LOG_DEBUG, "update, port = %i", port); \
+	supla_esp_cfg.FirmwareUpdate = 1;\
+	supla_esp_cfg_save(&supla_esp_cfg);\
+	supla_esp_devconn_system_restart(); };  }; 
+	
+har *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
+    char dev_name[25], const char mac[6], const char data_saved);
+	
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
 
