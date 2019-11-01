@@ -20,14 +20,8 @@
 #define K_SONOFF_TOUCH_H_
 
 #define ESP8285
-#define BOARD_ON_CONNECT
+
 #define BOARD_CFG_HTML_TEMPLATE
-
-#define USE_GPIO9
-
-//#define GPIO_INIT_DELAY
-
-#define USE_GPIO14
 
 #define LED_INVERT
 

@@ -25,15 +25,13 @@
 
 #define _RASING_EDGE
 
-#define LED_INVERT
-
 #define LED_RED_PORT     2
 #define B_RELAY1_PORT    4
 #define B_CFG_PORT       5
 
 #define AP_SSID "YUNSCHAN"
 
-#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == LED_RED_PORT) {hi =supla_esp_gpio_output_is_hi(B_RELAY1_PORT);\
+#define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == LED_RED_PORT) {hi =!supla_esp_gpio_output_is_hi(B_RELAY1_PORT);\
  } else if (port==B_RELAY1_PORT) {\
  GPIO_OUTPUT_SET(GPIO_ID_PIN(LED_RED_PORT),  hi); }\
  else if (port == 20) { \

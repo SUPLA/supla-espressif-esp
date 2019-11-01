@@ -761,19 +761,10 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 			}
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 
-	} else if
-	   #ifdef _RASING_EDGE
-		( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE 	//wlaczanie przy zboczu narastajacym
-		|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
+	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
-		supla_log(LOG_DEBUG, "RELAY");
+		//supla_log(LOG_DEBUG, "RELAY");
 		supla_esp_gpio_relay_switch(input_cfg, 255);
-	   #else
-		( input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
-
-		supla_log(LOG_DEBUG, "RELAY");
-		supla_esp_gpio_relay_switch(input_cfg, 255);
-	   #endif
 
 
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
@@ -805,20 +796,11 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 			}
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 		
-	} else if
-	    #ifdef _RASING_EDGE 
-		 ( /*input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE	//wlaczanie przy zboczu narastajacym
-		 || */input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-
-		supla_esp_gpio_relay_switch(input_cfg, 255);
-	    #else
-		( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
+	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 
 		supla_esp_gpio_relay_switch(input_cfg, 255);
-	   #endif
 
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 			    &&  input_cfg->channel != 255 ) {
@@ -1072,11 +1054,6 @@ supla_esp_gpio_intr_handler(void *params) {
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_init(void) {
 
-	#ifdef GPIO_INIT_DELAY	
-		os_delay_us(100000);
-		supla_log(LOG_DEBUG, "gpio_init_delay");
-	#endif
-
 	int a;
 	supla_log(LOG_DEBUG, "supla_esp_gpio_init");
 
@@ -1111,11 +1088,6 @@ supla_esp_gpio_init(void) {
 	#endif
 
 	ETS_GPIO_INTR_DISABLE();
-
-	#ifdef GPIO0_INPUT
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);
-    #endif
 	
 	GPIO_PORT_INIT;
 	ETS_GPIO_INTR_ATTACH(supla_esp_gpio_intr_handler, NULL);
@@ -1138,20 +1110,6 @@ supla_esp_gpio_init(void) {
 	   PIN_FUNC_SELECT(PERIPHS_IO_MUX_U0TXD_U, FUNC_GPIO1);
 	   PIN_PULLUP_DIS(PERIPHS_IO_MUX_U0TXD_U);
 	#endif
-
-    #ifdef USE_GPIO9
-	   PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA2_U, FUNC_GPIO9);
-	   PIN_FUNC_SELECT(PERIPHS_IO_MUX_SD_DATA3_U, FUNC_GPIO10);
-	   PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
-	   PIN_PULLUP_EN(PERIPHS_IO_MUX_SD_DATA2_U);
-	   PIN_PULLUP_EN(PERIPHS_IO_MUX_SD_DATA3_U);
-    #endif
-
- #ifdef USE_GPIO14
-	   PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
-	   PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);
-	#endif
-
 
     #ifdef LED_RED_PORT
       #if LED_RED_PORT != 16
@@ -1269,15 +1227,6 @@ supla_esp_gpio_set_hi(int port, char hi) {
 	BOARD_GPIO_OUTPUT_SET_HI
 	#endif
 	
-/*	if ( port == 4 )  {
-		supla_log(LOG_DEBUG, "warunek port = %i", port); 
-	if ( hi == 1 )  {
-		supla_log(LOG_DEBUG, "warunek hi = %i", hi);
-		supla_esp_pwm_set_percent_duty(50, 100, 0);
-	} else
-	{ supla_esp_pwm_set_percent_duty(0, 100, 0); }
-	} */
-
 	if ( port == 16 ) {
 		gpio16_output_set(hi == 1 ? 1 : 0);
 	} else {
@@ -1292,28 +1241,16 @@ void supla_esp_gpio_set_led(char r, char g, char b) {
 	os_timer_disarm(&supla_gpio_timer2);
 
     #ifdef LED_RED_PORT
-	#if defined LED_INVERT		
-		supla_esp_gpio_set_hi(LED_RED_PORT, !r);
-	#else
 		supla_esp_gpio_set_hi(LED_RED_PORT, r);
-	#endif
     #endif
 
     #ifdef LED_GREEN_PORT
-	#if defined LED_INVERT		
-		supla_esp_gpio_set_hi(LED_GREEN_PORT, !g);
-	#else
 		supla_esp_gpio_set_hi(LED_GREEN_PORT, g);
 	#endif
-    #endif
 
     #ifdef LED_BLUE_PORT
-	#if defined LED_INVERT		
-		supla_esp_gpio_set_hi(LED_BLUE_PORT, !b);
-	#else
 		supla_esp_gpio_set_hi(LED_BLUE_PORT, b);
 	#endif
-    #endif
 }
 
 #ifdef LED_REINIT

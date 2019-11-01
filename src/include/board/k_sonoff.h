@@ -25,8 +25,6 @@
 
 #define RASING_EDGE
 
-//#define LED_INVERT
-
 #ifdef __BOARD_k_sonoff_ds18b20
 	#define DS18B20
 	#define TEMPERATURE_CHANNEL 1

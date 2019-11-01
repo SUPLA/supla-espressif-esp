@@ -21,8 +21,6 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-//#define LED_INVERT
-
 #define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 #define _RASING_EDGE
