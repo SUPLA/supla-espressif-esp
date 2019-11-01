@@ -22,7 +22,7 @@
 #include "supla_esp.h" 
 #include "supla_dht.h"
 #include "supla_ds18b20.h"
-//#include "supla_esp_gpio.h"
+
 
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
@@ -301,7 +301,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg)
 		|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
 		supla_log(LOG_DEBUG, "RELAY");
-		supla_esp_gpio_relay_switch(input_cfg, 255);
+		supla_esp_board_gpio_relay_switch(input_cfg, 255);
 		
 		} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 				&&  input_cfg->channel != 255 ) {
@@ -321,7 +321,7 @@ supla_esp_board_gpio_on_input_inactive(void* _input_cfg)
 
     if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {		//wlaczanie przy zboczu narastajacym
 
-		supla_esp_gpio_relay_switch(input_cfg, 255);
+		supla_esp_board_gpio_relay_switch(input_cfg, 255);
 
     } else if ( input_cfg->type == INPUT_TYPE_SENSOR
 			    &&  input_cfg->channel != 255 ) {
