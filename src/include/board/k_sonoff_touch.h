@@ -23,13 +23,11 @@
 
 #define BOARD_CFG_HTML_TEMPLATE
 
-#define LED_INVERT
-
 #define _RASING_EDGE
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.9.0"
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 #ifdef __BOARD_k_sonoff_touch
 	#define AP_SSID "SONOFF-TOUCH"
@@ -54,8 +52,20 @@
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
     char dev_name[25], const char mac[6], const char data_saved);
+	
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
-void ICACHE_FLASH_ATTR
-supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+#define BOARD_ON_INPUT_ACTIVE                        \
+    supla_esp_board_gpio_on_input_active(input_cfg); \
+    return;
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg);
+
+#define BOARD_ON_INPUT_INACTIVE                        \
+    supla_esp_board_gpio_on_input_inactive(input_cfg); \
+    return;
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_inactive(void* _input_cfg);
+
 
 #endif
