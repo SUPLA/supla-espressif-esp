@@ -25,8 +25,6 @@
 
 #define USE_GPIO3
 
-//#define _RASING_EDGE
-
 #define AP_SSID "SOCKET-01"
 
 #define LED_RED_PORT      2

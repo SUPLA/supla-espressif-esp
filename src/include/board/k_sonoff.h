@@ -21,16 +21,13 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.4.1"
-
-#define RASING_EDGE
+#define SUPLA_ESP_SOFTVER "2.7.12.0"
 
 #ifdef __BOARD_k_sonoff_ds18b20
 	#define DS18B20
 	#define TEMPERATURE_CHANNEL 1
 	#define AP_SSID "SONOFF_DS18B20"
 
-	// Sonoff TH (v2)
     	#define W1_GPIO14
 
 #endif
@@ -40,10 +37,6 @@
    	#define TEMPERATURE_HUMIDITY_CHANNEL 1
 	#define AP_SSID "SONOFF_DHT22"
 
-    // Sonoff TH (v1)
-	//#define W1_GPIO3
-
-    // Sonoff TH (v2)
        #define W1_GPIO14
 
 #endif
@@ -57,8 +50,6 @@
 #define B_RELAY1_PORT    12
 #define B_CFG_PORT        0
 
-//#define BOARD_ESP_STARTED {GPIO_OUTPUT_SET(GPIO_ID_PIN(LED_RED_PORT),  1);};
-
 #define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == LED_RED_PORT) {hi =!supla_esp_gpio_output_is_hi(B_RELAY1_PORT);\
  } else if (port==B_RELAY1_PORT) {\
  supla_esp_gpio_set_led(hi, 1, 1); }\
@@ -68,7 +59,19 @@
 	supla_esp_cfg_save(&supla_esp_cfg);\
 	supla_esp_devconn_system_restart(); };\
 }; 
+	
+void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+#define BOARD_ON_INPUT_ACTIVE                        \
+    supla_esp_board_gpio_on_input_active(input_cfg); \
+    return;
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg);
+
+#define BOARD_ON_INPUT_INACTIVE                        \
+    supla_esp_board_gpio_on_input_inactive(input_cfg); \
+    return;
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_inactive(void* _input_cfg);
 
 #endif
