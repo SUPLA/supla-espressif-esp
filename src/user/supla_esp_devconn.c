@@ -156,7 +156,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
 
 void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_system_restart(void) {
+supla_esp_devconn_before_system_restart(void) {
 
     if ( supla_esp_cfgmode_started() == 0 ) {
 
@@ -172,17 +172,6 @@ supla_esp_devconn_system_restart(void) {
 		#ifdef ELECTRICITY_METER_COUNT
 		supla_esp_em_stop();
 		#endif /*ELECTRICITY_METER_COUNT*/
-
-		#ifdef BOARD_BEFORE_REBOOT
-		supla_esp_board_before_reboot();
-		#endif
-
-		supla_log(LOG_DEBUG, "RESTART");
-    	supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
-
-    	system_restart();
-
-
     }
 }
 
@@ -256,7 +245,7 @@ supla_esp_data_write_append_buffer(void *buf, int count) {
 		if ( devconn->esp_send_buffer_len+count > SEND_BUFFER_SIZE ) {
 
 			supla_log(LOG_ERR, "Send buffer size exceeded");
-			supla_esp_devconn_system_restart();
+			supla_system_restart();
 
 			return -1;
 
@@ -1243,7 +1232,7 @@ supla_esp_devconn_iterate(void *timer_arg) {
 
 		if( srpc_iterate(devconn->srpc) == SUPLA_RESULT_FALSE ) {
 			supla_log(LOG_DEBUG, "iterate fail");
-			supla_esp_devconn_system_restart();
+			supla_system_restart();
 		}
 
 	}
@@ -1372,7 +1361,7 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 			if ( t > devconn->last_response ) {
 				if ( t-devconn->last_response > WATCHDOG_TIMEOUT ) {
 					supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
-					supla_esp_devconn_system_restart();
+					supla_system_restart();
 				} else {
 					unsigned int t2 = abs((t-devconn->last_response)/1000000);
 					if ( t2 >= WATCHDOG_SOFT_TIMEOUT

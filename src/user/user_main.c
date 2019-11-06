@@ -43,18 +43,20 @@
 #include "supla_update.h"
 #endif
 
-/*
-void *supla_malloc(size_t size) {
+void ICACHE_FLASH_ATTR supla_system_restart(void) {
 
-	void *result = os_malloc(size);
+	supla_esp_devconn_before_system_restart();
 
-	if ( result == NULL ) {
-		supla_log(LOG_DEBUG, "Free heap size: %i/%i", system_get_free_heap_size(), size);
-	}
+	#ifdef BOARD_BEFORE_REBOOT
+	supla_esp_board_before_reboot();
+	#endif
 
-	return result;
+	supla_log(LOG_DEBUG, "RESTART");
+	supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
+
+	system_restart();
+
 }
-*/
 
 uint32 ICACHE_FLASH_ATTR
 user_rf_cal_sector_set(void)
@@ -182,23 +184,6 @@ void MAIN_ICACHE_FLASH user_init(void)
 	#ifdef BOARD_ESP_STARTED
 	BOARD_ESP_STARTED;
 	#endif
-
-/*
-	if ( supla_esp_state.ltag != 25 ) {
-		supla_log(LOG_DEBUG, "Log state reset");
-		memset(supla_esp_state.log, 0, 4000);
-		supla_esp_state.len = 0;
-		supla_esp_state.ltag = 25;
-		supla_esp_save_state(1);
-	}
-
-	if ( supla_esp_state.len < 0 || supla_esp_state.len > 20 )
-		supla_esp_state.len = 0;
-
-	int a;
-	for(a=0;a<supla_esp_state.len;a++)
-		supla_log(LOG_DEBUG, "%i. %s", a, supla_esp_state.log[a]);
-*/
 	
 #endif /*BOARD_USER_INIT*/
 

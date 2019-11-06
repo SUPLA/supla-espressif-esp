@@ -25,7 +25,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.13"
+#define SUPLA_ESP_SOFTVER "2.7.14"
 
 #define STATE_UNKNOWN       0
 #define STATE_DISCONNECTED  1
@@ -164,7 +164,7 @@ void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned c
 void supla_esp_board_relay_before_change_state(void);
 void supla_esp_board_relay_after_change_state(void);
 void supla_esp_board_gpio_init(void);
-
+void ICACHE_FLASH_ATTR supla_system_restart(void);
 
 
 #ifdef __FOTA

@@ -31,7 +31,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed(int channel_number, c
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value_changed(int channel_number, char v);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_extendedvalue_changed(unsigned char channel_number, TSuplaChannelExtendedValue *value);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_channel_values_with_delay(void);
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_system_restart(void);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_system_restart(void);
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_cfgmode_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
