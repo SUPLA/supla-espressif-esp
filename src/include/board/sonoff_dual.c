@@ -176,7 +176,7 @@ supla_esp_board_uart0_rx_intr_handler(void *para) {
         	if ( supla_esp_cfgmode_started() != 0
         		 && (supla_esp_board_get_value() & 0x04) != (old & 0x04)  ) {
 
-        		system_restart();
+        		supla_system_restart();
 
         	};
 

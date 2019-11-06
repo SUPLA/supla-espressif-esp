@@ -867,7 +867,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 					input_cfg->cfg_counter++;
 
 				if ( supla_esp_restart_on_cfg_press == 1 ) {
-					system_restart();
+					supla_system_restart();
 					return;
 				}
 
@@ -883,7 +883,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 						factory_defaults(1);
 						supla_log(LOG_DEBUG, "Factory defaults");
 						os_delay_us(500000);
-						system_restart();
+						supla_system_restart();
 					}
 
 
@@ -944,7 +944,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 					} else if ( (system_get_time() - supla_esp_cfgmode_entertime) > 3000000 ) {
 
 						//  EXIT CFG MODE
-						system_restart();
+						supla_system_restart();
 
 					}
 
@@ -959,7 +959,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 						&& (system_get_time() - supla_esp_cfgmode_entertime) > 3000000 ) {
 
 					// EXIT CFG MODE
-					system_restart();
+					supla_system_restart();
 
 				} else {
 
