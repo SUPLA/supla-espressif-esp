@@ -27,7 +27,7 @@
 
 #define TEMPERATURE_CHANNEL 2
 #define LED_RED_PORT 16
-#define WATCHDOG_TIMEOUT 90000000
+#define WATCHDOG_TIMEOUT_SEC 90
 
 void ICACHE_FLASH_ATTR
 supla_esp_board_send_channel_values_with_delay(void *srpc);
