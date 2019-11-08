@@ -311,14 +311,14 @@ supla_esp_set_state(int __pri, const char *message) {
 	if ( message == NULL )
 		return;
 
-	unsigned char len = strlen(message)+1;
-
 	supla_log(__pri, message);
 
-    if ( len > STATE_MAXSIZE )
-    	len = STATE_MAXSIZE;
-
-	os_memcpy(devconn->laststate, message, len);
+	ets_snprintf(devconn->laststate,
+			STATE_MAXSIZE,
+			"%s%s%s",
+			message,
+			strnlen(devconn->laststate, STATE_MAXSIZE) > 0 ? "," : "",
+			devconn->laststate);
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1426,7 +1426,7 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_start(void) {
 
 	devconn->last_wifi_status = STATION_GOT_IP+1;
-	ets_snprintf(devconn->laststate, STATE_MAXSIZE, "WiFi - Connecting...");
+	supla_esp_set_state(LOG_NOTICE, "WiFi - Connecting...");
 	
 	wifi_station_disconnect();
 	
