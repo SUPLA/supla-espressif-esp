@@ -273,7 +273,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 		if ((r = supla_espconn_sent(&devconn->ESPConn,
 				(unsigned char*)devconn->esp_send_buffer, devconn->esp_send_buffer_len)) == 0) {
 			devconn->esp_send_buffer_len = 0;
-			devconn->last_sent = system_get_time();
+			devconn->last_sent = heartbeat_timer_sec;
 		}
 
 		supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
@@ -293,7 +293,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 		} else {
 
 			if ( r == 0 )
-				devconn->last_sent = system_get_time();
+				devconn->last_sent = heartbeat_timer_sec;
 
 			return r == 0 ? count : -1;
 		}
@@ -1110,7 +1110,7 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 	TsrpcReceivedData rd;
 	char result;
 
-	devconn->last_response = system_get_time();
+	devconn->last_response = heartbeat_timer_sec;
 
 	//supla_log(LOG_DEBUG, "call_received");
 
@@ -1355,24 +1355,20 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 
 	 if ( supla_esp_cfgmode_started() == 0
 		  && supla_esp_devconn_update_started() == 0 ) {
-
-			unsigned int t = system_get_time();
-
-			if ( t > devconn->last_response ) {
-				if ( t-devconn->last_response > WATCHDOG_TIMEOUT ) {
+			if ( heartbeat_timer_sec > devconn->last_response ) {
+				if ( heartbeat_timer_sec-devconn->last_response > WATCHDOG_TIMEOUT_SEC ) {
 					supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
 					supla_system_restart();
 				} else {
-					unsigned int t2 = abs((t-devconn->last_response)/1000000);
-					if ( t2 >= WATCHDOG_SOFT_TIMEOUT
-						 && t2 > devconn->server_activity_timeout
-						 && t > devconn->next_wd_soft_timeout_challenge ) {
+					unsigned int t = heartbeat_timer_sec - devconn->last_response;
+					if ( t >= WATCHDOG_SOFT_TIMEOUT_SEC
+						 && t > devconn->server_activity_timeout
+						 && heartbeat_timer_sec > devconn->next_wd_soft_timeout_challenge ) {
 						supla_log(LOG_DEBUG, "WATCHDOG SOFT TIMEOUT");
 						supla_esp_devconn_reconnect();
 					}
 				}
 			}
-
 	 }
 
 }
@@ -1476,7 +1472,7 @@ supla_esp_devconn_stop(void) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_reconnect(void) {
 
-	devconn->next_wd_soft_timeout_challenge = system_get_time() + WATCHDOG_SOFT_TIMEOUT*1000000;
+	devconn->next_wd_soft_timeout_challenge = heartbeat_timer_sec + WATCHDOG_SOFT_TIMEOUT_SEC;
 
     if ( supla_esp_cfgmode_started() == 0
 		  && supla_esp_devconn_update_started() == 0 ) {
@@ -1535,31 +1531,21 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 
 	unsigned int t1;
 	unsigned int t2;
-	unsigned int t3;
-
-	//supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
 	if ( supla_esp_devconn_is_registered() == 1
 		 && devconn->server_activity_timeout > 0
 		 && devconn->srpc != NULL ) {
 
-		    t1 = system_get_time();
-		    t2 = abs((t1-devconn->last_sent)/1000000);
-		    t3 = abs((t1-devconn->last_response)/1000000);
+		    t1 = heartbeat_timer_sec-devconn->last_sent;
+		    t2 = heartbeat_timer_sec-devconn->last_response;
 
-		    if ( t3 >= (devconn->server_activity_timeout+10) ) {
-
-		    	supla_log(LOG_DEBUG, "Activity timeout %i, %i, %i, %i",  t1, devconn->last_response, (t1-devconn->last_response)/1000000, devconn->server_activity_timeout+10);
-
+		    if ( t2 >= (devconn->server_activity_timeout+10) ) {
+		    	supla_log(LOG_DEBUG, "ACTIVITY TIMEOUT");
 		    	supla_esp_devconn_reconnect();
-
-		    } else if ( ( t2 >= (devconn->server_activity_timeout-5)
-		    		      && t2 <= devconn->server_activity_timeout )
-		    		    || ( t3 >= (devconn->server_activity_timeout-5)
-		    		         && t3 <= devconn->server_activity_timeout ) ) {
-
-			    //supla_log(LOG_DEBUG, "PING %i,%i", t1 / 1000000, t1 % 1000000);
-			    //system_print_meminfo();
+		    } else if ( ( t1 >= (devconn->server_activity_timeout-5)
+		    		      && t1 <= devconn->server_activity_timeout )
+		    		    || ( t2 >= (devconn->server_activity_timeout-5)
+		    		         && t2 <= devconn->server_activity_timeout ) ) {
 
 				srpc_dcs_async_ping_server(devconn->srpc);
 				

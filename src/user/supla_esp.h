@@ -251,16 +251,22 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 
 #define ACTIVITY_TIMEOUT 10
 
-#ifndef WATCHDOG_TIMEOUT
-// us.
-#define WATCHDOG_TIMEOUT 60000000
+#ifdef WATCHDOG_TIMEOUT
+#error "WATCHDOG_TIMEOUT is deprecated use WATCHDOG_TIMEOUT_SEC"
 #endif /*WATCHDOG_TIMEOUT*/
 
-#ifndef WATCHDOG_SOFT_TIMEOUT
-// sec.
-// WATCHDOG_SOFT_TIMEOUT*1000000 > WATCHDOG_TIMEOUT == inactive
-#define WATCHDOG_SOFT_TIMEOUT 65
+#ifdef WATCHDOG_SOFT_TIMEOUT
+#error "WATCHDOG_SOFT_TIMEOUT is deprecated use WATCHDOG_SOFT_TIMEOUT_SEC"
 #endif /*WATCHDOG_SOFT_TIMEOUT*/
+
+#ifndef WATCHDOG_TIMEOUT_SEC
+#define WATCHDOG_TIMEOUT_SEC 60
+#endif /*WATCHDOG_TIMEOUT*/
+
+#ifndef WATCHDOG_SOFT_TIMEOUT_SEC
+// WATCHDOG_SOFT_TIMEOUT_SEC > WATCHDOG_TIMEOUT == inactive
+#define WATCHDOG_SOFT_TIMEOUT_SEC 65
+#endif /*WATCHDOG_SOFT_TIMEOUT_SEC*/
 
 #ifndef RELAY_DOUBLE_TRY
 #define RELAY_DOUBLE_TRY 10000
@@ -277,5 +283,7 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #ifndef RGBW_CHANNEL_LIMIT
 #define RGBW_CHANNEL_LIMIT if ( ChannelNumber >= 2 ) return;
 #endif
+
+extern uint32 heartbeat_timer_sec;
 
 #endif /* SUPLA_ESP_H_ */
