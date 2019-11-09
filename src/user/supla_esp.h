@@ -245,7 +245,7 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define WIFI_SSID_MAXSIZE   32
 #define WIFI_PWD_MAXSIZE    64
 
-#define STATE_MAXSIZE       200
+#define STATE_MAXSIZE       300
 
 #define RECVBUFF_MAXSIZE  1024
 
