@@ -27,7 +27,7 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.12.0"
+#define SUPLA_ESP_SOFTVER "2.7.12.1"
 
 #ifdef __BOARD_k_sonoff_touch
 	#define AP_SSID "SONOFF-TOUCH"

@@ -329,7 +329,12 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void) {
-  supla_esp_gpio_set_led(!supla_esp_cfg.StatusLedOff, 0, 0);
+	
+	if ( supla_esp_cfg.StatusLedOff == 1 )  {
+	supla_esp_gpio_set_led(1, 0, 0);	
+	}
+	else { supla_esp_gpio_set_led(0, 0, 0);
+	}
   
 }
 
