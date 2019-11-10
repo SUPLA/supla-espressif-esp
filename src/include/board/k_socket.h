@@ -21,15 +21,14 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.12.0"
-
-//#define _RASING_EDGE	-	juz niepotrzebne
+#define SUPLA_ESP_SOFTVER "2.7.12.1"
 
 #define BOARD_CFG_HTML_TEMPLATE
+#define BOARD_ON_CONNECT
 
 #ifdef __BOARD_k_socket_ds18b20
 	#define DS18B20
-	#define TEMPERATURE_CHANNEL 1
+	#define TEMPERATURE_CHANNEL 2
 	#define AP_SSID "SOCKET_DS18B20"
 
     	#define W1_GPIO5
@@ -38,7 +37,7 @@
 
 #ifdef __BOARD_k_socket_DHT22
 	#define DHTSENSOR
-   	#define TEMPERATURE_HUMIDITY_CHANNEL 1
+   	#define TEMPERATURE_HUMIDITY_CHANNEL 2
 	#define AP_SSID "SOCKET_DHT22"
 
         #define W1_GPIO5
