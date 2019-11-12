@@ -245,8 +245,6 @@ supla_esp_data_write_append_buffer(void *buf, int count) {
 		if ( devconn->esp_send_buffer_len+count > SEND_BUFFER_SIZE ) {
 
 			supla_log(LOG_ERR, "Send buffer size exceeded");
-			supla_system_restart();
-
 			return -1;
 
 		} else {
