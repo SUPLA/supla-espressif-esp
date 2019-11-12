@@ -276,7 +276,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 			devconn->last_sent = heartbeat_timer_sec;
 		}
 
-		supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
+		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 	};
 
 	if ( devconn->esp_send_buffer_len > 0 ) {
