@@ -43,6 +43,9 @@
 #include "supla_update.h"
 #endif
 
+ETSTimer heartbeat_timer;
+uint32 heartbeat_timer_sec;
+
 void ICACHE_FLASH_ATTR supla_system_restart(void) {
 
 	supla_esp_devconn_before_system_restart();
@@ -96,9 +99,19 @@ user_rf_cal_sector_set(void)
 void MAIN_ICACHE_FLASH user_rf_pre_init() {};
 
 
+void DEVCONN_ICACHE_FLASH
+supla_esp_heartbeat_cb(void *ptr) {
+	heartbeat_timer_sec++;
+}
+
 
 void MAIN_ICACHE_FLASH user_init(void)
 {
+	heartbeat_timer_sec = 0;
+
+	os_timer_disarm(&heartbeat_timer);
+	os_timer_setfn(&heartbeat_timer, (os_timer_func_t *)supla_esp_heartbeat_cb, NULL);
+	os_timer_arm(&heartbeat_timer, 1000, 1);
 
 #ifdef BOARD_USER_INIT
 	BOARD_USER_INIT;
