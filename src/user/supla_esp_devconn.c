@@ -504,7 +504,9 @@ supla_esp_channel_extendedvalue_changed(unsigned char channel_number, TSuplaChan
 
 void DEVCONN_ICACHE_FLASH 
 supla_esp_channel_set_result(int channelNumber, int SenderID, char Success){
-    srpc_ds_async_set_channel_result(devconn->srpc, channelNumber, SenderID, Success);
+        if ( supla_esp_devconn_is_registered() == 1 ) {
+                srpc_ds_async_set_channel_result(devconn->srpc, channelNumber, SenderID, Success);
+        }
 }
 
 #if defined(RGBW_CONTROLLER_CHANNEL) \
