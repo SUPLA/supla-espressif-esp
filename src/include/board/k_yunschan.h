@@ -21,7 +21,7 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.12.0"
+#define SUPLA_ESP_SOFTVER "2.7.16.0"
 
 #define BOARD_ON_CONNECT
 
@@ -38,7 +38,7 @@
  	supla_log(LOG_DEBUG, "update, port = %i", port); \
 	supla_esp_devconn_stop(); \
 	os_delay_us(200); \
-	system_restart(); };  \
+	supla_system_restart(); };  \
 };
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
