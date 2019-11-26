@@ -25,7 +25,7 @@
 #define ESP8266_SUPLA_PROTO_VERSION 7
 #define BOARD_CFG_HTML_TEMPLATE
 
-#define SUPLA_ESP_SOFTVER "2.7.12.2"
+#define SUPLA_ESP_SOFTVER "2.7.16.0"
 
 #define _ROLLERSHUTTER_SUPPORT
 
@@ -49,7 +49,7 @@
 
 
 #define LED_RED_PORT   16
-#define WATCHDOG_TIMEOUT 90000000
+#define WATCHDOG_TIMEOUT_SEC 90
 
 
 char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
