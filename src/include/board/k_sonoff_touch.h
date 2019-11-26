@@ -26,7 +26,7 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.12.1"
+#define SUPLA_ESP_SOFTVER "2.7.16.0"
 
 #ifdef __BOARD_k_sonoff_touch
 	#define AP_SSID "SONOFF-TOUCH"
@@ -46,7 +46,9 @@
  	supla_log(LOG_DEBUG, "update, port = %i", port); \
 	supla_esp_cfg.FirmwareUpdate = 1;\
 	supla_esp_cfg_save(&supla_esp_cfg);\
-	supla_esp_devconn_system_restart(); };  }; 
+	os_delay_us(200); \
+	supla_system_restart(); };\
+}; 
 
 
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
