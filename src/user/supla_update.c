@@ -113,7 +113,7 @@ supla_esp_update_reboot(char uf_finish) {
 	} else {
 
 		system_upgrade_flag_set(UPGRADE_FLAG_IDLE);
-		supla_esp_devconn_system_restart();
+		supla_system_restart();
 	}
 
 

@@ -624,7 +624,7 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 		}
 
 		if ( reboot > 0 ) {
-			system_restart();
+			supla_system_restart();
 			return;
 		}
 				

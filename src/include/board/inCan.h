@@ -49,7 +49,7 @@
 #if defined(__BOARD_inCanRS_DS) || defined(__BOARD_inCanRS_DHT11) || defined(__BOARDRS_inCanRS_DHT22)
 
 #define _ROLLERSHUTTER_SUPPORT
-#define WATCHDOG_TIMEOUT 90000000
+#define WATCHDOG_TIMEOUT_SEC 90
 #define RELAY_MIN_DELAY 50
 #endif
 
