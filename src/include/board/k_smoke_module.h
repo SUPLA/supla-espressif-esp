@@ -60,7 +60,7 @@
 	supla_esp_cfg.FirmwareUpdate = 1;\
 	supla_esp_cfg_save(&supla_esp_cfg);\
 	os_delay_us(200); \
-	supla_system_restart(); };\  
+	supla_system_restart(); };\
 	}; 
 	
 char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
