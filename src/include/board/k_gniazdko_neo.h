@@ -21,9 +21,9 @@
 
 #define ESP8266_SUPLA_PROTO_VERSION 7
 
-#define SUPLA_ESP_SOFTVER "2.7.12.0"
+#define BOARD_ON_CONNECT
 
-#define _RASING_EDGE
+#define SUPLA_ESP_SOFTVER "2.7.16.0"
 
 #define LED_RED_PORT     4
 #define B_RELAY1_PORT    12
@@ -38,11 +38,26 @@
  	supla_log(LOG_DEBUG, "update, port = %i", port);\
 	supla_esp_cfg.FirmwareUpdate = 1;\
 	supla_esp_cfg_save(&supla_esp_cfg);\
-	supla_esp_devconn_system_restart(); };\
+	os_delay_us(200); \
+	supla_system_restart(); };\
 };
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc);
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void);
+
+void supla_esp_board_send_channel_values_with_delay(void *srpc);
+
+#define BOARD_ON_INPUT_ACTIVE                        \
+    supla_esp_board_gpio_on_input_active(input_cfg); \
+    return;
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg);
+
+#define BOARD_ON_INPUT_INACTIVE                        \
+    supla_esp_board_gpio_on_input_inactive(input_cfg); \
+    return;
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_inactive(void* _input_cfg);
+
+#endif
 
 #endif

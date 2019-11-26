@@ -85,3 +85,62 @@ void supla_esp_board_send_channel_values_with_delay(void *srpc) {
 	
 
 }
+
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_relay_switch(void* _input_cfg,
+    char hi)
+{
+
+    supla_input_cfg_t* input_cfg = (supla_input_cfg_t*)_input_cfg;
+
+    if (input_cfg->relay_gpio_id != 255) {
+
+        // supla_log(LOG_DEBUG, "RELAY");
+
+        supla_esp_gpio_relay_hi(input_cfg->relay_gpio_id, hi, 0);
+
+        if (input_cfg->channel != 255)
+            supla_esp_channel_value_changed(
+                input_cfg->channel,
+                supla_esp_gpio_relay_is_hi(input_cfg->relay_gpio_id));
+    }
+}
+
+void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg)
+{
+
+    supla_input_cfg_t* input_cfg = (supla_input_cfg_t*)_input_cfg;
+
+  if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE 	//wlaczanie przy zboczu narastajacym
+		|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
+
+		supla_log(LOG_DEBUG, "RELAY");
+		supla_esp_board_gpio_relay_switch(input_cfg, 255);
+		
+		} else if ( input_cfg->type == INPUT_TYPE_SENSOR
+				&&  input_cfg->channel != 255 ) {
+
+		supla_esp_channel_value_changed(input_cfg->channel, 1);
+
+	}
+
+    input_cfg->last_state = 1;
+}
+
+void ICACHE_FLASH_ATTR
+supla_esp_board_gpio_on_input_inactive(void* _input_cfg)
+{
+
+    supla_input_cfg_t* input_cfg = (supla_input_cfg_t*)_input_cfg;
+
+    if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {		//wlaczanie przy zboczu narastajacym
+
+		supla_esp_board_gpio_relay_switch(input_cfg, 255);
+
+    } else if ( input_cfg->type == INPUT_TYPE_SENSOR
+			    &&  input_cfg->channel != 255 ) {
+		supla_esp_channel_value_changed(input_cfg->channel, 0);
+
+	}
+
+    input_cfg->last_state = 0;
+}
