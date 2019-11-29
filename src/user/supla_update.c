@@ -128,15 +128,10 @@ supla_esp_check_updates(void *srpc) {
 		update_step = FUPDT_STEP_CHECKING;
 		update_checking_start_time = system_get_time();
 		supla_log(LOG_DEBUG, "if - supla_esp_check_updates");
-		
-    #if defined _ROLLERSHUTTER_SUPPORT
-		supla_esp_cfg.FirmwareUpdate = 1;	
-	#else
+
 		supla_esp_cfg.FirmwareUpdate = 0;
-	#endif
 		supla_esp_cfg_save(&supla_esp_cfg);		
 	
-
 		TDS_FirmwareUpdateParams params;
 		memset(&params, 0, sizeof(TDS_FirmwareUpdateParams));
 
