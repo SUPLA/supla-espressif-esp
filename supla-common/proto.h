@@ -29,16 +29,24 @@
 
 #elif defined(__AVR__)
 
+#define SPROTO_WITHOUT_OUT_BUFFER
+
 struct _supla_timeval {
   long tv_sec[2];
   long tv_usec[2];
 };
+
+#define timeval _supla_timeval
 
 #define _supla_int16_t int
 #define _supla_int_t long
 #define _supla_int64_t long long
 
 #elif defined(ESP8266)
+
+#ifdef ARDUINO_ARCH_ESP8266
+#define SPROTO_WITHOUT_OUT_BUFFER
+#endif /*ARDUINO_ARCH_ESP8266*/
 
 struct _supla_timeval {
   long long tv_sec;
@@ -72,6 +80,9 @@ struct _supla_timeval {
 extern "C" {
 #endif
 
+#define SUPLA_TAG_SIZE 5
+extern char sproto_tag[SUPLA_TAG_SIZE];
+
 // DCS - device/client -> server
 // SDC - server -> device/client
 // DS  - device -> server
@@ -81,7 +92,6 @@ extern "C" {
 
 #define SUPLA_PROTO_VERSION 11
 #define SUPLA_PROTO_VERSION_MIN 1
-#define SUPLA_TAG_SIZE 5
 #if defined(__AVR__)
 #define SUPLA_MAX_DATA_SIZE 1024
 #define SUPLA_CHANNELGROUP_RELATION_PACK_MAXCOUNT 25
@@ -274,6 +284,11 @@ extern "C" {
 #define SUPLA_CHANNELTYPE_THERMOSTAT 6000                   // ver. >= 11
 #define SUPLA_CHANNELTYPE_THERMOSTAT_HEATPOL_HOMEPLUS 6010  // ver. >= 11
 
+#define SUPLA_CHANNELTYPE_VALVE 7000                        // ver. >= 11
+#define SUPLA_CHANNELTYPE_BRIDGE 8000                       // ver. >= 11
+#define SUPLA_CHANNELTYPE_GENERAL_PURPOSE_MEASUREMENT 9000  // ver. >= 11
+#define SUPLA_CHANNELTYPE_ENGINE 10000                      // ver. >= 11
+
 #define SUPLA_CHANNELDRIVER_MCP23008 2
 
 #define SUPLA_CHANNELFNC_NONE 0
@@ -314,15 +329,19 @@ extern "C" {
 #define SUPLA_CHANNELFNC_WATER_METER 330                  // ver. >= 10
 #define SUPLA_CHANNELFNC_THERMOSTAT 400                   // ver. >= 11
 #define SUPLA_CHANNELFNC_THERMOSTAT_HEATPOL_HOMEPLUS 410  // ver. >= 11
+#define SUPLA_CHANNELFNC_VALVE_OPENCLOSE 500              // ver. >= 11
+#define SUPLA_CHANNELFNC_VALVE_PERCENTAGE 510             // ver. >= 11
+#define SUPLA_CHANNELFNC_GENERAL_PURPOSE_MEASUREMENT 520  // ver. >= 11
+#define SUPLA_CHANNELFNC_CONTROLLINGTHEENGINESPEED 600    // ver. >= 11
 
-#define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATEWAYLOCK 0x0001
-#define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGATE 0x0002
-#define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEGARAGEDOOR 0x0004
-#define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEDOORLOCK 0x0008
-#define SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEROLLERSHUTTER 0x0010
-#define SUPLA_BIT_RELAYFUNC_POWERSWITCH 0x0020
-#define SUPLA_BIT_RELAYFUNC_LIGHTSWITCH 0x0040
-#define SUPLA_BIT_RELAYFUNC_STAIRCASETIMER 0x0080  // ver. >= 8
+#define SUPLA_BIT_FUNC_CONTROLLINGTHEGATEWAYLOCK 0x0001
+#define SUPLA_BIT_FUNC_CONTROLLINGTHEGATE 0x0002
+#define SUPLA_BIT_FUNC_CONTROLLINGTHEGARAGEDOOR 0x0004
+#define SUPLA_BIT_FUNC_CONTROLLINGTHEDOORLOCK 0x0008
+#define SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER 0x0010
+#define SUPLA_BIT_FUNC_POWERSWITCH 0x0020
+#define SUPLA_BIT_FUNC_LIGHTSWITCH 0x0040
+#define SUPLA_BIT_FUNC_STAIRCASETIMER 0x0080  // ver. >= 8
 
 #define SUPLA_EVENT_CONTROLLINGTHEGATEWAYLOCK 10
 #define SUPLA_EVENT_CONTROLLINGTHEGATE 20
@@ -1217,14 +1236,17 @@ typedef struct {
 void *sproto_init(void);
 void sproto_free(void *spd_ptr);
 
-char sproto_in_buffer_append(void *spd_ptr, char *data,
-                             unsigned _supla_int_t data_size);
+#ifndef SPROTO_WITHOUT_OUT_BUFFER
 char sproto_out_buffer_append(void *spd_ptr, TSuplaDataPacket *sdp);
-
-char sproto_pop_in_sdp(void *spd_ptr, TSuplaDataPacket *sdp);
 unsigned _supla_int_t sproto_pop_out_data(void *spd_ptr, char *buffer,
                                           unsigned _supla_int_t buffer_size);
 char sproto_out_dataexists(void *spd_ptr);
+#endif
+
+char sproto_in_buffer_append(void *spd_ptr, char *data,
+                             unsigned _supla_int_t data_size);
+
+char sproto_pop_in_sdp(void *spd_ptr, TSuplaDataPacket *sdp);
 char sproto_in_dataexists(void *spd_ptr);
 
 unsigned char sproto_get_version(void *spd_ptr);
