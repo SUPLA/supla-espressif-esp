@@ -58,11 +58,11 @@
 #endif
 
 typedef struct {
-	
+
 	int channel_number;
 	ETSTimer timer;
 	char value[SUPLA_CHANNELVALUE_SIZE];
-	
+
 }channel_value_delayed;
 
 typedef struct {
@@ -83,6 +83,7 @@ typedef struct {
 
 	void *srpc;
 	char registered;
+	uint32 register_time_sec;
 
 	char recvbuff[RECVBUFF_MAXSIZE];
 	unsigned int recvbuff_size;
@@ -99,6 +100,8 @@ typedef struct {
 	#ifdef CVD_MAX_COUNT
 	channel_value_delayed cvd[CVD_MAX_COUNT];
 	#endif /*CVD_MAX_COUNT*/
+
+
 
 }devconn_params;
 
@@ -126,12 +129,12 @@ typedef struct {
 	float color_brightness;
 	float color_brightness_step;
 	float dest_color_brightness;
-	
+
 	float brightness;
 	float brightness_step;
 	float dest_brightness;
 	char turn_onoff;
-		
+
 }devconn_smooth;
 
 devconn_smooth smooth[SMOOTH_MAX_COUNT];
@@ -397,6 +400,7 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 		devconn->server_activity_timeout = register_device_result->activity_timeout;
 		devconn->registered = 1;
+		devconn->register_time_sec = heartbeat_timer_sec;
 
 		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
 		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
@@ -446,7 +450,6 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		break;
 
 	default:
-
 		buff = os_malloc(30);
 		ets_snprintf(buff, 30, "Unknown code %i", register_device_result->result_code);
 		supla_esp_set_state(LOG_NOTICE, buff);
@@ -523,11 +526,11 @@ supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, 
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value_changed_delayed_cb(void *timer_arg) {
-	
+
 	if ( supla_esp_devconn_is_registered() ) {
 		srpc_ds_async_channel_value_changed(devconn->srpc, ((channel_value_delayed*)timer_arg)->channel_number, ((channel_value_delayed*)timer_arg)->value);
 	}
-	
+
 }
 
 #ifdef CVD_MAX_COUNT
@@ -536,11 +539,11 @@ supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_b
 
 	if ( channel_number >= CVD_MAX_COUNT )
 		return;
-	
+
 	devconn->cvd[channel_number].channel_number = channel_number;
-	
+
 	supla_esp_channel_rgbw_to_value(devconn->cvd[channel_number].value, color, color_brightness, brightness);
-	
+
 	os_timer_disarm(&devconn->cvd[channel_number].timer);
 	os_timer_setfn(&devconn->cvd[channel_number].timer, (os_timer_func_t *)supla_esp_channel_value_changed_delayed_cb, &devconn->cvd[channel_number]);
 	os_timer_arm(&devconn->cvd[channel_number].timer, 1500, 0);
@@ -788,7 +791,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 	 if ( _smooth->color == _smooth->dest_color
 		  && _smooth->color_brightness == _smooth->dest_color_brightness
 		  && _smooth->brightness == _smooth->dest_brightness ) {
-		 
+
 		 _smooth->active = 0;
 	 }
 
@@ -827,13 +830,13 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 #endif /*RGBW_ONOFF_SUPPORT*/
 
 	RGBW_CHANNEL_LIMIT
-	
+
 	if ( ColorBrightness < 0 ) {
 		ColorBrightness = 0;
 	} else if ( ColorBrightness > 100 ) {
 		ColorBrightness = 100;
 	}
-	
+
 	if ( Brightness < 0 ) {
 		Brightness = 0;
 	} else if ( Brightness > 100 ) {
@@ -864,14 +867,14 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 _smooth->smoothly = smoothly;
 
 	 supla_esp_board_get_rgbw_value(ChannelNumber, &_smooth->color, &_smooth->color_brightness, &_smooth->brightness);
-	 	 
+
 	 _smooth->color_brightness_step = abs(_smooth->color_brightness-ColorBrightness)/100.00;
 	 _smooth->brightness_step = abs(_smooth->brightness-Brightness)/100.00;
-	 
+
 	 _smooth->dest_color = Color;
 	 _smooth->dest_color_brightness = ColorBrightness;
 	 _smooth->dest_brightness = Brightness;
-	 
+
 	 #ifdef RGBW_ONOFF_SUPPORT
 	 _smooth->turn_onoff = TurnOnOff;
 	 #endif /*RGBW_ONOFF_SUPPORT*/
@@ -1102,6 +1105,49 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 	}
 }
 
+#if ESP8266_SUPLA_PROTO_VERSION >= 12
+void DEVCONN_ICACHE_FLASH
+supla_esp_get_channel_state(void *_srpc, TCSD_ChannelStateRequest *request) {
+  if (request == NULL || _srpc == NULL) {
+    return;
+  }
+
+  TDSC_ChannelState state;
+  memset(&state, 0, sizeof(TDSC_ChannelState));
+
+  state.ChannelNumber = request->ChannelNumber;
+  state.ReceiverID = request->SenderID;
+
+  state.Fields = SUPLA_CHANNELSTATE_FIELD_UPTIME |
+                 SUPLA_CHANNELSTATE_FIELD_CONNECTIONUPTIME;
+
+  struct ip_info ipconfig;
+  if (wifi_get_ip_info(STATION_IF, &ipconfig) && ipconfig.ip.addr != 0) {
+    state.Fields |= SUPLA_CHANNELSTATE_FIELD_IPV4;
+    state.IPv4 = ipconfig.ip.addr;
+  }
+
+  state.Uptime = heartbeat_timer_sec;
+  state.ConnectionUptime = heartbeat_timer_sec - devconn->register_time_sec;
+
+  if (wifi_get_macaddr(STATION_IF, (unsigned char *)state.MAC)) {
+    state.Fields |= SUPLA_CHANNELSTATE_FIELD_MAC;
+  }
+
+  sint8 rssi = wifi_station_get_rssi();
+  if (rssi < 10) {
+    state.Fields |= SUPLA_CHANNELSTATE_FIELD_WIFIRSSI;
+    state.WiFiRSSI = rssi;
+  }
+
+#ifdef BOARD_ON_CHANNEL_STATE_RESULT
+  BOARD_ON_CHANNEL_STATE_RESULT
+#endif /*BOARD_ON_CHANNEL_STATE_RESULT*/
+
+  srpc_csd_async_channel_state_result(_srpc, &state);
+}
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+
 void DEVCONN_ICACHE_FLASH
 supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd, unsigned char proto_version) {
 
@@ -1142,6 +1188,11 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 			supla_esp_board_on_user_localtime_result(rd.data.sdc_user_localtime_result);
 			break;
 		#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
+		#if ESP8266_SUPLA_PROTO_VERSION >= 12
+		case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
+			supla_esp_get_channel_state(_srpc, rd.data.csd_channel_state_request);
+			break;
+		#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 		}
 
 		srpc_rd_free(&rd);
@@ -1247,9 +1298,9 @@ supla_esp_srpc_free(void) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_srpc_init(void) {
-	
+
 	supla_esp_srpc_free();
-		
+
 	TsrpcParams srpc_params;
 	srpc_params_init(&srpc_params);
 	srpc_params.data_read = &supla_esp_data_read;
@@ -1257,7 +1308,7 @@ supla_esp_srpc_init(void) {
 	srpc_params.on_remote_call_received = &supla_esp_on_remote_call_received;
 
 	devconn->srpc = srpc_init(&srpc_params);
-	
+
 	srpc_set_proto_version(devconn->srpc, ESP8266_SUPLA_PROTO_VERSION);
 
 	os_timer_setfn(&devconn->supla_iterate_timer, (os_timer_func_t *)supla_esp_devconn_iterate, NULL);
@@ -1267,14 +1318,14 @@ supla_esp_srpc_init(void) {
 
 void DEVCONN_ICACHE_FLASH
 supla_espconn_disconnect(struct espconn *espconn) {
-	
+
 	//supla_log(LOG_DEBUG, "Disconnect %i", espconn->state);
-	
+
 	if ( espconn->state != ESPCONN_CLOSE
 		 && espconn->state != ESPCONN_NONE ) {
 		_supla_espconn_disconnect(espconn);
 	}
-	
+
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1410,7 +1461,7 @@ supla_esp_devconn_init(void) {
 	memset(devconn, 0, sizeof(devconn_params));
 	memset(&devconn->ESPConn, 0, sizeof(struct espconn));
 	memset(&devconn->ESPTCP, 0, sizeof(esp_tcp));
-	
+
 	os_timer_disarm(&devconn->supla_watchdog_timer);
 	os_timer_setfn(&devconn->supla_watchdog_timer, (os_timer_func_t *)supla_esp_devconn_watchdog_cb, NULL);
 	os_timer_arm(&devconn->supla_watchdog_timer, 1000, 1);
@@ -1421,9 +1472,9 @@ supla_esp_devconn_start(void) {
 
 	devconn->last_wifi_status = STATION_GOT_IP+1;
 	supla_esp_set_state(LOG_NOTICE, "WiFi - Connecting...");
-	
+
 	wifi_station_disconnect();
-	
+
 	supla_esp_gpio_state_disconnected();
 
     struct station_config stationConf;
@@ -1437,25 +1488,25 @@ supla_esp_devconn_start(void) {
 
     os_memcpy(stationConf.ssid, supla_esp_cfg.WIFI_SSID, WIFI_SSID_MAXSIZE);
     os_memcpy(stationConf.password, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
-   
+
     stationConf.ssid[31] = 0;
     stationConf.password[63] = 0;
-    
-    
+
+
     wifi_station_set_config(&stationConf);
     wifi_station_set_auto_connect(1);
 
     wifi_station_connect();
-    
+
 	os_timer_disarm(&devconn->supla_devconn_timer1);
 	os_timer_setfn(&devconn->supla_devconn_timer1, (os_timer_func_t *)supla_esp_devconn_timer1_cb, NULL);
 	os_timer_arm(&devconn->supla_devconn_timer1, 1000, 1);
-	
+
 }
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_stop(void) {
-	
+
 	os_timer_disarm(&devconn->supla_devconn_timer1);
 	os_timer_disarm(&devconn->supla_iterate_timer);
 
@@ -1546,7 +1597,7 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 		    		         && t2 <= devconn->server_activity_timeout ) ) {
 
 				srpc_dcs_async_ping_server(devconn->srpc);
-				
+
 			}
 
 	}
