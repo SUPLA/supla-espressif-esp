@@ -41,6 +41,12 @@ typedef struct {
 #define DHT_MAXCOUNT	32000
 //#define DHT_DEBUG		true
 
+#define DEV_TH22    1
+#define DEV_SI7021  2
+
+#define DEV_TYPE    DEV_SI7021
+
+
 //bool DHTInit(DHT_Sensor *sensor);
 bool DHTRead(DHT_Sensor *sensor, DHT_Sensor_Data* output);
 //char* DHTFloat2String(char* buffer, float value);

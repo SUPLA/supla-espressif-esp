@@ -81,6 +81,22 @@ bool DHTRead(DHT_Sensor *sensor, DHT_Sensor_Data* output)
 	// Wake up device, 250ms of high
 	GPIO_OUTPUT_SET(pin, 1);
 	sleepms(250);
+
+#if (DEV_TYPE  ==  DEV_SI7021)
+
+	// Hold low for 500us
+	GPIO_OUTPUT_SET(pin, 0);
+	os_delay_us(500);
+
+	// High for 40us
+	GPIO_OUTPUT_SET(pin, 1);
+	os_delay_us(50);
+	// Set DHT_PIN pin as an input
+	GPIO_DIS_OUTPUT(pin);
+
+#elif (DEV_TYPE  ==  DEV_TH22)
+
+
 	// Hold low for 20ms
 	GPIO_OUTPUT_SET(pin, 0);
 	sleepms(20);
@@ -89,6 +105,8 @@ bool DHTRead(DHT_Sensor *sensor, DHT_Sensor_Data* output)
 	os_delay_us(40);
 	// Set DHT_PIN pin as an input
 	GPIO_DIS_OUTPUT(pin);
+
+#endif
 
 	// wait for pin to drop?
 	while (GPIO_INPUT_GET(pin) == 1 && i < DHT_MAXCOUNT) {
