@@ -1105,6 +1105,43 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 	}
 }
 
+#if ESP8266_SUPLA_PROTO_VERSION >= 12 || defined(CHANNEL_STATE_TOOLS)
+void DEVCONN_ICACHE_FLASH
+supla_esp_get_channel_state(_supla_int_t ChannelNumber, _supla_int_t ReceiverID,
+                            TDSC_ChannelState *state) {
+  memset(state, 0, sizeof(TDSC_ChannelState));
+
+  state->ChannelNumber = ChannelNumber;
+  state->ReceiverID = ReceiverID;
+
+  state->Fields = SUPLA_CHANNELSTATE_FIELD_UPTIME |
+                  SUPLA_CHANNELSTATE_FIELD_CONNECTIONUPTIME;
+
+  struct ip_info ipconfig;
+  if (wifi_get_ip_info(STATION_IF, &ipconfig) && ipconfig.ip.addr != 0) {
+    state->Fields |= SUPLA_CHANNELSTATE_FIELD_IPV4;
+    state->IPv4 = ipconfig.ip.addr;
+  }
+
+  state->Uptime = heartbeat_timer_sec;
+  state->ConnectionUptime = heartbeat_timer_sec - devconn->register_time_sec;
+
+  if (wifi_get_macaddr(STATION_IF, (unsigned char *)state->MAC)) {
+    state->Fields |= SUPLA_CHANNELSTATE_FIELD_MAC;
+  }
+
+  sint8 rssi = wifi_station_get_rssi();
+  if (rssi < 10) {
+    state->Fields |= SUPLA_CHANNELSTATE_FIELD_WIFIRSSI;
+    state->WiFiRSSI = rssi;
+  }
+
+#ifdef BOARD_ON_CHANNEL_STATE_PREPARE
+  BOARD_ON_CHANNEL_STATE_PREPARE
+#endif /*BOARD_ON_CHANNEL_STATE_PREPARE*/
+}
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12 || defined(CHANNEL_STATE_TOOLS)*/
+
 #if ESP8266_SUPLA_PROTO_VERSION >= 12
 void DEVCONN_ICACHE_FLASH
 supla_esp_get_channel_state(void *_srpc, TCSD_ChannelStateRequest *request) {
@@ -1113,40 +1150,13 @@ supla_esp_get_channel_state(void *_srpc, TCSD_ChannelStateRequest *request) {
   }
 
   TDSC_ChannelState state;
-  memset(&state, 0, sizeof(TDSC_ChannelState));
-
-  state.ChannelNumber = request->ChannelNumber;
-  state.ReceiverID = request->SenderID;
-
-  state.Fields = SUPLA_CHANNELSTATE_FIELD_UPTIME |
-                 SUPLA_CHANNELSTATE_FIELD_CONNECTIONUPTIME;
-
-  struct ip_info ipconfig;
-  if (wifi_get_ip_info(STATION_IF, &ipconfig) && ipconfig.ip.addr != 0) {
-    state.Fields |= SUPLA_CHANNELSTATE_FIELD_IPV4;
-    state.IPv4 = ipconfig.ip.addr;
-  }
-
-  state.Uptime = heartbeat_timer_sec;
-  state.ConnectionUptime = heartbeat_timer_sec - devconn->register_time_sec;
-
-  if (wifi_get_macaddr(STATION_IF, (unsigned char *)state.MAC)) {
-    state.Fields |= SUPLA_CHANNELSTATE_FIELD_MAC;
-  }
-
-  sint8 rssi = wifi_station_get_rssi();
-  if (rssi < 10) {
-    state.Fields |= SUPLA_CHANNELSTATE_FIELD_WIFIRSSI;
-    state.WiFiRSSI = rssi;
-  }
-
-#ifdef BOARD_ON_CHANNEL_STATE_RESULT
-  BOARD_ON_CHANNEL_STATE_RESULT
-#endif /*BOARD_ON_CHANNEL_STATE_RESULT*/
+  supla_esp_get_channel_state(request->ChannelNumber, request->SenderID,
+                              &state);
 
   srpc_csd_async_channel_state_result(_srpc, &state);
 }
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd, unsigned char proto_version) {
