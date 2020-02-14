@@ -267,7 +267,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CHANNELEXTENDEDVALUE_SIZE 1024
 
 #define SUPLA_CHANNELTYPE_SENSORNO 1000
-#define SUPLA_CHANNELTYPE_SENSORNC 1010        // ver. >= 4
+#define SUPLA_CHANNELTYPE_SENSORNC 1010        // DEPRECATED
 #define SUPLA_CHANNELTYPE_DISTANCESENSOR 1020  // ver. >= 5
 #define SUPLA_CHANNELTYPE_CALLBUTTON 1500      // ver. >= 4
 #define SUPLA_CHANNELTYPE_RELAYHFD4 2000
@@ -1316,7 +1316,8 @@ typedef struct {
 #define SUPLA_CHANNELSTATE_FIELD_BRIDGESIGNALSTRENGTH 0x0040
 #define SUPLA_CHANNELSTATE_FIELD_UPTIME 0x0080
 #define SUPLA_CHANNELSTATE_FIELD_CONNECTIONUPTIME 0x0100
-#define SUPLA_CHANNELSTATE_FIELD_BATTERY_HEALTH 0x0200
+#define SUPLA_CHANNELSTATE_FIELD_BATTERYHEALTH 0x0200
+#define SUPLA_CHANNELSTATE_FIELD_BRIDGENODEONLINE 0x0400
 
 typedef struct {
   _supla_int_t ReceiverID;  // Not used for TChannelState_ExtendedValue
@@ -1333,11 +1334,13 @@ typedef struct {
   unsigned char BatteryPowered;  // true(1)/false(0)
   char WiFiRSSI;
   unsigned char WiFiSignalStrength;        // 0 - 100%
+  unsigned char BridgeNodeOnline;          // 0/1
   unsigned char BridgeSignalStrength;      // 0 - 100%
   unsigned _supla_int_t Uptime;            // sec.
   unsigned _supla_int_t ConnectionUptime;  // sec.
   unsigned char BatteryHealth;
-} TDSC_ChannelState;  // v. >= 12 Device -> Server -> Client
+  char EmptySpace[8];  // Empty space for future use
+} TDSC_ChannelState;   // v. >= 12 Device -> Server -> Client
 
 #define TChannelState_ExtendedValue TDSC_ChannelState
 
