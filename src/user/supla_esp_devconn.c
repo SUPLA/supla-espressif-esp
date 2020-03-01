@@ -352,7 +352,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 }
 
 void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_send_channel_values_with_delay(int time_ms) {
+supla_esp_devconn_send_channel_values_with__delay(int time_ms) {
 	os_timer_disarm(&devconn->supla_value_timer);
 	os_timer_setfn(&devconn->supla_value_timer, (os_timer_func_t *)supla_esp_devconn_send_channel_values_cb, NULL);
 	os_timer_arm(&devconn->supla_value_timer, time_ms, 0);
@@ -360,7 +360,7 @@ supla_esp_devconn_send_channel_values_with_delay(int time_ms) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_send_channel_values_with_delay(void) {
-	supla_esp_devconn_send_channel_values_with_delay(1500);
+	supla_esp_devconn_send_channel_values_with__delay(1500);
 }
 
 void DEVCONN_ICACHE_FLASH
