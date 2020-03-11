@@ -178,6 +178,21 @@ supla_esp_devconn_before_system_restart(void) {
     }
 }
 
+uint8 DEVCONN_ICACHE_FLASH supla_esp_devconn_any_outgoingdata_exists(void) {
+  if (devconn) {
+    if (devconn->esp_send_buffer_len > 0) {
+      return 1;
+    }
+
+    if (devconn->srpc && (srpc_out_queue_item_count(devconn->srpc) > 0 ||
+                          srpc_output_dataexists(devconn->srpc) > 0)) {
+      return 1;
+    }
+  }
+
+  return 0;
+}
+
 char DEVCONN_ICACHE_FLASH
 supla_esp_devconn_update_started(void) {
 #ifdef __FOTA
