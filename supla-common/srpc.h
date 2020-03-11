@@ -148,6 +148,8 @@ union TsrpcDataPacketData {
   TSC_ClientsReconnectRequestResult *sc_clients_reconnect_result;
   TCS_SetRegistrationEnabled *cs_set_registration_enabled;
   TSC_SetRegistrationEnabledResult *sc_set_registration_enabled_result;
+  TCS_DeviceReconnectRequest *cs_device_reconnect_request;
+  TSC_DeviceReconnectRequestResult *sc_device_reconnect_request_result;
 };
 
 typedef struct {
@@ -163,6 +165,8 @@ void *SRPC_ICACHE_FLASH srpc_init(TsrpcParams *params);
 void SRPC_ICACHE_FLASH srpc_free(void *_srpc);
 
 char SRPC_ICACHE_FLASH srpc_input_dataexists(void *_srpc);
+char SRPC_ICACHE_FLASH srpc_output_dataexists(void *_srpc);
+unsigned char SRPC_ICACHE_FLASH srpc_out_queue_item_count(void *srpc);
 
 char SRPC_ICACHE_FLASH srpc_iterate(void *_srpc);
 
@@ -325,6 +329,10 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_registration_enabled(
     void *_srpc, TCS_SetRegistrationEnabled *reg_enabled);
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_set_registration_enabled_result(
     void *_srpc, TSC_SetRegistrationEnabledResult *result);
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_device_reconnect_request(
+    void *_srpc, TCS_DeviceReconnectRequest *request);
+_supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_device_reconnect_request_result(
+    void *_srpc, TSC_DeviceReconnectRequestResult *result);
 #endif /*SRPC_EXCLUDE_CLIENT*/
 
 #ifndef SRPC_EXCLUDE_EXTENDEDVALUE_TOOLS

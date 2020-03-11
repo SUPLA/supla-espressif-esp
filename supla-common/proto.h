@@ -206,6 +206,8 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_SC_CALL_CLIENTS_RECONNECT_REQUEST_RESULT 570   // ver. >= 12
 #define SUPLA_CS_CALL_SET_REGISTRATION_ENABLED 580           // ver. >= 12
 #define SUPLA_SC_CALL_SET_REGISTRATION_ENABLED_RESULT 590    // ver. >= 12
+#define SUPLA_CS_CALL_DEVICE_RECONNECT_REQUEST 600           // ver. >= 12
+#define SUPLA_SC_CALL_DEVICE_RECONNECT_REQUEST_RESULT 610    // ver. >= 12
 
 #define SUPLA_RESULT_CALL_NOT_ALLOWED -5
 #define SUPLA_RESULT_DATA_TOO_LARGE -4
@@ -346,6 +348,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CHANNELFNC_IC_ELECTRICITY_METER 315         // ver. >= 12
 #define SUPLA_CHANNELFNC_IC_GAS_METER 320                 // ver. >= 10
 #define SUPLA_CHANNELFNC_IC_WATER_METER 330               // ver. >= 10
+#define SUPLA_CHANNELFNC_IC_HEAT_METER 340                // ver. >= 10
 #define SUPLA_CHANNELFNC_THERMOSTAT 400                   // ver. >= 11
 #define SUPLA_CHANNELFNC_THERMOSTAT_HEATPOL_HOMEPLUS 410  // ver. >= 11
 #define SUPLA_CHANNELFNC_VALVE_OPENCLOSE 500              // ver. >= 12
@@ -1096,7 +1099,28 @@ typedef struct {
   _supla_int_t Result;
 } TSC_SuperUserAuthorizationResult;  // v. >= 10
 
-#define SUPLA_CALCFG_CMD_GET_CHANNEL_FUNCLIST 1000  // v. >= 11
+#define SUPLA_CALCFG_CMD_GET_CHANNEL_FUNCLIST 1000   // v. >= 11
+#define SUPLA_CALCFG_CMD_ZWAVE_RESET_AND_CLEAR 2000  // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_ADD_NODE 2010         // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_REMOVE_NODE 2020      // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_GET_NODE_LIST 2030    // v. >= 12
+
+#define CALCFG_ZWAVE_SCREENTYPE_UNKNOWN 0
+#define CALCFG_ZWAVE_SCREENTYPE_MULTILEVEL 1
+#define CALCFG_ZWAVE_SCREENTYPE_BINARY 2
+#define CALCFG_ZWAVE_SCREENTYPE_MULTILEVEL_AUTOSHADE 3
+#define CALCFG_ZWAVE_SCREENTYPE_MULTILEVEL_COLOR_CONTROL 4
+#define CALCFG_ZWAVE_SCREENTYPE_BINARY_COLOR_CONTROL 5
+
+typedef struct {
+  unsigned char Id;
+  unsigned char ScreenType;
+  char Name[100];  // UTF8
+  char Online;
+  char Errors;
+  char Value;
+  char EOL;            // End Of List
+} TCalCfg_ZWave_Node;  // v. >= 12
 
 // CALCFG == CALIBRATION / CONFIG
 typedef struct {
@@ -1384,6 +1408,7 @@ typedef struct {
 
 typedef struct {
   _supla_int_t ChannelID;
+  _supla_int_t Func;
   unsigned char ResultCode;
 } TSC_SetChannelFunctionResult;
 
@@ -1401,6 +1426,15 @@ typedef struct {
 typedef struct {
   unsigned char ResultCode;
 } TSC_SetRegistrationEnabledResult;
+
+typedef struct {
+  int DeviceID;
+} TCS_DeviceReconnectRequest;
+
+typedef struct {
+  int DeviceID;
+  unsigned char ResultCode;
+} TSC_DeviceReconnectRequestResult;
 
 #define SUPLA_VALVE_FLAG_FLOODING 0x1
 #define SUPLA_VALVE_FLAG_MANUALLY_CLOSED 0x2
