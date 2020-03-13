@@ -1162,7 +1162,7 @@ supla_esp_get_channel_state(_supla_int_t ChannelNumber, _supla_int_t ReceiverID,
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 12
 void DEVCONN_ICACHE_FLASH
-supla_esp_get_channel_state(void *_srpc, TCSD_ChannelStateRequest *request) {
+supla_esp_get_channel__state(void *_srpc, TCSD_ChannelStateRequest *request) {
   if (request == NULL || _srpc == NULL) {
     return;
   }
@@ -1218,7 +1218,7 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 		#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
 		#if ESP8266_SUPLA_PROTO_VERSION >= 12
 		case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
-			supla_esp_get_channel_state(_srpc, rd.data.csd_channel_state_request);
+			supla_esp_get_channel__state(_srpc, rd.data.csd_channel_state_request);
 			break;
 		#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 		}
