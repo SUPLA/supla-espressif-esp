@@ -146,6 +146,7 @@ supla_esp_cfg_init(void) {
 	memset(GUID, 0, SUPLA_GUID_SIZE);
 
 	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
+	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
 
 	os_timer_disarm(&supla_esp_cfg_timer1);
 
