@@ -284,6 +284,10 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define RGBW_CHANNEL_LIMIT if ( ChannelNumber >= 2 ) return;
 #endif
 
+#ifdef DONT_SAVE_STATE
+#define DEVICE_STATE_INACTIVE
+#endif
+
 extern uint32 heartbeat_timer_sec;
 
 #endif /* SUPLA_ESP_H_ */
