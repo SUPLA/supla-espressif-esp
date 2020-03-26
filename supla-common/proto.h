@@ -1104,7 +1104,7 @@ typedef struct {
 #define SUPLA_CALCFG_RESULT_TRUE 1               // ver. >= 12
 #define SUPLA_CALCFG_RESULT_DONE 2               // ver. >= 12
 #define SUPLA_CALCFG_RESULT_IN_PROGRESS 3        // ver. >= 12
-#define SUPLA_CALCFG_RESULT_NODE_FOUND 3         // ver. >= 12
+#define SUPLA_CALCFG_RESULT_NODE_FOUND 4         // ver. >= 12
 #define SUPLA_CALCFG_RESULT_SENDER_CONFLICT 100  // ver. >= 12
 #define SUPLA_CALCFG_RESULT_TIMEOUT 101          // ver. >= 12
 #define SUPLA_CALCFG_RESULT_NOT_SUPPORTED 102    // ver. >= 12
@@ -1113,6 +1113,7 @@ typedef struct {
 #define SUPLA_CALCFG_RESULT_DEBUG 105            // ver. >= 12
 
 #define SUPLA_CALCFG_CMD_GET_CHANNEL_FUNCLIST 1000        // v. >= 11
+#define SUPLA_CALCFG_CMD_CANCEL_ALL_CLIENT_COMMANDS 1010  // v. >= 12
 #define SUPLA_CALCFG_CMD_ZWAVE_RESET_AND_CLEAR 2000       // v. >= 12
 #define SUPLA_CALCFG_CMD_ZWAVE_ADD_NODE 2010              // v. >= 12
 #define SUPLA_CALCFG_CMD_ZWAVE_REMOVE_NODE 2020           // v. >= 12
