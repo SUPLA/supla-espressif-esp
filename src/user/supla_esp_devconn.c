@@ -1202,7 +1202,7 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 			break;
         #if ESP8266_SUPLA_PROTO_VERSION >= 12
 		case SUPLA_SD_CALL_CHANNEL_SET_VALUE_B:
-			supla_esp_channel_set_value_b(rd.data.sd_channel_new_value_b);
+			supla_esp_channel_set_value(rd.data.sd_channel_new_value_b);
 			break;
         #else
 		case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
