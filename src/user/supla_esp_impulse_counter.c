@@ -42,6 +42,7 @@ void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
   memset(&icv, 0, sizeof(TDS_ImpulseCounter_Value));
 
   while (channel_number < IMPULSE_COUNTER_COUNT) {
+    memcpy(&icv, &last_icv[channel_number], sizeof(TDS_ImpulseCounter_Value));
     if (supla_esp_board_get_impulse_counter(channel_number, &icv) == 1 &&
         memcmp(&last_icv[channel_number], &icv,
                sizeof(TDS_ImpulseCounter_Value)) != 0) {
