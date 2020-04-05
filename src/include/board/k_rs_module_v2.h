@@ -22,7 +22,7 @@
 #define STATE_SECTOR_OFFSET 2		// zmiana sektora zapisu
 #define RS_SAVE_STATE_DELAY 500		// zmiana czestotliwosci zapisu
 
-#define ESP8266_SUPLA_PROTO_VERSION 7
+#define ESP8266_SUPLA_PROTO_VERSION 10
 #define BOARD_CFG_HTML_TEMPLATE
 
 #define SUPLA_ESP_SOFTVER "2.7.16.0"
@@ -45,10 +45,10 @@
 	#define AP_SSID "ROLETY_V2_DS18B20"
 #endif
 
-//#define USE_GPIO16_OUTPUT
+#define USE_GPIO16_OUTPUT
 
 
-#define LED_RED_PORT   4
+#define LED_RED_PORT   16
 #define WATCHDOG_TIMEOUT_SEC 90
 
 #define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
