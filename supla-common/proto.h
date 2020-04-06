@@ -1155,7 +1155,6 @@ typedef struct {
 typedef struct {
   unsigned char Id;
   unsigned char ScreenType;
-  char EOL;                // End Of List
   unsigned char NameSize;  // including the terminating null byte ('\0')
   char Name[ZWAVE_NODE_NAME_MAXSIZE];  // UTF8. Last variable in struct!
 } TCalCfg_ZWave_Node;                  // v. >= 12
