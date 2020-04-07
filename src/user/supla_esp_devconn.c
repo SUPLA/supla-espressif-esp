@@ -911,13 +911,8 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 
 #endif
 
-#if ESP8266_SUPLA_PROTO_VERSION >= 12
-void DEVCONN_ICACHE_FLASH
-supla_esp_channel_set_value(TSD_SuplaChannelNewValue_B *new_value) {
-#else
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
-#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 
 #ifdef BOARD_ON_CHANNEL_VALUE_SET
 	 BOARD_ON_CHANNEL_VALUE_SET
@@ -1200,15 +1195,9 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 		case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT:
 			supla_esp_on_register_result(rd.data.sd_register_device_result);
 			break;
-        #if ESP8266_SUPLA_PROTO_VERSION >= 12
-		case SUPLA_SD_CALL_CHANNEL_SET_VALUE_B:
-			supla_esp_channel_set_value(rd.data.sd_channel_new_value_b);
-			break;
-        #else
 		case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
 			supla_esp_channel_set_value(rd.data.sd_channel_new_value);
 			break;
-		#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 		case SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT:
 			supla_esp_channel_set_activity_timeout_result(rd.data.sdc_set_activity_timeout_result);
 			break;
