@@ -109,6 +109,10 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
 	supla_esp_cfg.Test = Test;
 
+#ifdef BOARD_ESP_FACTORY_DEFAULTS
+	BOARD_ESP_FACTORY_DEFAULTS
+#endif /*BOARD_ESP_FACTORY_DEFAULTS*/
+
 	if ( save == 1 ) {
 
 		supla_esp_cfg_save(&supla_esp_cfg);
