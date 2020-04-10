@@ -329,12 +329,17 @@ supla_esp_set_state(int __pri, const char *message) {
 
 	supla_log(__pri, message);
 
-	ets_snprintf(devconn->laststate,
+	char laststate[STATE_MAXSIZE];
+	ets_snprintf(laststate,
 			STATE_MAXSIZE,
 			"%s%s%s",
 			message,
 			strnlen(devconn->laststate, STATE_MAXSIZE) > 0 ? "," : "",
 			devconn->laststate);
+
+	ets_snprintf(devconn->laststate,
+			STATE_MAXSIZE,
+			"%s", laststate);
 }
 
 void DEVCONN_ICACHE_FLASH
