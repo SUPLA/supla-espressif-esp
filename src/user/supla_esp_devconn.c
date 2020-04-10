@@ -491,7 +491,8 @@ supla_esp_channel_set_activity_timeout_result(TSDC_SuplaSetActivityTimeoutResult
 }
 
 char DEVCONN_ICACHE_FLASH supla_esp_devconn_is_registered(void) {
-	return devconn->srpc != NULL
+	return devconn != NULL
+			&& devconn->srpc != NULL
 			&& devconn->registered == 1 ? 1 : 0;
 }
 
@@ -1127,6 +1128,15 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 	}
 }
+
+void DEVCONN_ICACHE_FLASH supla_esp_set_channel_result(
+    unsigned char ChannelNumber, _supla_int_t SenderID, char Success) {
+  if (supla_esp_devconn_is_registered()) {
+    srpc_ds_async_set_channel_result(devconn->srpc, ChannelNumber, SenderID,
+                                     Success);
+  }
+}
+
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 12 || defined(CHANNEL_STATE_TOOLS)
 void DEVCONN_ICACHE_FLASH
