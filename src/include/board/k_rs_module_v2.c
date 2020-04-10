@@ -59,7 +59,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
 	supla_input_cfg[2].type = INPUT_TYPE_BTN_MONOSTABLE_RS;
 	supla_input_cfg[2].gpio_id = B_BTN2_PORT;
-	supla_input_cfg[2].flags = INPUT_FLAG_PULLUP;
+	//supla_input_cfg[2].flags = INPUT_FLAG_PULLUP;
 	supla_input_cfg[2].relay_gpio_id = B_RELAY2_PORT;
 
 	// ---------------------------------------
@@ -311,7 +311,8 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg)
 
         if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);	
-          }			
+          }
+	}		  
 	else {
 
 	supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
