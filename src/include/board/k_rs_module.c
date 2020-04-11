@@ -301,11 +301,12 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg)
     supla_log(LOG_DEBUG, "RELAY HI"); 
 	int rs;
 	rs = 0;
-	supla_log(LOG_DEBUG, "rs = %i", rs);
+	supla_log(LOG_DEBUG, "active rs = %i", rs);
 #ifdef _ROLLERSHUTTER_SUPPORT 
 	supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id); 
 	if ( rs_cfg != NULL ) { 
 		rs = rs+1;
+		supla_log(LOG_DEBUG, "rs = %i", rs);
         if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) { 
 			supla_log(LOG_DEBUG, "if gpio hi, rs = %i", rs);
 			if ( rs == 1 ) {
