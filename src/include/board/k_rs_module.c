@@ -307,7 +307,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg)
         if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) { 
 			rs = rs+1;
 			supla_log(LOG_DEBUG, "rs = %i", rs);
-			if ( rs = 1 ) {
+			if ( rs == 1 ) {
 				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
 				supla_log(LOG_DEBUG, "RS_RELAY_OFF");
 			}
