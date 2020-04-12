@@ -331,7 +331,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg) {
         supla_esp_channel_value_changed(input_cfg->channel, 1);
     }
 
-    input_cfg->last_state = 0;
+    input_cfg->last_state = 1;
 }
 
 void ICACHE_FLASH_ATTR
@@ -359,5 +359,5 @@ supla_esp_board_gpio_on_input_inactive(void* _input_cfg) {
         supla_esp_channel_value_changed(input_cfg->channel, 0);
     }
 
-    input_cfg->last_state = 1;
+    input_cfg->last_state = 0;
 }
