@@ -93,6 +93,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	supla_esp_gpio_set_hi(5, 1);	// ustaw gpio5 (rs) high
 	os_delay_us(500000);			// poczekaj 0,5s
 	supla_esp_gpio_set_hi(5, 0);	// ustaw gpio5 (rs) low
+	supla_esp_gpio_set_hi(13, 0);	// ustaw gpio13 (rs) low
 	
 	//----------------------------------------
 
