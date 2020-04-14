@@ -34,12 +34,12 @@
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
-   if( supla_esp_cfg.ThermometerType == DS18B20 && supla_esp_cfg.ThermometerType == DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 	   
-	if( supla_esp_cfg.ThermometerType == DS18B20 ) {
+	if( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DS18B20");
 	}
-	if( supla_esp_cfg.ThermometerType == DHT22 ) {
+	if( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DHT22");
 	}
    }
@@ -119,7 +119,7 @@ void ICACHE_FLASH_ATTR
 	channels[0].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER;
 	channels[0].value[0] = (*supla_rs_cfg[0].position)-1;
 
-   if( supla_esp_cfg.ThermometerType == DS18B20 ) {
+   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
     channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 	channels[1].FuncList = 0;
@@ -127,7 +127,7 @@ void ICACHE_FLASH_ATTR
 	supla_get_temperature(channels[1].value);
    }
 
-   if( supla_esp_cfg.ThermometerType == DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
 	channels[1].FuncList = 0;
@@ -135,7 +135,7 @@ void ICACHE_FLASH_ATTR
 	supla_get_temp_and_humidity(channels[1].value);
    }
 
-   if( supla_esp_cfg.ThermometerType == DS18B20 && supla_esp_cfg.ThermometerType == DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 		channels[2].Number = 2;
 		channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
 		channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
@@ -283,9 +283,9 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
         (unsigned char)mac[1], (unsigned char)mac[2], (unsigned char)mac[3],
         (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
         supla_esp_cfg.Server, supla_esp_cfg.Email,
-		supla_esp_cfg.ThermometerType == NONE ? "selected" : "",
-		supla_esp_cfg.ThermometerType == DS18B20 ? "selected" : "",
-		supla_esp_cfg.ThermometerType == DHT22 ? "selected" : "",
+		supla_esp_cfg.ThermometerType == THERM_NONE ? "selected" : "",
+		supla_esp_cfg.ThermometerType == THERM_DS18B20 ? "selected" : "",
+		supla_esp_cfg.ThermometerType == THERM_DHT22 ? "selected" : "",
 		supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
         supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : "");
 
