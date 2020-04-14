@@ -104,7 +104,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 void ICACHE_FLASH_ATTR
    supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count) {
 	
-   if( supla_esp_cfg.ThermometerType == DS18B20 && supla_esp_cfg.ThermometerType == DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 	
     *channel_count = 3;
     }
