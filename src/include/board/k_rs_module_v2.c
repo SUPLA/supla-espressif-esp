@@ -34,12 +34,12 @@
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
-   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+   if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 	   
-	if( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
+	if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DS18B20");
 	}
-	if( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+	if ( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DHT22");
 	}
    }
