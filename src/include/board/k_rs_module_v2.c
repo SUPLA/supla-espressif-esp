@@ -245,7 +245,7 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
                                   "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
                                   "value=\"%s\"><label>E-mail</label></i></div><div "
                                   "class=\"w\"><h3>Additional Settings</h3>"
-								  "<i><select name="trm"><option value="0" %s>NONE</option>"
+								  "<i><select name=\"trm\"><option value="0" %s>NONE</option>"
 								  "<option value="1" %s>DS18B20</option><option value="2" %s>DHT22</option>"
 								  "</select><label>Thermometer type:</label></i>"
 								  "<i><select name=\"upd\"><option value=\"0\" %s>NO<option "
