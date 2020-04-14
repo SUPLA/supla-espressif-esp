@@ -27,6 +27,10 @@
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
 
+#define NONE					  0
+#define DS18B20					  1
+#define DHT22					  2
+
 typedef struct {
 
 	char TAG[6];
