@@ -60,6 +60,7 @@
 #define VAR_UPD          11
 #define VAR_RBT          12
 #define VAR_ZRE          13
+#define VAR_TRM			 14		// wybor czujnika temperatury
 #define VAR_EML          20
 #define VAR_USD          21
 #define VAR_TRG          22
@@ -300,6 +301,9 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 #if defined(POWSENSOR2)
 				char zre[3] = { 'z', 'r', 'e' };
 #endif
+#ifdef TEMP_SELECT											// wybor czujnika temperatury
+				char trm[3] = { 't', 'r', 'm' };
+#endif
 				char upd[3] = { 'u', 'p', 'd' };
 				char rbt[3] = { 'r', 'b', 't' };
 				char eml[3] = { 'e', 'm', 'l' };
@@ -380,6 +384,14 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 					} else if ( memcmp(zre, &pdata[a], 3) == 0 ) {
 
 						pVars->current_var = VAR_ZRE;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+					#endif
+					
+					#ifdef TEMP_SELECT									// wybor czujnika temperatury
+					} else if ( memcmp(trm, &pdata[a], 3) == 0 ) {
+						
+						pVars->current_var = VAR_TRM;
 						pVars->buff_size = 12;
 						pVars->pbuff = pVars->intval;
 					#endif
@@ -524,6 +536,12 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 					} else if ( pVars->current_var == VAR_ZRE ) {
 
 						cfg->ZeroInitialEnergy = pVars->intval[0] - '0';
+					#endif
+					
+					#ifdef TEMP_SELECT											// wybor czujnika temperatury
+					} else if ( pVars->current_var == VAR_TRM ) {
+
+						cfg->ThermometerType = pVars->intval[0] - '0';
 					#endif
 
 					} else if ( pVars->current_var == VAR_UPD ) {

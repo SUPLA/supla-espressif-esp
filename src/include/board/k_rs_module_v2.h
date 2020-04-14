@@ -29,24 +29,15 @@
 
 #define _ROLLERSHUTTER_SUPPORT
 
-#ifdef __BOARD_k_rs_module_v2
-	#define AP_SSID "ROLETY_V2"
-#endif
+#define AP_SSID "ROLETY_V2"
 
-#ifdef __BOARD_k_rs_module_v2_DHT22
-	#define DHTSENSOR
-   	#define TEMPERATURE_HUMIDITY_CHANNEL 1
-	#define AP_SSID "ROLETY_V2_DHT22"
-#endif
+#define DHTSENSOR
+#define TEMPERATURE_HUMIDITY_CHANNEL 1
 
-#ifdef __BOARD_k_rs_module_v2_ds18b20
-	#define DS18B20
-	#define TEMPERATURE_CHANNEL 1
-	#define AP_SSID "ROLETY_V2_DS18B20"
-#endif
+#define DS18B20
+#define TEMPERATURE_CHANNEL 1
 
 #define USE_GPIO16_OUTPUT
-
 
 #define LED_RED_PORT   16
 #define WATCHDOG_TIMEOUT_SEC 90

@@ -19,13 +19,10 @@
 #include "public_key_in_c_code"
 
 #include "supla_esp.h"
-#if defined __BOARD_k_rs_module_v2_ds18b20
-	#include "supla_ds18b20.h"
-#endif
 
-#if defined __BOARD_k_rs_module_v2_DHT22
-	#include "supla_dht.h"
-#endif
+#include "supla_ds18b20.h"
+#include "supla_dht.h"
+
 
 #define B_CFG_PORT          4
 #define B_RELAY1_PORT       5
@@ -37,13 +34,18 @@
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
-	#if defined __BOARD_k_rs_module_v2_ds18b20
+   if( supla_esp_cfg.ThermometerType == DS18B20 && supla_esp_cfg.ThermometerType == DHT22 ) {
+	   
+	if( supla_esp_cfg.ThermometerType == DS18B20 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DS18B20");
-	#elif defined __BOARD_k_rs_module_v2_DHT22
+	}
+	if( supla_esp_cfg.ThermometerType == DHT22 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DHT22");
-	#else
+	}
+   }
+   else {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2");
-	#endif
+	}
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
@@ -76,7 +78,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 
 	//----------------------------------------
 	
-    supla_relay_cfg[2].gpio_id = 20;
+    supla_relay_cfg[2].gpio_id = 20;	// update init channel
     supla_relay_cfg[2].channel = 2;
 	
 	//----------------------------------------
@@ -84,16 +86,16 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 	//PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);	// pullup gpio 4
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);	// pullup gpio 12	
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);	// pullup gpio 14
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);		// pullup gpio 4
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);		// pullup gpio 12	
+	PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);		// pullup gpio 14
 	
-	//----------------------------------------
+	//----------------------------------------	dla plytki rs_module_v2
 	
-	supla_esp_gpio_set_hi(5, 1);	// ustaw gpio5 (rs) high
-	os_delay_us(500000);			// poczekaj 0,5s
-	supla_esp_gpio_set_hi(5, 0);	// ustaw gpio5 (rs) low
-	supla_esp_gpio_set_hi(13, 0);	// ustaw gpio13 (rs) low
+	supla_esp_gpio_set_hi(B_RELAY1_PORT, 1);	// ustaw gpio5 (rs) high
+	os_delay_us(500000);						// poczekaj 0,5s
+	supla_esp_gpio_set_hi(B_RELAY1_PORT, 0);	// ustaw gpio5 (rs) low
+	supla_esp_gpio_set_hi(B_RELAY2_PORT, 0);	// ustaw gpio13 (rs) low
 	
 	//----------------------------------------
 
@@ -102,17 +104,14 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 void ICACHE_FLASH_ATTR
    supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count) {
 	
-    #ifdef __BOARD_k_rs_module_v2_ds18b20
+   if( supla_esp_cfg.ThermometerType == DS18B20 && supla_esp_cfg.ThermometerType == DHT22 ) {
+	
     *channel_count = 3;
-    #endif
+    }
+   else {
 
-    #ifdef __BOARD_k_rs_module_v2_DHT22
-    *channel_count = 3;
-    #endif
-
-    #ifdef __BOARD_k_rs_module_v2
     *channel_count = 2;
-    #endif
+    }
 
 	channels[0].Number = 0;
 	channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
@@ -120,37 +119,36 @@ void ICACHE_FLASH_ATTR
 	channels[0].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER;
 	channels[0].value[0] = (*supla_rs_cfg[0].position)-1;
 
-	#ifdef __BOARD_k_rs_module_v2_ds18b20
-  channels[1].Number = 1;
+   if( supla_esp_cfg.ThermometerType == DS18B20 ) {
+    channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 	channels[1].FuncList = 0;
 	channels[1].Default = 0;
-
 	supla_get_temperature(channels[1].value);
-	#endif
+   }
 
-	#ifdef __BOARD_k_rs_module_v2_DHT22
+   if( supla_esp_cfg.ThermometerType == DHT22 ) {
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
 	channels[1].FuncList = 0;
 	channels[1].Default = 0;
-
 	supla_get_temp_and_humidity(channels[1].value);
-	#endif
+   }
 
-	#if defined(__BOARD_k_rs_module_v2_ds18b20) || defined(__BOARD_k_rs_module_v2_DHT22)
+   if( supla_esp_cfg.ThermometerType == DS18B20 && supla_esp_cfg.ThermometerType == DHT22 ) {
 		channels[2].Number = 2;
 		channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
 		channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
 		channels[2].Default = 0;
 		channels[2].value[0] = supla_esp_gpio_relay_on(20);
-	#else
+   }
+   else {
 		channels[1].Number = 1;
 		channels[1].Type = SUPLA_CHANNELTYPE_RELAY;
 		channels[1].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
 		channels[1].Default = 0;
 		channels[1].value[0] = supla_esp_gpio_relay_on(20);
-	#endif
+   }
 
 }
 
@@ -247,6 +245,9 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
                                   "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
                                   "value=\"%s\"><label>E-mail</label></i></div><div "
                                   "class=\"w\"><h3>Additional Settings</h3>"
+								  "<i><select name="trm"><option value="0" %s>NONE</option>"
+								  "<option value="1" %s>DS18B20</option><option value="2" %s>DHT22</option>"
+								  "</select><label>Thermometer type:</label></i>"
 								  "<i><select name=\"upd\"><option value=\"0\" %s>NO<option "
 								  "value=\"1\" %s>YES</select><label>Firmware update</label></i>"
                                   "</div><button type=\"submit\">SAVE</button></form></div><br><br>";
@@ -282,6 +283,9 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
         (unsigned char)mac[1], (unsigned char)mac[2], (unsigned char)mac[3],
         (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
         supla_esp_cfg.Server, supla_esp_cfg.Email,
+		supla_esp_cfg.ThermometerType == NONE ? "selected" : "",
+		supla_esp_cfg.ThermometerType == DS18B20 ? "selected" : "",
+		supla_esp_cfg.ThermometerType == DHT22 ? "selected" : "",
 		supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
         supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : "");
 
