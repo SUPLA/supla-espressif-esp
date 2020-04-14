@@ -34,6 +34,7 @@
 
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
+	supla_log(LOG_DEBUG, "Termometr: %i", supla_esp_cfg.ThermometerType);
    if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 	   
 	if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
@@ -283,9 +284,9 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
         (unsigned char)mac[1], (unsigned char)mac[2], (unsigned char)mac[3],
         (unsigned char)mac[4], (unsigned char)mac[5], supla_esp_cfg.WIFI_SSID,
         supla_esp_cfg.Server, supla_esp_cfg.Email,
-		supla_esp_cfg.ThermometerType == THERM_NONE ? "selected" : "",
-		supla_esp_cfg.ThermometerType == THERM_DS18B20 ? "selected" : "",
-		supla_esp_cfg.ThermometerType == THERM_DHT22 ? "selected" : "",
+		supla_esp_cfg.ThermometerType == 0 ? "selected" : "",
+		supla_esp_cfg.ThermometerType == 1 ? "selected" : "",
+		supla_esp_cfg.ThermometerType == 2 ? "selected" : "",
 		supla_esp_cfg.FirmwareUpdate == 0 ? "selected" : "",
         supla_esp_cfg.FirmwareUpdate == 1 ? "selected" : "");
 
