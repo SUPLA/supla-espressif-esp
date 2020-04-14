@@ -59,6 +59,8 @@ typedef struct {
 
     char Trigger;
     char ZeroInitialEnergy;
+	
+	char ThermometerType;
     char zero[200];
 
 }SuplaEspCfg;
