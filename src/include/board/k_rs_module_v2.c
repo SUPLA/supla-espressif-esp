@@ -35,7 +35,7 @@
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
 	supla_log(LOG_DEBUG, "Termometr: %i", supla_esp_cfg.ThermometerType);
-   if ( supla_esp_cfg.ThermometerType == 1 && supla_esp_cfg.ThermometerType == 2 ) {
+   if ( supla_esp_cfg.ThermometerType == 1 || supla_esp_cfg.ThermometerType == 2 ) {
 	
 	supla_log(LOG_DEBUG, "if name 1 i 2: %i", supla_esp_cfg.ThermometerType);
 	if ( supla_esp_cfg.ThermometerType == 1 ) {
@@ -109,7 +109,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 void ICACHE_FLASH_ATTR
    supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count) {
 	
-   if( supla_esp_cfg.ThermometerType == 1 && supla_esp_cfg.ThermometerType == 2 ) {
+   if( supla_esp_cfg.ThermometerType == 1 || supla_esp_cfg.ThermometerType == 2 ) {
 	
     *channel_count = 3;
     }
@@ -140,7 +140,7 @@ void ICACHE_FLASH_ATTR
 	supla_get_temp_and_humidity(channels[1].value);
    }
 
-   if( supla_esp_cfg.ThermometerType == 1 && supla_esp_cfg.ThermometerType == 2 ) {
+   if( supla_esp_cfg.ThermometerType == 1 || supla_esp_cfg.ThermometerType == 2 ) {
 		channels[2].Number = 2;
 		channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
 		channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
