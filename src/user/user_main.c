@@ -142,7 +142,17 @@ void MAIN_ICACHE_FLASH user_init(void)
 
      supla_esp_devconn_init();
 
-
+	#if defined TEMP_SELECT
+	
+		if ( supla_esp_cfg.ThermometerType == 1 ) {
+			supla_ds18b20_init();
+		}
+		
+		if ( supla_esp_cfg.ThermometerType == 2 ) {
+			supla_dht_init();
+		}
+	#else
+		
      #ifdef DS18B20
 		 supla_ds18b20_init();
      #endif
@@ -150,6 +160,8 @@ void MAIN_ICACHE_FLASH user_init(void)
      #ifdef DHTSENSOR
 		 supla_dht_init();
      #endif
+	 
+	#endif
 
 	#ifdef SUPLA_PWM_COUNT
 	     supla_esp_pwm_init();
