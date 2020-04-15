@@ -33,11 +33,15 @@
 
 #define TEMP_SELECT
 
+if ( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
 #define DHTSENSOR
 #define TEMPERATURE_HUMIDITY_CHANNEL 1
+}
 
-//#define DS18B20
+if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
+#define DS18B20
 #define TEMPERATURE_CHANNEL 1
+}
 
 #define USE_GPIO16_OUTPUT
 
