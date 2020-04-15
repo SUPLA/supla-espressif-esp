@@ -35,12 +35,12 @@
 void ICACHE_FLASH_ATTR supla_esp_board_set_device_name(char *buffer, uint8 buffer_size) {
 	
 	supla_log(LOG_DEBUG, "Termometr: %i", supla_esp_cfg.ThermometerType);
-   if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+   if ( supla_esp_cfg.ThermometerType == 1 && supla_esp_cfg.ThermometerType == 2 ) {
 	   
-	if ( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
+	if ( supla_esp_cfg.ThermometerType == 1 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DS18B20");
 	}
-	if ( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+	if ( supla_esp_cfg.ThermometerType == 2 ) {
 		ets_snprintf(buffer, buffer_size, "ROLETY_V2-DHT22");
 	}
    }
@@ -105,7 +105,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 void ICACHE_FLASH_ATTR
    supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count) {
 	
-   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == 1 && supla_esp_cfg.ThermometerType == 2 ) {
 	
     *channel_count = 3;
     }
@@ -120,7 +120,7 @@ void ICACHE_FLASH_ATTR
 	channels[0].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER;
 	channels[0].value[0] = (*supla_rs_cfg[0].position)-1;
 
-   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 ) {
+   if( supla_esp_cfg.ThermometerType == 1 ) {
     channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_THERMOMETERDS18B20;
 	channels[1].FuncList = 0;
@@ -128,7 +128,7 @@ void ICACHE_FLASH_ATTR
 	supla_get_temperature(channels[1].value);
    }
 
-   if( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == 2 ) {
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
 	channels[1].FuncList = 0;
@@ -136,7 +136,7 @@ void ICACHE_FLASH_ATTR
 	supla_get_temp_and_humidity(channels[1].value);
    }
 
-   if( supla_esp_cfg.ThermometerType == THERM_DS18B20 && supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+   if( supla_esp_cfg.ThermometerType == 1 && supla_esp_cfg.ThermometerType == 2 ) {
 		channels[2].Number = 2;
 		channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
 		channels[2].FuncList = SUPLA_BIT_RELAYFUNC_POWERSWITCH;
