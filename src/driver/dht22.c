@@ -23,7 +23,7 @@
 #include "driver/dht22.h"
 #include "espmissingincludes.h"
 
-#define DHT_DEBUG
+//#define DHT_DEBUG
 
 #ifdef DHT_DEBUG
 #undef DHT_DEBUG
