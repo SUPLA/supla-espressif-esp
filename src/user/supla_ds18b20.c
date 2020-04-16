@@ -31,6 +31,11 @@
 
 #include "supla_esp_devconn.h"
 
+if ( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+	supla_log(LOG_DEBUG, "supla_ds18b20 disabled" );
+}
+else {
+
 #ifdef DS18B20
 
 
@@ -215,3 +220,4 @@ void ICACHE_FLASH_ATTR supla_get_temperature(char value[SUPLA_CHANNELVALUE_SIZE]
 #endif
 
  
+}
