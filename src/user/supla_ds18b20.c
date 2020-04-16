@@ -120,11 +120,6 @@ uint8_t  supla_ds18b20_read() {
 void ICACHE_FLASH_ATTR
 supla_ds18b20_read_temperatureB(void *timer_arg) {
 	
-  if ( supla_esp_cfg.ThermometerType == 2 ) {
-	supla_log(LOG_DEBUG, "supla_ds18b20 disabled" );
-  }
-  else {
-
 	os_timer_disarm(&supla_ds18b20_timer2);
 
 	supla_ds18b20_reset();
@@ -162,17 +157,12 @@ supla_ds18b20_read_temperatureB(void *timer_arg) {
     	supla_get_temperature(value);
     	supla_esp_channel_value__changed(TEMPERATURE_CHANNEL, value);
     };
-  }
+
 }
 
 void ICACHE_FLASH_ATTR
 supla_ds18b20_read_temperatureA(void *timer_arg) {
 	
-  if ( supla_esp_cfg.ThermometerType == 2 ) {
-	supla_log(LOG_DEBUG, "supla_ds18b20 disabled" );
-  }
-  else {
-
 	supla_ds18b20_reset();
 
 	if ( SUPLA_DS_MODEL == SUPLA_DS_MODEL_UNKNOWN ) {
@@ -205,7 +195,7 @@ supla_ds18b20_read_temperatureA(void *timer_arg) {
 	    os_timer_arm (&supla_ds18b20_timer2, 1000, 0);
 
 	}
-  }
+
 }
 
 void ICACHE_FLASH_ATTR supla_ds18b20_start(void)
