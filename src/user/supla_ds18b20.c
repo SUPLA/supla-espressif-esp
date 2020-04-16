@@ -120,7 +120,7 @@ uint8_t  supla_ds18b20_read() {
 void ICACHE_FLASH_ATTR
 supla_ds18b20_read_temperatureB(void *timer_arg) {
 	
-  if ( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+  if ( supla_esp_cfg.ThermometerType == 2 ) {
 	supla_log(LOG_DEBUG, "supla_ds18b20 disabled" );
   }
   else {
@@ -168,7 +168,7 @@ supla_ds18b20_read_temperatureB(void *timer_arg) {
 void ICACHE_FLASH_ATTR
 supla_ds18b20_read_temperatureA(void *timer_arg) {
 	
-  if ( supla_esp_cfg.ThermometerType == THERM_DHT22 ) {
+  if ( supla_esp_cfg.ThermometerType == 2 ) {
 	supla_log(LOG_DEBUG, "supla_ds18b20 disabled" );
   }
   else {
