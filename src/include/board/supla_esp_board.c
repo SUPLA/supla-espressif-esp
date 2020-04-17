@@ -111,10 +111,8 @@
 
 #include "board/k_rs_module.c"
 
-#elif defined(__BOARD_k_rs_module_v2) \
-      || defined(__BOARD_k_rs_module_v2_ds18b20) \
-      || defined(__BOARD_k_rs_module_v2_DHT22) \
-
+#elif defined(__BOARD_k_rs_module_v2)
+ 
 #include "board/k_rs_module_v2.c"
 
 #elif defined(__BOARD_k_smoke_module) \

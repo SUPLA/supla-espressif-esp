@@ -136,7 +136,7 @@ void ICACHE_FLASH_ATTR
 	channels[1].Number = 1;
 	channels[1].Type = SUPLA_CHANNELTYPE_DHT22;
 	channels[1].FuncList = 0;
-	channels[1].Default = 0;
+	channels[1].Default = SUPLA_CHANNELFNC_HUMIDITYANDTEMPERATURE;
 	supla_get_temp_and_humidity(channels[1].value);
    }
 
