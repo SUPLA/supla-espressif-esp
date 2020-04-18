@@ -319,6 +319,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_relay_switch(void* _input_cfg,
 void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg) {
 
     supla_input_cfg_t* input_cfg = (supla_input_cfg_t*)_input_cfg;
+	supla_log(LOG_DEBUG, "RELAY HI RS");
 	
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
 		
@@ -358,7 +359,7 @@ void ICACHE_FLASH_ATTR
 supla_esp_board_gpio_on_input_inactive(void* _input_cfg) {
 
     supla_input_cfg_t* input_cfg = (supla_input_cfg_t*)_input_cfg;
-	
+	supla_log(LOG_DEBUG, "RELAY LO RS");
 	
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
 
