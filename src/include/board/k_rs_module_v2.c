@@ -365,6 +365,9 @@ supla_esp_board_gpio_on_input_inactive(void* _input_cfg) {
 			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
 			if ( rs_cfg != NULL ) {
 				
+				supla_log(LOG_DEBUG, "rs btn up = %i", __supla_esp_gpio_relay_is_hi(rs_cfg->up));
+				supla_log(LOG_DEBUG, "rs btn down = %i", __supla_esp_gpio_relay_is_hi(rs_cfg->down));
+				
 				if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
 				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);	
 				}
