@@ -322,7 +322,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg) {
 	
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
 		
-    supla_log(LOG_DEBUG, "RELAY HI");
+    supla_log(LOG_DEBUG, "RELAY HI RS");
    // #ifdef _ROLLERSHUTTER_SUPPORT
 		supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
 		
@@ -362,7 +362,7 @@ supla_esp_board_gpio_on_input_inactive(void* _input_cfg) {
 	
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
 
-		supla_log(LOG_DEBUG, "RELAY LO");
+		supla_log(LOG_DEBUG, "RELAY LO RS");
 	
 		//#ifdef _ROLLERSHUTTER_SUPPORT
 		
