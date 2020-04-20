@@ -419,11 +419,14 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 
 	case SUPLA_RESULTCODE_TRUE:
 
-		supla_esp_gpio_state_connected();
-
 		devconn->server_activity_timeout = register_device_result->activity_timeout;
 		devconn->registered = 1;
 		devconn->register_time_sec = heartbeat_timer_sec;
+
+		// supla_esp_gpio_state_connected()
+		// should be called after setting
+		// devconn->registered to 1
+		supla_esp_gpio_state_connected();
 
 		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
 		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
