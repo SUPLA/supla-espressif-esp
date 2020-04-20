@@ -1188,6 +1188,12 @@ supla_esp_get_channel__state(void *_srpc, TCSD_ChannelStateRequest *request) {
 
   srpc_csd_async_channel_state_result(_srpc, &state);
 }
+
+void DEVCONN_ICACHE_FLASH supla_esp_get_channel_functions(void) {
+  if (supla_esp_devconn_is_registered()) {
+    srpc_ds_async_get_channel_functions(devconn->srpc);
+  }
+}
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 
 
@@ -1235,6 +1241,11 @@ supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int 
 		case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
 			supla_esp_get_channel__state(_srpc, rd.data.csd_channel_state_request);
 			break;
+        #ifdef BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT
+		case SUPLA_SD_CALL_GET_CHANNEL_FUNCTIONS_RESULT:
+			supla_esp_board_on_get_channel_functions_result(rd.data.sd_channel_functions);
+			break;
+        #endif /*BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT*/
 		#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 		}
 
