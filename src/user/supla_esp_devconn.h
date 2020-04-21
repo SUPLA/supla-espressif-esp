@@ -48,6 +48,9 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_get_channel_state(_supla_int_t ChannelNumber, _supla_int_t ReceiverID,
                             TDSC_ChannelState *state);
 void DEVCONN_ICACHE_FLASH supla_esp_get_channel_functions(void);
+void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_b(
+    int channel_number, char value[SUPLA_CHANNELVALUE_SIZE],
+    unsigned char offline);
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12 || defined(CHANNEL_STATE_TOOLS)*/
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
