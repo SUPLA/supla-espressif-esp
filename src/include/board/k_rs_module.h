@@ -29,8 +29,6 @@
 
 #define _ROLLERSHUTTER_SUPPORT
 
-#define TEMP_SELECT
-
 #ifdef __BOARD_k_rs_module
 	#define AP_SSID "ROLETY"
 #endif
