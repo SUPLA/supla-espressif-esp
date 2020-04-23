@@ -84,7 +84,7 @@ void *pvPortRealloc(void *mem, size_t newsize, const char *file, int line);
 #endif
 
 //void *supla_malloc(size_t size);
-
+/*
 #ifndef malloc
 #define malloc os_malloc
 #endif
@@ -100,7 +100,7 @@ void *pvPortRealloc(void *mem, size_t newsize, const char *file, int line);
 #ifndef realloc
 #define realloc os_realloc
 #endif
-
+*/
 #ifndef vsnprintf
 #define vsnprintf ets_vsnprintf
 #endif
