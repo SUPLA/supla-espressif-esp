@@ -22,7 +22,7 @@
 
 #include "supla_ds18b20.h"
 #include "supla_dht.h"
-#include "supla_esp_gpio.c"
+//#include "supla_esp_gpio.c"
 
 
 #define B_CFG_PORT          4
