@@ -31,7 +31,7 @@
 
 #define AP_SSID "ROLETY_V2"
 
-#define TEMP_SELECT
+//#define TEMP_SELECT
 
 #define DHTSENSOR
 #define TEMPERATURE_HUMIDITY_CHANNEL 1
