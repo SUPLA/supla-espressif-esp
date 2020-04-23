@@ -66,7 +66,7 @@ case $1 in
    ;;
    "k_rs_module_v2")
       FOTA=1
-      FLASH_SIZE="4096"
+      FLASH_SIZE="2048"
    ;;
    "k_smoke_module")
       FOTA=1
