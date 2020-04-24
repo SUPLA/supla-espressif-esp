@@ -22,7 +22,6 @@
 
 #include "supla_ds18b20.h"
 #include "supla_dht.h"
-//#include "supla_esp_gpio.c"
 
 
 #define B_CFG_PORT          4
@@ -92,9 +91,9 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
 	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 	//PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
-	//PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);	// pullup gpio 4
-	//PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);		// pullup gpio 12	
-	//PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);		// pullup gpio 14
+	  PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);	// pullup gpio 4
+	  PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);		// pullup gpio 12	
+	  PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);		// pullup gpio 14
 	
 	//----------------------------------------	dla plytki rs_module_v2
 	
