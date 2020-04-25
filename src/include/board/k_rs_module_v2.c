@@ -88,8 +88,6 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	
 	//----------------------------------------
 	
-	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);
-	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);
 	//PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);	// pullup gpio 0
 	  PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO4_U);	// pullup gpio 4
 	  PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);		// pullup gpio 12	
@@ -322,7 +320,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_on_input_active(void* _input_cfg) {
 
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
 
-    supla_log(LOG_DEBUG, "RELAY HI");
+    supla_log(LOG_DEBUG, "RELAY HI RS");
 	
 		#ifdef _ROLLERSHUTTER_SUPPORT
 			//supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
@@ -352,14 +350,20 @@ supla_esp_board_gpio_on_input_inactive(void* _input_cfg) {
 
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
 
-		supla_log(LOG_DEBUG, "RELAY LO");
+		supla_log(LOG_DEBUG, "RELAY LO RS");
 	
     #ifdef _ROLLERSHUTTER_SUPPORT
 		supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
 		if ( rs_cfg != NULL ) {
-
+			
+			supla_log(LOG_DEBUG, "rs btn up = %i", __supla_esp_gpio_relay_is_hi(rs_cfg->up)); 
+			supla_log(LOG_DEBUG, "rs btn down = %i", __supla_esp_gpio_relay_is_hi(rs_cfg->down));
+			
 			if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
-				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);	
+				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+
+				supla_log(LOG_DEBUG, "if 1 rs btn up = %i", __supla_esp_gpio_relay_is_hi(rs_cfg->up)); 
+				supla_log(LOG_DEBUG, "if 1 rs btn down = %i", __supla_esp_gpio_relay_is_hi(rs_cfg->down));
 			}
 		}		  
 		else {
