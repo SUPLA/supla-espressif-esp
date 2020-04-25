@@ -339,10 +339,11 @@ supla_esp_board_gpio_on_input_inactive(void* _input_cfg) {
 			if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) || 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
 				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);	
 			}
-		}		  
+				  
 		else {
 
-		supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
+			supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
+			}
 		}
 
 	#endif /*_ROLLERSHUTTER_SUPPORT*/ 
