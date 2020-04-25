@@ -93,12 +93,12 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_init(void) {
 	  PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);		// pullup gpio 12	
 	  PIN_PULLUP_EN(PERIPHS_IO_MUX_MTMS_U);		// pullup gpio 14
 	
-	//----------------------------------------	dla plytki rs_module_v2
+	//----------------------------------------	dla plytki rs_module_v2 (juz zbedne)
 	
-	supla_esp_gpio_set_hi(B_RELAY1_PORT, 1);	// ustaw gpio5 (rs) high
-	os_delay_us(500000);						// poczekaj 0,5s
-	supla_esp_gpio_set_hi(B_RELAY1_PORT, 0);	// ustaw gpio5 (rs) low
-	supla_esp_gpio_set_hi(B_RELAY2_PORT, 0);	// ustaw gpio13 (rs) low
+	//supla_esp_gpio_set_hi(B_RELAY1_PORT, 1);	// ustaw gpio5 (rs) high
+	//os_delay_us(500000);						// poczekaj 0,5s
+	//supla_esp_gpio_set_hi(B_RELAY1_PORT, 0);	// ustaw gpio5 (rs) low
+	//supla_esp_gpio_set_hi(B_RELAY2_PORT, 0);	// ustaw gpio13 (rs) low
 	
 	//----------------------------------------
 
