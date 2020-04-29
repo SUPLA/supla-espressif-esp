@@ -55,7 +55,7 @@ void supla_esp_board_gpio_init(void) {
 
 	supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
 	supla_input_cfg[1].gpio_id = B_BTN2_PORT;
-	supla_input_cfg[1].flags = INPUT_FLAG_PULLUP;
+	supla_input_cfg[1].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
 	supla_input_cfg[1].relay_gpio_id = B_RELAY2_PORT;
 	supla_input_cfg[1].channel = 1;
 
@@ -304,5 +304,5 @@ char *ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
 }
 
 void ICACHE_FLASH_ATTR supla_esp_board_on_connect(void) {
-  supla_esp_gpio_set_led(supla_esp_cfg.StatusLedOff, 0, 0);
+  supla_esp_gpio_set_led(!supla_esp_cfg.StatusLedOff, 0, 0);
 }
