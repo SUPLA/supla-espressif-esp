@@ -133,6 +133,10 @@
 
 #include "board/k_socket_dual.c"
 
+#elif defined(__BOARD_k_socket_dual_v2)
+
+#include "board/k_socket_dual_v2.c"
+
 #elif defined(__BOARD_k_sonoff) \
       || defined(__BOARD_k_sonoff_ds18b20)	\
       || defined(__BOARD_k_sonoff_DHT22)		\

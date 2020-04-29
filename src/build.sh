@@ -104,6 +104,10 @@ case $1 in
       FOTA=1
       FLASH_SIZE="4096"
    ;;
+   "k_socket_dual_v2")
+      FOTA=1
+      FLASH_SIZE="4096"
+   ;;
    "k_sonoff")
       FOTA=1
    ;;
@@ -281,6 +285,7 @@ case $1 in
    echo "              k_socket_dual";
    echo "              k_socket_dual_ds18b20";
    echo "              k_socket_dual_DHT22";
+   echo "              k_socket_dual_v2";   
    echo "              k_sonoff";
    echo "              k_sonoff_ds18b20";
    echo "              k_sonoff_DHT22";
