@@ -77,6 +77,9 @@ void supla_esp_board_gpio_init(void) {
 	//---------------------------------------
     
 	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);	//uzycie GPIO0
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);	//uzycie GPIO12
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);	//uzycie GPIO13
+	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);	//uzycie GPIO14
 	//GPIO_DIS_OUTPUT(GPIO_ID_PIN(0));						// ustawienie gpio 0 jako input
 	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);					//pullup GPIO0
 	PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);					//pullup GPIO12
