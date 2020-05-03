@@ -54,11 +54,11 @@ void supla_esp_board_gpio_init(void) {
 	supla_input_cfg[0].relay_gpio_id = B_RELAY1_PORT;
 	supla_input_cfg[0].channel = 0;
 
-	supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
-	supla_input_cfg[1].gpio_id = B_BTN2_PORT;
+	//supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
+	//supla_input_cfg[1].gpio_id = B_BTN2_PORT;
 	//supla_input_cfg[1].flags = INPUT_FLAG_PULLUP | INPUT_FLAG_CFG_BTN;
-	supla_input_cfg[1].relay_gpio_id = B_RELAY2_PORT;
-	supla_input_cfg[1].channel = 1;
+	//supla_input_cfg[1].relay_gpio_id = B_RELAY2_PORT;
+	//supla_input_cfg[1].channel = 1;
 
 	// ---------------------------------------
 
@@ -78,13 +78,13 @@ void supla_esp_board_gpio_init(void) {
 	//---------------------------------------
     
 	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);	//uzycie GPIO0
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);	//uzycie GPIO12
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);	//uzycie GPIO13
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);	//uzycie GPIO14
+	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12);	//uzycie GPIO12
+	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13);	//uzycie GPIO13
+	//PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14);	//uzycie GPIO14
 	//GPIO_DIS_OUTPUT(GPIO_ID_PIN(0));						// ustawienie gpio 0 jako input
 	//PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);					//pullup GPIO0
 	//PIN_PULLUP_DIS(PERIPHS_IO_MUX_GPIO0_U);					//wylaczenie pullup GPIO0
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);					//pullup GPIO12
+	//PIN_PULLUP_EN(PERIPHS_IO_MUX_MTDI_U);					//pullup GPIO12
 	
 }
 
