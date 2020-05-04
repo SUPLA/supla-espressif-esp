@@ -37,8 +37,6 @@
 #define DHTSENSOR
 #define TEMPERATURE_HUMIDITY_CHANNEL 2
 
-#define W1_GPIO3
-
 #define USE_GPIO16_OUTPUT
 
 #define LED_RED_PORT     16
