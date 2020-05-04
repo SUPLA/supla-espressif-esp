@@ -60,6 +60,8 @@ void supla_esp_board_gpio_init(void) {
 	supla_input_cfg[1].relay_gpio_id = B_RELAY2_PORT;
 	supla_input_cfg[1].channel = 1;
 
+	supla_input_cfg[2].type = INPUT_TYPE_BTN_MONOSTABLE;
+	supla_input_cfg[2].gpio_id = 5;
 	// ---------------------------------------
 
     supla_relay_cfg[0].gpio_id = B_RELAY1_PORT;
