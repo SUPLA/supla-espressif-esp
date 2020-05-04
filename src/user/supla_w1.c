@@ -63,9 +63,5 @@ void ICACHE_FLASH_ATTR supla_w1_init(void) {
 		PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO2_U);
     #endif
 	
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0);	//test
-	PIN_PULLUP_EN(PERIPHS_IO_MUX_GPIO0_U);					//test
-	GPIO_DIS_OUTPUT(GPIO_ID_PIN(0));						//test
-
     GPIO_DIS_OUTPUT( supla_w1_pin );
 }
