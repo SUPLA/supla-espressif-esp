@@ -37,13 +37,12 @@
 #define DHTSENSOR
 #define TEMPERATURE_HUMIDITY_CHANNEL 2
 
-#define USE_GPIO16_OUTPUT
+//#define USE_GPIO16_OUTPUT
 
-
-#define LED_RED_PORT     16
+//#define LED_RED_PORT     16
 #define B_RELAY1_PORT    13
 #define B_RELAY2_PORT    14
-#define B_BTN1_PORT       3
+#define B_BTN1_PORT       0
 #define B_BTN2_PORT      12
 
 #define BOARD_GPIO_OUTPUT_SET_HI if (supla_last_state == STATE_CONNECTED) {if (port == 20) { \
