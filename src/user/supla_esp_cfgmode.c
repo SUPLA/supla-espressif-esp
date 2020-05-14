@@ -506,7 +506,7 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 
 					} else if ( pVars->current_var == VAR_LED ) {
 
-						cfg->StatusLedOff = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+						cfg->StatusLedOff = (pVars->intval[0] - '0');
 
 					} else if ( pVars->current_var == VAR_UPD ) {
 
