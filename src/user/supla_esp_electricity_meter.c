@@ -29,10 +29,10 @@
 
 ETSTimer supla_em_timer1;
 char supla_em_send_base_enabled = 1;
-TElectricityMeter_ExtendedValue last_ev[ELECTRICITY_METER_COUNT];
+TElectricityMeter_ExtendedValue_V2 last_ev[ELECTRICITY_METER_COUNT];
 
 void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
-    TElectricityMeter_ExtendedValue *ev, char *value);
+    TElectricityMeter_ExtendedValue_V2 *ev, char *value);
 
 void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
   if (supla_esp_devconn_is_registered() != 1) {
@@ -41,21 +41,21 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
 
   unsigned char channel_number = 0;
   char value[SUPLA_CHANNELVALUE_SIZE];
-  TElectricityMeter_ExtendedValue ev;
-  memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+  TElectricityMeter_ExtendedValue_V2 ev;
+  memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
 
   while (channel_number < ELECTRICITY_METER_COUNT) {
     if (supla_esp_board_get_measurements(channel_number, &ev) == 1 &&
         memcmp(&ev, &last_ev[channel_number],
-               sizeof(TElectricityMeter_ExtendedValue)) != 0) {
+               sizeof(TElectricityMeter_ExtendedValue_V2)) != 0) {
       memcpy(&last_ev[channel_number], &ev,
-             sizeof(TElectricityMeter_ExtendedValue));
+             sizeof(TElectricityMeter_ExtendedValue_V2));
       supla_esp_em_extendedvalue_to_value(&ev, value);
       if (supla_em_send_base_enabled == 1) {
         supla_esp_channel_value__changed(channel_number, value);
       }
       supla_esp_channel_em_value_changed(channel_number, &ev);
-      memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+      memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
     }
 
     channel_number++;
@@ -80,7 +80,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_device_registered(void) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
-    TElectricityMeter_ExtendedValue *ev, char *value) {
+    TElectricityMeter_ExtendedValue_V2 *ev, char *value) {
   memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
 
   if (sizeof(TElectricityMeter_Value) > SUPLA_CHANNELVALUE_SIZE) {
@@ -118,8 +118,8 @@ void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
 
 void ICACHE_FLASH_ATTR supla_esp_em_get_value(
     unsigned char channel_number, char value[SUPLA_CHANNELVALUE_SIZE]) {
-  TElectricityMeter_ExtendedValue ev;
-  memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue));
+  TElectricityMeter_ExtendedValue_V2 ev;
+  memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
   if (supla_esp_board_get_measurements(channel_number, &ev) == 1) {
     supla_esp_em_extendedvalue_to_value(&ev, value);
   }
