@@ -238,7 +238,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_RESULTCODE_ACCESSID_NOT_ASSIGNED 18                  // ver. >= 7
 #define SUPLA_RESULTCODE_AUTHKEY_ERROR 19                          // ver. >= 7
 #define SUPLA_RESULTCODE_NO_LOCATION_AVAILABLE 20                  // ver. >= 7
-#define SUPLA_RESULTCODE_USER_CONFLICT 21                          // ver. >= 7
+#define SUPLA_RESULTCODE_USER_CONFLICT 21                          // Deprecated
 #define SUPLA_RESULTCODE_UNAUTHORIZED 22                           // ver. >= 10
 #define SUPLA_RESULTCODE_AUTHORIZED 23                             // ver. >= 10
 #define SUPLA_RESULTCODE_NOT_ALLOWED 24                            // ver. >= 12
@@ -482,7 +482,10 @@ typedef struct {
   char sub_value[SUPLA_CHANNELVALUE_SIZE];  // For example sensor value
 } TSuplaChannelValue;
 
+#ifdef USE_DEPRECATED_EMEV_V1
 #define EV_TYPE_ELECTRICITY_METER_MEASUREMENT_V1 10
+#endif /*USE_DEPRECATED_EMEV_V1*/
+#define EV_TYPE_ELECTRICITY_METER_MEASUREMENT_V2 12
 #define EV_TYPE_IMPULSE_COUNTER_DETAILS_V1 20
 #define EV_TYPE_THERMOSTAT_DETAILS_V1 30
 #define EV_TYPE_CHANNEL_STATE_V1 40
@@ -1045,10 +1048,13 @@ typedef struct {
 #define EM_VAR_FORWARD_REACTIVE_ENERGY 0x0400
 #define EM_VAR_REVERSE_REACTIVE_ENERGY 0x0800
 #define EM_VAR_CURRENT_OVER_65A 0x1000
+#define EM_VAR_FORWARD_REACTIVE_ENERGY_BALANCED 0x2000
+#define EM_VAR_REVERSE_REACTIVE_ENERGY_BALANCED 0x4000
 #define EM_VAR_ALL 0xFFFF
 
 #define EM_MEASUREMENT_COUNT 5
 
+#ifdef USE_DEPRECATED_EMEV_V1
 // [IODevice->Server->Client]
 typedef struct {
   unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kWh
@@ -1069,6 +1075,33 @@ typedef struct {
   TElectricityMeter_Measurement m[EM_MEASUREMENT_COUNT];  // Last variable in
                                                           // struct!
 } TElectricityMeter_ExtendedValue;                        // v. >= 10
+#endif /*USE_DEPRECATED_EMEV_V1*/
+
+// [IODevice->Server->Client]
+typedef struct {
+  unsigned _supla_int64_t total_forward_active_energy[3];    // * 0.00001 kWh
+  unsigned _supla_int64_t total_reverse_active_energy[3];    // * 0.00001 kWh
+  unsigned _supla_int64_t total_forward_reactive_energy[3];  // * 0.00001 kvarh
+  unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvarh
+  unsigned _supla_int64_t
+      total_forward_active_energy_balanced;  // * 0.00001 kWh
+  unsigned _supla_int64_t
+      total_reverse_active_energy_balanced;  // * 0.00001 kWh
+
+  // The price per unit, total cost and currency is overwritten by the server
+  // total_cost == SUM(total_forward_active_energy[n] * price_per_unit
+  _supla_int_t total_cost;           // * 0.01
+  _supla_int_t total_cost_balanced;  // * 0.01
+  _supla_int_t price_per_unit;       // * 0.0001
+  // Currency Code A https://www.nationsonline.org/oneworld/currencies.htm
+  char currency[3];
+
+  _supla_int_t measured_values;
+  _supla_int_t period;  // Approximate period between measurements in seconds
+  _supla_int_t m_count;
+  TElectricityMeter_Measurement m[EM_MEASUREMENT_COUNT];  // Last variable in
+                                                          // struct!
+} TElectricityMeter_ExtendedValue_V2;                     // v. >= 12
 
 #define EM_VALUE_FLAG_PHASE1_ON 0x01
 #define EM_VALUE_FLAG_PHASE2_ON 0x02
