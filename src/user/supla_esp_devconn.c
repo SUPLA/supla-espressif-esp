@@ -1670,9 +1670,9 @@ supla_esp_devconn_timer1_cb(void *timer_arg) {
 }
 
 #ifdef ELECTRICITY_METER_COUNT
-void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue *em_ev) {
+void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue_V2 *em_ev) {
 	TSuplaChannelExtendedValue ev;
-	srpc_evtool_v1_emextended2extended(em_ev, &ev);
+	srpc_evtool_v2_emextended2extended(em_ev, &ev);
 	supla_esp_channel_extendedvalue_changed(channel_number, &ev);
 }
 #endif /*ELECTRICITY_METER_COUNT*/
