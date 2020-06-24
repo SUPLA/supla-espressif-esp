@@ -1134,13 +1134,10 @@ supla_esp_gpio_init(void) {
 
 				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_relay_cfg[a].gpio_id));
 				gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_PIN_INTR_DISABLE);
-				gpio_output_set(0, BIT(supla_relay_cfg[a].gpio_id), BIT(supla_relay_cfg[a].gpio_id), 0);
 
 			} else if (supla_relay_cfg[a].gpio_id == 16) {
 				gpio16_output_conf();
 			}
-
-
 
 			supla_relay_cfg[a].last_time = 2147483647;
 
