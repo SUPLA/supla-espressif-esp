@@ -517,7 +517,7 @@ supla_esp_gpio_enable_input_port(char port) {
 
 	if ( port < 1 || port > 15 ) return;
 
-    gpio_output_set(0, 0, 0, GPIO_ID_PIN(port));
+    gpio_output_set(0, 0, 0, BIT(port));
 
     gpio_register_set(GPIO_PIN_ADDR(port), GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE)
                       | GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_DISABLE)
@@ -1134,7 +1134,7 @@ supla_esp_gpio_init(void) {
 
 				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_relay_cfg[a].gpio_id));
 				gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_PIN_INTR_DISABLE);
-				gpio_output_set(0, GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), 0);
+				gpio_output_set(0, BIT(supla_relay_cfg[a].gpio_id), BIT(supla_relay_cfg[a].gpio_id), 0);
 
 			} else if (supla_relay_cfg[a].gpio_id == 16) {
 				gpio16_output_conf();
@@ -1176,7 +1176,7 @@ supla_esp_gpio_init(void) {
 
     	//supla_log(LOG_DEBUG, "input init %i", supla_input_cfg[a].gpio_id);
 
-        gpio_output_set(0, 0, 0, GPIO_ID_PIN(supla_input_cfg[a].gpio_id));
+        gpio_output_set(0, 0, 0, BIT(supla_input_cfg[a].gpio_id));
 
         gpio_register_set(GPIO_PIN_ADDR(supla_input_cfg[a].gpio_id), GPIO_PIN_INT_TYPE_SET(GPIO_PIN_INTR_DISABLE)
                           | GPIO_PIN_PAD_DRIVER_SET(GPIO_PAD_DRIVER_DISABLE)
@@ -1254,7 +1254,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_reinit_led(void) {
 		#if LED_RED_PORT != 16
 			GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(LED_RED_PORT));
 			gpio_pin_intr_state_set(GPIO_ID_PIN(LED_RED_PORT), GPIO_PIN_INTR_DISABLE);
-			gpio_output_set(0, GPIO_ID_PIN(LED_RED_PORT), GPIO_ID_PIN(LED_RED_PORT), 0);
+			gpio_output_set(0, BIT(LED_RED_PORT), BIT(LED_RED_PORT), 0);
 		#endif
 	#endif
 
@@ -1262,7 +1262,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_reinit_led(void) {
 		#if LED_GREEN_PORT != 16
 			GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(LED_GREEN_PORT));
 			gpio_pin_intr_state_set(GPIO_ID_PIN(LED_GREEN_PORT), GPIO_PIN_INTR_DISABLE);
-			gpio_output_set(0, GPIO_ID_PIN(LED_GREEN_PORT), GPIO_ID_PIN(LED_GREEN_PORT), 0);
+			gpio_output_set(0, BIT(LED_GREEN_PORT), BIT(LED_GREEN_PORT), 0);
 		#endif
 	#endif
 
@@ -1270,7 +1270,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_reinit_led(void) {
 		#if LED_BLUE_PORT != 16
 			GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(LED_BLUE_PORT));
 			gpio_pin_intr_state_set(GPIO_ID_PIN(LED_BLUE_PORT), GPIO_PIN_INTR_DISABLE);
-			gpio_output_set(0, GPIO_ID_PIN(LED_BLUE_PORT), GPIO_ID_PIN(LED_BLUE_PORT), 0);
+			gpio_output_set(0, BIT(LED_BLUE_PORT), BIT(LED_BLUE_PORT), 0);
 		#endif
 	#endif
 
