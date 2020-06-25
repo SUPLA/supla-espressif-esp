@@ -288,6 +288,8 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define DEVICE_STATE_INACTIVE
 #endif
 
-extern uint32 heartbeat_timer_sec;
+_supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void);
+_supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void);
+uint32 MAIN_ICACHE_FLASH uptime_sec(void);
 
 #endif /* SUPLA_ESP_H_ */
