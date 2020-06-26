@@ -155,6 +155,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_B 102        // ver. >= 12
 #define SUPLA_DS_CALL_DEVICE_CHANNEL_EXTENDEDVALUE_CHANGED 105  // ver. >= 10
 #define SUPLA_SD_CALL_CHANNEL_SET_VALUE 110
+#define SUPLA_SD_CALL_GROUP_SET_VALUE 115
 #define SUPLA_DS_CALL_CHANNEL_SET_VALUE_RESULT 120
 #define SUPLA_SC_CALL_LOCATION_UPDATE 130
 #define SUPLA_SC_CALL_LOCATIONPACK_UPDATE 140
@@ -419,6 +420,10 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CHANNEL_FLAG_TIME_SETTING_NOT_AVAILABLE 0x00100000  // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_RSA_ENCRYPTED_PIN_REQUIRED 0x00200000  // ver. >= 12
 #define SUPLA_CHANNEL_OFFLINE_DURING_REGISTRATION 0x00400000      // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_ZIGBEE_BRIDGE 0x00800000               // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_TIMER_SUPPORTED 0x01000000             // ver. >= 12
+
+#define SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED 0x0001  // ver. >= 12
 
 #pragma pack(push, 1)
 
@@ -489,6 +494,8 @@ typedef struct {
 #define EV_TYPE_IMPULSE_COUNTER_DETAILS_V1 20
 #define EV_TYPE_THERMOSTAT_DETAILS_V1 30
 #define EV_TYPE_CHANNEL_STATE_V1 40
+#define EV_TYPE_TIMER_STATE_V1 50
+#define EV_TYPE_CHANNEL_AND_TIMER_STATE_V1 60
 
 #define CALCFG_TYPE_THERMOSTAT_DETAILS_V1 10
 
@@ -673,6 +680,17 @@ typedef struct {
 
   char value[SUPLA_CHANNELVALUE_SIZE];
 } TSD_SuplaChannelNewValue;
+
+typedef struct {
+  // server -> device
+  _supla_int_t SenderID;
+  unsigned _supla_int_t DurationMS;
+
+  char value[SUPLA_CHANNELVALUE_SIZE];
+  unsigned char ChannelCount;
+  unsigned char
+      ChannelNumber[SUPLA_CHANNELMAXCOUNT];  // Last variable in struct!
+} TSD_SuplaGroupNewValue;
 
 typedef struct {
   // device -> server
@@ -922,8 +940,6 @@ typedef struct {
   char SoftVer[SUPLA_SOFTVER_MAXSIZE];
 
   char ServerName[SUPLA_SERVER_NAME_MAXSIZE];
-
-  unsigned _supla_int_t RegistrationFlags;
 } TCS_SuplaRegisterClient_D;  // ver. >= 12
 
 typedef struct {
@@ -1048,8 +1064,8 @@ typedef struct {
 #define EM_VAR_FORWARD_REACTIVE_ENERGY 0x0400
 #define EM_VAR_REVERSE_REACTIVE_ENERGY 0x0800
 #define EM_VAR_CURRENT_OVER_65A 0x1000
-#define EM_VAR_FORWARD_REACTIVE_ENERGY_BALANCED 0x2000
-#define EM_VAR_REVERSE_REACTIVE_ENERGY_BALANCED 0x4000
+#define EM_VAR_FORWARD_ACTIVE_ENERGY_BALANCED 0x2000
+#define EM_VAR_REVERSE_ACTIVE_ENERGY_BALANCED 0x4000
 #define EM_VAR_ALL 0xFFFF
 
 #define EM_MEASUREMENT_COUNT 5
@@ -1085,8 +1101,10 @@ typedef struct {
   unsigned _supla_int64_t total_reverse_reactive_energy[3];  // * 0.00001 kvarh
   unsigned _supla_int64_t
       total_forward_active_energy_balanced;  // * 0.00001 kWh
+                                             // Vector phase-to-phase balancing
   unsigned _supla_int64_t
       total_reverse_active_energy_balanced;  // * 0.00001 kWh
+                                             // Vector phase-to-phase balancing
 
   // The price per unit, total cost and currency is overwritten by the server
   // total_cost == SUM(total_forward_active_energy[n] * price_per_unit
@@ -1408,6 +1426,7 @@ typedef struct {
 #define SUPLA_CHANNELSTATE_FIELD_BATTERYHEALTH 0x0200
 #define SUPLA_CHANNELSTATE_FIELD_BRIDGENODEONLINE 0x0400
 #define SUPLA_CHANNELSTATE_FIELD_LASTCONNECTIONRESETCAUSE 0x0800
+#define SUPLA_CHANNELSTATE_FIELD_LIGHTSOURCEHEALTH 0x1000
 
 #define SUPLA_LASTCONNECTIONRESETCAUSE_UNKNOWN 0
 #define SUPLA_LASTCONNECTIONRESETCAUSE_ACTIVITY_TIMEOUT 1
@@ -1415,9 +1434,9 @@ typedef struct {
 #define SUPLA_LASTCONNECTIONRESETCAUSE_SERVER_CONNECTION_LOST 3
 
 typedef struct {
-  _supla_int_t ReceiverID;  // Not used for TChannelState_ExtendedValue
+  _supla_int_t ReceiverID;  // Not used in extended values
   union {
-    // Not used for TChannelState_ExtendedValue
+    // Not used in extended values
     _supla_int_t ChannelID;       // Server -> Client
     unsigned char ChannelNumber;  // Device -> Server
   };
@@ -1435,14 +1454,37 @@ typedef struct {
   unsigned _supla_int_t ConnectionUptime;  // sec.
   unsigned char BatteryHealth;
   unsigned char LastConnectionResetCause;  // SUPLA_LASTCONNECTIONRESETCAUSE_*
-  char EmptySpace[8];                      // Empty space for future use
-} TDSC_ChannelState;  // v. >= 12 Device -> Server -> Client
+  unsigned short LightSourceHealthTotal;   // 0 - 65535 hours
+  unsigned short
+      LightSourceHealthLeft;  // 0.00 - 100.00% LightSourceHealthTotal * 0.01
+  char EmptySpace[4];         // Empty space for future use
+} TDSC_ChannelState;          // v. >= 12 Device -> Server -> Client
 
 #define TChannelState_ExtendedValue TDSC_ChannelState
 
 typedef struct {
   _supla_int_t ChannelID;
 } TCS_ChannelBasicCfgRequest;  // v. >= 12
+
+typedef struct {
+  union {
+    // Remaining time to turn off
+    unsigned _supla_int_t RemainingTimeMs;
+    unsigned _supla_int_t RemainingTimeTs;  // Unix timestamp - Filled by server
+  };
+
+  _supla_int_t SenderID;
+  unsigned _supla_int_t
+      SenderNameSize;  // including the terminating null byte ('\0')
+  char SenderName[SUPLA_SENDER_NAME_MAXSIZE];  // Last variable in struct!
+                                               // UTF8 | Filled by server
+
+} TTimerState_ExtendedValue;
+
+typedef struct {
+  TChannelState_ExtendedValue Channel;
+  TTimerState_ExtendedValue Timer;  // Last variable in struct!
+} TChannelAndTimerState_ExtendedValue;
 
 typedef struct {
   char DeviceName[SUPLA_DEVICE_NAME_MAXSIZE];  // UTF8
