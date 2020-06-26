@@ -36,6 +36,7 @@
 #include "supla-dev/log.h"
 #include "supla_esp_electricity_meter.h"
 #include "supla_esp_impulse_counter.h"
+#include "supla_esp_countdown_timer.h"
 
 #include "board/supla_esp_board.c"
 
@@ -51,16 +52,16 @@ typedef struct {
 
 _t_usermain_uptime usermain_uptime;
 
-_supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void) {
+unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void) {
 	uint32 time = system_get_time();
 	if (time < usermain_uptime.last_system_time) {
 		usermain_uptime.cycles++;
 	}
 	usermain_uptime.last_system_time = time;
-	return usermain_uptime.cycles * 0xffffffff + time;
+	return usermain_uptime.cycles * (uint32)0xffffffff + (unsigned _supla_int64_t)time;
 }
 
-_supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void) {
+unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void) {
 	return uptime_usec() / 1000;
 }
 
@@ -133,7 +134,7 @@ void MAIN_ICACHE_FLASH user_init(void)
 
 	os_timer_disarm(&usermain_uptime.timer);
 	os_timer_setfn(&usermain_uptime.timer, (os_timer_func_t *)supla_esp_uptime_counter_watchdog_cb, NULL);
-	os_timer_arm(&usermain_uptime.timer, 1000, 1);
+	os_timer_arm(&usermain_uptime.timer, 10000, 1);
 
 #ifdef BOARD_USER_INIT
 	BOARD_USER_INIT;
@@ -213,6 +214,7 @@ void MAIN_ICACHE_FLASH user_init(void)
 	#endif
 
 	supla_esp_devconn_start();
+	supla_esp_countdown_timer_init();
 
 	system_print_meminfo();
 	
