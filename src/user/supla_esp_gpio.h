@@ -56,9 +56,9 @@ typedef struct {
 	uint8 gpio_id;
 	uint8 flags;
 	uint8 channel;
+	unsigned _supla_int_t channel_flags;
 
 	unsigned int last_time;
-	ETSTimer timer;
 
 }supla_relay_cfg_t;
 

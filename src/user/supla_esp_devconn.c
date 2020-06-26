@@ -36,6 +36,7 @@
 #include "supla_dht.h"
 #include "supla-dev/srpc.h"
 #include "supla-dev/log.h"
+#include "supla_esp_countdown_timer.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
@@ -594,12 +595,12 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 	return (v == 1 ? HI_VALUE : LO_VALUE) == _v;
 }
 
-void supla_esp_relay_timer_func(void *timer_arg) {
 
-	_supla_esp_channel_set_value(((supla_relay_cfg_t*)timer_arg)->gpio_id, 0, ((supla_relay_cfg_t*)timer_arg)->channel);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_timer_finish(uint8 gpio_id, uint8 channel_number) {
+
+	_supla_esp_channel_set_value(gpio_id, LO_VALUE, channel_number);
 
 }
-
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
     || defined(RGBW_CONTROLLER_CHANNEL) \
@@ -1115,20 +1116,37 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 	srpc_ds_async_set_channel_result(devconn->srpc, new_value->ChannelNumber, new_value->SenderID, Success);
 
+#ifndef COUNTDOWN_TIMER_DISABLED
 	if ( v == 1 && new_value->DurationMS > 0 ) {
 
 		for(a=0;a<RELAY_MAX_COUNT;a++)
 			if ( supla_relay_cfg[a].gpio_id != 255
 				 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
 
-				os_timer_disarm(&supla_relay_cfg[a].timer);
+				supla_esp_countdown_timer_countdown(new_value->DurationMS,
+						supla_relay_cfg[a].gpio_id,
+						supla_relay_cfg[a].channel,
+						new_value->SenderID,
+						supla_esp_devconn_on_countdown_timer_finish);
 
-				os_timer_setfn(&supla_relay_cfg[a].timer, supla_esp_relay_timer_func, &supla_relay_cfg[a]);
-				os_timer_arm (&supla_relay_cfg[a].timer, new_value->DurationMS, false);
+                #if ESP8266_SUPLA_PROTO_VERSION >= 12
+				if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+
+					TSuplaChannelExtendedValue ev;
+					memset(&ev, 0, sizeof(TSuplaChannelExtendedValue));
+					ev.type = EV_TYPE_TIMER_STATE_V1;
+					TTimerState_ExtendedValue *tstate = (TTimerState_ExtendedValue*)ev.value;
+					tstate->RemainingTimeMs = new_value->DurationMS;
+					tstate->SenderID = new_value->SenderID;
+					ev.size = sizeof(TTimerState_ExtendedValue);
+
+					supla_esp_channel_extendedvalue_changed(new_value->ChannelNumber, &ev);
+				}
+                #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 
 				break;
 			}
-
+#endif /*COUNTDOWN_TIMER_DISABLED*/
 	}
 }
 
@@ -1297,6 +1315,18 @@ supla_esp_devconn_iterate(void *timer_arg) {
 					os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 
 					supla_esp_board_set_channels(srd.channels, &srd.channel_count);
+
+					for(uint8 a=0;a<RELAY_MAX_COUNT;a++) {
+						if ( supla_relay_cfg[a].gpio_id != 255 ) {
+							for(uint8 b=0;b<srd.channel_count;b++) {
+								if (srd.channels[b].Number == supla_relay_cfg[a].channel) {
+									supla_relay_cfg[a].channel_flags = srd.channels[b].Flags;
+									break;
+								}
+							}
+						}
+					}
+
 
 					srpc_ds_async_registerdevice_e(devconn->srpc, &srd);
 				#else

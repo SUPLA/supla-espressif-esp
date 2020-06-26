@@ -214,7 +214,10 @@ void MAIN_ICACHE_FLASH user_init(void)
 	#endif
 
 	supla_esp_devconn_start();
+
+    #ifndef COUNTDOWN_TIMER_DISABLED
 	supla_esp_countdown_timer_init();
+    #endif /*COUNTDOWN_TIMER_DISABLED*/
 
 	system_print_meminfo();
 	

@@ -139,6 +139,10 @@
 #define DHT_ICACHE_FLASH ICACHE_FLASH_ATTR
 #endif
 
+#ifndef CDT_ICACHE_FLASH_ATTR
+#define CDT_ICACHE_FLASH_ATTR  ICACHE_FLASH_ATTR
+#endif
+
 #ifndef BTN1_DEFAULT
 #define BTN1_DEFAULT BTN_TYPE_MONOSTABLE
 #endif
@@ -288,8 +292,14 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define DEVICE_STATE_INACTIVE
 #endif
 
-_supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void);
-_supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void);
+#ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
+#ifndef BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS
+#define BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS 5000
+#endif /*BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS*/
+#endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
+
+unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void);
+unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void);
 uint32 MAIN_ICACHE_FLASH uptime_sec(void);
 
 #endif /* SUPLA_ESP_H_ */
