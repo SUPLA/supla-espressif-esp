@@ -529,6 +529,9 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_channel_extendedvalue_changed(unsigned char channel_number, TSuplaChannelExtendedValue *value) {
 
 	if ( supla_esp_devconn_is_registered() == 1 ) {
+        #ifdef BOARD_BEFORE_SENDING_THE_EXTENDEDVALUE
+		   BOARD_BEFORE_SENDING_THE_EXTENDEDVALUE;
+        #endif /*BOARD_BEFORE_SENDING_THE_EXTENDEDVALUE*/
 		srpc_ds_async_channel_extendedvalue_changed(devconn->srpc, channel_number, value);
 	}
 }
