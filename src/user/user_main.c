@@ -163,8 +163,11 @@ void MAIN_ICACHE_FLASH user_init(void)
 	  supla_esp_update_init();
 	 #endif
 
-     supla_esp_devconn_init();
+     #ifndef COUNTDOWN_TIMER_DISABLED
+      supla_esp_countdown_timer_init();
+     #endif /*COUNTDOWN_TIMER_DISABLED*/
 
+     supla_esp_devconn_init();
 
      #ifdef DS18B20
 		 supla_ds18b20_init();
@@ -214,10 +217,6 @@ void MAIN_ICACHE_FLASH user_init(void)
 	#endif
 
 	supla_esp_devconn_start();
-
-    #ifndef COUNTDOWN_TIMER_DISABLED
-	supla_esp_countdown_timer_init();
-    #endif /*COUNTDOWN_TIMER_DISABLED*/
 
 	system_print_meminfo();
 	

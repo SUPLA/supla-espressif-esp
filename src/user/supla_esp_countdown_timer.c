@@ -23,12 +23,12 @@
 #include "supla-dev/log.h"
 
 typedef struct {
-  _countdown_timer_finish_cb finish_cb;
   _supla_int_t sender_id;
   unsigned _supla_int64_t last_time;
   unsigned int time_left_ms;
   uint8 gpio_id;
   uint8 channel_number;
+  char target_value[SUPLA_CHANNELVALUE_SIZE];
 
 } _t_countdown_timer_item;
 
@@ -41,14 +41,27 @@ typedef struct {
   unsigned _supla_int64_t last_save_time;
 #endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
 
+  _countdown_timer_finish_cb finish_cb;
+  _countdown_timer_on_disarm on_disarm_cb;
+
 } _t_countdown_timer_vars;
 
 _t_countdown_timer_vars countdown_timer_vars;
 
+void CDT_ICACHE_FLASH_ATTR
+supla_esp_countdown_set_finish_cb(_countdown_timer_finish_cb finish_cb) {
+  countdown_timer_vars.finish_cb = finish_cb;
+}
+
+void CDT_ICACHE_FLASH_ATTR
+supla_esp_countdown_set_on_disarm_cb(_countdown_timer_on_disarm on_disarm_cb) {
+  countdown_timer_vars.on_disarm_cb = on_disarm_cb;
+}
+
 void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_init(void) {
   memset(&countdown_timer_vars, 0, sizeof(_t_countdown_timer_vars));
   for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
-    countdown_timer_vars.items[a].gpio_id = 255;
+    countdown_timer_vars.items[a].channel_number = 255;
   }
 }
 
@@ -62,15 +75,16 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
 
   for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
     _t_countdown_timer_item *i = &countdown_timer_vars.items[a];
-    if (i->gpio_id != 255 && i->time_left_ms > 0) {
+    if (i->channel_number != 255 && i->time_left_ms > 0) {
       unsigned _supla_int64_t now_ms = uptime_msec();
       unsigned _supla_int64_t time_diff = now_ms - i->last_time;
       if (time_diff >= i->time_left_ms) {
         i->time_left_ms = 0;
-        if (i->finish_cb) {
-          i->finish_cb(i->gpio_id, i->channel_number);
+        if (countdown_timer_vars.finish_cb) {
+          countdown_timer_vars.finish_cb(i->gpio_id, i->channel_number,
+                                         i->target_value);
         }
-        i->gpio_id = 255;
+        i->channel_number = 255;
       } else {
         i->time_left_ms -= time_diff;
       }
@@ -80,8 +94,8 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
       if (save) {
         supla_esp_board_save_countdown_timer_state(
             countdown_timer_vars.time_ms, countdown_timer_vars.gpio_id,
-            countdown_timer_vars.channel_number, countdown_timer_vars.sender_id,
-            0);
+            countdown_timer_vars.channel_number, i->target_value,
+            countdown_timer_vars.sender_id, 0);
       }
 #endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
     }
@@ -100,7 +114,7 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_startstop(void) {
   unsigned int delay_ms = 0;
 
   for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
-    if (countdown_timer_vars.items[a].gpio_id != 255 &&
+    if (countdown_timer_vars.items[a].channel_number != 255 &&
         countdown_timer_vars.items[a].time_left_ms > 0) {
       unsigned int dms = countdown_timer_vars.items[a].time_left_ms / 10;
       if (dms < 50) {
@@ -131,7 +145,7 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_startstop(void) {
 
 uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
     unsigned int time_ms, uint8 gpio_id, uint8 channel_number,
-    _supla_int_t sender_id, _countdown_timer_finish_cb finish_cb) {
+    char target_value[SUPLA_CHANNELVALUE_SIZE], _supla_int_t sender_id) {
 #ifdef BOARD_ON_COUNTDOWN_START
   BOARD_ON_COUNTDOWN_START;
 #endif /*BOARD_ON_COUNTDOWN_START*/
@@ -140,7 +154,7 @@ uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
   uint8 a;
 
   for (a = 0; a < RELAY_MAX_COUNT; a++) {
-    if (countdown_timer_vars.items[a].gpio_id == gpio_id) {
+    if (countdown_timer_vars.items[a].channel_number == channel_number) {
       i = &countdown_timer_vars.items[a];
       break;
     }
@@ -148,7 +162,7 @@ uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
 
   if (i == NULL) {
     for (a = 0; a < RELAY_MAX_COUNT; a++) {
-      if (countdown_timer_vars.items[a].gpio_id == 255) {
+      if (countdown_timer_vars.items[a].channel_number == 255) {
         i = &countdown_timer_vars.items[a];
         break;
       }
@@ -159,7 +173,6 @@ uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
     return 0;
   }
 
-  i->finish_cb = finish_cb;
   i->sender_id = sender_id;
   i->time_left_ms = time_ms;
   i->channel_number = channel_number;
@@ -169,6 +182,61 @@ uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
   supla_esp_countdown_timer_startstop();
 
   return 1;
+}
+
+uint8 CDT_ICACHE_FLASH_ATTR
+supla_esp_countdown_timer_disarm(uint8 channel_number) {
+  uint8 result = 0;
+  for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
+    if (countdown_timer_vars.items[a].channel_number == channel_number) {
+      countdown_timer_vars.items[a].channel_number = 255;
+
+      if (countdown_timer_vars.items[a].time_left_ms > 0) {
+        countdown_timer_vars.items[a].time_left_ms = 0;
+        result = 1;
+
+        if (countdown_timer_vars.on_disarm_cb) {
+          countdown_timer_vars.on_disarm_cb(channel_number);
+        }
+      }
+
+      break;
+    }
+  }
+
+  return result;
+}
+
+void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_get_state(
+    uint8 channel_number, TTimerState_ExtendedValue *state) {
+  if (state == NULL) {
+    return;
+  }
+
+  memset(state, 0, sizeof(TTimerState_ExtendedValue));
+
+  for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
+    if (countdown_timer_vars.items[a].channel_number == channel_number) {
+      state->RemainingTimeMs = countdown_timer_vars.items[a].time_left_ms;
+      state->SenderID = countdown_timer_vars.items[a].sender_id;
+      memcpy(state->TargetValue, countdown_timer_vars.items[a].target_value,
+             SUPLA_CHANNELVALUE_SIZE);
+    }
+  }
+}
+
+void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_get_state_ev(
+    uint8 channel_number, TSuplaChannelExtendedValue *ev) {
+  if (ev == NULL) {
+    return;
+  }
+
+  memset(ev, 0, sizeof(TSuplaChannelExtendedValue));
+  ev->type = EV_TYPE_TIMER_STATE_V1;
+  ev->size = sizeof(TTimerState_ExtendedValue);
+
+  supla_esp_countdown_get_state(channel_number,
+                                (TTimerState_ExtendedValue *)ev->value);
 }
 
 #endif /*COUNTDOWN_TIMER_DISABLED*/

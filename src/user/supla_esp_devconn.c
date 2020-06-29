@@ -357,7 +357,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 
 		int a;
 
-		for(a=0; a<RS_MAX_COUNT; a++)
+		for(a=0; a<RS_MAX_COUNT; a++) {
 			if ( supla_rs_cfg[a].up != NULL
 				   && supla_rs_cfg[a].down != NULL
 				   && supla_rs_cfg[a].up->channel != 255 ) {
@@ -365,6 +365,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, ((*supla_rs_cfg[a].position)-100)/100);
 
 			}
+		}
 
 		supla_esp_board_send_channel_values_with_delay(devconn->srpc);
 
@@ -598,11 +599,21 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 	return (v == 1 ? HI_VALUE : LO_VALUE) == _v;
 }
 
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_on_disarm(uint8 channel_number) {
+	for(uint8 a=0;a<RELAY_MAX_COUNT;a++)
+		if ( channel_number == supla_relay_cfg[a].channel ) {
+			if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+				TSuplaChannelExtendedValue ev;
+				supla_esp_countdown_get_state_ev(channel_number, &ev);
+				supla_esp_channel_extendedvalue_changed(channel_number, &ev);
+			}
+			break;
+		}
+}
 
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_timer_finish(uint8 gpio_id, uint8 channel_number) {
-
-	_supla_esp_channel_set_value(gpio_id, LO_VALUE, channel_number);
-
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_timer_finish(uint8 gpio_id,
+		uint8 channel_number, char target_value[SUPLA_CHANNELVALUE_SIZE]) {
+	_supla_esp_channel_set_value(gpio_id, target_value[0] == 0 ? LO_VALUE : HI_VALUE, channel_number);
 }
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
@@ -1120,33 +1131,36 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 	srpc_ds_async_set_channel_result(devconn->srpc, new_value->ChannelNumber, new_value->SenderID, Success);
 
 #ifndef COUNTDOWN_TIMER_DISABLED
-	if ( v == 1 && new_value->DurationMS > 0 ) {
+
+	supla_esp_countdown_timer_disarm(supla_relay_cfg[a].channel);
+
+	if ( new_value->DurationMS > 0 ) {
 
 		for(a=0;a<RELAY_MAX_COUNT;a++)
 			if ( supla_relay_cfg[a].gpio_id != 255
 				 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
 
-				supla_esp_countdown_timer_countdown(new_value->DurationMS,
-						supla_relay_cfg[a].gpio_id,
-						supla_relay_cfg[a].channel,
-						new_value->SenderID,
-						supla_esp_devconn_on_countdown_timer_finish);
+				if (v == 1
+					|| supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
 
-                #if ESP8266_SUPLA_PROTO_VERSION >= 12
-				if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+					char target_value[SUPLA_CHANNELVALUE_SIZE];
+					memcpy(target_value, new_value->value, SUPLA_CHANNELVALUE_SIZE);
+					target_value[0] = v ? 0 : 1;
 
-					TSuplaChannelExtendedValue ev;
-					memset(&ev, 0, sizeof(TSuplaChannelExtendedValue));
-					ev.type = EV_TYPE_TIMER_STATE_V1;
-					TTimerState_ExtendedValue *tstate = (TTimerState_ExtendedValue*)ev.value;
-					tstate->RemainingTimeMs = new_value->DurationMS;
-					tstate->SenderID = new_value->SenderID;
-					ev.size = sizeof(TTimerState_ExtendedValue);
+					supla_esp_countdown_timer_countdown(new_value->DurationMS,
+							supla_relay_cfg[a].gpio_id,
+							supla_relay_cfg[a].channel,
+							target_value,
+							new_value->SenderID);
 
-					supla_esp_channel_extendedvalue_changed(new_value->ChannelNumber, &ev);
+	                #if ESP8266_SUPLA_PROTO_VERSION >= 12
+					if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+						TSuplaChannelExtendedValue ev;
+						supla_esp_countdown_get_state_ev(new_value->ChannelNumber, &ev);
+						supla_esp_channel_extendedvalue_changed(new_value->ChannelNumber, &ev);
+					}
+	                #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 				}
-                #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
-
 				break;
 			}
 #endif /*COUNTDOWN_TIMER_DISABLED*/
@@ -1395,6 +1409,7 @@ supla_esp_srpc_free(void) {
 	}
 }
 
+
 void DEVCONN_ICACHE_FLASH
 supla_esp_srpc_init(void) {
 
@@ -1412,7 +1427,6 @@ supla_esp_srpc_init(void) {
 
 	os_timer_setfn(&devconn->supla_iterate_timer, (os_timer_func_t *)supla_esp_devconn_iterate, NULL);
 	os_timer_arm(&devconn->supla_iterate_timer, 100, 1);
-
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1564,6 +1578,9 @@ supla_esp_devconn_init(void) {
 	os_timer_disarm(&devconn->supla_watchdog_timer);
 	os_timer_setfn(&devconn->supla_watchdog_timer, (os_timer_func_t *)supla_esp_devconn_watchdog_cb, NULL);
 	os_timer_arm(&devconn->supla_watchdog_timer, 1000, 1);
+
+	supla_esp_countdown_set_on_disarm_cb(supla_esp_devconn_on_countdown_on_disarm);
+	supla_esp_countdown_set_finish_cb(supla_esp_devconn_on_countdown_timer_finish);
 }
 
 void DEVCONN_ICACHE_FLASH

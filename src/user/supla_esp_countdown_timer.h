@@ -23,12 +23,29 @@
 
 #ifndef COUNTDOWN_TIMER_DISABLED
 
-typedef void (*_countdown_timer_finish_cb)(uint8 gpio_id, uint8 channel_number);
+typedef void (*_countdown_timer_finish_cb)(
+    uint8 gpio_id, uint8 channel_number,
+    char target_value[SUPLA_CHANNELVALUE_SIZE]);
+typedef void (*_countdown_timer_on_disarm)(uint8 channel_number);
+
+void CDT_ICACHE_FLASH_ATTR
+supla_esp_countdown_set_finish_cb(_countdown_timer_finish_cb finish_cb);
+void CDT_ICACHE_FLASH_ATTR
+supla_esp_countdown_set_on_disarm_cb(_countdown_timer_on_disarm on_disarm_cb);
 
 void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_init(void);
+
 uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
     unsigned int time_ms, uint8 gpio_id, uint8 channel_number,
-    _supla_int_t sender_id, _countdown_timer_finish_cb finish_cb);
+    char target_value[SUPLA_CHANNELVALUE_SIZE], _supla_int_t sender_id);
+
+uint8 CDT_ICACHE_FLASH_ATTR
+supla_esp_countdown_timer_disarm(uint8 channel_number);
+
+void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_get_state(
+    uint8 channel_number, TTimerState_ExtendedValue *state);
+void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_get_state_ev(
+    uint8 channel_number, TSuplaChannelExtendedValue *ev);
 
 #endif /*COUNTDOWN_TIMER_ENABLED*/
 
