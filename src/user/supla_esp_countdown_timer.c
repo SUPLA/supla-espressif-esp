@@ -85,6 +85,7 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
                                          i->target_value);
         }
         i->channel_number = 255;
+        save = 1;
       } else {
         i->time_left_ms -= time_diff;
       }
@@ -93,9 +94,8 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
 #ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
       if (save) {
         supla_esp_board_save_countdown_timer_state(
-            countdown_timer_vars.time_ms, countdown_timer_vars.gpio_id,
-            countdown_timer_vars.channel_number, i->target_value,
-            countdown_timer_vars.sender_id, 0);
+            i->time_left_ms, i->gpio_id, i->channel_number, i->target_value,
+            i->sender_id, 0);
       }
 #endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
     }
@@ -103,7 +103,7 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
 
 #ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
   if (save) {
-    supla_esp_board_save_countdown_timer_state(0, 0, 0, 0, 1);
+    supla_esp_board_save_countdown_timer_state(0, 0, 0, NULL, 0, 1);
   }
 #endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
 
