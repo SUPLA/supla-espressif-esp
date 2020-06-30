@@ -601,7 +601,8 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_on_disarm(uint8 channel_number) {
 	for(uint8 a=0;a<RELAY_MAX_COUNT;a++)
-		if ( channel_number == supla_relay_cfg[a].channel ) {
+		if ( supla_relay_cfg[a].gpio_id != 255
+			 && channel_number == supla_relay_cfg[a].channel ) {
 			if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
 				TSuplaChannelExtendedValue ev;
 				supla_esp_countdown_get_state_ev(channel_number, &ev);
