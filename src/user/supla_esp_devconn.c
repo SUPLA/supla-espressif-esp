@@ -1133,7 +1133,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 #ifndef COUNTDOWN_TIMER_DISABLED
 
-	supla_esp_countdown_timer_disarm(supla_relay_cfg[a].channel);
+	supla_esp_countdown_timer_disarm(new_value->ChannelNumber);
 
 	if ( new_value->DurationMS > 0 ) {
 
