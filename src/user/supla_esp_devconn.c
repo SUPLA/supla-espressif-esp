@@ -1135,6 +1135,8 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 	supla_esp_countdown_timer_disarm(new_value->ChannelNumber);
 
+	new_value->DurationMS = 30000;
+
 	if ( new_value->DurationMS > 0 ) {
 
 		for(a=0;a<RELAY_MAX_COUNT;a++)
@@ -1156,9 +1158,13 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 	                #if ESP8266_SUPLA_PROTO_VERSION >= 12
 					if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
-						TSuplaChannelExtendedValue ev;
-						supla_esp_countdown_get_state_ev(new_value->ChannelNumber, &ev);
-						supla_esp_channel_extendedvalue_changed(new_value->ChannelNumber, &ev);
+						TSuplaChannelExtendedValue *ev =
+						     (TSuplaChannelExtendedValue *)malloc(sizeof(TSuplaChannelExtendedValue));
+						if (ev != NULL) {
+							supla_esp_countdown_get_state_ev(new_value->ChannelNumber, ev);
+							supla_esp_channel_extendedvalue_changed(new_value->ChannelNumber, ev);
+							free(ev);
+						}
 					}
 	                #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 				}
