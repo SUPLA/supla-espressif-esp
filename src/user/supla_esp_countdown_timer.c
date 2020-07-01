@@ -178,6 +178,7 @@ uint8 CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_countdown(
   i->channel_number = channel_number;
   i->last_time = uptime_msec();
   i->gpio_id = gpio_id;
+  memcpy(i->target_value, target_value, sizeof(SUPLA_CHANNELVALUE_SIZE));
 
   supla_esp_countdown_timer_startstop();
 
