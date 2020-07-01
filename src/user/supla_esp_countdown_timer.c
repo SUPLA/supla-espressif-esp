@@ -37,9 +37,9 @@ typedef struct {
   ETSTimer timer;
   _t_countdown_timer_item items[RELAY_MAX_COUNT];
 
-#ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
+#ifdef BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS
   unsigned _supla_int64_t last_save_time;
-#endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
+#endif /*BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS*/
 
   _countdown_timer_finish_cb finish_cb;
   _countdown_timer_on_disarm on_disarm_cb;
@@ -68,10 +68,10 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_init(void) {
 void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_startstop(void);
 
 void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
-#ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
+#ifdef BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS
   uint8 save = uptime_msec() > countdown_timer_vars.last_save_time +
                                    BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS;
-#endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
+#endif /*BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS*/
 
   for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
     _t_countdown_timer_item *i = &countdown_timer_vars.items[a];
@@ -85,27 +85,31 @@ void CDT_ICACHE_FLASH_ATTR supla_esp_countdown_timer_cb(void *ptr) {
                                          i->target_value);
         }
         i->channel_number = 255;
+#ifdef BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS
         save = 1;
+#endif /*BOARD_COUNTDOWN_TIMER_SAVE_DELAY_M*/
       } else {
         i->time_left_ms -= time_diff;
       }
       i->last_time = now_ms;
 
-#ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
+#ifdef BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS
       if (save) {
+
         supla_esp_board_save_countdown_timer_state(
             i->time_left_ms, i->gpio_id, i->channel_number, i->target_value,
             i->sender_id, 0);
       }
-#endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
+#endif /*BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS*/
     }
   }
 
-#ifdef BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE
+#ifdef BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS
   if (save) {
     supla_esp_board_save_countdown_timer_state(0, 0, 0, NULL, 0, 1);
+    countdown_timer_vars.last_save_time = uptime_msec();
   }
-#endif /*BOARD_COUNTDOWN_TIMER_STATE_SAVERESTORE*/
+#endif /*BOARD_COUNTDOWN_TIMER_SAVE_DELAY_MS*/
 
   supla_esp_countdown_timer_startstop();
 }
