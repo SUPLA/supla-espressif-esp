@@ -58,15 +58,15 @@ unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void) {
 		usermain_uptime.cycles++;
 	}
 	usermain_uptime.last_system_time = time;
-	return usermain_uptime.cycles * (uint32)0xffffffff + (unsigned _supla_int64_t)time;
+	return usermain_uptime.cycles * (unsigned _supla_int64_t)0xffffffff + (unsigned _supla_int64_t)time;
 }
 
 unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void) {
-	return uptime_usec() / 1000;
+	return uptime_usec() / (unsigned _supla_int64_t)1000;
 }
 
 uint32 MAIN_ICACHE_FLASH uptime_sec(void) {
-	return uptime_msec() / 1000;
+	return uptime_msec() / (unsigned _supla_int64_t)1000;
 }
 
 void MAIN_ICACHE_FLASH supla_system_restart(void) {
