@@ -1139,8 +1139,6 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 	supla_esp_countdown_timer_disarm(new_value->ChannelNumber);
 
-	new_value->DurationMS = 30000;
-
 	if ( new_value->DurationMS > 0 ) {
 
 		for(a=0;a<RELAY_MAX_COUNT;a++)
