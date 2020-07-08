@@ -763,7 +763,9 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
         #ifndef COUNTDOWN_TIMER_DISABLED
+		if (input_cfg->channel != 255) {
 		   supla_esp_countdown_timer_disarm(input_cfg->channel);
+		}
         #endif /*COUNTDOWN_TIMER_DISABLED*/
 
 		//supla_log(LOG_DEBUG, "RELAY");
@@ -800,7 +802,9 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
 
         #ifndef COUNTDOWN_TIMER_DISABLED
+		if (input_cfg->channel != 255) {
 		   supla_esp_countdown_timer_disarm(input_cfg->channel);
+		}
         #endif /*COUNTDOWN_TIMER_DISABLED*/
 
 		supla_esp_gpio_relay_switch(input_cfg, 255);
