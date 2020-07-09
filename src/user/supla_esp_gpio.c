@@ -30,6 +30,7 @@
 #include "supla_esp_cfg.h"
 #include "supla_esp_devconn.h"
 #include "supla_esp_cfgmode.h"
+#include "supla_esp_countdown_timer.h"
 
 #include "supla-dev/log.h"
 
