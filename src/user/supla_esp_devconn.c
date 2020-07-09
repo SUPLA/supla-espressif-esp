@@ -1214,6 +1214,15 @@ supla_esp_get_channel_state(_supla_int_t ChannelNumber, _supla_int_t ReceiverID,
   if (rssi < 10) {
     state->Fields |= SUPLA_CHANNELSTATE_FIELD_WIFIRSSI;
     state->WiFiRSSI = rssi;
+
+    state->Fields |= SUPLA_CHANNELSTATE_FIELD_WIFISIGNALSTRENGTH;
+    if (rssi > -50) {
+    	state->WiFiSignalStrength = 100;
+    } else if (rssi <= -100) {
+    	state->WiFiSignalStrength = 0;
+    } else {
+    	state->WiFiSignalStrength = 2 * (rssi + 100);
+    }
   }
 
 #ifdef BOARD_ON_CHANNEL_STATE_PREPARE
