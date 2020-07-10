@@ -366,7 +366,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER 0x00000010
 #define SUPLA_BIT_FUNC_POWERSWITCH 0x00000020
 #define SUPLA_BIT_FUNC_LIGHTSWITCH 0x00000040
-#define SUPLA_BIT_FUNC_STAIRCASETIMER 0x00000080  // ver. >= 8
+#define SUPLA_BIT_FUNC_STAIRCASETIMER 0x00000080          // ver. >= 8
 #define SUPLA_BIT_FUNC_THERMOMETER 0x00000100             // ver. >= 12
 #define SUPLA_BIT_FUNC_HUMIDITYANDTEMPERATURE 0x00000200  // ver. >= 12
 #define SUPLA_BIT_FUNC_HUMIDITY 0x00000400                // ver. >= 12
@@ -422,16 +422,18 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CHANNEL_FLAG_CAP_ACTION3 0x0200                     // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_CAP_ACTION4 0x0400                     // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_CAP_ACTION5 0x0800                     // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_CHANNELSTATE 0x00010000                // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_PHASE1_UNSUPPORTED 0x00020000          // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_PHASE2_UNSUPPORTED 0x00040000          // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_PHASE3_UNSUPPORTED 0x00080000          // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_TIME_SETTING_NOT_AVAILABLE 0x00100000  // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_RSA_ENCRYPTED_PIN_REQUIRED 0x00200000  // ver. >= 12
-#define SUPLA_CHANNEL_OFFLINE_DURING_REGISTRATION 0x00400000      // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_ZIGBEE_BRIDGE 0x00800000               // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED 0x01000000   // ver. >= 12
-#define SUPLA_CHANNEL_FLAG_LIGHTSOURCEHEALTH_SETTABLE 0x02000000  // ver. >= 12
+// Four free bists 0x1000, 0x2000, 0x4000, 0x8000
+#define SUPLA_CHANNEL_FLAG_CHANNELSTATE 0x00010000                 // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_PHASE1_UNSUPPORTED 0x00020000           // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_PHASE2_UNSUPPORTED 0x00040000           // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_PHASE3_UNSUPPORTED 0x00080000           // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_TIME_SETTING_NOT_AVAILABLE 0x00100000   // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_RSA_ENCRYPTED_PIN_REQUIRED 0x00200000   // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_OFFLINE_DURING_REGISTRATION 0x00400000  // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_ZIGBEE_BRIDGE 0x00800000                // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED 0x01000000    // ver. >= 12
+#define SUPLA_CHANNEL_FLAG_LIGHTSOURCELIFESPAN_SETTABLE \
+  0x02000000  // ver. >= 12
 
 #define SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED 0x0001  // ver. >= 12
 
@@ -1228,10 +1230,10 @@ typedef struct {
 } TCalCfg_ProgressReport;
 
 typedef struct {
-  unsigned char ResetCounter;             // 0 - NO, 1 - YES
-  unsigned char SetTime;                  // 0 - NO, 1 - YES
-  unsigned short LightSourceHealthTotal;  // 0 - 65535 hours
-} TCalCfg_LightSourceHealth;
+  unsigned char ResetCounter;          // 0 - NO, 1 - YES
+  unsigned char SetTime;               // 0 - NO, 1 - YES
+  unsigned short LightSourceLifespan;  // 0 - 65535 hours
+} TCalCfg_LightSourceLifespan;
 
 // CALCFG == CALIBRATION / CONFIG
 typedef struct {
@@ -1438,13 +1440,13 @@ typedef struct {
 #define SUPLA_CHANNELSTATE_FIELD_BATTERYPOWERED 0x0008
 #define SUPLA_CHANNELSTATE_FIELD_WIFIRSSI 0x0010
 #define SUPLA_CHANNELSTATE_FIELD_WIFISIGNALSTRENGTH 0x0020
-#define SUPLA_CHANNELSTATE_FIELD_BRIDGESIGNALSTRENGTH 0x0040
+#define SUPLA_CHANNELSTATE_FIELD_BRIDGENODESIGNALSTRENGTH 0x0040
 #define SUPLA_CHANNELSTATE_FIELD_UPTIME 0x0080
 #define SUPLA_CHANNELSTATE_FIELD_CONNECTIONUPTIME 0x0100
 #define SUPLA_CHANNELSTATE_FIELD_BATTERYHEALTH 0x0200
 #define SUPLA_CHANNELSTATE_FIELD_BRIDGENODEONLINE 0x0400
 #define SUPLA_CHANNELSTATE_FIELD_LASTCONNECTIONRESETCAUSE 0x0800
-#define SUPLA_CHANNELSTATE_FIELD_LIGHTSOURCEHEALTH 0x1000
+#define SUPLA_CHANNELSTATE_FIELD_LIGHTSOURCELIFESPAN 0x1000
 
 #define SUPLA_LASTCONNECTIONRESETCAUSE_UNKNOWN 0
 #define SUPLA_LASTCONNECTIONRESETCAUSE_ACTIVITY_TIMEOUT 1
@@ -1467,16 +1469,16 @@ typedef struct {
   char WiFiRSSI;
   unsigned char WiFiSignalStrength;        // 0 - 100%
   unsigned char BridgeNodeOnline;          // 0/1
-  unsigned char BridgeSignalStrength;      // 0 - 100%
+  unsigned char BridgeNodeSignalStrength;  // 0 - 100%
   unsigned _supla_int_t Uptime;            // sec.
   unsigned _supla_int_t ConnectionUptime;  // sec.
   unsigned char BatteryHealth;
   unsigned char LastConnectionResetCause;  // SUPLA_LASTCONNECTIONRESETCAUSE_*
-  unsigned short LightSourceHealthTotal;   // 0 - 65535 hours
+  unsigned short LightSourceLifespan;      // 0 - 65535 hours
   short
-      LightSourceHealthLeft;  // -327,67 - 100.00% LightSourceHealthTotal * 0.01
-  char EmptySpace[4];         // Empty space for future use
-} TDSC_ChannelState;          // v. >= 12 Device -> Server -> Client
+      LightSourceLifespanLeft;  // -327,67 - 100.00% LightSourceLifespan * 0.01
+  char EmptySpace[4];           // Empty space for future use
+} TDSC_ChannelState;            // v. >= 12 Device -> Server -> Client
 
 #define TChannelState_ExtendedValue TDSC_ChannelState
 
