@@ -408,7 +408,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_MFR_FAKRO 9
 #define SUPLA_MFR_PEVEKO 10
 #define SUPLA_MFR_WEKTA 11
-#define SUPLA_MFR_LUXINO 12
+#define SUPLA_MFR_STA_SYSTEM 12
 
 #define SUPLA_CHANNEL_FLAG_ZWAVE_BRIDGE 0x0001                    // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_IR_BRIDGE 0x0002                       // ver. >= 12
@@ -1419,18 +1419,10 @@ typedef struct {
 } TSDC_UserLocalTimeResult;
 
 typedef struct {
-  _supla_int_t SenderID;  // Filled by server
-  union {
-    _supla_int_t ChannelID;       // Server -> Client
-    unsigned char ChannelNumber;  // Device -> Server
-  };
-} TCS_ChannelStateRequest;  // v. >= 12
-
-typedef struct {
   _supla_int_t SenderID;
   union {
-    _supla_int_t ChannelID;       // Server -> Client
-    unsigned char ChannelNumber;  // Device -> Server
+    _supla_int_t ChannelID;       // Client -> Server
+    unsigned char ChannelNumber;  // Server -> Device
   };
 } TCSD_ChannelStateRequest;  // v. >= 12 Client -> Server -> Device
 
