@@ -4,6 +4,9 @@
 #include <stdint.h>
 #include <c_types.h>
 #include <stdarg.h>
+#include <os_type.h>
+#include <mem.h>
+#include <user_interface.h>
 
 int strcasecmp(const char *a, const char *b);
 #ifndef FREERTOS

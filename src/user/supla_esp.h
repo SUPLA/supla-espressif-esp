@@ -19,13 +19,11 @@
 #ifndef SUPLA_ESP_H_
 #define SUPLA_ESP_H_
 
-#define MEMLEAK_DEBUG
-
 #include "supla-dev/proto.h"
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.7.21"
+#define SUPLA_ESP_SOFTVER "2.7.22"
 
 #define STATE_UNKNOWN       0
 #define STATE_DISCONNECTED  1
@@ -141,6 +139,10 @@
 
 #ifndef CDT_ICACHE_FLASH_ATTR
 #define CDT_ICACHE_FLASH_ATTR  ICACHE_FLASH_ATTR
+#endif
+
+#ifndef DNS_ICACHE_FLASH_ATTR
+#define DNS_ICACHE_FLASH_ATTR  ICACHE_FLASH_ATTR
 #endif
 
 #ifndef BTN1_DEFAULT

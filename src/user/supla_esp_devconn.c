@@ -37,6 +37,7 @@
 #include "supla-dev/srpc.h"
 #include "supla-dev/log.h"
 #include "supla_esp_countdown_timer.h"
+#include "supla_esp_dns_client.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
@@ -1477,38 +1478,48 @@ supla_esp_devconn_disconnect_cb(void *arg){
 }
 
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_dns_found_cb(const char *name, ip_addr_t *ip, void *arg) {
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_dns__found(ip_addr_t *ip) {
+  //supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
 
-	//supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
+  if (ip == NULL) {
+    supla_esp_set_state(LOG_NOTICE, "Domain not found.");
+    return;
+  }
 
-	if ( ip == NULL ) {
-		supla_esp_set_state(LOG_NOTICE, "Domain not found.");
-		return;
+  supla_espconn_disconnect(&devconn->ESPConn);
 
-	}
+  devconn->ESPConn.proto.tcp = &devconn->ESPTCP;
+  devconn->ESPConn.type = ESPCONN_TCP;
+  devconn->ESPConn.state = ESPCONN_NONE;
 
-	supla_espconn_disconnect(&devconn->ESPConn);
+  os_memcpy(devconn->ESPConn.proto.tcp->remote_ip, ip, 4);
+  devconn->ESPConn.proto.tcp->local_port = espconn_port();
 
-	devconn->ESPConn.proto.tcp = &devconn->ESPTCP;
-	devconn->ESPConn.type = ESPCONN_TCP;
-	devconn->ESPConn.state = ESPCONN_NONE;
+#if NOSSL == 1
+  devconn->ESPConn.proto.tcp->remote_port = 2015;
+#else
+  devconn->ESPConn.proto.tcp->remote_port = 2016;
+#endif
 
-	os_memcpy(devconn->ESPConn.proto.tcp->remote_ip, ip, 4);
-	devconn->ESPConn.proto.tcp->local_port = espconn_port();
+  espconn_regist_recvcb(&devconn->ESPConn, supla_esp_devconn_recv_cb);
+  espconn_regist_connectcb(&devconn->ESPConn, supla_esp_devconn_connect_cb);
+  espconn_regist_disconcb(&devconn->ESPConn, supla_esp_devconn_disconnect_cb);
 
-	#if NOSSL == 1
-		devconn->ESPConn.proto.tcp->remote_port = 2015;
-	#else
-		devconn->ESPConn.proto.tcp->remote_port = 2016;
-	#endif
+  supla_espconn_connect(&devconn->ESPConn);
+}
 
-	espconn_regist_recvcb(&devconn->ESPConn, supla_esp_devconn_recv_cb);
-	espconn_regist_connectcb(&devconn->ESPConn, supla_esp_devconn_connect_cb);
-	espconn_regist_disconcb(&devconn->ESPConn, supla_esp_devconn_disconnect_cb);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_dns_found_cb(const char *name,
+                                                         ip_addr_t *ip,
+                                                         void *arg) {
 
-	supla_espconn_connect(&devconn->ESPConn);
+#ifndef ADDITIONAL_DNS_CLIENT_DISABLED
+  if (ip == NULL) {
+	supla_esp_dns_resolve(supla_esp_cfg.Server, supla_esp_devconn_dns__found);
+    return;
+  }
+#endif /*ADDITIONAL_DNS_CLIENT_DISABLED*/
 
+  supla_esp_devconn_dns__found(ip);
 }
 
 void DEVCONN_ICACHE_FLASH

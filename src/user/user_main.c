@@ -37,6 +37,7 @@
 #include "supla_esp_electricity_meter.h"
 #include "supla_esp_impulse_counter.h"
 #include "supla_esp_countdown_timer.h"
+#include "supla_esp_dns_client.h"
 
 #include "board/supla_esp_board.c"
 
@@ -167,6 +168,10 @@ void MAIN_ICACHE_FLASH user_init(void)
       supla_esp_countdown_timer_init();
      #endif /*COUNTDOWN_TIMER_DISABLED*/
 
+     #ifndef ADDITIONAL_DNS_CLIENT_DISABLED
+      supla_esp_dns_client_init();
+     #endif /*ADDITIONAL_DNS_CLIENT_DISABLED*/
+
      supla_esp_devconn_init();
 
      #ifdef DS18B20
@@ -223,7 +228,7 @@ void MAIN_ICACHE_FLASH user_init(void)
 	#ifdef BOARD_ESP_STARTED
 	BOARD_ESP_STARTED;
 	#endif
-	
+
 #endif /*BOARD_USER_INIT*/
 
 }
