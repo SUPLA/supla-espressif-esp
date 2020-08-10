@@ -102,6 +102,14 @@
 #define INPUT_TYPE_BTN_BISTABLE_RS       5
 #define INPUT_TYPE_CUSTOM                200
 
+#ifndef INPUT_MIN_CYCLE_COUNT
+#define INPUT_MIN_CYCLE_COUNT   5
+#endif /*INPUT_MIN_CYCLE_COUNT*/
+
+#ifndef INPUT_CYCLE_TIME
+#define INPUT_CYCLE_TIME        20
+#endif /*INPUT_CYCLE_TIME*/
+
 // milliseconds
 #ifndef RS_START_DELAY
 #define RS_START_DELAY 1000

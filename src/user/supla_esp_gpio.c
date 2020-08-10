@@ -40,9 +40,6 @@
 #define LED_GREEN  0x2
 #define LED_BLUE   0x4
 
-#define INPUT_MIN_CYCLE_COUNT   5
-#define INPUT_CYCLE_TIME        20
-
 #define CFG_BTN_PRESS_COUNT     10
 
 #define RS_STATE_STOP           0
