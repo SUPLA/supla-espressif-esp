@@ -1265,8 +1265,8 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_c(
     int channel_number, char value[SUPLA_CHANNELVALUE_SIZE],
     unsigned char offline, unsigned _supla_int_t validity_time_sec) {
   if (supla_esp_devconn_is_registered()) {
-    srpc_ds_async_channel_value_changed_b(devconn->srpc, channel_number, value,
-                                          offline);
+    srpc_ds_async_channel_value_changed_c(devconn->srpc, channel_number, value,
+                                          offline, validity_time_sec);
   }
 }
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
