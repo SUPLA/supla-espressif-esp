@@ -835,6 +835,15 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
 
         break;
 
+      case SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_C:
+
+        if (srpc->sdp.data_size == sizeof(TDS_SuplaDeviceChannelValue_C))
+          rd->data.ds_device_channel_value_c =
+              (TDS_SuplaDeviceChannelValue_C *)malloc(
+                  sizeof(TDS_SuplaDeviceChannelValue_C));
+
+        break;
+
       case SUPLA_DS_CALL_DEVICE_CHANNEL_EXTENDEDVALUE_CHANGED:
 
         if (srpc->sdp.data_size <=
@@ -853,6 +862,17 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
         if (srpc->sdp.data_size == sizeof(TSD_SuplaChannelNewValue))
           rd->data.sd_channel_new_value = (TSD_SuplaChannelNewValue *)malloc(
               sizeof(TSD_SuplaChannelNewValue));
+
+        break;
+
+      case SUPLA_SD_CALL_GROUP_SET_VALUE:
+
+        if (srpc->sdp.data_size >=
+                sizeof(TSD_SuplaGroupNewValue) -
+                    (sizeof(unsigned char) * SUPLA_CHANNELMAXCOUNT) &&
+            srpc->sdp.data_size <= sizeof(TSD_SuplaGroupNewValue))
+          rd->data.sd_group_new_value =
+              (TSD_SuplaGroupNewValue *)malloc(sizeof(TSD_SuplaGroupNewValue));
 
         break;
 
@@ -943,7 +963,7 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
 
         break;
 
-      case SUPLA_CS_CALL_REGISTER_CLIENT_D:  // ver. >= 11
+      case SUPLA_CS_CALL_REGISTER_CLIENT_D:  // ver. >= 12
 
         if (srpc->sdp.data_size == sizeof(TCS_SuplaRegisterClient_D))
           rd->data.cs_register_client_d = (TCS_SuplaRegisterClient_D *)malloc(
@@ -1353,8 +1373,8 @@ srpc_call_min_version_required(void *_srpc, unsigned _supla_int_t call_type) {
     case SUPLA_DCS_CALL_GET_USER_LOCALTIME:
     case SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT:
     case SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST_B:
-    case SUPLA_CS_CALL_REGISTER_CLIENT_D:
       return 11;
+    case SUPLA_CS_CALL_REGISTER_CLIENT_D:
     case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
     case SUPLA_DSC_CALL_CHANNEL_STATE_RESULT:
     case SUPLA_CS_CALL_GET_CHANNEL_BASIC_CFG:
@@ -1370,8 +1390,10 @@ srpc_call_min_version_required(void *_srpc, unsigned _supla_int_t call_type) {
     case SUPLA_CS_CALL_DEVICE_RECONNECT_REQUEST:
     case SUPLA_SC_CALL_DEVICE_RECONNECT_REQUEST_RESULT:
     case SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_B:
+    case SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_C:
     case SUPLA_DS_CALL_GET_CHANNEL_FUNCTIONS:
     case SUPLA_SD_CALL_GET_CHANNEL_FUNCTIONS_RESULT:
+    case SUPLA_SD_CALL_GROUP_SET_VALUE:
       return 12;
   }
 
@@ -1665,6 +1687,18 @@ srpc_sd_async_set_channel_value(void *_srpc, TSD_SuplaChannelNewValue *value) {
 }
 
 _supla_int_t SRPC_ICACHE_FLASH
+srpc_sd_async_set_group_value(void *_srpc, TSD_SuplaGroupNewValue *value) {
+  _supla_int_t size = sizeof(TSD_SuplaGroupNewValue) -
+                      (sizeof(unsigned char) * SUPLA_CHANNELMAXCOUNT) +
+                      (sizeof(unsigned char) * value->ChannelCount);
+
+  if (size > sizeof(TSD_SuplaGroupNewValue)) return 0;
+
+  return srpc_async_call(_srpc, SUPLA_SD_CALL_GROUP_SET_VALUE, (char *)value,
+                         size);
+}
+
+_supla_int_t SRPC_ICACHE_FLASH
 srpc_ds_async_set_channel_result(void *_srpc, unsigned char ChannelNumber,
                                  _supla_int_t SenderID, char Success) {
   TDS_SuplaChannelNewValueResult result;
@@ -1705,6 +1739,19 @@ srpc_ds_async_channel_value_changed_b(void *_srpc, unsigned char channel_number,
 
   return srpc_async_call(_srpc, SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_B,
                          (char *)&ncsc, sizeof(TDS_SuplaDeviceChannelValue_B));
+}
+
+_supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_channel_value_changed_c(
+    void *_srpc, unsigned char channel_number, char *value,
+    unsigned char offline, unsigned _supla_int_t validity_time_sec) {
+  TDS_SuplaDeviceChannelValue_C ncsc;
+  ncsc.ChannelNumber = channel_number;
+  ncsc.Offline = !!offline;
+  ncsc.ValidityTimeSec = validity_time_sec;
+  memcpy(ncsc.value, value, SUPLA_CHANNELVALUE_SIZE);
+
+  return srpc_async_call(_srpc, SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_C,
+                         (char *)&ncsc, sizeof(TDS_SuplaDeviceChannelValue_C));
 }
 
 _supla_int_t SRPC_ICACHE_FLASH srpc_ds_async_channel_extendedvalue_changed(
@@ -2335,6 +2382,11 @@ srpc_evtool_emev_v1to2(TElectricityMeter_ExtendedValue *v1,
   memcpy(v2->m, v1->m,
          sizeof(TElectricityMeter_Measurement) * EM_MEASUREMENT_COUNT);
 
+  v2->measured_values ^=
+      v1->measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY_BALANCED;
+  v2->measured_values ^=
+      v1->measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY_BALANCED;
+
   return 1;
 }
 
@@ -2344,7 +2396,7 @@ srpc_evtool_emev_v2to1(TElectricityMeter_ExtendedValue_V2 *v2,
   if (v1 == NULL || v2 == NULL) {
     return 0;
   }
-  memset(v1, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
+  memset(v1, 0, sizeof(TElectricityMeter_ExtendedValue));
 
   for (int a = 0; a < 3; a++) {
     v1->total_forward_active_energy[a] = v2->total_forward_active_energy[a];
@@ -2364,9 +2416,9 @@ srpc_evtool_emev_v2to1(TElectricityMeter_ExtendedValue_V2 *v2,
          sizeof(TElectricityMeter_Measurement) * EM_MEASUREMENT_COUNT);
 
   v1->measured_values ^=
-      v1->measured_values & EM_VAR_FORWARD_REACTIVE_ENERGY_BALANCED;
+      v1->measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY_BALANCED;
   v1->measured_values ^=
-      v1->measured_values & EM_VAR_REVERSE_REACTIVE_ENERGY_BALANCED;
+      v1->measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY_BALANCED;
 
   return 1;
 }
