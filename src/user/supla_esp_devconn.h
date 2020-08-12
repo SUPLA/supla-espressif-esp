@@ -51,6 +51,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_get_channel_functions(void);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_b(
     int channel_number, char value[SUPLA_CHANNELVALUE_SIZE],
     unsigned char offline);
+void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_c(
+    int channel_number, char value[SUPLA_CHANNELVALUE_SIZE],
+    unsigned char offline, unsigned _supla_int_t validity_time_sec);
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12 || defined(CHANNEL_STATE_TOOLS)*/
 
 #if defined(RGB_CONTROLLER_CHANNEL) \
