@@ -1349,6 +1349,7 @@ supla_esp_devconn_iterate(void *timer_arg) {
 
 					srd.ManufacturerID = MANUFACTURER_ID;
 					srd.ProductID = PRODUCT_ID;
+					srd.Flags = DEVICE_FLAGS;
 					srd.channel_count = 0;
 					ets_snprintf(srd.Email, SUPLA_EMAIL_MAXSIZE, "%s", supla_esp_cfg.Email);
 					ets_snprintf(srd.ServerName, SUPLA_SERVER_NAME_MAXSIZE, "%s", supla_esp_cfg.Server);

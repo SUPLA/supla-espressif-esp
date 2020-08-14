@@ -169,6 +169,10 @@
 #define PRODUCT_ID 0
 #endif
 
+#ifndef DEVICE_FLAGS
+#define DEVICE_FLAGS 0
+#endif
+
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size);
 #if ESP8266_SUPLA_PROTO_VERSION >= 10
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count);
