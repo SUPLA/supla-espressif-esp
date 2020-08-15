@@ -1271,66 +1271,74 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_c(
 }
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 
+void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
+    void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd,
+    unsigned char proto_version) {
+  TsrpcReceivedData rd;
+  char result;
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_on_remote_call_received(void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd, unsigned char proto_version) {
+  devconn->last_response = uptime_sec();
 
-	TsrpcReceivedData rd;
-	char result;
+  // supla_log(LOG_DEBUG, "call_received");
 
-	devconn->last_response = uptime_sec();
+  if (SUPLA_RESULT_TRUE == (result = srpc_getdata(_srpc, &rd, 0))) {
+    switch (rd.call_type) {
+      case SUPLA_SDC_CALL_VERSIONERROR:
+        supla_esp_on_version_error(rd.data.sdc_version_error);
+        break;
+      case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT:
+        supla_esp_on_register_result(rd.data.sd_register_device_result);
+        break;
+      case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
+        supla_esp_channel_set_value(rd.data.sd_channel_new_value);
+        break;
+#if DEVICE_FLAGS & SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED
+      case SUPLA_SD_CALL_GROUP_SET_VALUE:
+        if (rd.data.sd_group_new_value) {
+          supla_esp_board_channelgroup_set_new_value(
+              rd.data.sd_group_new_value);
+        }
+        break;
+#endif /*DEVICE_FLAGS & SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED*/
 
-	//supla_log(LOG_DEBUG, "call_received");
+      case SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT:
+        supla_esp_channel_set_activity_timeout_result(
+            rd.data.sdc_set_activity_timeout_result);
+        break;
+#ifdef __FOTA
+      case SUPLA_SD_CALL_GET_FIRMWARE_UPDATE_URL_RESULT:
+        supla_esp_update_url_result(rd.data.sc_firmware_update_url_result);
+        break;
+#endif /*__FOTA*/
+#ifdef BOARD_CALCFG
+      case SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST:
+        supla_esp_board_calcfg_request(rd.data.sd_device_calcfg_request);
+        break;
+#endif /*BOARD_CALCFG*/
+#ifdef BOARD_ON_USER_LOCALTIME_RESULT
+      case SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT:
+        supla_esp_board_on_user_localtime_result(
+            rd.data.sdc_user_localtime_result);
+        break;
+#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
+#if ESP8266_SUPLA_PROTO_VERSION >= 12
+      case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
+        supla_esp_get_channel__state(_srpc, rd.data.csd_channel_state_request);
+        break;
+#ifdef BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT
+      case SUPLA_SD_CALL_GET_CHANNEL_FUNCTIONS_RESULT:
+        supla_esp_board_on_get_channel_functions_result(
+            rd.data.sd_channel_functions);
+        break;
+#endif /*BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT*/
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+    }
 
-	if ( SUPLA_RESULT_TRUE == ( result = srpc_getdata(_srpc, &rd, 0)) ) {
+    srpc_rd_free(&rd);
 
-		switch(rd.call_type) {
-		case SUPLA_SDC_CALL_VERSIONERROR:
-			supla_esp_on_version_error(rd.data.sdc_version_error);
-			break;
-		case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT:
-			supla_esp_on_register_result(rd.data.sd_register_device_result);
-			break;
-		case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
-			supla_esp_channel_set_value(rd.data.sd_channel_new_value);
-			break;
-		case SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT:
-			supla_esp_channel_set_activity_timeout_result(rd.data.sdc_set_activity_timeout_result);
-			break;
-		#ifdef __FOTA
-		case SUPLA_SD_CALL_GET_FIRMWARE_UPDATE_URL_RESULT:
-			supla_esp_update_url_result(rd.data.sc_firmware_update_url_result);
-			break;
-		#endif /*__FOTA*/
-		#ifdef BOARD_CALCFG
-		case SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST:
-			supla_esp_board_calcfg_request(rd.data.sd_device_calcfg_request);
-			break;
-		#endif /*BOARD_CALCFG*/
-		#ifdef BOARD_ON_USER_LOCALTIME_RESULT
-		case SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT:
-			supla_esp_board_on_user_localtime_result(rd.data.sdc_user_localtime_result);
-			break;
-		#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
-		#if ESP8266_SUPLA_PROTO_VERSION >= 12
-		case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
-			supla_esp_get_channel__state(_srpc, rd.data.csd_channel_state_request);
-			break;
-        #ifdef BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT
-		case SUPLA_SD_CALL_GET_CHANNEL_FUNCTIONS_RESULT:
-			supla_esp_board_on_get_channel_functions_result(rd.data.sd_channel_functions);
-			break;
-        #endif /*BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT*/
-		#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
-		}
-
-		srpc_rd_free(&rd);
-
-	} else if ( result == SUPLA_RESULT_DATA_ERROR ) {
-
-		supla_log(LOG_DEBUG, "DATA ERROR!");
-	}
-
+  } else if (result == SUPLA_RESULT_DATA_ERROR) {
+    supla_log(LOG_DEBUG, "DATA ERROR!");
+  }
 }
 
 void
