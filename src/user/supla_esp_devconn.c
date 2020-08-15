@@ -1295,8 +1295,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #if DEVICE_FLAGS & SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED
       case SUPLA_SD_CALL_GROUP_SET_VALUE:
         if (rd.data.sd_group_new_value) {
-          supla_esp_board_channelgroup_set_new_value(
-              rd.data.sd_group_new_value);
+          supla_esp_board_channelgroup_set_value(rd.data.sd_group_new_value);
         }
         break;
 #endif /*DEVICE_FLAGS & SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED*/
