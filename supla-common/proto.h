@@ -166,50 +166,51 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CS_CALL_GET_NEXT 180
 #define SUPLA_SC_CALL_EVENT 190
 #define SUPLA_CS_CALL_CHANNEL_SET_VALUE 200
-#define SUPLA_CS_CALL_CHANNEL_SET_VALUE_B 205                // ver. >= 3
-#define SUPLA_DCS_CALL_SET_ACTIVITY_TIMEOUT 210              // ver. >= 2
-#define SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT 220       // ver. >= 2
-#define SUPLA_DS_CALL_GET_FIRMWARE_UPDATE_URL 300            // ver. >= 5
-#define SUPLA_SD_CALL_GET_FIRMWARE_UPDATE_URL_RESULT 310     // ver. >= 5
-#define SUPLA_DCS_CALL_GET_REGISTRATION_ENABLED 320          // ver. >= 7
-#define SUPLA_SDC_CALL_GET_REGISTRATION_ENABLED_RESULT 330   // ver. >= 7
-#define SUPLA_CS_CALL_OAUTH_TOKEN_REQUEST 340                // ver. >= 10
-#define SUPLA_SC_CALL_OAUTH_TOKEN_REQUEST_RESULT 350         // ver. >= 10
-#define SUPLA_SC_CALL_CHANNELPACK_UPDATE_B 360               // ver. >= 8
-#define SUPLA_SC_CALL_CHANNELPACK_UPDATE_C 361               // ver. >= 10
-#define SUPLA_SC_CALL_CHANNEL_UPDATE_B 370                   // ver. >= 8
-#define SUPLA_SC_CALL_CHANNEL_UPDATE_C 371                   // ver. >= 10
-#define SUPLA_SC_CALL_CHANNELGROUP_PACK_UPDATE 380           // ver. >= 9
-#define SUPLA_SC_CALL_CHANNELGROUP_PACK_UPDATE_B 381         // ver. >= 10
-#define SUPLA_SC_CALL_CHANNELGROUP_RELATION_PACK_UPDATE 390  // ver. >= 9
-#define SUPLA_SC_CALL_CHANNELVALUE_PACK_UPDATE 400           // ver. >= 9
-#define SUPLA_SC_CALL_CHANNELEXTENDEDVALUE_PACK_UPDATE 405   // ver. >= 10
-#define SUPLA_CS_CALL_SET_VALUE 410                          // ver. >= 9
-#define SUPLA_CS_CALL_SUPERUSER_AUTHORIZATION_REQUEST 420    // ver. >= 10
-#define SUPLA_SC_CALL_SUPERUSER_AUTHORIZATION_RESULT 430     // ver. >= 10
-#define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST 440              // ver. >= 10
-#define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST_B 445            // ver. >= 11
-#define SUPLA_SC_CALL_DEVICE_CALCFG_RESULT 450               // ver. >= 10
-#define SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST 460              // ver. >= 10
-#define SUPLA_DS_CALL_DEVICE_CALCFG_RESULT 470               // ver. >= 10
-#define SUPLA_DCS_CALL_GET_USER_LOCALTIME 480                // ver. >= 11
-#define SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT 490         // ver. >= 11
-#define SUPLA_CSD_CALL_GET_CHANNEL_STATE 500                 // ver. >= 12
-#define SUPLA_DSC_CALL_CHANNEL_STATE_RESULT 510              // ver. >= 12
-#define SUPLA_CS_CALL_GET_CHANNEL_BASIC_CFG 520              // ver. >= 12
-#define SUPLA_SC_CALL_CHANNEL_BASIC_CFG_RESULT 530           // ver. >= 12
-#define SUPLA_CS_CALL_SET_CHANNEL_FUNCTION 540               // ver. >= 12
-#define SUPLA_SC_CALL_SET_CHANNEL_FUNCTION_RESULT 550        // ver. >= 12
-#define SUPLA_CS_CALL_CLIENTS_RECONNECT_REQUEST 560          // ver. >= 12
-#define SUPLA_SC_CALL_CLIENTS_RECONNECT_REQUEST_RESULT 570   // ver. >= 12
-#define SUPLA_CS_CALL_SET_REGISTRATION_ENABLED 580           // ver. >= 12
-#define SUPLA_SC_CALL_SET_REGISTRATION_ENABLED_RESULT 590    // ver. >= 12
-#define SUPLA_CS_CALL_DEVICE_RECONNECT_REQUEST 600           // ver. >= 12
-#define SUPLA_SC_CALL_DEVICE_RECONNECT_REQUEST_RESULT 610    // ver. >= 12
-#define SUPLA_DS_CALL_GET_CHANNEL_FUNCTIONS 620              // ver. >= 12
-#define SUPLA_SD_CALL_GET_CHANNEL_FUNCTIONS_RESULT 630       // ver. >= 12
-#define SUPLA_CS_CALL_SET_CHANNEL_CAPTION 640                // ver. >= 12
-#define SUPLA_SC_CALL_SET_CHANNEL_CAPTION_RESULT 650         // ver. >= 12
+#define SUPLA_CS_CALL_CHANNEL_SET_VALUE_B 205                 // ver. >= 3
+#define SUPLA_DCS_CALL_SET_ACTIVITY_TIMEOUT 210               // ver. >= 2
+#define SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT 220        // ver. >= 2
+#define SUPLA_DS_CALL_GET_FIRMWARE_UPDATE_URL 300             // ver. >= 5
+#define SUPLA_SD_CALL_GET_FIRMWARE_UPDATE_URL_RESULT 310      // ver. >= 5
+#define SUPLA_DCS_CALL_GET_REGISTRATION_ENABLED 320           // ver. >= 7
+#define SUPLA_SDC_CALL_GET_REGISTRATION_ENABLED_RESULT 330    // ver. >= 7
+#define SUPLA_CS_CALL_OAUTH_TOKEN_REQUEST 340                 // ver. >= 10
+#define SUPLA_SC_CALL_OAUTH_TOKEN_REQUEST_RESULT 350          // ver. >= 10
+#define SUPLA_SC_CALL_CHANNELPACK_UPDATE_B 360                // ver. >= 8
+#define SUPLA_SC_CALL_CHANNELPACK_UPDATE_C 361                // ver. >= 10
+#define SUPLA_SC_CALL_CHANNEL_UPDATE_B 370                    // ver. >= 8
+#define SUPLA_SC_CALL_CHANNEL_UPDATE_C 371                    // ver. >= 10
+#define SUPLA_SC_CALL_CHANNELGROUP_PACK_UPDATE 380            // ver. >= 9
+#define SUPLA_SC_CALL_CHANNELGROUP_PACK_UPDATE_B 381          // ver. >= 10
+#define SUPLA_SC_CALL_CHANNELGROUP_RELATION_PACK_UPDATE 390   // ver. >= 9
+#define SUPLA_SC_CALL_CHANNELVALUE_PACK_UPDATE 400            // ver. >= 9
+#define SUPLA_SC_CALL_CHANNELEXTENDEDVALUE_PACK_UPDATE 405    // ver. >= 10
+#define SUPLA_CS_CALL_SET_VALUE 410                           // ver. >= 9
+#define SUPLA_CS_CALL_SUPERUSER_AUTHORIZATION_REQUEST 420     // ver. >= 10
+#define SUPLA_CS_CALL_GET_SUPERUSER_AUTHORIZATION_RESULT 425  // ver. >= 12
+#define SUPLA_SC_CALL_SUPERUSER_AUTHORIZATION_RESULT 430      // ver. >= 10
+#define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST 440               // ver. >= 10
+#define SUPLA_CS_CALL_DEVICE_CALCFG_REQUEST_B 445             // ver. >= 11
+#define SUPLA_SC_CALL_DEVICE_CALCFG_RESULT 450                // ver. >= 10
+#define SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST 460               // ver. >= 10
+#define SUPLA_DS_CALL_DEVICE_CALCFG_RESULT 470                // ver. >= 10
+#define SUPLA_DCS_CALL_GET_USER_LOCALTIME 480                 // ver. >= 11
+#define SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT 490          // ver. >= 11
+#define SUPLA_CSD_CALL_GET_CHANNEL_STATE 500                  // ver. >= 12
+#define SUPLA_DSC_CALL_CHANNEL_STATE_RESULT 510               // ver. >= 12
+#define SUPLA_CS_CALL_GET_CHANNEL_BASIC_CFG 520               // ver. >= 12
+#define SUPLA_SC_CALL_CHANNEL_BASIC_CFG_RESULT 530            // ver. >= 12
+#define SUPLA_CS_CALL_SET_CHANNEL_FUNCTION 540                // ver. >= 12
+#define SUPLA_SC_CALL_SET_CHANNEL_FUNCTION_RESULT 550         // ver. >= 12
+#define SUPLA_CS_CALL_CLIENTS_RECONNECT_REQUEST 560           // ver. >= 12
+#define SUPLA_SC_CALL_CLIENTS_RECONNECT_REQUEST_RESULT 570    // ver. >= 12
+#define SUPLA_CS_CALL_SET_REGISTRATION_ENABLED 580            // ver. >= 12
+#define SUPLA_SC_CALL_SET_REGISTRATION_ENABLED_RESULT 590     // ver. >= 12
+#define SUPLA_CS_CALL_DEVICE_RECONNECT_REQUEST 600            // ver. >= 12
+#define SUPLA_SC_CALL_DEVICE_RECONNECT_REQUEST_RESULT 610     // ver. >= 12
+#define SUPLA_DS_CALL_GET_CHANNEL_FUNCTIONS 620               // ver. >= 12
+#define SUPLA_SD_CALL_GET_CHANNEL_FUNCTIONS_RESULT 630        // ver. >= 12
+#define SUPLA_CS_CALL_SET_CHANNEL_CAPTION 640                 // ver. >= 12
+#define SUPLA_SC_CALL_SET_CHANNEL_CAPTION_RESULT 650          // ver. >= 12
 
 #define SUPLA_RESULT_CALL_NOT_ALLOWED -5
 #define SUPLA_RESULT_DATA_TOO_LARGE -4
@@ -709,6 +710,7 @@ typedef struct {
 typedef struct {
   // server -> device
   _supla_int_t SenderID;
+  _supla_int_t GroupID;
   unsigned _supla_int_t DurationMS;
 
   char value[SUPLA_CHANNELVALUE_SIZE];
@@ -1200,18 +1202,20 @@ typedef struct {
 #define SUPLA_CALCFG_RESULT_DEBUG 105                        // ver. >= 12
 #define SUPLA_CALCFG_RESULT_NOT_SUPPORTED_IN_SLAVE_MODE 106  // ver. >= 12
 
-#define SUPLA_CALCFG_CMD_GET_CHANNEL_FUNCLIST 1000        // v. >= 11
-#define SUPLA_CALCFG_CMD_CANCEL_ALL_CLIENT_COMMANDS 1010  // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_RESET_AND_CLEAR 2000       // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_ADD_NODE 2010              // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_REMOVE_NODE 2020           // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_GET_NODE_LIST 2030         // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_GET_ASSIGNED_NODE_ID 2040  // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_ASSIGN_NODE_ID 2050        // v. >= 12
-#define SUPLA_CALCFG_CMD_ZWAVE_CONFIG_MODE_ACTIVE 4000    // v. >= 12
-#define SUPLA_CALCFG_CMD_DEBUG_STRING 5000                // v. >= 12
-#define SUPLA_CALCFG_CMD_PROGRESS_REPORT 5001             // v. >= 12
-#define SUPLA_CALCFG_CMD_SET_LIGHTSOURCE_LIFESPAN 6000    // v. >= 12
+#define SUPLA_CALCFG_CMD_GET_CHANNEL_FUNCLIST 1000                   // v. >= 11
+#define SUPLA_CALCFG_CMD_CANCEL_ALL_CLIENT_COMMANDS 1010             // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_RESET_AND_CLEAR 2000                  // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_ADD_NODE 2010                         // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_REMOVE_NODE 2020                      // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_GET_NODE_LIST 2030                    // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_GET_ASSIGNED_NODE_ID 2040             // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_ASSIGN_NODE_ID 2050                   // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_GET_WAKE_UP_SETTINGS 2060             // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_WAKE_UP_SETTINGS_CHANGE_REQUEST 2070  // v. >= 12
+#define SUPLA_CALCFG_CMD_ZWAVE_CONFIG_MODE_ACTIVE 4000               // v. >= 12
+#define SUPLA_CALCFG_CMD_DEBUG_STRING 5000                           // v. >= 12
+#define SUPLA_CALCFG_CMD_PROGRESS_REPORT 5001                        // v. >= 12
+#define SUPLA_CALCFG_CMD_SET_LIGHTSOURCE_LIFESPAN 6000               // v. >= 12
 
 #define CALCFG_ZWAVE_SCREENTYPE_UNKNOWN 0
 #define CALCFG_ZWAVE_SCREENTYPE_MULTILEVEL 1
@@ -1224,6 +1228,7 @@ typedef struct {
 #define ZWAVE_NODE_NAME_MAXSIZE 50
 
 #define ZWAVE_NODE_FLAG_CHANNEL_ASSIGNED 0x1
+#define ZWAVE_NODE_FLAG_WAKEUP_TIME_SETTABLE 0x2
 
 typedef struct {
   unsigned char Id;
@@ -1236,6 +1241,17 @@ typedef struct {
   unsigned char NameSize;  // including the terminating null byte ('\0')
   char Name[ZWAVE_NODE_NAME_MAXSIZE];  // UTF8. Last variable in struct!
 } TCalCfg_ZWave_Node;                  // v. >= 12
+
+typedef struct {
+  unsigned int MinimumSec : 24;
+  unsigned int MaximumSec : 24;
+  unsigned int ValueSec : 24;
+  unsigned int IntervalStepSec : 24;
+} TCalCfg_ZWave_WakeupSettingsReport;
+
+typedef struct {
+  unsigned int ValueSec : 24;
+} TCalCfg_ZWave_WakeupSettingsChangeRequst;
 
 typedef struct {
   _supla_int_t Command;
