@@ -1177,6 +1177,25 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 	}
 }
 
+#if ESP8266_SUPLA_PROTO_VERSION >= 13
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_set_value_b(TSD_SuplaChannelNewValue_B *new_value_b) {
+#ifdef BOARD_ON_CHANNEL_VALUE_SET_B
+  BOARD_ON_CHANNEL_VALUE_SET_B
+#endif /*BOARD_ON_CHANNEL_VALUE_SET_B*/
+
+  TSD_SuplaChannelNewValue new_value;
+  memset(&new_value, 0, sizeof(TSD_SuplaChannelNewValue));
+
+  new_value.SenderID = new_value_b->SenderID;
+  new_value.ChannelNumber = new_value_b->ChannelNumber;
+  new_value.DurationMS = new_value_b->DurationMS;
+  memcpy(new_value.value, new_value_b->value, SUPLA_CHANNELVALUE_SIZE);
+
+  supla_esp_channel_set_value(&new_value);
+}
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 13*/
+
 void DEVCONN_ICACHE_FLASH supla_esp_set_channel_result(
     unsigned char ChannelNumber, _supla_int_t SenderID, char Success) {
   if (supla_esp_devconn_is_registered()) {
@@ -1292,14 +1311,11 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
       case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
         supla_esp_channel_set_value(rd.data.sd_channel_new_value);
         break;
-#if DEVICE_FLAGS & SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED
-      case SUPLA_SD_CALL_GROUP_SET_VALUE:
-        if (rd.data.sd_group_new_value) {
-          supla_esp_board_channelgroup_set_value(rd.data.sd_group_new_value);
-        }
+#if ESP8266_SUPLA_PROTO_VERSION >= 13
+      case SUPLA_SD_CALL_CHANNEL_SET_VALUE_B:
+        supla_esp_channel_set_value_b(rd.data.sd_channel_new_value_b);
         break;
-#endif /*DEVICE_FLAGS & SUPLA_DEVICE_FLAG_GROUP_CONTROL_EXPECTED*/
-
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 13*/
       case SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT:
         supla_esp_channel_set_activity_timeout_result(
             rd.data.sdc_set_activity_timeout_result);
