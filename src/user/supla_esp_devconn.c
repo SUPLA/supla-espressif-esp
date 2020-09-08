@@ -1187,7 +1187,8 @@ supla_esp_channel_set_value_b(TSD_SuplaChannelNewValue_B *new_value_b) {
   TSD_SuplaChannelNewValue new_value;
   memset(&new_value, 0, sizeof(TSD_SuplaChannelNewValue));
 
-  new_value.SenderID = new_value_b->SenderID;
+  // Do not pass the SenderID to TSD_SuplaChannelNewValue
+  new_value.SenderID = 0;
   new_value.ChannelNumber = new_value_b->ChannelNumber;
   new_value.DurationMS = new_value_b->DurationMS;
   memcpy(new_value.value, new_value_b->value, SUPLA_CHANNELVALUE_SIZE);
