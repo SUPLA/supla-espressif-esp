@@ -1,5 +1,5 @@
-csrc = $(wildcard gtest/*.c) $(wildcard src/*.c)
-ccsrc = $(wildcard gtest/*.cc) $(wildcard src/*.cc)
+csrc = $(wildcard gtest/*.c) $(wildcard src/*.c) $(wildcard mock/*.c)
+ccsrc = $(wildcard gtest/*.cc) $(wildcard src/*.cc) $(wildcard mock/*.cc)
 obj = $(csrc:.c=.o) $(ccsrc:.cc=.o)
 dep = $(obj:.o=.d) 
 
