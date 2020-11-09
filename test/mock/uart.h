@@ -22,6 +22,8 @@
 #include <c_types.h>
 
 void rx_buff_set_ptr(char* pdata, uint16 size);
+void tx_buff_set_ptr(char* pdata, uint16 size);
 uint16 rx_buff_deq(char* pdata, uint16 data_len);
+void tx_buff_enq(char* pdata, uint16 data_len);
 
 #endif /*MOCK_UART_H_*/

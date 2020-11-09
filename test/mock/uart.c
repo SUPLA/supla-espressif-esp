@@ -26,23 +26,43 @@ typedef struct {
   uint16 size;
 } _uart_mock_buff;
 
-_uart_mock_buff uart_mock_buff;
+_uart_mock_buff uart_mock_rx_buff;
+_uart_mock_buff uart_mock_tx_buff;
+
+void uart_mock_buff_set_ptr(_uart_mock_buff *buf, char *pdata, uint16 size) {
+  buf->pos = 0;
+  buf->pdata = pdata;
+  buf->size = size;
+}
+
+void tx_buff_set_ptr(char *pdata, uint16 size) {
+  uart_mock_buff_set_ptr(&uart_mock_tx_buff, pdata, size);
+}
 
 void rx_buff_set_ptr(char *pdata, uint16 size) {
-  uart_mock_buff.pos = 0;
-  uart_mock_buff.pdata = pdata;
-  uart_mock_buff.size = size;
+  uart_mock_buff_set_ptr(&uart_mock_rx_buff, pdata, size);
 }
 
 uint16 rx_buff_deq(char *pdata, uint16 data_len) {
-  if (uart_mock_buff.size - uart_mock_buff.pos < data_len) {
-    data_len = uart_mock_buff.size - uart_mock_buff.pos;
+  if (uart_mock_rx_buff.size - uart_mock_rx_buff.pos < data_len) {
+    data_len = uart_mock_rx_buff.size - uart_mock_rx_buff.pos;
   }
 
   if (data_len > 0) {
-    memcpy(pdata, &uart_mock_buff.pdata[uart_mock_buff.pos], data_len);
-    uart_mock_buff.pos += data_len;
+    memcpy(pdata, &uart_mock_rx_buff.pdata[uart_mock_rx_buff.pos], data_len);
+    uart_mock_rx_buff.pos += data_len;
   }
 
   return data_len;
+}
+
+void tx_buff_enq(char *pdata, uint16 data_len) {
+  if (uart_mock_tx_buff.size - uart_mock_tx_buff.pos < data_len) {
+    data_len = uart_mock_tx_buff.size - uart_mock_tx_buff.pos;
+  }
+
+  if (data_len > 0) {
+    memcpy(&uart_mock_tx_buff.pdata[uart_mock_tx_buff.pos], pdata, data_len);
+    uart_mock_tx_buff.pos += data_len;
+  }
 }
