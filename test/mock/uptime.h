@@ -20,7 +20,7 @@
 #define MOCK_UPTIME_H_
 
 #include <c_types.h>
-#include "proto.h"
+#include <proto.h>
 
 #ifdef __cplusplus
 extern "C" {
