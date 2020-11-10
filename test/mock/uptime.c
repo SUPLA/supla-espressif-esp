@@ -16,22 +16,27 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef MOCK_UART_H_
-#define MOCK_UART_H_
+#include "uptime.h"
+#include <sys/time.h>
+#include <string.h>
 
-#include <c_types.h>
+unsigned _supla_int64_t uptime_start_usec = 0;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+unsigned _supla_int64_t uptime_usec(void) {
+  struct timeval now;
+  gettimeofday(&now, NULL);
 
-void rx_buff_set_ptr(char* pdata, uint16 size);
-void tx_buff_set_ptr(char* pdata, uint16 size, uint16** pos);
-uint16 rx_buff_deq(char* pdata, uint16 data_len);
-void tx_buff_enq(char* pdata, uint16 data_len);
+  if (uptime_start_usec == 0) {
+    uptime_start_usec = now.tv_sec * 1000000 + now.tv_usec - 1000000;
+  }
 
-#ifdef __cplusplus
+  return now.tv_sec * 1000000 + now.tv_usec - uptime_start_usec;
 }
-#endif
 
-#endif /*MOCK_UART_H_*/
+unsigned _supla_int64_t uptime_msec(void) {
+  return uptime_usec() / (unsigned _supla_int64_t)1000;
+}
+
+uint32 uptime_sec(void) {
+  return uptime_msec() / (unsigned _supla_int64_t)1000;
+}

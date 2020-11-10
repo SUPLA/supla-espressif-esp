@@ -16,22 +16,22 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef MOCK_UART_H_
-#define MOCK_UART_H_
+#ifndef MOCK_UPTIME_H_
+#define MOCK_UPTIME_H_
 
 #include <c_types.h>
+#include "proto.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void rx_buff_set_ptr(char* pdata, uint16 size);
-void tx_buff_set_ptr(char* pdata, uint16 size, uint16** pos);
-uint16 rx_buff_deq(char* pdata, uint16 data_len);
-void tx_buff_enq(char* pdata, uint16 data_len);
+unsigned _supla_int64_t uptime_usec(void);
+unsigned _supla_int64_t uptime_msec(void);
+uint32 uptime_sec(void);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /*MOCK_UART_H_*/
+#endif /*MOCK_UPTIME_H_*/

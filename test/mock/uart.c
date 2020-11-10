@@ -35,8 +35,11 @@ void uart_mock_buff_set_ptr(_uart_mock_buff *buf, char *pdata, uint16 size) {
   buf->size = size;
 }
 
-void tx_buff_set_ptr(char *pdata, uint16 size) {
+void tx_buff_set_ptr(char *pdata, uint16 size, uint16 **pos) {
   uart_mock_buff_set_ptr(&uart_mock_tx_buff, pdata, size);
+  if (pos) {
+    *pos = &uart_mock_tx_buff.pos;
+  }
 }
 
 void rx_buff_set_ptr(char *pdata, uint16 size) {
