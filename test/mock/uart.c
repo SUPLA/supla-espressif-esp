@@ -26,8 +26,8 @@ typedef struct {
   uint16 size;
 } _uart_mock_buff;
 
-_uart_mock_buff uart_mock_rx_buff;
-_uart_mock_buff uart_mock_tx_buff;
+_uart_mock_buff uart_mock_rx_buff = {.pos = 0, .pdata = 0, .size = 0};
+_uart_mock_buff uart_mock_tx_buff = {.pos = 0, .pdata = 0, .size = 0};
 
 void uart_mock_buff_set_ptr(_uart_mock_buff *buf, char *pdata, uint16 size) {
   buf->pos = 0;
