@@ -1023,7 +1023,6 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 						supla_esp_state.turnedOff[new_value->ChannelNumber] |= 0x2;
 					}
 				}
-                #endif /*DONT_SAVE_STATE*/
 			} else if ( new_value->ChannelNumber == dimmer_cn
 					RGBW_CHANNEl_CMP ) {
 
