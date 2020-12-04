@@ -72,6 +72,12 @@ uint32 MAIN_ICACHE_FLASH uptime_sec(void) {
 
 void MAIN_ICACHE_FLASH supla_system_restart(void) {
 
+	#ifdef BOARD_IS_RESTART_ALLOWED
+	if (supla_esp_board_is_restart_allowed() == 0) {
+		return;
+	}
+	#endif
+
 	supla_esp_devconn_before_system_restart();
 
 	#ifdef BOARD_BEFORE_REBOOT
