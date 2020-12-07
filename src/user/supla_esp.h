@@ -196,7 +196,16 @@ void ICACHE_FLASH_ATTR supla_system_restart(void);
 #define RSA_PUBLIC_EXPONENT 65537
 
 extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
-#endif
+
+#ifndef UPDATE_PARAM3
+#define UPDATE_PARAM3 0
+#endif  /*UPDATE_PARAM3*/
+
+#ifndef UPDATE_PARAM4
+#define UPDATE_PARAM4 0
+#endif  /*UPDATE_PARAM4*/
+
+#endif /*__FOTA*/
 
 #ifndef INTR_CLEAR_MASK
 #define INTR_CLEAR_MASK 0xFF
