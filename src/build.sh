@@ -22,7 +22,7 @@ NOSSL=0
 SPI_MODE="DIO"
 BOARD_SELECTED=0
 
-export PATH=/hdd2/Espressif/xtensa-lx106-elf/bin:$PATH
+export PATH=/hdd2/Espressif/sdk_3x/xtensa-lx106-elf/bin:$PATH
 export COMPILE=gcc
 
 if [ -e ./build_include.sh ]; then
@@ -210,11 +210,9 @@ case $FLASH_SIZE in
 esac
 
 OUTDIR=../firmware
-export SDK_PATH=/hdd2/Espressif/ESP8266_NONOS_SDK-3.0.4
-export BIN_PATH=/hdd2/Espressif/ESP8266_BIN304
+export SDK_PATH=/hdd2/Espressif/sdk_3x/ESP8266_NONOS_SDK-3.0.4
+export BIN_PATH=/hdd2/Espressif/sdk_3x/ESP8266_BIN304
 LD_DIR=sdk304
-
-cp $SDK_PATH/include/* /hdd2/Espressif/xtensa-lx106-elf/xtensa-lx106-elf/sysroot/usr/include/
 
 make clean
 
