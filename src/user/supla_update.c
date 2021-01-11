@@ -375,9 +375,6 @@ supla_esp_update_recv_cb (void *arg, char *pdata, unsigned short len) {
 									update->downloaded_data_size = 0;
 
 									switch(system_get_flash_size_map()) {
-										case FLASH_SIZE_4M_MAP_256_256:
-										case FLASH_SIZE_2M:
-											break;
 										case FLASH_SIZE_8M_MAP_512_512:
 										case FLASH_SIZE_16M_MAP_512_512:
 										case FLASH_SIZE_32M_MAP_512_512:
@@ -393,6 +390,8 @@ supla_esp_update_recv_cb (void *arg, char *pdata, unsigned short len) {
 											if ( update->expected_file_size <= 1024*1004 )
 												update_step = FUPDT_STEP_DOWNLOADING;
 
+											break;
+										default:
 											break;
 									}
 								}
@@ -535,15 +534,6 @@ supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result) {
 		int ubin = system_upgrade_userbin_check();
 
 		switch(system_get_flash_size_map()) {
-		    case FLASH_SIZE_4M_MAP_256_256:
-		    case FLASH_SIZE_2M:
-
-		        // UPDATE NOT SUPPORTED
-
-		        free(update);
-		        update = NULL;
-		        return;
-
 			case FLASH_SIZE_8M_MAP_512_512:
 			case FLASH_SIZE_16M_MAP_512_512:
 			case FLASH_SIZE_32M_MAP_512_512:
@@ -553,6 +543,12 @@ supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result) {
 			case FLASH_SIZE_32M_MAP_1024_1024:
 				update->flash_addr = ubin == UPGRADE_FW_BIN1 ? 0x101000 : 0x01000;
 				break;
+			default:
+		        // UPDATE NOT SUPPORTED
+
+		        free(update);
+		        update = NULL;
+		        return;
 		}
 
 		update->flash_awo = update->flash_addr;
