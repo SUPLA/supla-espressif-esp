@@ -215,6 +215,7 @@ export BIN_PATH=/hdd2/Espressif/sdk_1x/ESP8266_BIN154
 LD_DIR=sdk154
 
 make clean
+find ./ -type d -name ".output" -exec rm -rf {} +
 
 BOARD_NAME=$1
 
