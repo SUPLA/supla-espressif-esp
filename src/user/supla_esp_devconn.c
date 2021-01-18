@@ -1802,3 +1802,11 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 	}
 }
 #endif /*BOARD_CALCFG*/
+
+#ifdef BOARD_ON_USER_LOCALTIME_RESULT
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_get_user_localtime(void) {
+  if (supla_esp_devconn_is_registered() == 1) {
+    srpc_dcs_async_get_user_localtime(devconn->srpc);
+  }
+}
+#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/

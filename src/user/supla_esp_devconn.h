@@ -87,4 +87,8 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result);
 #endif /*BOARD_CALCFG*/
 
+#ifdef BOARD_ON_USER_LOCALTIME_RESULT
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_get_user_localtime(void);
+#endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
+
 #endif /* SUPLA_ESP_CLIENT_H_ */
