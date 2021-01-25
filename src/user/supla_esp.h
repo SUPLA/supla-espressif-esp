@@ -23,7 +23,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "3.0.0"
+#define SUPLA_ESP_SOFTVER "2.5.0"
 
 #define STATE_UNKNOWN       0
 #define STATE_DISCONNECTED  1
