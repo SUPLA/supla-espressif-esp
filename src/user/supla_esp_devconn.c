@@ -1722,41 +1722,38 @@ supla_esp_devconn_laststate(void) {
 	return devconn->laststate;
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_wifi_check_status(void) {
+void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(void) {
+  uint8 status = wifi_station_get_connect_status();
 
-	uint8 status = wifi_station_get_connect_status();
+  if (devconn->last_wifi_status == status) {
+    return;
+  }
 
-	if (devconn->last_wifi_status == status) {
-		return;
-	}
+  supla_log(LOG_DEBUG, "WiFi Status: %i", status);
+  devconn->last_wifi_status = status;
 
-	supla_log(LOG_DEBUG, "WiFi Status: %i", status);
-	devconn->last_wifi_status = status;
+  if (STATION_GOT_IP == status) {
+    if (devconn->srpc == NULL) {
+      supla_esp_gpio_state_ipreceived();
+      supla_esp_devconn_resolvandconnect();
+    }
 
-	if ( STATION_GOT_IP == status ) {
+  } else {
+    switch (status) {
+      case STATION_NO_AP_FOUND: {
+        char buffer[WIFI_SSID_MAXSIZE + 30];
+        ets_snprintf(buffer, sizeof(buffer),
+                     "WiFi Network &quot;%s&quot; Not found",
+                     supla_esp_cfg.WIFI_SSID);
+        supla_esp_set_state(LOG_NOTICE, buffer);
+      } break;
+      case STATION_WRONG_PASSWORD:
+        supla_esp_set_state(LOG_NOTICE, "WiFi - Wrong password");
+        break;
+    }
 
-		if ( devconn->srpc == NULL ) {
-			supla_esp_gpio_state_ipreceived();
-			supla_esp_devconn_resolvandconnect();
-		}
-
-	} else {
-
-		switch(status) {
-
-			case STATION_NO_AP_FOUND:
-				supla_esp_set_state(LOG_NOTICE, "Wifi Network Not found");
-				break;
-			case STATION_WRONG_PASSWORD:
-				supla_esp_set_state(LOG_NOTICE, "WiFi - Wrong password");
-				break;
-		}
-
-		supla_esp_gpio_state_disconnected();
-
-	}
-
+    supla_esp_gpio_state_disconnected();
+  }
 }
 
 void DEVCONN_ICACHE_FLASH
