@@ -1677,7 +1677,7 @@ supla_esp_devconn_start(void) {
 
     stationConf.ssid[31] = 0;
     stationConf.password[63] = 0;
-
+    stationConf.threshold.rssi = -127;
 
     wifi_station_set_config(&stationConf);
     wifi_station_set_auto_connect(1);
@@ -1746,7 +1746,7 @@ supla_esp_wifi_check_status(void) {
 		switch(status) {
 
 			case STATION_NO_AP_FOUND:
-				supla_esp_set_state(LOG_NOTICE, "SSID Not found");
+				supla_esp_set_state(LOG_NOTICE, "Wifi Network Not found");
 				break;
 			case STATION_WRONG_PASSWORD:
 				supla_esp_set_state(LOG_NOTICE, "WiFi - Wrong password");
