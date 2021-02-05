@@ -933,7 +933,7 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 }
      #endif /*CVD_MAX_COUNT*/
 
-	supla_esp_hw_timer_init(FRC1_SOURCE, 1, _supla_esp_devconn_smooth_cb);
+	supla_esp_hw_timer_init(FRC1_SOURCE, 1, NULL, _supla_esp_devconn_smooth_cb);
 	supla_esp_hw_timer_arm(10000);
 #endif
 
