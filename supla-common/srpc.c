@@ -232,8 +232,20 @@ char SRPC_ICACHE_FLASH srpc_out_queue_push(Tsrpc *srpc, TSuplaDataPacket *sdp) {
   if (sdp->data_size < SUPLA_MAX_DATA_SIZE) {
     data_size -= SUPLA_MAX_DATA_SIZE - sdp->data_size;
   }
+#ifndef PACKET_INTEGRITY_BUFFER_DISABLED
+  char *buff = malloc(data_size + SUPLA_TAG_SIZE);
+  if (buff) {
+    memcpy(buff, sdp, data_size);
+    memcpy(&buff[data_size], sproto_tag, SUPLA_TAG_SIZE);
+
+    srpc->params.data_write(buff, data_size + SUPLA_TAG_SIZE,
+                            srpc->params.user_params);
+    free(buff);
+  }
+#else
   srpc->params.data_write((char *)sdp, data_size, srpc->params.user_params);
   srpc->params.data_write(sproto_tag, SUPLA_TAG_SIZE, srpc->params.user_params);
+#endif /*PACKET_INTEGRITY_BUFFER_DISABLED*/
   return 1;
 #else
   return srpc_queue_push(&srpc->out_queue, sdp);
@@ -368,6 +380,12 @@ char SRPC_ICACHE_FLASH srpc_iterate(void *_srpc) {
   }
 #endif /*__EH_DISABLED*/
 
+#else /*SRPC_WITHOUT_OUT_QUEUE*/
+#ifndef __EH_DISABLED
+  if (srpc->params.eh != 0 && raise_event) {
+    eh_raise_event(srpc->params.eh);
+  }
+#endif /*__EH_DISABLED*/
 #endif /*SRPC_WITHOUT_OUT_QUEUE*/
   return lck_unlock_r(srpc->lck, SUPLA_RESULT_TRUE);
 }
@@ -1239,20 +1257,21 @@ char SRPC_ICACHE_FLASH srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
         break;
 
       case SUPLA_CS_CALL_SET_CHANNEL_CAPTION:
-        if (srpc->sdp.data_size >= (sizeof(TCS_SetChannelCaption) -
-                                    SUPLA_CHANNEL_CAPTION_MAXSIZE) &&
-            srpc->sdp.data_size <= sizeof(TCS_SetChannelCaption))
-          rd->data.cs_set_channel_caption =
-              (TCS_SetChannelCaption *)malloc(sizeof(TCS_SetChannelCaption));
+      case SUPLA_CS_CALL_SET_LOCATION_CAPTION:
+        if (srpc->sdp.data_size >=
+                (sizeof(TCS_SetCaption) - SUPLA_CAPTION_MAXSIZE) &&
+            srpc->sdp.data_size <= sizeof(TCS_SetCaption))
+          rd->data.cs_set_caption =
+              (TCS_SetCaption *)malloc(sizeof(TCS_SetCaption));
         break;
 
       case SUPLA_SC_CALL_SET_CHANNEL_CAPTION_RESULT:
-        if (srpc->sdp.data_size >= (sizeof(TSC_SetChannelCaptionResult) -
-                                    SUPLA_CHANNEL_CAPTION_MAXSIZE) &&
-            srpc->sdp.data_size <= sizeof(TSC_SetChannelCaptionResult))
-          rd->data.sc_set_channel_caption_result =
-              (TSC_SetChannelCaptionResult *)malloc(
-                  sizeof(TSC_SetChannelCaptionResult));
+      case SUPLA_SC_CALL_SET_LOCATION_CAPTION_RESULT:
+        if (srpc->sdp.data_size >=
+                (sizeof(TSC_SetCaptionResult) - SUPLA_CAPTION_MAXSIZE) &&
+            srpc->sdp.data_size <= sizeof(TSC_SetCaptionResult))
+          rd->data.sc_set_caption_result =
+              (TSC_SetCaptionResult *)malloc(sizeof(TSC_SetCaptionResult));
         break;
 
       case SUPLA_CS_CALL_CLIENTS_RECONNECT_REQUEST:
@@ -1426,6 +1445,8 @@ srpc_call_min_version_required(void *_srpc, unsigned _supla_int_t call_type) {
       return 13;
     case SUPLA_DS_CALL_GET_CHANNEL_INT_PARAMS:
     case SUPLA_SD_CALL_GET_CHANNEL_INT_PARAMS_RESULT:
+    case SUPLA_CS_CALL_SET_LOCATION_CAPTION:
+    case SUPLA_SC_CALL_SET_LOCATION_CAPTION_RESULT:
       return 14;
   }
 
@@ -2296,26 +2317,49 @@ _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_set_channel_function_result(
                          (char *)result, sizeof(TSC_SetChannelFunctionResult));
 }
 
+_supla_int_t SRPC_ICACHE_FLASH srpc_cs_async_set_caption(
+    void *_srpc, TCS_SetCaption *caption, unsigned _supla_int_t call_type) {
+  _supla_int_t size =
+      sizeof(TCS_SetCaption) - SUPLA_CAPTION_MAXSIZE + caption->CaptionSize;
+
+  if (size > sizeof(TCS_SetCaption)) return 0;
+
+  return srpc_async_call(_srpc, call_type, (char *)caption, size);
+}
+
 _supla_int_t SRPC_ICACHE_FLASH
-srpc_cs_async_set_channel_caption(void *_srpc, TCS_SetChannelCaption *caption) {
-  _supla_int_t size = sizeof(TCS_SetChannelCaption) -
-                      SUPLA_CHANNEL_CAPTION_MAXSIZE + caption->CaptionSize;
+srpc_sc_async_set_caption_result(void *_srpc, TSC_SetCaptionResult *result,
+                                 unsigned _supla_int_t call_type) {
+  _supla_int_t size = sizeof(TSC_SetCaptionResult) - SUPLA_CAPTION_MAXSIZE +
+                      result->CaptionSize;
 
-  if (size > sizeof(TCS_SetChannelCaption)) return 0;
+  if (size > sizeof(TSC_SetCaptionResult)) return 0;
 
-  return srpc_async_call(_srpc, SUPLA_CS_CALL_SET_CHANNEL_CAPTION,
-                         (char *)caption, size);
+  return srpc_async_call(_srpc, call_type, (char *)result, size);
+}
+
+_supla_int_t SRPC_ICACHE_FLASH
+srpc_cs_async_set_channel_caption(void *_srpc, TCS_SetCaption *caption) {
+  return srpc_cs_async_set_caption(_srpc, caption,
+                                   SUPLA_CS_CALL_SET_CHANNEL_CAPTION);
 }
 
 _supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_set_channel_caption_result(
-    void *_srpc, TSC_SetChannelCaptionResult *result) {
-  _supla_int_t size = sizeof(TSC_SetChannelCaptionResult) -
-                      SUPLA_CHANNEL_CAPTION_MAXSIZE + result->CaptionSize;
+    void *_srpc, TSC_SetCaptionResult *result) {
+  return srpc_sc_async_set_caption_result(
+      _srpc, result, SUPLA_SC_CALL_SET_CHANNEL_CAPTION_RESULT);
+}
 
-  if (size > sizeof(TSC_SetChannelCaptionResult)) return 0;
+_supla_int_t SRPC_ICACHE_FLASH
+srpc_cs_async_set_location_caption(void *_srpc, TCS_SetCaption *caption) {
+  return srpc_cs_async_set_caption(_srpc, caption,
+                                   SUPLA_CS_CALL_SET_LOCATION_CAPTION);
+}
 
-  return srpc_async_call(_srpc, SUPLA_SC_CALL_SET_CHANNEL_CAPTION_RESULT,
-                         (char *)result, size);
+_supla_int_t SRPC_ICACHE_FLASH srpc_sc_async_set_location_caption_result(
+    void *_srpc, TSC_SetCaptionResult *result) {
+  return srpc_sc_async_set_caption_result(
+      _srpc, result, SUPLA_SC_CALL_SET_LOCATION_CAPTION_RESULT);
 }
 
 _supla_int_t SRPC_ICACHE_FLASH
