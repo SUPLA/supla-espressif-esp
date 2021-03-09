@@ -935,6 +935,13 @@ supla_esp_cfgmode_start(void) {
 
 	memcpy(apconfig.ssid, APSSID, apssid_len);
 
+#ifdef CFGMODE_SSID_LIMIT_MACLEN
+	ets_snprintf((char*)&apconfig.ssid[apssid_len],
+			14,
+ 			"-%02X%02X",
+			(unsigned char)mac[0],
+			(unsigned char)mac[1]);
+#else
 	ets_snprintf((char*)&apconfig.ssid[apssid_len],
 			14,
  			"-%02X%02X%02X%02X%02X%02X",
@@ -944,6 +951,7 @@ supla_esp_cfgmode_start(void) {
 			(unsigned char)mac[3],
 			(unsigned char)mac[4],
 			(unsigned char)mac[5]);
+#endif /*CFGMODE_SSID_LIMIT_MACLEN*/
 
 	apconfig.password[0] = 0;
 	apconfig.ssid_len = apssid_len+13;
