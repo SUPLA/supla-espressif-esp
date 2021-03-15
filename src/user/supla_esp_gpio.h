@@ -127,6 +127,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_cfgmode(void);
 void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 #endif
 
+void supla_esp_gpio_start_input_timer(supla_input_cfg_t *input_cfg);
 void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uint8 cancel_task, uint8 stop_delay);
 uint8 supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg);
 
