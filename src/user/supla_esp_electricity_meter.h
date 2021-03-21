@@ -23,6 +23,10 @@
 
 #ifdef ELECTRICITY_METER_COUNT
 
+#ifndef ELECTRICITY_METER_CHANNEL_OFFSET
+#define ELECTRICITY_METER_CHANNEL_OFFSET 0
+#endif /*ELECTRICITY_METER_CHANNEL_OFFSET*/
+
 void ICACHE_FLASH_ATTR supla_esp_em_init(void);
 void ICACHE_FLASH_ATTR supla_esp_em_start(void);
 void ICACHE_FLASH_ATTR supla_esp_em_stop(void);

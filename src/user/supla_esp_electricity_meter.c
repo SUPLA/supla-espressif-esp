@@ -39,16 +39,17 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
     return;
   }
 
-  unsigned char channel_number = 0;
+  unsigned char channel_number = ELECTRICITY_METER_CHANNEL_OFFSET;
   char value[SUPLA_CHANNELVALUE_SIZE];
   TElectricityMeter_ExtendedValue_V2 ev;
   memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
 
-  while (channel_number < ELECTRICITY_METER_COUNT) {
+  while (channel_number <
+         ELECTRICITY_METER_COUNT + ELECTRICITY_METER_CHANNEL_OFFSET) {
     if (supla_esp_board_get_measurements(channel_number, &ev) == 1 &&
-        memcmp(&ev, &last_ev[channel_number],
+        memcmp(&ev, &last_ev[channel_number - ELECTRICITY_METER_CHANNEL_OFFSET],
                sizeof(TElectricityMeter_ExtendedValue_V2)) != 0) {
-      memcpy(&last_ev[channel_number], &ev,
+      memcpy(&last_ev[channel_number - ELECTRICITY_METER_CHANNEL_OFFSET], &ev,
              sizeof(TElectricityMeter_ExtendedValue_V2));
       supla_esp_em_extendedvalue_to_value(&ev, value);
       if (supla_em_send_base_enabled == 1) {
