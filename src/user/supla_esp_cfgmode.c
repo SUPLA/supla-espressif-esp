@@ -877,110 +877,101 @@ supla_esp_discon_callback(void *arg) {
     }
 }
 
-void ICACHE_FLASH_ATTR
-supla_esp_connectcb(void *arg)
-{
-    struct espconn *conn = (struct espconn *)arg;
-    
-    //espconn_set_opt(conn, ESPCONN_NODELAY);
-    espconn_set_opt(conn, ESPCONN_COPY);
-    //espconn_set_opt(conn, ESPCONN_REUSEADDR);
+void ICACHE_FLASH_ATTR supla_esp_connectcb(void *arg) {
+  struct espconn *conn = (struct espconn *)arg;
 
-    TrivialHttpParserVars *pVars = malloc(sizeof(TrivialHttpParserVars));
-    memset(pVars, 0, sizeof(TrivialHttpParserVars));
-    conn->reverse = pVars;
+  // espconn_set_opt(conn, ESPCONN_NODELAY);
+  espconn_set_opt(conn, ESPCONN_COPY);
+  // espconn_set_opt(conn, ESPCONN_REUSEADDR);
 
-    espconn_regist_recvcb(conn, supla_esp_recv_callback );
-    espconn_regist_disconcb(conn, supla_esp_discon_callback);
+  TrivialHttpParserVars *pVars = malloc(sizeof(TrivialHttpParserVars));
+  memset(pVars, 0, sizeof(TrivialHttpParserVars));
+  conn->reverse = pVars;
+
+  espconn_regist_recvcb(conn, supla_esp_recv_callback);
+  espconn_regist_disconcb(conn, supla_esp_discon_callback);
 }
 
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
+  char APSSID[] = AP_SSID;
+  char mac[6];
 
-void ICACHE_FLASH_ATTR
-supla_esp_cfgmode_start(void) {
-	
-	char APSSID[] = AP_SSID;
-	char mac[6];
+#ifdef BOARD_BEFORE_CFGMODE_START
+  supla_esp_board_before_cfgmode_start();
+#endif
 
-	#ifdef BOARD_BEFORE_CFGMODE_START
-	supla_esp_board_before_cfgmode_start();
-	#endif
+  supla_esp_devconn_before_cfgmode_start();
 
-	supla_esp_devconn_before_cfgmode_start();
+  wifi_get_macaddr(SOFTAP_IF, (unsigned char *)mac);
 
-	wifi_get_macaddr(SOFTAP_IF, (unsigned char*)mac);
+  struct softap_config apconfig;
+  wifi_softap_get_config(&apconfig);
 
-	struct softap_config apconfig;
-	wifi_softap_get_config(&apconfig);
+  memset(apconfig.ssid, 0, sizeof(apconfig.ssid));
+  memset(apconfig.password, 0, sizeof(apconfig.password));
 
-	struct espconn *conn;
-	
-	if ( supla_esp_cfgmode_entertime != 0 )
-		return;
-	
-	supla_esp_devconn_stop();
+  struct espconn *conn;
 
-	supla_esp_cfgmode_entertime = system_get_time();
-	
-	supla_log(LOG_DEBUG, "ENTER CFG MODE");
-	supla_esp_gpio_state_cfgmode();
-	
-	#ifdef WIFI_SLEEP_DISABLE
-		wifi_set_sleep_type(NONE_SLEEP_T);
-	#endif
+  if (supla_esp_cfgmode_entertime != 0) return;
 
-	int apssid_len = strlen(APSSID);
+  supla_esp_devconn_stop();
 
-	if ( apssid_len+14 > 32 )
-		apssid_len = 18;
+  supla_esp_cfgmode_entertime = system_get_time();
 
-	memcpy(apconfig.ssid, APSSID, apssid_len);
+  supla_log(LOG_DEBUG, "ENTER CFG MODE");
+  supla_esp_gpio_state_cfgmode();
+
+#ifdef WIFI_SLEEP_DISABLE
+  wifi_set_sleep_type(NONE_SLEEP_T);
+#endif
+
+  int apssid_len = strnlen(APSSID, sizeof(apconfig.ssid));
+  memcpy(apconfig.ssid, APSSID, apssid_len);
+
+  char mac_str[14] = {};
 
 #ifdef CFGMODE_SSID_LIMIT_MACLEN
-	ets_snprintf((char*)&apconfig.ssid[apssid_len],
-			14,
- 			"-%02X%02X",
-			(unsigned char)mac[0],
-			(unsigned char)mac[1]);
+  ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X", (unsigned char)mac[4],
+               (unsigned char)mac[5]);
 #else
-	ets_snprintf((char*)&apconfig.ssid[apssid_len],
-			14,
- 			"-%02X%02X%02X%02X%02X%02X",
-			(unsigned char)mac[0],
-			(unsigned char)mac[1],
-			(unsigned char)mac[2],
-			(unsigned char)mac[3],
-			(unsigned char)mac[4],
-			(unsigned char)mac[5]);
+  ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X%02X%02X%02X%02X",
+               (unsigned char)mac[0], (unsigned char)mac[1],
+               (unsigned char)mac[2], (unsigned char)mac[3],
+               (unsigned char)mac[4], (unsigned char)mac[5]);
 #endif /*CFGMODE_SSID_LIMIT_MACLEN*/
 
-	apconfig.password[0] = 0;
-	apconfig.ssid_len = apssid_len+13;
-	apconfig.channel = 1;
-	apconfig.authmode = AUTH_OPEN;
-	apconfig.ssid_hidden = 0;
-	apconfig.max_connection = 4;
-	apconfig.beacon_interval = 100;
-		
-	wifi_set_opmode(SOFTAP_MODE);
-		
-	wifi_softap_set_config(&apconfig);
+  int mac_str_len = strnlen(mac_str, sizeof(mac_str));
 
-	conn = (struct espconn *)malloc(sizeof(struct espconn));
-	memset( conn, 0, sizeof( struct espconn ) );
+  if (apssid_len + mac_str_len > sizeof(apconfig.ssid)) {
+    apssid_len -= apssid_len + mac_str_len - sizeof(apconfig.ssid);
+  }
 
-	espconn_create(conn);
-	espconn_regist_time(conn, 5, 0);
-	
-	conn->type = ESPCONN_TCP;
-	conn->state = ESPCONN_NONE;
+  memcpy(&apconfig.ssid[apssid_len], mac_str, mac_str_len);
+  apconfig.ssid_len = apssid_len + mac_str_len;
+  apconfig.channel = 1;
+  apconfig.authmode = AUTH_OPEN;
+  apconfig.ssid_hidden = 0;
+  apconfig.max_connection = 4;
+  apconfig.beacon_interval = 100;
 
-	conn->proto.tcp = (esp_tcp *)zalloc(sizeof(esp_tcp));
-	conn->proto.tcp->local_port = 80;
+  wifi_set_opmode(SOFTAP_MODE);
 
-	espconn_regist_connectcb(conn, supla_esp_connectcb);
-	espconn_accept(conn);
-	
+  wifi_softap_set_config(&apconfig);
 
+  conn = (struct espconn *)malloc(sizeof(struct espconn));
+  memset(conn, 0, sizeof(struct espconn));
+
+  espconn_create(conn);
+  espconn_regist_time(conn, 5, 0);
+
+  conn->type = ESPCONN_TCP;
+  conn->state = ESPCONN_NONE;
+
+  conn->proto.tcp = (esp_tcp *)zalloc(sizeof(esp_tcp));
+  conn->proto.tcp->local_port = 80;
+
+  espconn_regist_connectcb(conn, supla_esp_connectcb);
+  espconn_accept(conn);
 }
 
 char ICACHE_FLASH_ATTR
