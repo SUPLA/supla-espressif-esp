@@ -386,8 +386,34 @@ supla_esp_devconn_send_channel_values_with_delay(void) {
 	supla_esp_devconn_send_channel_values_with__delay(1500);
 }
 
+#if ESP8266_SUPLA_PROTO_VERSION >= 15
+uint8 DEVCONN_ICACHE_FLASH
+supla_esp_devconn_validate_server_fingerprint(char *fingerprint) {
+  uint8 is_set = 0;
+
+  for (uint8 a = 0; a < SUPLA_FINGERPRINT_SIZE; a++) {
+    if (supla_esp_cfg.ServerFingerprint[a] != 0) {
+      is_set = 1;
+      break;
+    }
+  }
+
+  if (is_set) {
+    return memcmp(supla_esp_cfg.ServerFingerprint, fingerprint,
+                  SUPLA_FINGERPRINT_SIZE) == 0
+               ? 1
+               : 0;
+  }
+
+  memcpy(supla_esp_cfg.ServerFingerprint, fingerprint, SUPLA_FINGERPRINT_SIZE);
+  supla_esp_cfg_save(&supla_esp_cfg);
+
+  return 1;
+}
+#endif /*ESP8266_SUPLA_PROTO_VERSION*/
+
 void DEVCONN_ICACHE_FLASH
-supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_result) {
+supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult_B *register_device_result) {
 
 	char *buff = NULL;
 
@@ -421,6 +447,13 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		break;
 
 	case SUPLA_RESULTCODE_TRUE:
+
+#if ESP8266_SUPLA_PROTO_VERSION >= 15
+		if (!supla_esp_devconn_validate_server_fingerprint(result->server_fingerprint)) {
+			supla_esp_set_state(LOG_ERR, "Invalid server fingerprint!");
+			return;
+		}
+#endif /*ESP8266_SUPLA_PROTO_VERSION*/
 
 		devconn->server_activity_timeout = register_device_result->activity_timeout;
 		devconn->registered = 1;
@@ -1307,9 +1340,23 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
       case SUPLA_SDC_CALL_VERSIONERROR:
         supla_esp_on_version_error(rd.data.sdc_version_error);
         break;
-      case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT:
-        supla_esp_on_register_result(rd.data.sd_register_device_result);
+#if ESP8266_SUPLA_PROTO_VERSION >= 15
+      case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT_B:
+        supla_esp_on_register_result(rd.data.sd_register_device_result_b);
         break;
+#else
+      case SUPLA_SD_CALL_REGISTER_DEVICE_RESULT: {
+    	  TSD_SuplaRegisterDeviceResult_B result = {};
+
+		  result.result_code = rd.data.sd_register_device_result->result_code;
+    	  result.activity_timeout = rd.data.sd_register_device_result->activity_timeout;
+    	  result.version = rd.data.sd_register_device_result->version;
+    	  result.version_min = rd.data.sd_register_device_result->version_min;
+
+    	  supla_esp_on_register_result(&result);
+      }
+        break;
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 15*/
       case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
     	if (supla_esp_devconn_is_registered()) {
     	   supla_esp_channel_set_value(rd.data.sd_channel_new_value);
