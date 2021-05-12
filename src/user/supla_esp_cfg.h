@@ -28,40 +28,55 @@
 #define BTN_TYPE_BISTABLE         1
 
 typedef struct {
+  char TAG[6];
+  char GUID[SUPLA_GUID_SIZE];
+  char AuthKey[SUPLA_AUTHKEY_SIZE];
 
-	char TAG[6];
-	char GUID[SUPLA_GUID_SIZE];
-    char AuthKey[SUPLA_AUTHKEY_SIZE];
+  char Server[SERVER_MAXSIZE];
 
-	char Server[SERVER_MAXSIZE];
-	char Email[SUPLA_EMAIL_MAXSIZE];
+  union {
+    char Email[SUPLA_EMAIL_MAXSIZE];
+    char Username[SUPLA_EMAIL_MAXSIZE];
+  };
 
-	int LocationID;
+  union {
+    int LocationID;
+    int Port;
+  };
+
+  union {
     char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
+    char Password[SUPLA_LOCATION_PWD_MAXSIZE];
+  };
 
-    char WIFI_SSID[WIFI_SSID_MAXSIZE];
-    char WIFI_PWD[WIFI_PWD_MAXSIZE];
+  char WIFI_SSID[WIFI_SSID_MAXSIZE];
+  char WIFI_PWD[WIFI_PWD_MAXSIZE];
 
-    char CfgButtonType;
-    char Button1Type;
-    char Button2Type;
+  char CfgButtonType;
+  char Button1Type;
+  char Button2Type;
 
-    char StatusLedOff;
-    char InputCfgTriggerOff;
+  char StatusLedOff;
+  char InputCfgTriggerOff;
 
-    char FirmwareUpdate;
-    char Test;
+  char FirmwareUpdate;
+  char Test;
 
-    char UpsideDown;
+  char UpsideDown;
 
-    unsigned int Time1[CFG_TIME1_COUNT];
-    unsigned int Time2[CFG_TIME2_COUNT];
+  unsigned int Time1[CFG_TIME1_COUNT];
+  unsigned int Time2[CFG_TIME2_COUNT];
 
-    char Trigger;
+  char Trigger;
 
-    char zero[200];
+  char ServerFingerprint[SUPLA_FINGERPRINT_SIZE];
+  unsigned int Flags;  // CFG_FLAG_*
+  char MqttTopicPrefix[MQTT_PREFIX_SIZE];
+  char MqttQoS;
 
-}SuplaEspCfg;
+  char zero[200];
+
+} SuplaEspCfg;
 
 typedef struct {
 

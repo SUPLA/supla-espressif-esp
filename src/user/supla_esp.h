@@ -25,12 +25,12 @@
 
 #define SUPLA_ESP_SOFTVER "2.8.4"
 
-#define STATE_UNKNOWN       0
-#define STATE_DISCONNECTED  1
-#define STATE_IPRECEIVED    2
-#define STATE_CONNECTED     4
-#define STATE_CFGMODE       5
-#define STATE_UPDATE        6
+#define STATE_UNKNOWN 0
+#define STATE_DISCONNECTED 1
+#define STATE_IPRECEIVED 2
+#define STATE_CONNECTED 4
+#define STATE_CFGMODE 5
+#define STATE_UPDATE 6
 
 #ifndef ESP8266_SUPLA_PROTO_VERSION
 #define ESP8266_SUPLA_PROTO_VERSION SUPLA_PROTO_VERSION
@@ -40,13 +40,13 @@
 #define STATE_SECTOR_OFFSET 1
 #endif /*STATE_SECTOR_OFFSET*/
 
-#define LO_VALUE  0
-#define HI_VALUE  1
+#define LO_VALUE 0
+#define HI_VALUE 1
 
 #define RELAY_INIT_VALUE LO_VALUE
 
 #ifndef SAVE_STATE_DELAY
-#define SAVE_STATE_DELAY  1000
+#define SAVE_STATE_DELAY 1000
 #endif /*SAVE_STATE_DELAY*/
 
 #ifndef SEND_BUFFER_SIZE
@@ -54,60 +54,59 @@
 #endif /*SEND_BUFFER_SIZE*/
 
 #ifndef CFG_BTN_PRESS_TIME
-#define CFG_BTN_PRESS_TIME      5000
+#define CFG_BTN_PRESS_TIME 5000
 #endif /*CFG_BTN_PRESS_TIME*/
-
 
 #ifndef GET_CFG_PRESS_TIME
 #define GET_CFG_PRESS_TIME supla_esp_gpio_get_cfg_press_time
 #endif /*GET_CFG_PRESS_TIME*/
 
 #ifndef INPUT_MAX_COUNT
-#define INPUT_MAX_COUNT         7
+#define INPUT_MAX_COUNT 7
 #endif /*INPUT_MAX_COUNT*/
 
 #ifndef RELAY_MAX_COUNT
-#define RELAY_MAX_COUNT         4
+#define RELAY_MAX_COUNT 4
 #endif /*RELAY_MAX_COUNT*/
 
 #ifndef RS_MAX_COUNT
-#define RS_MAX_COUNT            8
+#define RS_MAX_COUNT 8
 #endif /*RS_MAX_COUNT*/
 
 #ifndef RS_SAVE_STATE_DELAY
-#define RS_SAVE_STATE_DELAY     0
+#define RS_SAVE_STATE_DELAY 0
 #endif /*RS_SAVE_STATE_DELAY*/
 
 #ifndef CFG_TIME1_COUNT
-#define CFG_TIME1_COUNT         8
+#define CFG_TIME1_COUNT 8
 #endif /*CFG_TIME1_COUNT*/
 
 #ifndef CFG_TIME2_COUNT
-#define CFG_TIME2_COUNT         8
+#define CFG_TIME2_COUNT 8
 #endif /*CFG_TIME2_COUNT*/
 
 #ifndef SMOOTH_MAX_COUNT
-#define SMOOTH_MAX_COUNT        1
+#define SMOOTH_MAX_COUNT 1
 #endif /*SMOOTH_MAX_COUNT*/
 
-#define INPUT_FLAG_PULLUP             0x01
-#define INPUT_FLAG_CFG_BTN            0x02
-#define INPUT_FLAG_FACTORY_RESET      0x04
-#define INPUT_FLAG_DISABLE_INTR       0x08
+#define INPUT_FLAG_PULLUP 0x01
+#define INPUT_FLAG_CFG_BTN 0x02
+#define INPUT_FLAG_FACTORY_RESET 0x04
+#define INPUT_FLAG_DISABLE_INTR 0x08
 
-#define INPUT_TYPE_SENSOR                1
-#define INPUT_TYPE_BTN_MONOSTABLE        2
-#define INPUT_TYPE_BTN_MONOSTABLE_RS     3
-#define INPUT_TYPE_BTN_BISTABLE          4
-#define INPUT_TYPE_BTN_BISTABLE_RS       5
-#define INPUT_TYPE_CUSTOM                200
+#define INPUT_TYPE_SENSOR 1
+#define INPUT_TYPE_BTN_MONOSTABLE 2
+#define INPUT_TYPE_BTN_MONOSTABLE_RS 3
+#define INPUT_TYPE_BTN_BISTABLE 4
+#define INPUT_TYPE_BTN_BISTABLE_RS 5
+#define INPUT_TYPE_CUSTOM 200
 
 #ifndef INPUT_MIN_CYCLE_COUNT
-#define INPUT_MIN_CYCLE_COUNT   5
+#define INPUT_MIN_CYCLE_COUNT 5
 #endif /*INPUT_MIN_CYCLE_COUNT*/
 
 #ifndef INPUT_CYCLE_TIME
-#define INPUT_CYCLE_TIME        20
+#define INPUT_CYCLE_TIME 20
 #endif /*INPUT_CYCLE_TIME*/
 
 // milliseconds
@@ -138,7 +137,7 @@
 #endif
 
 #ifndef CFG_ICACHE_FLASH_ATTR
-#define CFG_ICACHE_FLASH_ATTR  ICACHE_FLASH_ATTR
+#define CFG_ICACHE_FLASH_ATTR ICACHE_FLASH_ATTR
 #endif
 
 #ifndef DHT_ICACHE_FLASH
@@ -146,11 +145,11 @@
 #endif
 
 #ifndef CDT_ICACHE_FLASH_ATTR
-#define CDT_ICACHE_FLASH_ATTR  ICACHE_FLASH_ATTR
+#define CDT_ICACHE_FLASH_ATTR ICACHE_FLASH_ATTR
 #endif
 
 #ifndef DNS_ICACHE_FLASH_ATTR
-#define DNS_ICACHE_FLASH_ATTR  ICACHE_FLASH_ATTR
+#define DNS_ICACHE_FLASH_ATTR ICACHE_FLASH_ATTR
 #endif
 
 #ifndef BTN1_DEFAULT
@@ -173,17 +172,25 @@
 #define DEVICE_FLAGS 0
 #endif
 
+#ifndef MQTT_PREFIX_SIZE
+#define MQTT_PREFIX_SIZE 50
+#endif /*MQTT_PREFIX_SIZE*/
+
+#define CFG_FLAG_MQTT_ENABLED 0x01
+#define CFG_FLAG_MQTT_RETAIN 0x02
+
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size);
 #if ESP8266_SUPLA_PROTO_VERSION >= 10
-void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels, unsigned char *channel_count);
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
+                                  unsigned char *channel_count);
 #else
-void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels, unsigned char *channel_count);
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_B *channels,
+                                  unsigned char *channel_count);
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 10*/
 void supla_esp_board_relay_before_change_state(void);
 void supla_esp_board_relay_after_change_state(void);
 void supla_esp_board_gpio_init(void);
 void ICACHE_FLASH_ATTR supla_system_restart(void);
-
 
 #ifdef __FOTA
 
@@ -199,11 +206,11 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 
 #ifndef UPDATE_PARAM3
 #define UPDATE_PARAM3 0
-#endif  /*UPDATE_PARAM3*/
+#endif /*UPDATE_PARAM3*/
 
 #ifndef UPDATE_PARAM4
 #define UPDATE_PARAM4 0
-#endif  /*UPDATE_PARAM4*/
+#endif /*UPDATE_PARAM4*/
 
 #endif /*__FOTA*/
 
@@ -212,69 +219,69 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #endif
 
 #ifndef GPIO_PORT_INIT
-#define GPIO_PORT_INIT \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13); \
-	PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14)
+#define GPIO_PORT_INIT                                 \
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO0_U, FUNC_GPIO0); \
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO4_U, FUNC_GPIO4); \
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_GPIO5_U, FUNC_GPIO5); \
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTDI_U, FUNC_GPIO12); \
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTCK_U, FUNC_GPIO13); \
+  PIN_FUNC_SELECT(PERIPHS_IO_MUX_MTMS_U, FUNC_GPIO14)
 #endif
 
 // PWM ----------------------------------
 
 #ifndef PWM_0_OUT_IO_MUX
-	#define PWM_0_OUT_IO_MUX PERIPHS_IO_MUX_GPIO4_U
-	#define PWM_0_OUT_IO_NUM 4
-	#define PWM_0_OUT_IO_FUNC  FUNC_GPIO4
+#define PWM_0_OUT_IO_MUX PERIPHS_IO_MUX_GPIO4_U
+#define PWM_0_OUT_IO_NUM 4
+#define PWM_0_OUT_IO_FUNC FUNC_GPIO4
 #endif
 
 #ifndef PWM_1_OUT_IO_MUX
-	#define PWM_1_OUT_IO_MUX PERIPHS_IO_MUX_GPIO5_U
-	#define PWM_1_OUT_IO_NUM 5
-	#define PWM_1_OUT_IO_FUNC  FUNC_GPIO5
+#define PWM_1_OUT_IO_MUX PERIPHS_IO_MUX_GPIO5_U
+#define PWM_1_OUT_IO_NUM 5
+#define PWM_1_OUT_IO_FUNC FUNC_GPIO5
 #endif
 
 #ifndef PWM_2_OUT_IO_MUX
-	#define PWM_2_OUT_IO_MUX PERIPHS_IO_MUX_MTDI_U
-	#define PWM_2_OUT_IO_NUM 12
-	#define PWM_2_OUT_IO_FUNC  FUNC_GPIO12
+#define PWM_2_OUT_IO_MUX PERIPHS_IO_MUX_MTDI_U
+#define PWM_2_OUT_IO_NUM 12
+#define PWM_2_OUT_IO_FUNC FUNC_GPIO12
 #endif
 
 #ifndef PWM_3_OUT_IO_MUX
-	#define PWM_3_OUT_IO_MUX PERIPHS_IO_MUX_MTCK_U
-	#define PWM_3_OUT_IO_NUM 13
-	#define PWM_3_OUT_IO_FUNC  FUNC_GPIO13
+#define PWM_3_OUT_IO_MUX PERIPHS_IO_MUX_MTCK_U
+#define PWM_3_OUT_IO_NUM 13
+#define PWM_3_OUT_IO_FUNC FUNC_GPIO13
 #endif
 
 #ifndef PWM_4_OUT_IO_MUX
-	#define PWM_4_OUT_IO_MUX PERIPHS_IO_MUX_MTMS_U
-	#define PWM_4_OUT_IO_NUM 14
-	#define PWM_4_OUT_IO_FUNC  FUNC_GPIO14
+#define PWM_4_OUT_IO_MUX PERIPHS_IO_MUX_MTMS_U
+#define PWM_4_OUT_IO_NUM 14
+#define PWM_4_OUT_IO_FUNC FUNC_GPIO14
 #endif
 
 #ifndef PWM_PERIOD
-  #define PWM_PERIOD 1000
+#define PWM_PERIOD 1000
 #endif
 
 // --------------------------------------
 
 #ifndef AP_SSID
-	#ifdef ESP8285
-		#define AP_SSID "SUPLA-ESP8285"
-	#else
-		#define AP_SSID "SUPLA-ESP8266"
-	#endif
+#ifdef ESP8285
+#define AP_SSID "SUPLA-ESP8285"
+#else
+#define AP_SSID "SUPLA-ESP8266"
+#endif
 #endif
 
-#define SPI_FLASH_SEC_SIZE  4096
-#define SERVER_MAXSIZE      100
-#define WIFI_SSID_MAXSIZE   32
-#define WIFI_PWD_MAXSIZE    64
+#define SPI_FLASH_SEC_SIZE 4096
+#define SERVER_MAXSIZE 100
+#define WIFI_SSID_MAXSIZE 32
+#define WIFI_PWD_MAXSIZE 64
 
-#define STATE_MAXSIZE       300
+#define STATE_MAXSIZE 300
 
-#define RECVBUFF_MAXSIZE  1024
+#define RECVBUFF_MAXSIZE 1024
 
 #define ACTIVITY_TIMEOUT 10
 
@@ -308,7 +315,8 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #endif
 
 #ifndef RGBW_CHANNEL_LIMIT
-#define RGBW_CHANNEL_LIMIT if ( ChannelNumber >= 2 ) return;
+#define RGBW_CHANNEL_LIMIT \
+  if (ChannelNumber >= 2) return;
 #endif
 
 #ifdef DONT_SAVE_STATE
