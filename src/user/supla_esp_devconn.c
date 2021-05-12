@@ -1311,11 +1311,15 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
         supla_esp_on_register_result(rd.data.sd_register_device_result);
         break;
       case SUPLA_SD_CALL_CHANNEL_SET_VALUE:
-        supla_esp_channel_set_value(rd.data.sd_channel_new_value);
+    	if (supla_esp_devconn_is_registered()) {
+    	   supla_esp_channel_set_value(rd.data.sd_channel_new_value);
+    	}
         break;
 #if ESP8266_SUPLA_PROTO_VERSION >= 13
       case SUPLA_SD_CALL_CHANNELGROUP_SET_VALUE:
-        supla_esp_channelgroup_set_value(rd.data.sd_channelgroup_new_value);
+    	if (supla_esp_devconn_is_registered()) {
+    	   supla_esp_channelgroup_set_value(rd.data.sd_channelgroup_new_value);
+    	}
         break;
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 13*/
       case SUPLA_SDC_CALL_SET_ACTIVITY_TIMEOUT_RESULT:
