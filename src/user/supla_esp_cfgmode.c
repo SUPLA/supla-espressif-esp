@@ -610,17 +610,12 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 			return;
 		}
 				
-		if ( new_cfg.LocationPwd[0] == 0 ) {
+		if ( new_cfg.LocationPwd[0] == 0 )
 			memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd, SUPLA_LOCATION_PWD_MAXSIZE);
-		}
-
 		
-		if ( new_cfg.WIFI_PWD[0] == 0 ) {
+		if ( new_cfg.WIFI_PWD[0] == 0 )
 			memcpy(new_cfg.WIFI_PWD, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
-		}
-
-		memset(new_cfg.ServerFingerprint, 0, SUPLA_FINGERPRINT_SIZE);
-
+	    
 		if ( 1 == supla_esp_cfg_save(&new_cfg) ) {
 					
 			memcpy(&supla_esp_cfg, &new_cfg, sizeof(SuplaEspCfg));
