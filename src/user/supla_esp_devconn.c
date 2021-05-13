@@ -450,33 +450,31 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult_B *register_device_re
 	case SUPLA_RESULTCODE_TRUE:
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 15
-          if (!supla_esp_devconn_validate_server_fingerprint(
-                  register_device_result->server_fingerprint)) {
-            devconn->registered = 0;
-            supla_esp_set_state(LOG_ERR, "Invalid server fingerprint!");
-            return;
-          }
+		if (!supla_esp_devconn_validate_server_fingerprint(result->server_fingerprint)) {
+			supla_esp_set_state(LOG_ERR, "Invalid server fingerprint!");
+			return;
+		}
 #endif /*ESP8266_SUPLA_PROTO_VERSION*/
 
-          devconn->server_activity_timeout =
-              register_device_result->activity_timeout;
-          devconn->registered = 1;
-          devconn->register_time_sec = uptime_sec();
+		devconn->server_activity_timeout = register_device_result->activity_timeout;
+		devconn->registered = 1;
+		devconn->register_time_sec = uptime_sec();
 
-          // supla_esp_gpio_state_connected()
-          // should be called after setting
-          // devconn->registered to 1
-          supla_esp_gpio_state_connected();
+		// supla_esp_gpio_state_connected()
+		// should be called after setting
+		// devconn->registered to 1
+		supla_esp_gpio_state_connected();
 
-          supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
-          supla_log(LOG_DEBUG, "Free heap size: %i",
-                    system_get_free_heap_size());
+		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
+		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
-          if (devconn->server_activity_timeout != ACTIVITY_TIMEOUT) {
-            TDCS_SuplaSetActivityTimeout at;
-            at.activity_timeout = ACTIVITY_TIMEOUT;
-            srpc_dcs_async_set_activity_timeout(devconn->srpc, &at);
-          }
+		if ( devconn->server_activity_timeout != ACTIVITY_TIMEOUT ) {
+
+			TDCS_SuplaSetActivityTimeout at;
+			at.activity_timeout = ACTIVITY_TIMEOUT;
+			srpc_dcs_async_set_activity_timeout(devconn->srpc, &at);
+
+		}
 
 		#ifdef __FOTA
 		supla_esp_check_updates(devconn->srpc);
