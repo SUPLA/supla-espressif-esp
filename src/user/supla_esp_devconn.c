@@ -389,16 +389,16 @@ supla_esp_devconn_send_channel_values_with_delay(void) {
 #if ESP8266_SUPLA_PROTO_VERSION >= 15
 uint8 DEVCONN_ICACHE_FLASH
 supla_esp_devconn_validate_server_fingerprint(char *fingerprint) {
-  uint8 non_zero_count = 0;
+  uint8 is_set = 0;
 
   for (uint8 a = 0; a < SUPLA_FINGERPRINT_SIZE; a++) {
     if (supla_esp_cfg.ServerFingerprint[a] != 0) {
-      non_zero_count++;
+      is_set = 1;
+      break;
     }
   }
 
-  if (non_zero_count == SUPLA_FINGERPRINT_SIZE) {
-    // A valid fingerprint has no zeros
+  if (is_set) {
     return memcmp(supla_esp_cfg.ServerFingerprint, fingerprint,
                   SUPLA_FINGERPRINT_SIZE) == 0
                ? 1
