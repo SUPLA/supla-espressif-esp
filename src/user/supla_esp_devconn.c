@@ -405,7 +405,6 @@ supla_esp_devconn_validate_server_fingerprint(char *fingerprint) {
                : 0;
   }
 
-  supla_log(LOG_DEBUG, "Saving the server's fingerprint");
   memcpy(supla_esp_cfg.ServerFingerprint, fingerprint, SUPLA_FINGERPRINT_SIZE);
   supla_esp_cfg_save(&supla_esp_cfg);
 
