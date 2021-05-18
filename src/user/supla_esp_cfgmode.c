@@ -64,12 +64,24 @@
 #define VAR_TRG          22
 #define VAR_CMD          23
 
+#define VAR_PRO 24 // Protocol
+#define VAR_MVR 25 // MQTT Server
+#define VAR_PRT 26 // Port
+#define VAR_TLS 27 // TLS
+#define VAR_USR 28 // Username
+#define VAR_MWD 29 // MQTT Password
+#define VAR_PFX 30 // Topic prefix
+#define VAR_QOS 31 // MQTT QoS
+#define VAR_RET 32 // MQTT No Retain
+
 #ifdef CFG_TIME_VARIABLES
-#define VAR_T10          24
-#define VAR_T11          25
-#define VAR_T20          26
-#define VAR_T21          27
+#define VAR_T10          33
+#define VAR_T11          34
+#define VAR_T20          35
+#define VAR_T21          36
 #endif /*CFG_TIME_VARIABLES*/
+
+
 
 typedef struct {
 	
@@ -302,6 +314,18 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 				char usd[3] = { 'u', 's', 'd' };
 				char trg[3] = { 't', 'r', 'g' };
 				char cmd[3] = { 'c', 'm', 'd' };
+
+				char pro[3] = { 'p', 'r', 'o' };
+				char mvr[3] = { 'm', 'v', 'r' };
+				char prt[3] = { 'p', 'r', 't' };
+				char tls[3] = { 't', 'l', 's' };
+				char usr[3] = { 'u', 's', 'r' };
+				char mwd[3] = { 'm', 'w', 'd' };
+				char pfx[3] = { 'p', 'f', 'x' };
+				char qos[3] = { 'q', 'o', 's' };
+				char ret[3] = { 'r', 'e', 't' };
+
+
 #ifdef CFG_TIME_VARIABLES
 				char t10[3] = { 't', '1', '0' };
 				char t11[3] = { 't', '1', '1' };
@@ -326,9 +350,11 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						
 					} else if ( memcmp(svr, &pdata[a], 3) == 0 ) {
 						
-						pVars->current_var = VAR_SVR;
-						pVars->buff_size = SERVER_MAXSIZE;
-						pVars->pbuff = cfg->Server;
+						if (!(cfg->Flags & CFG_FLAG_MQTT_ENABLED)) {
+							pVars->current_var = VAR_SVR;
+							pVars->buff_size = SERVER_MAXSIZE;
+							pVars->pbuff = cfg->Server;
+						}
 						
 					} else if ( memcmp(lid, &pdata[a], 3) == 0 ) {
 						
@@ -385,11 +411,11 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->pbuff = pVars->intval;
 
 					} else if ( memcmp(eml, &pdata[a], 3) == 0 ) {
-
-						pVars->current_var = VAR_EML;
-						pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
-						pVars->pbuff = cfg->Email;
-
+						if (!(cfg->Flags & CFG_FLAG_MQTT_ENABLED)) {
+							pVars->current_var = VAR_EML;
+							pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+							pVars->pbuff = cfg->Email;
+						}
 					} else if ( memcmp(usd, &pdata[a], 3) == 0 ) {
 
 						pVars->current_var = VAR_USD;
@@ -411,6 +437,64 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 						pVars->current_var = VAR_CMD;
 						pVars->buff_size = CMD_MAXSIZE;
 						pVars->pbuff = user_cmd;
+
+					} else if ( memcmp(pro, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_PRO;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    } else if ( memcmp(mvr, &pdata[a], 3) == 0 ) {
+
+				    	if (cfg->Flags & CFG_FLAG_MQTT_ENABLED) {
+							pVars->current_var = VAR_MVR;
+							pVars->buff_size = SERVER_MAXSIZE;
+							pVars->pbuff = cfg->Server;
+				    	}
+
+					} else if ( memcmp(prt, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_PRT;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+					} else if ( memcmp(tls, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_TLS;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+				    } else if ( memcmp(usr, &pdata[a], 3) == 0 ) {
+
+				    	if (cfg->Flags & CFG_FLAG_MQTT_ENABLED) {
+							pVars->current_var = VAR_USR;
+							pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+							pVars->pbuff = cfg->Username;
+				    	}
+
+				    } else if ( memcmp(mwd, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_MWD;
+						pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
+						pVars->pbuff = cfg->Password;
+
+				    } else if ( memcmp(pfx, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_PFX;
+						pVars->buff_size = MQTT_PREFIX_SIZE;
+						pVars->pbuff = cfg->MqttTopicPrefix;
+
+					} else if ( memcmp(qos, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_QOS;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
+
+					} else if ( memcmp(ret, &pdata[a], 3) == 0 ) {
+
+						pVars->current_var = VAR_RET;
+						pVars->buff_size = 12;
+						pVars->pbuff = pVars->intval;
 
 #ifndef CFG_TIME_VARIABLES
 				    }
@@ -524,6 +608,42 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 					} else if ( pVars->current_var == VAR_TRG ) {
 
 						cfg->Trigger = pVars->intval[0] - '0';
+
+					} else if ( pVars->current_var == VAR_PRO ) {
+						if (pVars->intval[0] - '0' == 1) {
+							cfg->Flags |= CFG_FLAG_MQTT_ENABLED;
+						} else {
+							cfg->Flags &= ~CFG_FLAG_MQTT_ENABLED;
+						}
+
+					} else if ( pVars->current_var == VAR_PRT ) {
+
+						int port = pVars->intval[0] - '0';
+						if (port > 0 && port <= 65535) {
+							 cfg->Port = port;
+					    }
+
+					} else if ( pVars->current_var == VAR_TLS ) {
+						if (pVars->intval[0] - '0' == 1) {
+							cfg->Flags |= CFG_FLAG_MQTT_TLS;
+						} else {
+							cfg->Flags &= ~CFG_FLAG_MQTT_TLS;
+						}
+
+					} else if ( pVars->current_var == VAR_QOS ) {
+
+						int qos = pVars->intval[0] - '0';
+						if (qos >= 0 && qos <= 2) {
+							 cfg->MqttQoS = qos;
+					    }
+
+					} else if ( pVars->current_var == VAR_RET ) {
+						if (pVars->intval[0] - '0' == 1) {
+							cfg->Flags |= CFG_FLAG_MQTT_NO_RETAIN;
+						} else {
+							cfg->Flags &= ~CFG_FLAG_MQTT_NO_RETAIN;
+						}
+
 #ifndef CFG_TIME_VARIABLES
 				    }
 #else
@@ -590,7 +710,6 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 	
 	supla_esp_parse_request(pVars, pdata, len, &new_cfg, &reboot);
 	
-	
 	if ( pVars->type == TYPE_UNKNOWN ) {
 		
 		supla_esp_http_404(conn);
@@ -610,6 +729,7 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 			return;
 		}
 				
+		// This also works for cfg->Password (union)
 		if ( new_cfg.LocationPwd[0] == 0 )
 			memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd, SUPLA_LOCATION_PWD_MAXSIZE);
 		

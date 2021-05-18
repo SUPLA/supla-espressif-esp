@@ -105,6 +105,10 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 	supla_esp_cfg.CfgButtonType = BTN_TYPE_MONOSTABLE;
 	supla_esp_cfg.Button1Type = BTN1_DEFAULT;
 	supla_esp_cfg.Button2Type = BTN2_DEFAULT;
+	supla_esp_cfg.Flags = 0;
+	supla_esp_cfg.Port = 1883;
+	supla_esp_cfg.MqttTopicPrefix[0] = 0;
+	supla_esp_cfg.MqttQoS = 0;
 
 	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
 	supla_esp_cfg.Test = Test;
