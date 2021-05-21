@@ -267,7 +267,7 @@ void MAIN_ICACHE_FLASH user_init(void) {
       (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED &&
        (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Username[0] == 0)) ||
       (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) &&
-       (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Email[0]))) {
+       (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Email[0] == 0))) {
       supla_esp_cfgmode_start();
       return;
     }
