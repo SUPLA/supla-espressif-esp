@@ -17,12 +17,13 @@
  */
 
 #include "supla_esp_dns_client.h"
-#include "espmissingincludes.h"
-#include "supla-dev/log.h"
 
 #include <espconn.h>
 #include <osapi.h>
 #include <string.h>
+
+#include "espmissingincludes.h"
+#include "supla-dev/log.h"
 
 // https://tools.ietf.org/html/rfc1035
 // https://www.zytrax.com/books/dns/ch15
@@ -110,8 +111,6 @@ _t_dns_client_vars dns_client_vars;
 uint16 DNS_ICACHE_FLASH_ATTR htons(uint16 n) {
   return ((n & 0xff) << 8) | ((n & 0xff00) >> 8);
 }
-
-#define ntohs htons
 
 void DNS_ICACHE_FLASH_ATTR supla_esp_dns_encode_name(const char *name,
                                                      uint8 len, char *dest) {

@@ -17,3 +17,5 @@
  */
 
 #include "supla_esp_mqtt.h"
+
+void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void) {}

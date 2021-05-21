@@ -37,6 +37,11 @@
 #include "supla_esp_gpio.h"
 #include "supla_esp_impulse_counter.h"
 #include "supla_esp_pwm.h"
+#include "supla_esp_wifi.h"
+
+#ifdef MQTT_SUPPORT_ENABLED
+#include "supla_esp_mqtt.h"
+#endif
 
 #include "board/supla_esp_board.c"
 
@@ -211,6 +216,7 @@ void MAIN_ICACHE_FLASH user_init(void) {
   wifi_status_led_uninstall();
   supla_esp_cfg_init();
   supla_esp_gpio_init();
+  supla_esp_wifi_init();
 
   supla_log(LOG_DEBUG, "Starting %i", system_get_time());
 
@@ -256,6 +262,16 @@ void MAIN_ICACHE_FLASH user_init(void) {
   supla_esp_ic_init();
 #endif
 
+#ifdef MQTT_SUPPORT_ENABLED
+  if (supla_esp_cfg.WIFI_SSID[0] == 0 || supla_esp_cfg.WIFI_PWD[0] == 0 ||
+      (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED &&
+       (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Username[0] == 0)) ||
+      (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) &&
+       (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Email[0]))) {
+      supla_esp_cfgmode_start();
+      return;
+    }
+#else
   if (((supla_esp_cfg.LocationID == 0 || supla_esp_cfg.LocationPwd[0] == 0) &&
        supla_esp_cfg.Email[0] == 0) ||
       supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.WIFI_PWD[0] == 0 ||
@@ -263,6 +279,7 @@ void MAIN_ICACHE_FLASH user_init(void) {
     supla_esp_cfgmode_start();
     return;
   }
+#endif /*MQTT_SUPPORT_ENABLED*/
 
 #ifdef DS18B20
   supla_ds18b20_start();
@@ -280,7 +297,15 @@ void MAIN_ICACHE_FLASH user_init(void) {
   supla_esp_ic_start();
 #endif
 
+#ifdef MQTT_SUPPORT_ENABLED
+  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
+    supla_esp_mqtt_client_start();
+  } else {
+    supla_esp_devconn_start();
+  }
+#else
   supla_esp_devconn_start();
+#endif /*MQTT_SUPPORT_ENABLED*/
 
   system_print_meminfo();
 

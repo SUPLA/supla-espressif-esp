@@ -16,15 +16,32 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SUPLA_MQTT_H_
-#define SUPLA_MQTT_H_
+#include "supla_esp_state.h"
 
-#include "supla_esp.h"
+#include <string.h>
 
-#ifdef MQTT_SUPPORT_ENABLED
+#include "supla-dev/log.h"
 
-void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
+typedef struct {
+  char laststate[STATE_MAXSIZE];
+} _state_vars_t;
 
-#endif /*MQTT_SUPPORT_ENABLED*/
+_state_vars_t supla_esp_state_vars = {};
 
-#endif
+void ICACHE_FLASH_ATTR supla_esp_set_state(int __pri, const char *message) {
+  if (message == NULL) return;
+
+  supla_log(__pri, message);
+
+  char laststate[STATE_MAXSIZE];
+  ets_snprintf(
+      laststate, STATE_MAXSIZE, "%s%s%s", message,
+      strnlen(supla_esp_state_vars.laststate, STATE_MAXSIZE) > 0 ? "," : "",
+      supla_esp_state_vars.laststate);
+
+  ets_snprintf(supla_esp_state_vars.laststate, STATE_MAXSIZE, "%s", laststate);
+}
+
+const char *ICACHE_FLASH_ATTR supla_esp_get_laststate(void) {
+  return supla_esp_state_vars.laststate;
+}

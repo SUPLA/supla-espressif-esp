@@ -20,12 +20,15 @@
 #define SUPLA_ESP_CLIENT_H_
 
 #include "supla_esp.h"
+#include "supla_esp_state.h"
 
+// Maintaining backward compatibility
+#define supla_esp_devconn_laststate supla_esp_get_laststate
+// ----------------------------------
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_init(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void);
-char * DEVCONN_ICACHE_FLASH supla_esp_devconn_laststate(void);
 char DEVCONN_ICACHE_FLASH supla_esp_devconn_is_registered(void);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value_changed(int channel_number, char v);

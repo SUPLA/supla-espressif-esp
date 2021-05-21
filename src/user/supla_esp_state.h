@@ -16,15 +16,12 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef SUPLA_MQTT_H_
-#define SUPLA_MQTT_H_
+#ifndef SUPLA_ESP_STATE_H_
+#define SUPLA_ESP_STATE_H_
 
 #include "supla_esp.h"
 
-#ifdef MQTT_SUPPORT_ENABLED
+void ICACHE_FLASH_ATTR supla_esp_set_state(int __pri, const char *message);
+const char *ICACHE_FLASH_ATTR supla_esp_get_laststate(void);
 
-void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
-
-#endif /*MQTT_SUPPORT_ENABLED*/
-
-#endif
+#endif /* SUPLA_ESP_STATE_H_ */

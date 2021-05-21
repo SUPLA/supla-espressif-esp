@@ -38,6 +38,8 @@
 #include "supla-dev/log.h"
 #include "supla_esp_countdown_timer.h"
 #include "supla_esp_dns_client.h"
+#include "supla_esp_wifi.h"
+#include "supla_esp_state.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
@@ -84,20 +86,17 @@ typedef struct {
 	ip_addr_t ipaddr;
 
 	void *srpc;
+	uint8 started;
 	char registered;
 	uint32 register_time_sec;
 
 	char recvbuff[RECVBUFF_MAXSIZE];
 	unsigned int recvbuff_size;
 
-	char laststate[STATE_MAXSIZE];
-
 	unsigned int last_response;
 	unsigned int last_sent;
 	unsigned int next_wd_soft_timeout_challenge;
 	int server_activity_timeout;
-
-	uint8 last_wifi_status;
 
 	#ifdef CVD_MAX_COUNT
 	channel_value_delayed cvd[CVD_MAX_COUNT];
@@ -156,7 +155,6 @@ devconn_smooth smooth[SMOOTH_MAX_COUNT];
 
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_timer1_cb(void *timer_arg);
-void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
 
@@ -320,28 +318,6 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 
 
 	return 0;
-}
-
-
-void DEVCONN_ICACHE_FLASH
-supla_esp_set_state(int __pri, const char *message) {
-
-	if ( message == NULL )
-		return;
-
-	supla_log(__pri, message);
-
-	char laststate[STATE_MAXSIZE];
-	ets_snprintf(laststate,
-			STATE_MAXSIZE,
-			"%s%s%s",
-			message,
-			strnlen(devconn->laststate, STATE_MAXSIZE) > 0 ? "," : "",
-			devconn->laststate);
-
-	ets_snprintf(devconn->laststate,
-			STATE_MAXSIZE,
-			"%s", laststate);
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1654,54 +1630,31 @@ supla_esp_devconn_init(void) {
 }
 
 void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_start(void) {
-
-	devconn->last_wifi_status = STATION_GOT_IP+1;
-	supla_esp_set_state(LOG_NOTICE, "WiFi - Connecting...");
-
-	wifi_station_disconnect();
-
-	supla_esp_gpio_state_disconnected();
-
-    struct station_config stationConf;
-    memset(&stationConf, 0, sizeof(struct station_config));
-
-    wifi_set_opmode( STATION_MODE );
-
-	#ifdef WIFI_SLEEP_DISABLE
-		wifi_set_sleep_type(NONE_SLEEP_T);
-	#endif
-
-    os_memcpy(stationConf.ssid, supla_esp_cfg.WIFI_SSID, WIFI_SSID_MAXSIZE);
-    os_memcpy(stationConf.password, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
-
-    stationConf.ssid[31] = 0;
-    stationConf.password[63] = 0;
-    stationConf.threshold.rssi = -127;
-
-    wifi_station_set_config(&stationConf);
-    wifi_station_set_auto_connect(1);
-
-    wifi_station_connect();
-
-	os_timer_disarm(&devconn->supla_devconn_timer1);
-	os_timer_setfn(&devconn->supla_devconn_timer1, (os_timer_func_t *)supla_esp_devconn_timer1_cb, NULL);
-	os_timer_arm(&devconn->supla_devconn_timer1, 1000, 1);
-
+supla_esp_devconn_on_wifi_status_changed(uint8 status) {
+  if (devconn->started && devconn->srpc == NULL && status == STATION_GOT_IP) {
+    supla_esp_devconn_resolvandconnect();
+  }
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_stop(void) {
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void) {
+  devconn->started = 1;
+  supla_esp_wifi_station_connect(supla_esp_devconn_on_wifi_status_changed);
 
-	os_timer_disarm(&devconn->supla_devconn_timer1);
-	os_timer_disarm(&devconn->supla_iterate_timer);
+  os_timer_disarm(&devconn->supla_devconn_timer1);
+  os_timer_setfn(&devconn->supla_devconn_timer1,
+                 (os_timer_func_t *)supla_esp_devconn_timer1_cb, NULL);
+  os_timer_arm(&devconn->supla_devconn_timer1, 1000, 1);
+}
 
-	supla_espconn_disconnect(&devconn->ESPConn);
-	supla_esp_wifi_check_status();
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void) {
+  os_timer_disarm(&devconn->supla_devconn_timer1);
+  os_timer_disarm(&devconn->supla_iterate_timer);
 
-	devconn->registered = 0;
-	supla_esp_srpc_free();
+  supla_espconn_disconnect(&devconn->ESPConn);
 
+  devconn->registered = 0;
+  devconn->started = 0;
+  supla_esp_srpc_free();
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1717,50 +1670,8 @@ supla_esp_devconn_reconnect(void) {
 	 }
 }
 
-char * DEVCONN_ICACHE_FLASH
-supla_esp_devconn_laststate(void) {
-	return devconn->laststate;
-}
-
-void DEVCONN_ICACHE_FLASH supla_esp_wifi_check_status(void) {
-  uint8 status = wifi_station_get_connect_status();
-
-  if (devconn->last_wifi_status == status) {
-    return;
-  }
-
-  supla_log(LOG_DEBUG, "WiFi Status: %i", status);
-  devconn->last_wifi_status = status;
-
-  if (STATION_GOT_IP == status) {
-    if (devconn->srpc == NULL) {
-      supla_esp_gpio_state_ipreceived();
-      supla_esp_devconn_resolvandconnect();
-    }
-
-  } else {
-    switch (status) {
-      case STATION_NO_AP_FOUND: {
-        char buffer[WIFI_SSID_MAXSIZE + 30];
-        ets_snprintf(buffer, sizeof(buffer),
-                     "WiFi Network &quot;%s&quot; Not found",
-                     supla_esp_cfg.WIFI_SSID);
-        supla_esp_set_state(LOG_NOTICE, buffer);
-      } break;
-      case STATION_WRONG_PASSWORD:
-        supla_esp_set_state(LOG_NOTICE, "WiFi - Wrong password");
-        break;
-    }
-
-    supla_esp_gpio_state_disconnected();
-  }
-}
-
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_timer1_cb(void *timer_arg) {
-
-	supla_esp_wifi_check_status();
-
 	unsigned int t1;
 	unsigned int t2;
 

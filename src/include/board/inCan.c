@@ -323,14 +323,14 @@ char* ICACHE_FLASH_ATTR supla_esp_board_cfg_html_template(
 #endif
                                   "</div><button type=\"submit\">SAVE</button></form></div><br><br>";
 
-    int bufflen = strlen(supla_esp_devconn_laststate()) + strlen(dev_name) + strlen(SUPLA_ESP_SOFTVER) + strlen(supla_esp_cfg.WIFI_SSID) + strlen(supla_esp_cfg.Server) + strlen(supla_esp_cfg.Email) + strlen(html_template_header) + strlen(html_template) + 200;
+    int bufflen = strlen(supla_esp_get_laststate()) + strlen(dev_name) + strlen(SUPLA_ESP_SOFTVER) + strlen(supla_esp_cfg.WIFI_SSID) + strlen(supla_esp_cfg.Server) + strlen(supla_esp_cfg.Email) + strlen(html_template_header) + strlen(html_template) + 200;
 
     char* buffer = (char*)malloc(bufflen);
 
     ets_snprintf(
         buffer, bufflen, html_template, html_template_header,
         data_saved == 1 ? "<div id=\"msg\" class=\"c\">Data saved</div>" : "",
-        dev_name, supla_esp_devconn_laststate(), SUPLA_ESP_SOFTVER,
+        dev_name, supla_esp_get_laststate(), SUPLA_ESP_SOFTVER,
         (unsigned char)supla_esp_cfg.GUID[0],
         (unsigned char)supla_esp_cfg.GUID[1],
         (unsigned char)supla_esp_cfg.GUID[2],
