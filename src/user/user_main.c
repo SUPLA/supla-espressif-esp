@@ -138,7 +138,15 @@ void MAIN_ICACHE_FLASH supla_system_restart(void) {
   }
 #endif
 
+#ifdef MQTT_SUPPORT_ENABLED
+  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
+    supla_esp_mqtt_init();
+  } else {
+    supla_esp_mqtt_before_system_restart();
+  }
+#else
   supla_esp_devconn_before_system_restart();
+#endif /*MQTT_SUPPORT_ENABLED*/
 
 #ifdef BOARD_BEFORE_REBOOT
   supla_esp_board_before_reboot();
@@ -240,7 +248,15 @@ void MAIN_ICACHE_FLASH user_init(void) {
   supla_esp_dns_client_init();
 #endif /*ADDITIONAL_DNS_CLIENT_DISABLED*/
 
+#ifdef MQTT_SUPPORT_ENABLED
+  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
+	  supla_esp_mqtt_init();
+  } else {
+	  supla_esp_devconn_init();
+  }
+#else
   supla_esp_devconn_init();
+#endif /*MQTT_SUPPORT_ENABLED*/
 
 #ifdef DS18B20
   supla_ds18b20_init();

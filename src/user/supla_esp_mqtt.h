@@ -23,7 +23,10 @@
 
 #ifdef MQTT_SUPPORT_ENABLED
 
+void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void);
 
 #endif /*MQTT_SUPPORT_ENABLED*/
 

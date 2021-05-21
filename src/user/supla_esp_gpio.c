@@ -31,6 +31,7 @@
 #include "supla_esp_devconn.h"
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_countdown_timer.h"
+#include "supla_esp_mqtt.h"
 
 #include "supla-dev/log.h"
 
@@ -506,6 +507,10 @@ void  supla_esg_gpio_start_cfg_mode(void) {
 		#ifdef BEFORE_CFG_ENTER
 			BEFORE_CFG_ENTER
 		#endif
+
+        #ifdef MQTT_SUPPORT_ENABLED
+        supla_esp_mqtt_client_stop();
+        #endif /*MQTT_SUPPORT_ENABLED*/
 
 		supla_esp_devconn_stop();
 		supla_esp_cfgmode_start();

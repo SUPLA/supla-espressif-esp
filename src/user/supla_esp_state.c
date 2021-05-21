@@ -24,9 +24,9 @@
 
 typedef struct {
   char laststate[STATE_MAXSIZE];
-} _state_vars_t;
+} _supla_esp_state_vars_t;
 
-_state_vars_t supla_esp_state_vars = {};
+_supla_esp_state_vars_t supla_esp_state_vars = {};
 
 void ICACHE_FLASH_ATTR supla_esp_set_state(int __pri, const char *message) {
   if (message == NULL) return;

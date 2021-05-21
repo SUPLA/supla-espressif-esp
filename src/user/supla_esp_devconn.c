@@ -352,9 +352,11 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_send_channel_values_with__delay(int time_ms) {
-	os_timer_disarm(&devconn->supla_value_timer);
-	os_timer_setfn(&devconn->supla_value_timer, (os_timer_func_t *)supla_esp_devconn_send_channel_values_cb, NULL);
-	os_timer_arm(&devconn->supla_value_timer, time_ms, 0);
+	if (devconn) {
+		os_timer_disarm(&devconn->supla_value_timer);
+		os_timer_setfn(&devconn->supla_value_timer, (os_timer_func_t *)supla_esp_devconn_send_channel_values_cb, NULL);
+		os_timer_arm(&devconn->supla_value_timer, time_ms, 0);
+	}
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1584,6 +1586,10 @@ supla_esp_devconn_watchdog_cb(void *timer_arg) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_cfgmode_start(void) {
 
+	if (!devconn) {
+		return;
+	}
+
     #ifndef SUPLA_SMOOTH_DISABLED
 	#if defined(RGB_CONTROLLER_CHANNEL) \
 		|| defined(RGBW_CONTROLLER_CHANNEL) \
@@ -1602,8 +1608,6 @@ supla_esp_devconn_before_cfgmode_start(void) {
     #endif /*SUPLA_SMOOTH_DISABLED*/
 
 	os_timer_disarm(&devconn->supla_watchdog_timer);
-
-
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1637,6 +1641,10 @@ supla_esp_devconn_on_wifi_status_changed(uint8 status) {
 }
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void) {
+  if (!devconn) {
+ 	return;
+  }
+
   devconn->started = 1;
   supla_esp_wifi_station_connect(supla_esp_devconn_on_wifi_status_changed);
 
@@ -1647,6 +1655,10 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void) {
 }
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void) {
+  if (!devconn) {
+	  return;
+  }
+
   os_timer_disarm(&devconn->supla_devconn_timer1);
   os_timer_disarm(&devconn->supla_iterate_timer);
 
