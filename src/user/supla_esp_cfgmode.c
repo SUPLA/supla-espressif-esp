@@ -619,7 +619,7 @@ supla_esp_parse_request(TrivialHttpParserVars *pVars, char *pdata, unsigned shor
 
 					} else if ( pVars->current_var == VAR_PRT ) {
 
-						int port = pVars->intval[0] - '0';
+						int port = cfg_str2int(pVars);
 						if (port > 0 && port <= 65535) {
 							 cfg->Port = port;
 					    }

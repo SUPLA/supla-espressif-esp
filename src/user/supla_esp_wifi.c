@@ -23,6 +23,7 @@
 
 #include "supla-dev/log.h"
 #include "supla_esp_cfg.h"
+#include "supla_esp_cfgmode.h"
 #include "supla_esp_gpio.h"
 #include "supla_esp_state.h"
 
@@ -41,7 +42,8 @@ void ICACHE_FLASH_ATTR supla_esp_wifi_init(void) {}
 void ICACHE_FLASH_ATTR supla_esp_wifi_check_status(void *ptr) {
   uint8 status = wifi_station_get_connect_status();
 
-  if (supla_esp_wifi_vars.last_status == status) {
+  if (supla_esp_wifi_vars.last_status == status ||
+      supla_esp_cfgmode_started()) {
     return;
   }
 
