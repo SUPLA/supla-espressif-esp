@@ -19,7 +19,6 @@
 #ifndef SUPLA_ESP_H_
 #define SUPLA_ESP_H_
 
-#include "supla-dev/proto.h"
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
@@ -175,6 +174,14 @@
 #ifndef MQTT_PREFIX_SIZE
 #define MQTT_PREFIX_SIZE 50
 #endif /*MQTT_PREFIX_SIZE*/
+
+#ifndef MQTT_RECVBUF_SIZE
+#define MQTT_RECVBUF_SIZE 1024
+#endif /*MQTT_RECVBUF_SIZE*/
+
+#ifndef MQTT_SENDBUF_SIZE
+#define MQTT_SENDBUF_SIZE 1024
+#endif /*MQTT_SENDBUF_SIZE*/
 
 #define CFG_FLAG_MQTT_ENABLED 0x01
 #define CFG_FLAG_MQTT_NO_RETAIN 0x02

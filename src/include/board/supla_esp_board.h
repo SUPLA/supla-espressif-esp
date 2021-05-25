@@ -17,6 +17,8 @@
  */
 
 #include <os_type.h>
+
+#include "supla-dev/proto.h"
 #include "supla_esp.h"
 
 #ifndef SUPLA_ESP_BOARD_H_

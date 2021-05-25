@@ -40,9 +40,9 @@ extern "C" {
 #define MQTT_PAL_HTONS(s) htons(s)
 #define MQTT_PAL_NTOHS(s) ntohs(s)
 
-#define MQTT_PAL_TIME() time(NULL)
+#define MQTT_PAL_TIME() uptime_sec()
 
-typedef time_t mqtt_pal_time_t;
+typedef unsigned _supla_int64_t mqtt_pal_time_t;
 typedef void* mqtt_pal_mutex_t;
 typedef void* mqtt_pal_socket_handle;
 

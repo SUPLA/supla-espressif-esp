@@ -23,10 +23,20 @@
 
 #ifdef MQTT_SUPPORT_ENABLED
 
+#define MQTT_WANTS_PUBLISH_ALL 0
+
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void);
+
+void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_publish(uint8 idx);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_subscribe(void);
+
+uint8 ICACHE_FLASH_ATTR
+supla_esp_board_mqtt_get_subscription_topic(char **topic_name, uint8 index);
+uint8 ICACHE_FLASH_ATTR supla_esp_board_mqtt_get_topic_for_publication(
+    char **topic_name, void **message, size_t *message_size, uint8 index);
 
 #endif /*MQTT_SUPPORT_ENABLED*/
 
