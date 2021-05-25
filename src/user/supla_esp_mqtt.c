@@ -18,6 +18,8 @@
 
 #include "supla_esp_mqtt.h"
 
+#ifdef MQTT_SUPPORT_ENABLED
+
 #include <espconn.h>
 #include <osapi.h>
 
@@ -208,3 +210,5 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void) {
   mqtt_disconnect(&supla_esp_mqtt_vars->client);
   supla_esp_mqtt_espconn_diconnect();
 }
+
+#endif /*MQTT_SUPPORT_ENABLED*/
