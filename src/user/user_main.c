@@ -140,9 +140,9 @@ void MAIN_ICACHE_FLASH supla_system_restart(void) {
 
 #ifdef MQTT_SUPPORT_ENABLED
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
-    supla_esp_mqtt_init();
-  } else {
     supla_esp_mqtt_before_system_restart();
+  } else {
+    supla_esp_devconn_before_system_restart();
   }
 #else
   supla_esp_devconn_before_system_restart();

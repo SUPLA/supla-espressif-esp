@@ -20,6 +20,7 @@
 
 #ifdef MQTT_SUPPORT_ENABLED
 
+#include <ctype.h>
 #include <espconn.h>
 #include <osapi.h>
 
@@ -57,6 +58,7 @@ typedef struct {
 
   uint8 subscribe_idx;
   uint8 publish_idx[32];
+  char *prefix;
 
 } _supla_esp_mqtt_vars_t;
 
@@ -65,6 +67,27 @@ _supla_esp_mqtt_vars_t *supla_esp_mqtt_vars = NULL;
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
   supla_esp_mqtt_vars = malloc(sizeof(_supla_esp_mqtt_vars_t));
   memset(supla_esp_mqtt_vars, 0, sizeof(_supla_esp_mqtt_vars_t));
+
+  if (!supla_esp_mqtt_vars) {
+    return;
+  }
+
+  uint8 name_len = strnlen(MQTT_DEVICE_NAME, 100);
+  uint8 prefix_size = name_len + 21;
+  supla_esp_mqtt_vars->prefix = malloc(prefix_size);
+
+  if (supla_esp_mqtt_vars->prefix) {
+    unsigned char mac[6] = {};
+    wifi_get_macaddr(STATION_IF, mac);
+    ets_snprintf(supla_esp_mqtt_vars->prefix, prefix_size,
+                 "supla/devices/%s-%02x%02x%02x", MQTT_DEVICE_NAME, mac[3],
+                 mac[4], mac[5]);
+
+    for (uint8 a = 0; a < name_len; a++) {
+      supla_esp_mqtt_vars->prefix[a + 14] =
+          (char)tolower((int)supla_esp_mqtt_vars->prefix[a + 14]);
+    }
+  }
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void) {}
@@ -122,10 +145,12 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
     void *message = NULL;
     size_t message_size = 0;
 
-    if (!supla_esp_board_mqtt_get_topic_for_publication(&topic_name, &message,
-                                                        &message_size, idx) ||
-        topic_name == NULL) {
-      supla_esp_mqtt_vars->publish_idx[(idx - 1) / 8] &= ~bit;
+    if (!supla_esp_board_mqtt_get_message_for_publication(&topic_name, &message,
+                                                          &message_size, idx) ||
+        topic_name == NULL || topic_name[0] == 0) {
+      memset(supla_esp_mqtt_vars->publish_idx, 0,
+             sizeof(supla_esp_mqtt_vars->publish_idx));
+      return 0;
 
     } else {
       ret = 1;
@@ -146,6 +171,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
       if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN)) {
         publish_flags |= MQTT_PUBLISH_RETAIN;
       }
+
+      supla_esp_mqtt_add_topic_prefix(topic_name);
 
       enum MQTTErrors r = mqtt_publish(&supla_esp_mqtt_vars->client, topic_name,
                                        message, message_size, publish_flags);
@@ -316,7 +343,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
     supla_esp_gpio_state_connected();
     supla_esp_mqtt_vars->status = CONN_STATUS_READY;
     supla_esp_mqtt_wants_subscribe();
-    supla_esp_mqtt_wants_publish(MQTT_WANTS_PUBLISH_ALL);
+    supla_esp_mqtt_wants_publish(1, 255);
   }
 }
 
@@ -364,15 +391,17 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
   }
 }
 
-void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_publish(uint8 idx) {
-  if (idx == 0) {
-    uint8 n = sizeof(supla_esp_mqtt_vars->publish_idx);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_publish(uint8 idx_from,
+                                                    uint8 idx_to) {
+  idx_from -= 1;
+  idx_to -= 1;
 
-    for (uint8 a = 0; a < n; a++) {
-      supla_esp_mqtt_vars->publish_idx[a] = 0xFF;
-    }
-  } else {
-    supla_esp_mqtt_vars->publish_idx[(idx - 1) / 8] |= 1 << ((idx - 1) % 8);
+  if (idx_from > idx_to) {
+    return;
+  }
+
+  for (uint8 a = idx_from; a <= idx_to; a++) {
+    supla_esp_mqtt_vars->publish_idx[a / 8] |= 1 << (a % 8);
   }
 }
 
@@ -446,5 +475,11 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void) {
   mqtt_disconnect(&supla_esp_mqtt_vars->client);
   supla_esp_mqtt_espconn_diconnect();
 }
+
+const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void) {
+  return supla_esp_mqtt_vars->prefix;
+}
+
+void ICACHE_FLASH_ATTR supla_esp_mqtt_add_topic_prefix(char **topic_name) {}
 
 #endif /*MQTT_SUPPORT_ENABLED*/
