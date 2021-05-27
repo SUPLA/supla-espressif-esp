@@ -28,7 +28,14 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void);
 const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void);
-void ICACHE_FLASH_ATTR supla_esp_mqtt_add_topic_prefix(char **topic_name);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
+                                                       void **message_out,
+                                                       size_t *message_size_out,
+                                                       const char *topic,
+                                                       const char *message);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 num, const char *json_config);
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_publish(uint8 idx_from,
                                                     uint8 idx_to);

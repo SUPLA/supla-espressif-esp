@@ -112,6 +112,7 @@ typedef struct {
 } _t_usermain_uptime;
 
 _t_usermain_uptime usermain_uptime;
+ETSTimer system_restart_delay_timer;
 
 unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void) {
   uint32 time = system_get_time();
@@ -131,7 +132,7 @@ uint32 MAIN_ICACHE_FLASH uptime_sec(void) {
   return uptime_msec() / (unsigned _supla_int64_t)1000;
 }
 
-void MAIN_ICACHE_FLASH supla_system_restart(void) {
+void ICACHE_FLASH_ATTR supla_system_restart(void) {
 #ifdef BOARD_IS_RESTART_ALLOWED
   if (supla_esp_board_is_restart_allowed() == 0) {
     return;
@@ -156,6 +157,17 @@ void MAIN_ICACHE_FLASH supla_system_restart(void) {
   supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
   system_restart();
+}
+
+void ICACHE_FLASH_ATTR supla_system_restart_with_delay_cb(void *ptr) {
+  supla_system_restart();
+}
+
+void ICACHE_FLASH_ATTR supla_system_restart_with_delay(uint32 delay_ms) {
+  os_timer_disarm(&system_restart_delay_timer);
+  os_timer_setfn(&system_restart_delay_timer,
+                 (os_timer_func_t *)supla_system_restart_with_delay_cb, NULL);
+  os_timer_arm(&system_restart_delay_timer, delay_ms, 0);
 }
 
 uint32 MAIN_ICACHE_FLASH user_rf_cal_sector_set(void) {

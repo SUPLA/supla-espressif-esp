@@ -726,8 +726,12 @@ supla_esp_recv_callback (void *arg, char *pdata, unsigned short len)
 		}
 
 		if ( reboot > 0 ) {
-			supla_system_restart();
-			return;
+			if (reboot == 2) {
+				supla_system_restart_with_delay(1500);
+			} else {
+				supla_system_restart();
+				return;
+			}
 		}
 				
 		// This also works for cfg->Password (union)

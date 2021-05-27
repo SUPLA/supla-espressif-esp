@@ -48,6 +48,7 @@ typedef struct {
   struct espconn esp_conn;
   esp_tcp esptcp;
   ip_addr_t ipaddr;
+  uint8 error_notification;
   struct mqtt_client client;
   unsigned _supla_int64_t wait_until_ms;
   uint32 ip;
@@ -172,10 +173,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
         publish_flags |= MQTT_PUBLISH_RETAIN;
       }
 
-      supla_esp_mqtt_add_topic_prefix(topic_name);
-
       enum MQTTErrors r = mqtt_publish(&supla_esp_mqtt_vars->client, topic_name,
                                        message, message_size, publish_flags);
+      supla_log(LOG_DEBUG, "Publish %s", topic_name);
 
       if (r == MQTT_OK) {
         supla_esp_mqtt_vars->publish_idx[(idx - 1) / 8] &= ~bit;
@@ -190,10 +190,12 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
 
     if (topic_name) {
       free(topic_name);
+      topic_name = NULL;
     }
 
     if (message) {
       free(message);
+      message = NULL;
     }
 
   } while (!ret);
@@ -354,12 +356,19 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_disconnect(void *arg) {
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
                                                 void **state) {
-  if (client->error != MQTT_ERROR_INITIAL_RECONNECT &&
-      supla_esp_mqtt_vars->wait_until_ms &&
-      supla_esp_mqtt_vars->wait_until_ms > uptime_msec()) {
-    return;
+  if (client->error != MQTT_ERROR_INITIAL_RECONNECT) {
+    if (!supla_esp_mqtt_vars->error_notification) {
+      supla_esp_set_state(LOG_NOTICE, mqtt_error_str(client->error));
+      supla_esp_mqtt_vars->error_notification = 1;
+    }
+
+    if (supla_esp_mqtt_vars->wait_until_ms &&
+        supla_esp_mqtt_vars->wait_until_ms > uptime_msec()) {
+      return;
+    }
   }
 
+  supla_esp_mqtt_vars->error_notification = 0;
   supla_esp_mqtt_vars->wait_until_ms = uptime_msec() + RECONNECT_RETRY_TIME_MS;
 
   supla_esp_mqtt_espconn_diconnect();
@@ -480,6 +489,61 @@ const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void) {
   return supla_esp_mqtt_vars->prefix;
 }
 
-void ICACHE_FLASH_ATTR supla_esp_mqtt_add_topic_prefix(char **topic_name) {}
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
+                                                       void **message_out,
+                                                       size_t *message_size_out,
+                                                       const char *topic,
+                                                       const char *message) {
+  if (!topic_name_out || !message_out || !message_size_out ||
+      !supla_esp_mqtt_vars->prefix || supla_esp_mqtt_vars->prefix[0] == 0) {
+    return 0;
+  }
+
+  *topic_name_out = NULL;
+  *message_out = NULL;
+  *message_size_out = 0;
+
+  char c = 0;
+  // ets_snprintf does not handle NULL when determining buffer size
+  size_t size =
+      ets_snprintf(&c, 1, "%s/%s", supla_esp_mqtt_vars->prefix, topic) + 1;
+  *topic_name_out = malloc(size);
+  c = 0;
+  if (*topic_name_out) {
+    ets_snprintf(*topic_name_out, size, "%s/%s", supla_esp_mqtt_vars->prefix,
+                 topic);
+    if (message == NULL || message[0] == 0) {
+      c = 1;
+    } else {
+      size = strnlen(message, 8192);
+      *message_out = malloc(size);
+      if (*message_out) {
+        memcpy(*message_out, message, size);
+        *message_size_out = size;
+        c = 1;
+      }
+    }
+  }
+
+  if (c == 0) {
+    if (*topic_name_out) {
+      free(*topic_name_out);
+      *topic_name_out = NULL;
+    }
+
+    if (*message_out) {
+      free(*message_out);
+      *message_out = NULL;
+    }
+  }
+
+  return c;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 num, const char *json_config) {
+  return 0;
+}
 
 #endif /*MQTT_SUPPORT_ENABLED*/
