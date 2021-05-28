@@ -175,7 +175,6 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
 
       enum MQTTErrors r = mqtt_publish(&supla_esp_mqtt_vars->client, topic_name,
                                        message, message_size, publish_flags);
-      supla_log(LOG_DEBUG, "Publish %s", topic_name);
 
       if (r == MQTT_OK) {
         supla_esp_mqtt_vars->publish_idx[(idx - 1) / 8] &= ~bit;
@@ -305,7 +304,6 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_espconn_diconnect(void) {
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
   supla_esp_mqtt_vars->status = CONN_STATUS_CONNECTED;
-  supla_log(LOG_DEBUG, "on_connect");
 
   supla_esp_mqtt_vars->subscribe_idx = 0;
   memset(supla_esp_mqtt_vars->publish_idx, 0,
@@ -351,7 +349,6 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_disconnect(void *arg) {
   supla_esp_mqtt_vars->status = CONN_STATUS_DISCONNECTED;
-  supla_log(LOG_DEBUG, "on_disconnect");
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
