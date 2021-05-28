@@ -22,6 +22,7 @@
 
 #include <ctype.h>
 #include <espconn.h>
+#include <math.h>
 #include <osapi.h>
 
 #include "mqtt.h"
@@ -31,6 +32,7 @@
 #include "supla_esp_state.h"
 #include "supla_esp_wifi.h"
 
+#define BOARD_MAX_IDX 208
 #define RECONNECT_RETRY_TIME_MS 5000
 #define CONN_STATUS_UNKNOWN 0
 #define CONN_STATUS_CONNECTING 1
@@ -59,6 +61,8 @@ typedef struct {
 
   uint8 subscribe_idx;
   uint8 publish_idx[32];
+
+  uint16 prefix_len;
   char *prefix;
 
 } _supla_esp_mqtt_vars_t;
@@ -88,10 +92,24 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
       supla_esp_mqtt_vars->prefix[a + 14] =
           (char)tolower((int)supla_esp_mqtt_vars->prefix[a + 14]);
     }
+
+    supla_esp_mqtt_vars->prefix_len =
+        strnlen(supla_esp_mqtt_vars->prefix, prefix_size);
   }
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void) {}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_get_message_for_publication(
+    char **topic_name, void **message, size_t *message_size, uint8 index) {
+  switch (index) {
+    case 209:
+      return supla_esp_mqtt_prepare_message(topic_name, message, message_size,
+                                            "connected", "true");
+  }
+
+  return 0;
+}
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_subscribe(void) {
   if (!supla_esp_mqtt_vars->subscribe_idx) {
@@ -146,13 +164,19 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
     void *message = NULL;
     size_t message_size = 0;
 
-    if (!supla_esp_board_mqtt_get_message_for_publication(&topic_name, &message,
-                                                          &message_size, idx) ||
+    if ((idx <= BOARD_MAX_IDX &&
+         !supla_esp_board_mqtt_get_message_for_publication(
+             &topic_name, &message, &message_size, idx)) ||
+        (idx > BOARD_MAX_IDX &&
+         !supla_esp_mqtt_get_message_for_publication(&topic_name, &message,
+                                                     &message_size, idx)) ||
         topic_name == NULL || topic_name[0] == 0) {
-      memset(supla_esp_mqtt_vars->publish_idx, 0,
-             sizeof(supla_esp_mqtt_vars->publish_idx));
-      return 0;
-
+      if (idx <= BOARD_MAX_IDX) {
+        memset(supla_esp_mqtt_vars->publish_idx, 0, BOARD_MAX_IDX / 8);
+      } else {
+        memset(&supla_esp_mqtt_vars->publish_idx[BOARD_MAX_IDX / 8], 0,
+               sizeof(supla_esp_mqtt_vars->publish_idx) - BOARD_MAX_IDX / 8);
+      }
     } else {
       ret = 1;
       uint8 publish_flags = 0;
@@ -280,7 +304,15 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_recv_cb(void *arg, char *pdata,
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_on_message_received(
-    void **adapter_instance, struct mqtt_response_publish *message) {}
+    void **adapter_instance, struct mqtt_response_publish *message) {
+  supla_esp_board_mqtt_on_message_received(
+      message->dup_flag, message->qos_level, message->retain_flag,
+      message->topic_name, message->topic_name_size,
+      (const char *)message->application_message,
+      message->application_message_size);
+
+  supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
+}
 
 sint8 ICACHE_FLASH_ATTR supla_esp_mqtt_espconn_connect(void) {
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_TLS) {
@@ -336,14 +368,21 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
       (unsigned char)supla_esp_cfg.GUID[14],
       (unsigned char)supla_esp_cfg.GUID[15]);
 
+  char *will_topic = NULL;
+  supla_esp_mqtt_prepare_topic(&will_topic, "connected");
+
   if (MQTT_OK ==
-      mqtt_connect(&supla_esp_mqtt_vars->client, clientId, NULL, NULL, 0,
-                   supla_esp_cfg.Username, supla_esp_cfg.Password,
+      mqtt_connect(&supla_esp_mqtt_vars->client, clientId, will_topic, "false",
+                   5, supla_esp_cfg.Username, supla_esp_cfg.Password,
                    MQTT_CONNECT_CLEAN_SESSION, MQTT_KEEP_ALIVE_SEC)) {
     supla_esp_gpio_state_connected();
     supla_esp_mqtt_vars->status = CONN_STATUS_READY;
     supla_esp_mqtt_wants_subscribe();
     supla_esp_mqtt_wants_publish(1, 255);
+  }
+
+  if (will_topic) {
+    free(will_topic);
   }
 }
 
@@ -355,7 +394,12 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
                                                 void **state) {
   if (client->error != MQTT_ERROR_INITIAL_RECONNECT) {
     if (!supla_esp_mqtt_vars->error_notification) {
-      supla_esp_set_state(LOG_NOTICE, mqtt_error_str(client->error));
+      if (client->error == MQTT_ERROR_CONNECTION_REFUSED) {
+        supla_esp_set_state(LOG_NOTICE, "Connection refused");
+      } else {
+        supla_log(LOG_DEBUG, mqtt_error_str(client->error));
+      }
+
       supla_esp_mqtt_vars->error_notification = 1;
     }
 
@@ -486,12 +530,33 @@ const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void) {
   return supla_esp_mqtt_vars->prefix;
 }
 
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_topic(char **topic_name_out,
+                                                     const char *topic) {
+  if (!topic_name_out || !topic) {
+    return 0;
+  }
+
+  char c = 0;
+  // ets_snprintf does not handle NULL when determining buffer size
+  size_t size =
+      ets_snprintf(&c, 1, "%s/%s", supla_esp_mqtt_vars->prefix, topic) + 1;
+  *topic_name_out = malloc(size);
+
+  if (*topic_name_out) {
+    ets_snprintf(*topic_name_out, size, "%s/%s", supla_esp_mqtt_vars->prefix,
+                 topic);
+    return 1;
+  }
+
+  return 0;
+}
+
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
                                                        void **message_out,
                                                        size_t *message_size_out,
                                                        const char *topic,
                                                        const char *message) {
-  if (!topic_name_out || !message_out || !message_size_out ||
+  if (!topic_name_out || !message_out || !message_size_out || !topic ||
       !supla_esp_mqtt_vars->prefix || supla_esp_mqtt_vars->prefix[0] == 0) {
     return 0;
   }
@@ -500,29 +565,23 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
   *message_out = NULL;
   *message_size_out = 0;
 
-  char c = 0;
-  // ets_snprintf does not handle NULL when determining buffer size
-  size_t size =
-      ets_snprintf(&c, 1, "%s/%s", supla_esp_mqtt_vars->prefix, topic) + 1;
-  *topic_name_out = malloc(size);
-  c = 0;
-  if (*topic_name_out) {
-    ets_snprintf(*topic_name_out, size, "%s/%s", supla_esp_mqtt_vars->prefix,
-                 topic);
+  uint8 result = 0;
+
+  if (supla_esp_mqtt_prepare_topic(topic_name_out, topic)) {
     if (message == NULL || message[0] == 0) {
-      c = 1;
+      result = 1;
     } else {
-      size = strnlen(message, 8192);
+      uint16_t size = strnlen(message, 8192);
       *message_out = malloc(size);
       if (*message_out) {
         memcpy(*message_out, message, size);
         *message_size_out = size;
-        c = 1;
+        result = 1;
       }
     }
   }
 
-  if (c == 0) {
+  if (result == 0) {
     if (*topic_name_out) {
       free(*topic_name_out);
       *topic_name_out = NULL;
@@ -534,12 +593,170 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
     }
   }
 
-  return c;
+  return result;
 }
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 num, const char *json_config) {
+  return 0;
+}
+
+int supla_esp_mqtt_str2int(const char *str, uint16_t len, uint8 *err) {
+  int result = 0;
+  uint8 minus = 0;
+  uint8 dot = 0;
+  uint16_t a = 0;
+  uint16_t _len = len;
+
+  for (a = 0; a < len; a++) {
+    char c = str[a];
+    if (a == 0 && c == '-') {
+      minus = 1;
+      continue;
+    } else if (a > 0 && !dot && c == '.') {
+      dot = 1;
+      _len = a;
+    } else if (c < '0' || c > '9') {
+      if (err) {
+        *err = 1;
+      }
+      return 0;
+    }
+  }
+
+  for (a = minus ? 1 : 0; a < _len; a++) {
+    result += (str[a] - '0') * pow(10, _len - 1 - a);
+  }
+
+  if (minus) {
+    result *= -1;
+  }
+
+  if (err) {
+    *err = 0;
+  }
+
+  return result;
+}
+
+int supla_esp_mqtt_parse_int_with_prefix(const char *prefix,
+                                         uint16_t prefix_len, char **topic_name,
+                                         uint16_t *topic_name_size,
+                                         uint8 *err) {
+  if (err) {
+    *err = 1;
+  }
+
+  if (*topic_name_size < prefix_len ||
+      memcmp(*topic_name, prefix, prefix_len) != 0) {
+    return 0;
+  }
+
+  (*topic_name) += prefix_len;
+  (*topic_name_size) -= prefix_len;
+
+  for (size_t a = 0; a < *topic_name_size; a++) {
+    if ((*topic_name)[a] == '/') {
+      if (a == 0) {
+        return 0;
+      }
+
+      int result = supla_esp_mqtt_str2int(*topic_name, a, err);
+
+      if (err && *err) {
+        return 0;
+      }
+
+      (*topic_name) += a + 1;
+      (*topic_name_size) -= a + 1;
+
+      if (err) {
+        *err = 0;
+      }
+
+      return result;
+    }
+  }
+
+  return 0;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_lc_equal(const char *str,
+                                                const char *message,
+                                                size_t message_size) {
+  for (size_t a = 0; a < message_size; a++) {
+    uint8 i1 = message[a];
+    uint8 i2 = str[a];
+    if (tolower(i1) != tolower(i2)) {
+      return 0;
+    }
+  }
+
+  return 1;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel, uint8 *on) {
+  if (!topic_name || topic_name_size == 0 || !message || message_size == 0 ||
+      !channel || !on || !supla_esp_mqtt_vars->prefix ||
+      supla_esp_mqtt_vars->prefix[0] == 0 ||
+      supla_esp_mqtt_vars->prefix_len + 1 >= topic_name_size) {
+    return 0;
+  }
+
+  char *tn = (char *)topic_name;
+
+  if (memcmp(tn, supla_esp_mqtt_vars->prefix,
+             supla_esp_mqtt_vars->prefix_len) == 0) {
+    tn += supla_esp_mqtt_vars->prefix_len + 1;
+    topic_name_size -= supla_esp_mqtt_vars->prefix_len + 1;
+  } else {
+    return 0;
+  }
+
+  uint8 err = 1;
+  *channel = supla_esp_mqtt_parse_int_with_prefix("channels/", 9, &tn,
+                                                  &topic_name_size, &err);
+
+  if (err) {
+    return 0;
+  }
+
+  if (topic_name_size == 6 && memcmp(tn, "set/on", topic_name_size) == 0) {
+    if ((message_size == 1 && message[0] == '1') ||
+        (message_size == 3 &&
+         supla_esp_mqtt_lc_equal("yes", message, message_size)) ||
+        (message_size == 4 &&
+         supla_esp_mqtt_lc_equal("true", message, message_size))) {
+      *on = 1;
+      return 1;
+    } else if ((message_size == 1 && message[0] == '0') ||
+               (message_size == 2 &&
+                supla_esp_mqtt_lc_equal("no", message, message_size)) ||
+               (message_size == 5 &&
+                supla_esp_mqtt_lc_equal("false", message, message_size))) {
+      *on = 0;
+      return 1;
+    }
+  } else if (topic_name_size == 14 &&
+             memcmp(tn, "execute_action", topic_name_size) == 0) {
+    if (message_size == 7 &&
+        supla_esp_mqtt_lc_equal("turn_on", message, message_size)) {
+      *on = 1;
+      return 1;
+    } else if (message_size == 8 &&
+               supla_esp_mqtt_lc_equal("turn_off", message, message_size)) {
+      *on = 0;
+      return 1;
+    } else if (message_size == 6 &&
+               supla_esp_mqtt_lc_equal("toggle", message, message_size)) {
+      *on = 255;
+      return 1;
+    }
+  }
+
   return 0;
 }
 
