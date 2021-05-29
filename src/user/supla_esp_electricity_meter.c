@@ -16,14 +16,15 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "supla_esp_electricity_meter.h"
+
 #include <eagle_soc.h>
 #include <ets_sys.h>
 #include <os_type.h>
 #include <osapi.h>
-#include "supla-dev/log.h"
 
+#include "supla-dev/log.h"
 #include "supla_esp_devconn.h"
-#include "supla_esp_electricity_meter.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 
@@ -57,6 +58,9 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
       }
       supla_esp_channel_em_value_changed(channel_number, &ev);
       memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
+#ifdef BOARD_ON_EV_VALUE_CHANGED
+      BOARD_ON_EV_VALUE_CHANGED
+#endif /*BOARD_ON_EV_VALUE_CHANGED*/
     }
 
     channel_number++;
@@ -137,4 +141,8 @@ void ICACHE_FLASH_ATTR supla_esp_em_set_measurement_frequency(int freq) {
   }
 }
 
+TElectricityMeter_ExtendedValue_V2 *ICACHE_FLASH_ATTR
+supla_esp_em_get_last_ev_ptr(uint8 channel_number) {
+  return &last_ev[channel_number - ELECTRICITY_METER_CHANNEL_OFFSET];
+}
 #endif /*ELECTRICITY_METER_COUNT*/

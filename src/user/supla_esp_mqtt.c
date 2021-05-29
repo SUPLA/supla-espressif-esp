@@ -18,6 +18,8 @@
 
 #include "supla_esp_mqtt.h"
 
+#include "supla_esp_electricity_meter.h"
+
 #ifdef MQTT_SUPPORT_ENABLED
 
 #include <ctype.h>
@@ -171,12 +173,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
          !supla_esp_mqtt_get_message_for_publication(&topic_name, &message,
                                                      &message_size, idx)) ||
         topic_name == NULL || topic_name[0] == 0) {
-      if (idx <= BOARD_MAX_IDX) {
-        memset(supla_esp_mqtt_vars->publish_idx, 0, BOARD_MAX_IDX / 8);
-      } else {
-        memset(&supla_esp_mqtt_vars->publish_idx[BOARD_MAX_IDX / 8], 0,
-               sizeof(supla_esp_mqtt_vars->publish_idx) - BOARD_MAX_IDX / 8);
-      }
+      supla_esp_mqtt_vars->publish_idx[(idx - 1) / 8] &= ~bit;
     } else {
       ret = 1;
       uint8 publish_flags = 0;
@@ -530,32 +527,58 @@ const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void) {
   return supla_esp_mqtt_vars->prefix;
 }
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_topic(char **topic_name_out,
-                                                     const char *topic) {
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare__topic(char **topic_name_out,
+                                                      const char *topic,
+                                                      va_list va) {
   if (!topic_name_out || !topic) {
     return 0;
   }
 
+  va_list vac;
+  va_copy(vac, va);
+
   char c = 0;
   // ets_snprintf does not handle NULL when determining buffer size
-  size_t size =
-      ets_snprintf(&c, 1, "%s/%s", supla_esp_mqtt_vars->prefix, topic) + 1;
+  size_t size = ets_vsnprintf(&c, 1, topic, vac) + 1;
+  va_end(vac);
+
+  char *_topic = malloc(size);
+  if (!_topic) {
+    return 0;
+  }
+
+  char result = 0;
+  ets_vsnprintf(_topic, size, topic, vac);
+
+  size = ets_snprintf(&c, 1, "%s/%s", supla_esp_mqtt_vars->prefix, _topic) + 1;
+
   *topic_name_out = malloc(size);
 
   if (*topic_name_out) {
     ets_snprintf(*topic_name_out, size, "%s/%s", supla_esp_mqtt_vars->prefix,
                  topic);
-    return 1;
+
+    result = 1;
   }
 
-  return 0;
+  free(_topic);
+
+  return result;
 }
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
-                                                       void **message_out,
-                                                       size_t *message_size_out,
-                                                       const char *topic,
-                                                       const char *message) {
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_topic(char **topic_name_out,
+                                                     const char *topic, ...) {
+  va_list va;
+  va_start(va, topic);
+  uint8 result = supla_esp_mqtt_prepare__topic(topic_name_out, topic, va);
+  va_end(va);
+
+  return result;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *topic, const char *message, ...) {
   if (!topic_name_out || !message_out || !message_size_out || !topic ||
       !supla_esp_mqtt_vars->prefix || supla_esp_mqtt_vars->prefix[0] == 0) {
     return 0;
@@ -566,8 +589,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
   *message_size_out = 0;
 
   uint8 result = 0;
+  va_list va;
+  va_start(va, message);
 
-  if (supla_esp_mqtt_prepare_topic(topic_name_out, topic)) {
+  if (supla_esp_mqtt_prepare__topic(topic_name_out, topic, va)) {
     if (message == NULL || message[0] == 0) {
       result = 1;
     } else {
@@ -580,6 +605,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
       }
     }
   }
+
+  va_end(va);
 
   if (result == 0) {
     if (*topic_name_out) {
@@ -594,6 +621,14 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
   }
 
   return result;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_channel_state_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *topic, const char *message, uint8 channel_number) {
+  return supla_esp_mqtt_prepare_message(
+      topic_name_out, message_out, message_size_out, "channels/%i/state/%s",
+      message, channel_number, topic);
 }
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
@@ -698,9 +733,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_lc_equal(const char *str,
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
     const void *topic_name, uint16_t topic_name_size, const char *message,
-    size_t message_size, uint8 *channel, uint8 *on) {
+    size_t message_size, uint8 *channel_number, uint8 *on) {
   if (!topic_name || topic_name_size == 0 || !message || message_size == 0 ||
-      !channel || !on || !supla_esp_mqtt_vars->prefix ||
+      !channel_number || !on || !supla_esp_mqtt_vars->prefix ||
       supla_esp_mqtt_vars->prefix[0] == 0 ||
       supla_esp_mqtt_vars->prefix_len + 1 >= topic_name_size) {
     return 0;
@@ -717,8 +752,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
   }
 
   uint8 err = 1;
-  *channel = supla_esp_mqtt_parse_int_with_prefix("channels/", 9, &tn,
-                                                  &topic_name_size, &err);
+  *channel_number = supla_esp_mqtt_parse_int_with_prefix(
+      "channels/", 9, &tn, &topic_name_size, &err);
 
   if (err) {
     return 0;
@@ -759,5 +794,268 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
 
   return 0;
 }
+
+#ifdef ELECTRICITY_METER_COUNT
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_phase_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *topic, const char *message, uint8 channel_number, uint8 phase) {
+  return supla_esp_mqtt_prepare_message(
+      topic_name_out, message_out, message_size_out,
+      "channels/%i/state/phases/%i/%s", message, channel_number, phase + 1,
+      topic);
+}
+
+uint8 supla_esp_mqtt_prepare_em_message(char **topic_name_out,
+                                        void **message_out,
+                                        size_t *message_size_out, uint8 index,
+                                        uint8 channel_number,
+                                        _supla_int_t channel_flags) {
+  if (index > 41) {
+    return 0;
+  }
+
+  TElectricityMeter_ExtendedValue_V2 *em_ev =
+      supla_esp_em_get_last_ev_ptr(channel_number);
+
+  if (!em_ev ||
+      ((channel_flags & SUPLA_CHANNEL_FLAG_PHASE1_UNSUPPORTED) && index >= 10 &&
+       index <= 21) ||
+      (((channel_flags & SUPLA_CHANNEL_FLAG_PHASE2_UNSUPPORTED) &&
+        index >= 22 && index <= 33)) ||
+      (((channel_flags & SUPLA_CHANNEL_FLAG_PHASE3_UNSUPPORTED) &&
+        index >= 34 && index <= 45))) {
+    return 0;
+  }
+
+  char value[50];
+  value[0] = 0;
+
+  short phase = (index - 10) / 12;
+
+  switch (index) {
+    case 1:
+      ets_snprintf(value, sizeof(value), "%u", em_ev->measured_values);
+      // This topic should be called "measured_values" but for compatibility
+      // with the rest API it has been changed to "support"
+      return supla_esp_mqtt_prepare_channel_state_message(
+          topic_name_out, message_out, message_size_out, "support", value,
+          channel_number);
+
+    case 2:
+      if (em_ev->measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     (em_ev->total_forward_active_energy[0] +
+                      em_ev->total_forward_active_energy[1] +
+                      em_ev->total_forward_active_energy[2]) *
+                         0.00001);
+
+        return supla_esp_mqtt_prepare_channel_state_message(
+            topic_name_out, message_out, message_size_out,
+            "total_forward_active_energy", value, channel_number);
+      }
+      break;
+
+    case 3:
+      if (em_ev->measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     (em_ev->total_reverse_active_energy[0] +
+                      em_ev->total_reverse_active_energy[1] +
+                      em_ev->total_reverse_active_energy[2]) *
+                         0.00001);
+
+        return supla_esp_mqtt_prepare_channel_state_message(
+            topic_name_out, message_out, message_size_out,
+            "total_reverse_active_energy", value, channel_number);
+      }
+      break;
+
+    case 4:
+      if (em_ev->measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY_BALANCED) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->total_forward_active_energy_balanced * 0.00001);
+
+        return supla_esp_mqtt_prepare_channel_state_message(
+            topic_name_out, message_out, message_size_out,
+            "total_forward_active_energy_balanced", value, channel_number);
+      }
+      break;
+
+    case 5:
+      if (em_ev->measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY_BALANCED) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->total_reverse_active_energy_balanced * 0.00001);
+
+        return supla_esp_mqtt_prepare_channel_state_message(
+            topic_name_out, message_out, message_size_out,
+            "total_reverse_active_energy_balanced", value, channel_number);
+      }
+      break;
+
+    case 6:
+    case 18:
+    case 30:
+      if (em_ev->measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->total_forward_active_energy[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out,
+            "total_forward_active_energy", value, channel_number, phase);
+      }
+      break;
+
+    case 7:
+    case 19:
+    case 31:
+      if (em_ev->measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->total_reverse_active_energy[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out,
+            "total_reverse_active_energy", value, channel_number, phase);
+      }
+      break;
+
+    case 8:
+    case 20:
+    case 32:
+      if (em_ev->measured_values & EM_VAR_FORWARD_REACTIVE_ENERGY) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->total_forward_reactive_energy[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out,
+            "total_forward_reactive_energy", value, channel_number, phase);
+      }
+      break;
+
+    case 9:
+    case 21:
+    case 33:
+      if (em_ev->measured_values & EM_VAR_REVERSE_REACTIVE_ENERGY) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->total_reverse_reactive_energy[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out,
+            "total_reverse_reactive_energy", value, channel_number, phase);
+      }
+      break;
+
+    case 10:
+    case 22:
+    case 34:
+      if (em_ev->measured_values & EM_VAR_FREQ) {
+        ets_snprintf(value, sizeof(value), "%.2f", em_ev->m[0].freq * 0.01);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "frequency", value,
+            channel_number, phase);
+      }
+      break;
+
+    case 11:
+    case 23:
+    case 35:
+      if (em_ev->measured_values & EM_VAR_VOLTAGE) {
+        ets_snprintf(value, sizeof(value), "%.2f",
+                     em_ev->m[0].voltage[phase] * 0.01);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "voltage", value,
+            channel_number, phase);
+      }
+      break;
+
+    case 12:
+    case 24:
+    case 36:
+      if (em_ev->measured_values & EM_VAR_CURRENT ||
+          em_ev->measured_values & EM_VAR_CURRENT_OVER_65A) {
+        unsigned int current = em_ev->m[0].current[phase];
+
+        if ((em_ev->measured_values & EM_VAR_CURRENT_OVER_65A) &&
+            !(em_ev->measured_values & EM_VAR_CURRENT)) {
+          current *= 10;
+        }
+
+        ets_snprintf(value, sizeof(value), "%.3f", current * 0.001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "current", value,
+            channel_number, phase);
+      }
+      break;
+
+    case 13:
+    case 25:
+    case 37:
+      if (em_ev->measured_values & EM_VAR_POWER_ACTIVE) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->m[0].power_active[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "power_active",
+            value, channel_number, phase);
+      }
+      break;
+
+    case 14:
+    case 26:
+    case 38:
+      if (em_ev->measured_values & EM_VAR_POWER_REACTIVE) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->m[0].power_reactive[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "power_reactive",
+            value, channel_number, phase);
+      }
+      break;
+
+    case 15:
+    case 27:
+    case 39:
+      if (em_ev->measured_values & EM_VAR_POWER_APPARENT) {
+        ets_snprintf(value, sizeof(value), "%.5f",
+                     em_ev->m[0].power_apparent[phase] * 0.00001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "power_apparent",
+            value, channel_number, phase);
+      }
+      break;
+
+    case 16:
+    case 28:
+    case 40:
+      if (em_ev->measured_values & EM_VAR_POWER_FACTOR) {
+        ets_snprintf(value, sizeof(value), "%.3f",
+                     em_ev->m[0].power_factor[phase] * 0.001);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "power_factor",
+            value, channel_number, phase);
+      }
+      break;
+
+    case 17:
+    case 29:
+    case 41:
+      if (em_ev->measured_values & EM_VAR_PHASE_ANGLE) {
+        ets_snprintf(value, sizeof(value), "%.1f",
+                     em_ev->m[0].phase_angle[phase] * 0.1);
+
+        return supla_esp_mqtt_prepare_phase_message(
+            topic_name_out, message_out, message_size_out, "phase_angle", value,
+            channel_number, phase);
+      }
+      break;
+  }
+  return 0;
+}
+#endif /*ELECTRICITY_METER_COUNT*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/

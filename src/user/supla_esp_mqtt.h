@@ -29,21 +29,32 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void);
 const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void);
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_topic(char **topic_name_out,
-                                                     const char *topic);
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(char **topic_name_out,
-                                                       void **message_out,
-                                                       size_t *message_size_out,
-                                                       const char *topic,
-                                                       const char *message);
+                                                     const char *topic, ...);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *topic, const char *message, ...);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_channel_state_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *topic, const char *message, uint8 channel_number);
+
+#ifdef ELECTRICITY_METER_COUNT
+uint8 supla_esp_mqtt_prepare_em_message(char **topic_name_out,
+                                        void **message_out,
+                                        size_t *message_size_out, uint8 index,
+                                        uint8 channel_number,
+                                        _supla_int_t channel_flags);
+#endif /*ELECTRICITY_METER_COUNT*/
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare__message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *topic, const char *message, uint8 channel_number);
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 num, const char *json_config);
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(const void *topic_name,
-                                                     uint16_t topic_name_size,
-                                                     const char *message,
-                                                     size_t message_size,
-                                                     uint8 *channel, uint8 *on);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel_number, uint8 *on);
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_publish(uint8 idx_from,
                                                     uint8 idx_to);
