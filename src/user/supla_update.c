@@ -78,7 +78,7 @@ static update_params *update = NULL;
 static char update_step;
 static unsigned int update_checking_start_time = 0;
 
-void supla_esp_update_init(void) {
+void ICACHE_FLASH_ATTR supla_esp_update_init(void) {
 	
 	update = NULL;
 

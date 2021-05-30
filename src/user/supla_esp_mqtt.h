@@ -38,11 +38,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_channel_state_message(
     const char *topic, const char *message, uint8 channel_number);
 
 #ifdef ELECTRICITY_METER_COUNT
-uint8 supla_esp_mqtt_prepare_em_message(char **topic_name_out,
-                                        void **message_out,
-                                        size_t *message_size_out, uint8 index,
-                                        uint8 channel_number,
-                                        _supla_int_t channel_flags);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 index, uint8 channel_number, _supla_int_t channel_flags);
 #endif /*ELECTRICITY_METER_COUNT*/
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare__message(

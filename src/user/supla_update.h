@@ -23,10 +23,11 @@
 
 #include "supla_esp.h"
 
-void supla_esp_update_init(void);
-void supla_esp_check_updates(void *srpc);
-void supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result);
-char supla_esp_update_started(void);
+void ICACHE_FLASH_ATTR supla_esp_update_init(void);
+void ICACHE_FLASH_ATTR supla_esp_check_updates(void *srpc);
+void ICACHE_FLASH_ATTR
+supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result);
+char ICACHE_FLASH_ATTR supla_esp_update_started(void);
 
 #endif /* SUPLA_ESP_UPDATE_H_ */
 

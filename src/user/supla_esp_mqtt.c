@@ -243,7 +243,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_iterate(void *ptr) {
   }
 }
 
-sint8 supla_esp_mqtt_conn_sent(uint8 *psent, uint16 length) {
+sint8 ICACHE_FLASH_ATTR supla_esp_mqtt_conn_sent(uint8 *psent, uint16 length) {
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_TLS) {
     return espconn_secure_sent(&supla_esp_mqtt_vars->esp_conn, psent, length);
   } else {
@@ -251,8 +251,9 @@ sint8 supla_esp_mqtt_conn_sent(uint8 *psent, uint16 length) {
   }
 }
 
-ssize_t mqtt_pal_sendall(mqtt_pal_socket_handle methods, const void *buf,
-                         size_t len, int flags) {
+ssize_t ICACHE_FLASH_ATTR mqtt_pal_sendall(mqtt_pal_socket_handle methods,
+                                           const void *buf, size_t len,
+                                           int flags) {
   if (supla_esp_mqtt_vars->status != CONN_STATUS_CONNECTED &&
       supla_esp_mqtt_vars->status != CONN_STATUS_READY) {
     return MQTT_ERROR_SOCKET_ERROR;
@@ -268,8 +269,8 @@ ssize_t mqtt_pal_sendall(mqtt_pal_socket_handle methods, const void *buf,
   return MQTT_ERROR_SOCKET_ERROR;
 }
 
-ssize_t mqtt_pal_recvall(mqtt_pal_socket_handle methods, void *buf,
-                         size_t bufsz, int flags) {
+ssize_t ICACHE_FLASH_ATTR mqtt_pal_recvall(mqtt_pal_socket_handle methods,
+                                           void *buf, size_t bufsz, int flags) {
   ssize_t result = supla_esp_mqtt_vars->recv_len;
   supla_esp_mqtt_vars->recv_len = 0;
   if (result > 0) {
@@ -637,7 +638,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
   return 0;
 }
 
-int supla_esp_mqtt_str2int(const char *str, uint16_t len, uint8 *err) {
+int ICACHE_FLASH_ATTR supla_esp_mqtt_str2int(const char *str, uint16_t len, uint8 *err) {
   int result = 0;
   uint8 minus = 0;
   uint8 dot = 0;
@@ -675,10 +676,9 @@ int supla_esp_mqtt_str2int(const char *str, uint16_t len, uint8 *err) {
   return result;
 }
 
-int supla_esp_mqtt_parse_int_with_prefix(const char *prefix,
-                                         uint16_t prefix_len, char **topic_name,
-                                         uint16_t *topic_name_size,
-                                         uint8 *err) {
+int ICACHE_FLASH_ATTR supla_esp_mqtt_parse_int_with_prefix(
+    const char *prefix, uint16_t prefix_len, char **topic_name,
+    uint16_t *topic_name_size, uint8 *err) {
   if (err) {
     *err = 1;
   }
@@ -806,11 +806,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_phase_message(
       topic);
 }
 
-uint8 supla_esp_mqtt_prepare_em_message(char **topic_name_out,
-                                        void **message_out,
-                                        size_t *message_size_out, uint8 index,
-                                        uint8 channel_number,
-                                        _supla_int_t channel_flags) {
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 index, uint8 channel_number, _supla_int_t channel_flags) {
   if (index > 41) {
     return 0;
   }
