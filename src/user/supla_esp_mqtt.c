@@ -66,6 +66,7 @@ typedef struct {
 
   uint16 prefix_len;
   char *prefix;
+  char *device_id;
 
 } _supla_esp_mqtt_vars_t;
 
@@ -97,6 +98,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
 
     supla_esp_mqtt_vars->prefix_len =
         strnlen(supla_esp_mqtt_vars->prefix, prefix_size);
+
+    supla_esp_mqtt_vars->device_id = &supla_esp_mqtt_vars->prefix[14];
   }
 }
 
@@ -632,13 +635,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_channel_state_message(
       message, channel_number, topic);
 }
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
-    char **topic_name_out, void **message_out, size_t *message_size_out,
-    uint8 num, const char *json_config) {
-  return 0;
-}
-
-int ICACHE_FLASH_ATTR supla_esp_mqtt_str2int(const char *str, uint16_t len, uint8 *err) {
+int ICACHE_FLASH_ATTR supla_esp_mqtt_str2int(const char *str, uint16_t len,
+                                             uint8 *err) {
   int result = 0;
   uint8 minus = 0;
   uint8 dot = 0;
@@ -1055,5 +1053,57 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
   return 0;
 }
 #endif /*ELECTRICITY_METER_COUNT*/
+
+#ifdef MQTT_HA_RELAY_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 light, uint8 channel_number, const char *mfr) {
+  const char cfg[] =
+      "{\"avty\":{\"topic\":\"%s/"
+      "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
+      "\"false\"},\"~\":\"%s/channels/"
+      "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
+      "s\"},\"name\":\"#%i\",\"uniq_id\":\"%s-%i\",\"qos\":0,\"ret\":false,"
+      "\"opt\":false,\"stat_t\":\"~/state/on\",\"cmd_t\":\"~/set/"
+      "on\",\"pl_on\":\"true\",\"pl_off\":\"false\"}";
+  char c = 0;
+
+  char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
+  supla_esp_board_set_device_name(device_name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+  char *buffer = NULL;
+  size_t buffer_size = 0;
+
+  for (uint8 a = 0; a < 2; a++) {
+    buffer_size =
+        ets_snprintf(a ? buffer : &c, a ? buffer_size : 1, cfg,
+                     supla_esp_mqtt_vars->prefix, supla_esp_mqtt_vars->prefix,
+                     channel_number, supla_esp_mqtt_vars->device_id, mfr,
+                     device_name, SUPLA_ESP_SOFTVER, channel_number,
+                     device_name, channel_number) +
+        1;
+
+    if (!a) {
+      buffer = malloc(buffer_size);
+      if (!buffer) {
+        return 0;
+      }
+    }
+  }
+
+  unsigned char mac[6] = {};
+  wifi_get_macaddr(STATION_IF, mac);
+
+  uint8 result = supla_esp_mqtt_prepare_message(
+      topic_name_out, message_out, message_size_out,
+      "/homeassistant/%s/supla-%02x%02x%02x%02x%02x%02x/config", buffer,
+      light ? "light" : "switch", mac[0], mac[1], mac[2], mac[3], mac[4],
+      mac[5]);
+
+  free(buffer);
+
+  return result;
+}
+#endif /*MQTT_HA_RELAY_SUPPORT*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/

@@ -46,9 +46,6 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare__message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     const char *topic, const char *message, uint8 channel_number);
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_message(
-    char **topic_name_out, void **message_out, size_t *message_size_out,
-    uint8 num, const char *json_config);
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
     const void *topic_name, uint16_t topic_name_size, const char *message,
@@ -67,6 +64,12 @@ void ICACHE_FLASH_ATTR supla_esp_board_mqtt_on_message_received(
     uint8_t dup_flag, uint8_t qos_level, uint8_t retain_flag,
     const void *topic_name, uint16_t topic_name_size, const char *message,
     size_t message_size);
+
+#ifdef MQTT_HA_RELAY_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 light, uint8 channel_number, const char *mfr);
+#endif /*MQTT_HA_RELAY_SUPPORT*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/
 
