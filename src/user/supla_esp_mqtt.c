@@ -815,7 +815,65 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_on(
 void ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_val(char buffer[25],
                                                   uint8 is_unsigned,
                                                   _supla_int64_t value,
-                                                  uint8 precision) {}
+                                                  uint8 precision) {
+  uint8 minus = 0;
+  uint8 n = 0;
+  uint8 m = 0;
+  uint8 offset = 0;
+
+  if (!is_unsigned && (_supla_int64_t)value < 0) {
+    value = (_supla_int64_t)value * -1;
+    minus = 1;
+  }
+
+  unsigned _supla_int64_t v = value;
+  while (v != 0) {
+    if (!m && precision && v % 10 == 0) {
+      value /= 10;
+      precision--;
+    } else {
+      m = 1;
+      n++;
+    }
+    v /= 10;
+  }
+
+  if (minus) {
+    buffer[0] = '-';
+    offset++;
+  }
+
+  if (value == 0) {
+    precision = 0;
+    n++;
+  } else if (precision > 0) {
+    if (precision >= n) {
+      buffer[offset++] = '0';
+      buffer[offset++] = '.';
+      for (m = 0; m < precision - n; m++) {
+        buffer[offset++] = '0';
+      }
+    } else {
+      offset++;
+    }
+    precision++;
+  }
+
+  buffer[n + offset] = 0;
+
+  while (n > 0) {
+    if (precision) {
+      precision--;
+      if (!precision) {
+        buffer[n + offset - 1] = '.';
+        offset--;
+      }
+    }
+    buffer[n + offset - 1] = value % 10 + '0';
+    value /= 10;
+    n--;
+  }
+}
 
 #ifdef ELECTRICITY_METER_COUNT
 
