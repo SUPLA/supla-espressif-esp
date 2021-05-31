@@ -25,6 +25,7 @@
 
 #include "supla-dev/log.h"
 #include "supla_esp_devconn.h"
+#include "supla_esp_mqtt.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 
@@ -36,9 +37,17 @@ void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
     TElectricityMeter_ExtendedValue_V2 *ev, char *value);
 
 void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
-  if (supla_esp_devconn_is_registered() != 1) {
+#ifdef MQTT_SUPPORT_ENABLED
+  if (!supla_esp_devconn_is_registered() &&
+      !supla_esp_mqtt_server_connected()) {
     return;
   }
+#else
+  if (!supla_esp_devconn_is_registered()) {
+    return;
+  }
+}
+#endif /*MQTT_SUPPORT_ENABLED*/
 
   unsigned char channel_number = ELECTRICITY_METER_CHANNEL_OFFSET;
   char value[SUPLA_CHANNELVALUE_SIZE];
@@ -58,9 +67,8 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
       }
       supla_esp_channel_em_value_changed(channel_number, &ev);
       memset(&ev, 0, sizeof(TElectricityMeter_ExtendedValue_V2));
-#ifdef BOARD_ON_EV_VALUE_CHANGED
+
       supla_esp_board_on_ev_value_changed(channel_number, &ev);
-#endif /*BOARD_ON_EV_VALUE_CHANGED*/
     }
 
     channel_number++;

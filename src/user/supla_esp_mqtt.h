@@ -27,6 +27,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_stop(void);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_server_connected(void);
 const char ICACHE_FLASH_ATTR *supla_esp_mqtt_topic_prefix(void);
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_topic(char **topic_name_out,
                                                      const char *topic, ...);

@@ -16,14 +16,16 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "supla_esp_impulse_counter.h"
+
 #include <eagle_soc.h>
 #include <ets_sys.h>
 #include <os_type.h>
 #include <osapi.h>
-#include "supla-dev/log.h"
 
+#include "supla-dev/log.h"
 #include "supla_esp_devconn.h"
-#include "supla_esp_impulse_counter.h"
+#include "supla_esp_mqtt.h"
 
 #ifdef IMPULSE_COUNTER_COUNT
 
@@ -31,9 +33,17 @@ ETSTimer supla_ic_timer1;
 TDS_ImpulseCounter_Value last_icv[IMPULSE_COUNTER_COUNT];
 
 void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
-  if (supla_esp_devconn_is_registered() != 1) {
+#ifdef MQTT_SUPPORT_ENABLED
+  if (!supla_esp_devconn_is_registered() &&
+      !supla_esp_mqtt_server_connected()) {
     return;
   }
+#else
+  if (!supla_esp_devconn_is_registered()) {
+    return;
+  }
+}
+#endif /*MQTT_SUPPORT_ENABLED*/
 
   unsigned char channel_number = 0;
   char value[SUPLA_CHANNELVALUE_SIZE];
