@@ -80,26 +80,34 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
     return;
   }
 
+  size_t user_prefix_len =
+      strnlen(supla_esp_cfg.MqttTopicPrefix, MQTT_PREFIX_SIZE);
+  if (user_prefix_len > 0) {
+    user_prefix_len += 1;
+  }
   uint8 name_len = strnlen(MQTT_DEVICE_NAME, 100);
-  uint8 prefix_size = name_len + 21;
+  size_t prefix_size = user_prefix_len + name_len + 21;
   supla_esp_mqtt_vars->prefix = malloc(prefix_size);
 
   if (supla_esp_mqtt_vars->prefix) {
     unsigned char mac[6] = {};
     wifi_get_macaddr(STATION_IF, mac);
     ets_snprintf(supla_esp_mqtt_vars->prefix, prefix_size,
-                 "supla/devices/%s-%02x%02x%02x", MQTT_DEVICE_NAME, mac[3],
-                 mac[4], mac[5]);
+                 "%s%ssupla/devices/%s-%02x%02x%02x",
+                 user_prefix_len ? supla_esp_cfg.MqttTopicPrefix : "",
+                 user_prefix_len ? "/" : "", MQTT_DEVICE_NAME, mac[3], mac[4],
+                 mac[5]);
 
     for (uint8 a = 0; a < name_len; a++) {
-      supla_esp_mqtt_vars->prefix[a + 14] =
-          (char)tolower((int)supla_esp_mqtt_vars->prefix[a + 14]);
+      supla_esp_mqtt_vars->prefix[a + user_prefix_len + 14] = (char)tolower(
+          (int)supla_esp_mqtt_vars->prefix[a + user_prefix_len + 14]);
     }
 
     supla_esp_mqtt_vars->prefix_len =
         strnlen(supla_esp_mqtt_vars->prefix, prefix_size);
 
-    supla_esp_mqtt_vars->device_id = &supla_esp_mqtt_vars->prefix[14];
+    supla_esp_mqtt_vars->device_id =
+        &supla_esp_mqtt_vars->prefix[14 + user_prefix_len];
   }
 }
 
@@ -197,7 +205,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
         publish_flags |= MQTT_PUBLISH_RETAIN;
       }
 
-      supla_log(LOG_DEBUG, "Publish %s", topic_name);
+      // supla_log(LOG_DEBUG, "Publish %s", topic_name);
 
       enum MQTTErrors r = mqtt_publish(&supla_esp_mqtt_vars->client, topic_name,
                                        message, message_size, publish_flags);
@@ -313,8 +321,6 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_on_message_received(
       message->topic_name, message->topic_name_size,
       (const char *)message->application_message,
       message->application_message_size);
-
-  supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 }
 
 sint8 ICACHE_FLASH_ATTR supla_esp_mqtt_espconn_connect(void) {
@@ -911,6 +917,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
 
   short phase = (index - 10) / 12;
 
+  // Indexes are not allowed to be changed
+
   switch (index) {
     case 1:
       ets_snprintf(value, sizeof(value), "%u", em_ev->measured_values);
@@ -1135,9 +1143,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
 #endif /*ELECTRICITY_METER_COUNT*/
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_ha_cfg_topic(
-    char **topic_name_out, uint8 channel_number, uint8 n) {
+    const char *component, char **topic_name_out, uint8 channel_number,
+    uint8 n) {
   const char topic[] =
-      "homeassistant/sensor/supla/%02x%02x%02x%02x%02x%02x_%i_%i/config";
+      "homeassistant/%s/supla/%02x%02x%02x%02x%02x%02x_%i_%i/config";
 
   *topic_name_out = NULL;
   size_t buffer_size = 0;
@@ -1148,8 +1157,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_ha_cfg_topic(
 
   for (uint8 a = 0; a < 2; a++) {
     buffer_size = ets_snprintf(a ? *topic_name_out : &c, a ? buffer_size : 1,
-                               topic, mac[0], mac[1], mac[2], mac[3], mac[4],
-                               mac[5], channel_number, n) +
+                               topic, component, mac[0], mac[1], mac[2], mac[3],
+                               mac[4], mac[5], channel_number, n) +
                   1;
 
     if (!a) {
@@ -1167,7 +1176,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_ha_cfg_topic(
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 light, uint8 channel_number, const char *mfr) {
-  if (!supla_esp_mqtt_prepare_ha_cfg_topic(topic_name_out, channel_number, 0)) {
+  if (!supla_esp_mqtt_prepare_ha_cfg_topic(light ? "light" : "switch",
+                                           topic_name_out, channel_number, 0)) {
     return 0;
   }
 
@@ -1176,9 +1186,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
       "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
       "\"false\"},\"~\":\"%s/channels/"
       "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
-      "s\"},\"name\":\"#%i\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x\","
-      "\"qos\":0,\"ret\":false,\"opt\":false,\"stat_t\":\"~/state/"
-      "on\",\"cmd_t\":\"~/set/on\",\"pl_on\":\"true\",\"pl_off\":\"false\"}";
+      "s\"},\"name\":\"#%i "
+      "%s\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\",\"qos\":0,"
+      "\"ret\":false,\"opt\":false,\"stat_t\":\"~/state/on\",\"cmd_t\":\"~/set/"
+      "on\",\"pl_on\":\"true\",\"pl_off\":\"false\"}";
   char c = 0;
 
   char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
@@ -1194,8 +1205,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
         ets_snprintf(a ? *message_out : &c, a ? buffer_size : 1, cfg,
                      supla_esp_mqtt_vars->prefix, supla_esp_mqtt_vars->prefix,
                      channel_number, supla_esp_mqtt_vars->device_id, mfr,
-                     device_name, SUPLA_ESP_SOFTVER, channel_number, mac[0],
-                     mac[1], mac[2], mac[3], mac[4], mac[5]) +
+                     device_name, SUPLA_ESP_SOFTVER, channel_number,
+                     light ? "Light switch" : "Power switch", mac[0], mac[1],
+                     mac[2], mac[3], mac[4], mac[5], channel_number) +
         1;
 
     if (!a) {
@@ -1219,8 +1231,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
-    const char *stat_t, const char *val_tpl, int n) {
-  if (!supla_esp_mqtt_prepare_ha_cfg_topic(topic_name_out, channel_number, n)) {
+    const char *stat_t, uint8 precision, int n) {
+  if (!supla_esp_mqtt_prepare_ha_cfg_topic("sensor", topic_name_out,
+                                           channel_number, n)) {
     return 0;
   }
 
@@ -1229,10 +1242,11 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
       "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
       "\"false\"},\"~\":\"%s/channels/"
       "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
-      "s\"},\"name\":\"#%i "
-      "(%s)\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\",\"qos\":0,"
+      "s\"},\"name\":\"#%i Electricity Meter "
+      "(%s)\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\",\"qos\":0,"
       "\"unit_"
-      "of_meas\":\"%s\",\"stat_t\":\"~/state/phases/1/%s\",\"val_tpl\":\"%s\"}";
+      "of_meas\":\"%s\",\"stat_t\":\"~/%s\",\"val_tpl\":\"{{ value | round(%i) "
+      "}}\"}";
 
   char c = 0;
 
@@ -1250,8 +1264,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
                      supla_esp_mqtt_vars->prefix, supla_esp_mqtt_vars->prefix,
                      channel_number, supla_esp_mqtt_vars->device_id, mfr,
                      device_name, SUPLA_ESP_SOFTVER, channel_number, name,
-                     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5], n, unit,
-                     stat_t, val_tpl) +
+                     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+                     channel_number, n, unit, stat_t, precision) +
         1;
 
     if (!a) {
@@ -1270,10 +1284,211 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
   return 1;
 }
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em_prepare_message(
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
-    const char *stat_t, const char *val_tpl) {
+    const char *stat_t, uint8 precision, uint8 phase, int n) {
+  size_t _stat_t_size = strlen(stat_t) + 20;
+  char *_stat_t = malloc(_stat_t_size);
+  if (!_stat_t) {
+    return 0;
+  }
+
+  size_t _name_size = strlen(name) + 15;
+  char *_name = malloc(_name_size);
+
+  if (!_name) {
+    free(_stat_t);
+    return 0;
+  }
+
+  ets_snprintf(_stat_t, _stat_t_size, "state/phases/%i/%s", phase, stat_t);
+  ets_snprintf(_name, _name_size, "%s - Phase %i", name, phase);
+
+  uint8 result = supla_esp_mqtt_ha_em__prepare_message(
+      topic_name_out, message_out, message_size_out, channel_number, mfr, _name,
+      unit, _stat_t, precision, n);
+
+  free(_stat_t);
+  free(_name);
+  return result;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr, uint8 index) {
+  _supla_int_t measured_values =
+      supla_esp_board_em_get_all_possible_measured_values();
+
+  uint8 phase = (index - 5) / 12 + 1;
+
+  // Indexes are not allowed to be changed
+  switch (index) {
+    case 1:
+      if (measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY) {
+        return supla_esp_mqtt_ha_em__prepare_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total forward active energy", "kWh",
+            "state/total_forward_active_energy", 5, index);
+      }
+      break;
+    case 2:
+      if (measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY) {
+        return supla_esp_mqtt_ha_em__prepare_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total reverse active energy", "kWh",
+            "state/total_reverse_active_energy", 5, index);
+      }
+      break;
+
+    case 3:
+      if (measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY_BALANCED) {
+        return supla_esp_mqtt_ha_em__prepare_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total forward active energy - balanced", "kWh",
+            "state/total_forward_active_energy_balanced", 5, index);
+      }
+
+      break;
+    case 4:
+      if (measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY_BALANCED) {
+        return supla_esp_mqtt_ha_em__prepare_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total reverse active energy - balanced", "kWh",
+            "state/total_reverse_active_energy_balanced", 5, index);
+      }
+
+      break;
+
+      //
+      //
+      // ---
+
+    case 5:
+    case 17:
+    case 29:
+      if (measured_values & EM_VAR_FORWARD_ACTIVE_ENERGY) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total forward active energy", "kWh", "total_forward_active_energy",
+            5, phase, index);
+      }
+      break;
+
+    case 6:
+    case 18:
+    case 30:
+      if (measured_values & EM_VAR_REVERSE_ACTIVE_ENERGY) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total reverse active energy", "kWh", "total_reverse_active_energy",
+            5, phase, index);
+      }
+      break;
+
+    case 7:
+    case 19:
+    case 31:
+      if (measured_values & EM_VAR_FORWARD_REACTIVE_ENERGY) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total forward reactive energy", "kvarh",
+            "total_forward_reactive_energy", 5, phase, index);
+      }
+      break;
+
+    case 8:
+    case 20:
+    case 32:
+      if (measured_values & EM_VAR_REVERSE_REACTIVE_ENERGY) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Total reverse reactive energy", "kvarh",
+            "total_reverse_reactive_energy", 5, phase, index);
+      }
+      break;
+
+    case 9:
+    case 21:
+    case 33:
+      if (measured_values & EM_VAR_FREQ) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Frequency", "Hz", "frequency", 2, phase, index);
+      }
+      break;
+
+    case 10:
+    case 22:
+    case 34:
+      if (measured_values & EM_VAR_VOLTAGE) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Voltage", "V", "voltage", 2, phase, index);
+      }
+      break;
+
+    case 11:
+    case 23:
+    case 35:
+      if (measured_values & EM_VAR_CURRENT) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Current", "A", "current", 3, phase, index);
+      }
+      break;
+
+    case 12:
+    case 24:
+    case 36:
+      if (measured_values & EM_VAR_POWER_ACTIVE) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Power active", "W", "power_active", 5, phase, index);
+      }
+      break;
+
+    case 13:
+    case 25:
+    case 37:
+      if (measured_values & EM_VAR_POWER_REACTIVE) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Power reactive", "var", "power_reactive", 5, phase, index);
+      }
+      break;
+
+    case 14:
+    case 26:
+    case 38:
+      if (measured_values & EM_VAR_POWER_APPARENT) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Power apparent", "VA", "power_apparent", 5, phase, index);
+      }
+      break;
+
+    case 15:
+    case 27:
+    case 39:
+      if (measured_values & EM_VAR_POWER_FACTOR) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Power factor", "", "power_factor", 3, phase, index);
+      }
+      break;
+
+    case 16:
+    case 28:
+    case 40:
+      if (measured_values & EM_VAR_PHASE_ANGLE) {
+        return supla_esp_mqtt_ha_prepare_em_phase_message(
+            topic_name_out, message_out, message_size_out, channel_number, mfr,
+            "Phase angle", "°", "phase_angle", 1, phase, index);
+      }
+      break;
+  }
+
   return 0;
 }
 #endif /*MQTT_HA_EM_SUPPORT*/
