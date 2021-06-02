@@ -37,7 +37,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_send_base_value_enabled(char enabled);
 void ICACHE_FLASH_ATTR supla_esp_em_set_measurement_frequency(int freq);
 TElectricityMeter_ExtendedValue_V2* ICACHE_FLASH_ATTR
 supla_esp_em_get_last_ev_ptr(uint8 channel_number);
-
+_supla_int_t supla_esp_board_em_get_all_possible_measured_values(void);
 #endif /*ELECTRICITY_METER_COUNT*/
 
 #endif
