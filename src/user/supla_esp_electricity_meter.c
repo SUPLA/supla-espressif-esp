@@ -46,7 +46,6 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
   if (!supla_esp_devconn_is_registered()) {
     return;
   }
-}
 #endif /*MQTT_SUPPORT_ENABLED*/
 
   unsigned char channel_number = ELECTRICITY_METER_CHANNEL_OFFSET;
