@@ -18,7 +18,9 @@
 
 #include "supla_esp_mqtt.h"
 
+#include "supla_esp_cfgmode.h"
 #include "supla_esp_electricity_meter.h"
+#include "supla_update.h"
 
 #ifdef MQTT_SUPPORT_ENABLED
 
@@ -48,6 +50,7 @@
 typedef struct {
   uint8 started;
   ETSTimer iterate_timer;
+  ETSTimer watchdog_timer;
   uint8 status;
   struct espconn esp_conn;
   esp_tcp esptcp;
@@ -55,6 +58,7 @@ typedef struct {
   uint8 error_notification;
   struct mqtt_client client;
   unsigned _supla_int64_t wait_until_ms;
+  uint32 disconnected_at_sec;
   uint32 ip;
 
   unsigned short recv_len;
@@ -71,6 +75,34 @@ typedef struct {
 } _supla_esp_mqtt_vars_t;
 
 _supla_esp_mqtt_vars_t *supla_esp_mqtt_vars = NULL;
+
+void ICACHE_FLASH_ATTR supla_esp_mqtt_set_status(uint8 status) {
+  supla_esp_mqtt_vars->status = status;
+  if (status != CONN_STATUS_READY) {
+    if (!supla_esp_mqtt_vars->disconnected_at_sec) {
+      supla_esp_mqtt_vars->disconnected_at_sec = uptime_sec();
+    }
+  } else if (supla_esp_mqtt_vars->disconnected_at_sec) {
+    supla_esp_mqtt_vars->disconnected_at_sec = 0;
+  }
+}
+
+void ICACHE_FLASH_ATTR supla_esp_mqtt_watchdog(void *ptr) {
+#ifdef __FOTA
+  uint8 update_started = supla_esp_update_started();
+#else
+  uint8 update_started = 0;
+#endif
+
+  if (supla_esp_cfgmode_started() == 0 && update_started == 0 &&
+      supla_esp_mqtt_vars->disconnected_at_sec &&
+      uptime_sec() - supla_esp_mqtt_vars->disconnected_at_sec >=
+          WATCHDOG_TIMEOUT_SEC) {
+    os_timer_disarm(&supla_esp_mqtt_vars->watchdog_timer);
+    supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
+    supla_system_restart();
+  }
+}
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
   supla_esp_mqtt_vars = malloc(sizeof(_supla_esp_mqtt_vars_t));
@@ -109,6 +141,13 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
     supla_esp_mqtt_vars->device_id =
         &supla_esp_mqtt_vars->prefix[14 + user_prefix_len];
   }
+
+  supla_esp_mqtt_set_status(CONN_STATUS_DISCONNECTED);
+
+  os_timer_disarm(&supla_esp_mqtt_vars->watchdog_timer);
+  os_timer_setfn(&supla_esp_mqtt_vars->watchdog_timer,
+                 (os_timer_func_t *)supla_esp_mqtt_watchdog, NULL);
+  os_timer_arm(&supla_esp_mqtt_vars->watchdog_timer, 1000, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void) {}
@@ -338,13 +377,13 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_espconn_diconnect(void) {
     espconn_disconnect(&supla_esp_mqtt_vars->esp_conn);
   }
 
-  supla_esp_mqtt_vars->status = CONN_STATUS_DISCONNECTED;
+  supla_esp_mqtt_set_status(CONN_STATUS_DISCONNECTED);
   memset(&supla_esp_mqtt_vars->esp_conn, 0, sizeof(struct espconn));
   supla_esp_mqtt_vars->recv_len = 0;
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
-  supla_esp_mqtt_vars->status = CONN_STATUS_CONNECTED;
+  supla_esp_mqtt_set_status(CONN_STATUS_CONNECTED);
 
   supla_esp_mqtt_vars->subscribe_idx = 0;
   memset(supla_esp_mqtt_vars->publish_idx, 0,
@@ -385,7 +424,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
                    5, supla_esp_cfg.Username, supla_esp_cfg.Password,
                    MQTT_CONNECT_CLEAN_SESSION, MQTT_KEEP_ALIVE_SEC)) {
     supla_esp_gpio_state_connected();
-    supla_esp_mqtt_vars->status = CONN_STATUS_READY;
+    supla_esp_mqtt_set_status(CONN_STATUS_READY);
     supla_esp_mqtt_wants_subscribe();
     supla_esp_mqtt_wants_publish(1, 255);
 
@@ -408,7 +447,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_disconnect(void *arg) {
-  supla_esp_mqtt_vars->status = CONN_STATUS_DISCONNECTED;
+  supla_esp_mqtt_set_status(CONN_STATUS_DISCONNECTED);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
@@ -454,10 +493,10 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
   espconn_regist_disconcb(&supla_esp_mqtt_vars->esp_conn,
                           supla_esp_mqtt_conn_on_disconnect);
 
-  supla_esp_mqtt_vars->status = CONN_STATUS_CONNECTING;
+  supla_esp_mqtt_set_status(CONN_STATUS_CONNECTING);
 
   if (supla_esp_mqtt_espconn_connect() != 0) {
-    supla_esp_mqtt_vars->status = CONN_STATUS_DISCONNECTED;
+    supla_esp_mqtt_set_status(CONN_STATUS_DISCONNECTED);
     return;
   }
 }
