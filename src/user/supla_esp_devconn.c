@@ -75,6 +75,8 @@ typedef struct {
 	ETSTimer supla_iterate_timer;
 	ETSTimer supla_watchdog_timer;
 	ETSTimer supla_value_timer;
+	ETSTimer reconnect_delay_timer;
+	ETSTimer stop_delay_timer;
 
 	// ESPCONN_INPROGRESS fix
 	char esp_send_buffer[SEND_BUFFER_SIZE];
@@ -157,6 +159,8 @@ devconn_smooth smooth[SMOOTH_MAX_COUNT];
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_timer1_cb(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect_with_delay(uint32 time_ms);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop_with_delay(void);
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_system_restart(void) {
@@ -324,7 +328,7 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_on_version_error(TSDC_SuplaVersionError *version_error) {
 
 	supla_esp_set_state(LOG_ERR, "Protocol version error");
-	supla_esp_devconn_stop();
+	supla_esp_devconn_stop_with_delay();
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -466,7 +470,7 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		break;
 	}
 
-	supla_esp_devconn_stop();
+	supla_esp_devconn_stop_with_delay();
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1467,16 +1471,11 @@ supla_esp_srpc_init(void) {
 	os_timer_arm(&devconn->supla_iterate_timer, 100, 1);
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_espconn_disconnect(struct espconn *espconn) {
+void DEVCONN_ICACHE_FLASH supla_espconn_disconnect(struct espconn *espconn) {
+  // supla_log(LOG_DEBUG, "Disconnect %i", espconn->state);
 
-	//supla_log(LOG_DEBUG, "Disconnect %i", espconn->state);
-
-	if ( espconn->state != ESPCONN_CLOSE
-		 && espconn->state != ESPCONN_NONE ) {
-		_supla_espconn_disconnect(espconn);
-	}
-
+  // !!! Do not call this function in any espconn callback.
+  _supla_espconn_disconnect(espconn);
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1493,7 +1492,9 @@ supla_esp_devconn_disconnect_cb(void *arg){
 	devconn->esp_send_buffer_len = 0;
 	devconn->recvbuff_size = 0;
 
-    supla_esp_devconn_reconnect();
+	if (devconn->started) {
+		supla_esp_devconn_reconnect_with_delay(RECONNECT_DELAY_MSEC);
+	}
 }
 
 
@@ -1636,7 +1637,7 @@ supla_esp_devconn_init(void) {
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_on_wifi_status_changed(uint8 status) {
   if (devconn->started && devconn->srpc == NULL && status == STATION_GOT_IP) {
-    supla_esp_devconn_resolvandconnect();
+	  supla_esp_devconn_resolvandconnect();
   }
 }
 
@@ -1648,38 +1649,63 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void) {
   devconn->started = 1;
   supla_esp_wifi_station_connect(supla_esp_devconn_on_wifi_status_changed);
 
+  os_timer_disarm(&devconn->reconnect_delay_timer);
   os_timer_disarm(&devconn->supla_devconn_timer1);
   os_timer_setfn(&devconn->supla_devconn_timer1,
                  (os_timer_func_t *)supla_esp_devconn_timer1_cb, NULL);
   os_timer_arm(&devconn->supla_devconn_timer1, 1000, 1);
 }
 
-void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void) {
+void DEVCONN_ICACHE_FLASH supla_esp_devconn__stop(void *ptr) {
   if (!devconn) {
 	  return;
   }
+  devconn->registered = 0;
+  devconn->started = 0;
 
   os_timer_disarm(&devconn->supla_devconn_timer1);
   os_timer_disarm(&devconn->supla_iterate_timer);
 
   supla_espconn_disconnect(&devconn->ESPConn);
 
-  devconn->registered = 0;
-  devconn->started = 0;
   supla_esp_srpc_free();
 }
 
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void) {
+	supla_esp_devconn__stop(NULL);
+}
+
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop_with_delay(void) {
+  // Use this function if you want to stop the connection from the espconn
+  // callback.
+
+  os_timer_disarm(&devconn->stop_delay_timer);
+  os_timer_setfn(&devconn->stop_delay_timer,
+                 (os_timer_func_t *)supla_esp_devconn__stop, NULL);
+  os_timer_arm(&devconn->stop_delay_timer, 5, 0);
+}
+
+void DEVCONN_ICACHE_FLASH supla_esp_devconn__reconnect(void *ptr) {
+  devconn->next_wd_soft_timeout_challenge =
+      uptime_sec() + WATCHDOG_SOFT_TIMEOUT_SEC;
+
+  if (supla_esp_cfgmode_started() == 0 &&
+      supla_esp_devconn_update_started() == 0) {
+    supla_esp_devconn_stop();
+    supla_esp_devconn_start();
+  }
+}
+
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void) {
+  supla_esp_devconn__reconnect(NULL);
+}
+
 void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_reconnect(void) {
-
-	devconn->next_wd_soft_timeout_challenge = uptime_sec() + WATCHDOG_SOFT_TIMEOUT_SEC;
-
-    if ( supla_esp_cfgmode_started() == 0
-		  && supla_esp_devconn_update_started() == 0 ) {
-
-			supla_esp_devconn_stop();
-			supla_esp_devconn_start();
-	 }
+supla_esp_devconn_reconnect_with_delay(uint32 time_ms) {
+  os_timer_disarm(&devconn->reconnect_delay_timer);
+  os_timer_setfn(&devconn->reconnect_delay_timer,
+                 (os_timer_func_t *)supla_esp_devconn__reconnect, NULL);
+  os_timer_arm(&devconn->reconnect_delay_timer, time_ms, 0);
 }
 
 void DEVCONN_ICACHE_FLASH

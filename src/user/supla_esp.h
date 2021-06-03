@@ -315,6 +315,10 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define WATCHDOG_SOFT_TIMEOUT_SEC 65
 #endif /*WATCHDOG_SOFT_TIMEOUT_SEC*/
 
+#ifndef RECONNECT_DELAY_MSEC
+#define RECONNECT_DELAY_MSEC 2000
+#endif /*RECONNECT_DELAY_MSEC*/
+
 #ifndef RELAY_DOUBLE_TRY
 #define RELAY_DOUBLE_TRY 10000
 #endif
