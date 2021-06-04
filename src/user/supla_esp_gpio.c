@@ -957,7 +957,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 							supla_esg_gpio_start_cfg_mode();
 						}
 
-					} else if ( (system_get_time() - supla_esp_cfgmode_entertime) > 3000000 ) {
+					} else if ( (system_get_time() - supla_esp_cfgmode_entertime()) > 3000000 ) {
 
 						//  EXIT CFG MODE
 						supla_system_restart();
@@ -972,7 +972,7 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 						&& supla_esp_cfgmode_started() == 1
 						&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 							 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS )
-						&& (system_get_time() - supla_esp_cfgmode_entertime) > 3000000 ) {
+						&& (system_get_time() - supla_esp_cfgmode_entertime()) > 3000000 ) {
 
 					// EXIT CFG MODE
 					supla_system_restart();

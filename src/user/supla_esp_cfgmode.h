@@ -19,10 +19,13 @@
 #ifndef SUPLA_ESP_CFGMODE_H_
 #define SUPLA_ESP_CFGMODE_H_
 
+#include "supla_esp.h"
+
 void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void);
 char ICACHE_FLASH_ATTR supla_esp_cfgmode_started(void);
-void ICACHE_FLASH_ATTR supla_esp_channel_value_changed(int channel_number, char v);
+void ICACHE_FLASH_ATTR supla_esp_channel_value_changed(int channel_number,
+                                                       char v);
 
-extern unsigned int supla_esp_cfgmode_entertime;
+unsigned int ICACHE_FLASH_ATTR supla_esp_cfgmode_entertime(void);
 
 #endif /* SUPLA_ESP_CFGMODE_H_ */

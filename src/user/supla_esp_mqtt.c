@@ -419,10 +419,18 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
   char *will_topic = NULL;
   supla_esp_mqtt_prepare_topic(&will_topic, "connected");
 
-  if (MQTT_OK ==
-      mqtt_connect(&supla_esp_mqtt_vars->client, clientId, will_topic, "false",
-                   5, supla_esp_cfg.Username, supla_esp_cfg.Password,
-                   MQTT_CONNECT_CLEAN_SESSION, MQTT_KEEP_ALIVE_SEC)) {
+  char *username = NULL;
+  char *password = NULL;
+
+  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_AUTH) {
+    username = supla_esp_cfg.Username;
+    password = supla_esp_cfg.Password;
+  }
+
+  if (MQTT_OK == mqtt_connect(&supla_esp_mqtt_vars->client, clientId,
+                              will_topic, "false", 5, username, password,
+                              MQTT_CONNECT_CLEAN_SESSION,
+                              MQTT_KEEP_ALIVE_SEC)) {
     supla_esp_gpio_state_connected();
     supla_esp_mqtt_set_status(CONN_STATUS_READY);
     supla_esp_mqtt_wants_subscribe();
