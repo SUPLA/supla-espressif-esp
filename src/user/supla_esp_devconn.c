@@ -1480,23 +1480,21 @@ void DEVCONN_ICACHE_FLASH supla_espconn_disconnect(struct espconn *espconn) {
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_connect_cb(void *arg) {
-	supla_log(LOG_DEBUG, "devconn_connect_cb");
 	supla_esp_srpc_init();
 }
 
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_disconnect_cb(void *arg) {
+  supla_esp_gpio_state_ipreceived();  // We go back to the state after
+                                      // connecting to wifi, and before
+                                      // connecting to the server
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_disconnect_cb(void *arg){
-	supla_log(LOG_DEBUG, "devconn_disconnect_cb");
+  devconn->esp_send_buffer_len = 0;
+  devconn->recvbuff_size = 0;
 
-	devconn->esp_send_buffer_len = 0;
-	devconn->recvbuff_size = 0;
-
-	if (devconn->started) {
-		supla_esp_devconn_reconnect_with_delay(RECONNECT_DELAY_MSEC);
-	}
+  if (devconn->started) {
+    supla_esp_devconn_reconnect_with_delay(RECONNECT_DELAY_MSEC);
+  }
 }
-
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_dns__found(ip_addr_t *ip) {
   //supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");

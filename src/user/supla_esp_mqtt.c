@@ -450,7 +450,9 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_disconnect(void *arg) {
   supla_esp_mqtt_set_status(CONN_STATUS_DISCONNECTED);
-  supla_esp_gpio_state_disconnected();
+  supla_esp_gpio_state_ipreceived();  // We go back to the state after
+                                      // connecting to wifi, and before
+                                      // connecting to the broker
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
