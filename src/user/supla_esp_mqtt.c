@@ -182,7 +182,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_subscribe(void) {
       if (r == MQTT_ERROR_SEND_BUFFER_IS_FULL) {
         supla_esp_mqtt_vars->client.error = MQTT_OK;
       }
-      supla_log(LOG_DEBUG, "MQTT Publish Error %s. Retry...",
+      supla_log(LOG_DEBUG, "MQTT Subscribe Error %s. Retry...",
                 mqtt_error_str(r));
     }
   }
