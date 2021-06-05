@@ -190,7 +190,7 @@
 #define CFG_FLAG_MQTT_ENABLED 0x01
 #define CFG_FLAG_MQTT_NO_RETAIN 0x02
 #define CFG_FLAG_MQTT_TLS 0x04
-#define CFG_FLAG_MQTT_AUTH 0x08
+#define CFG_FLAG_MQTT_NO_AUTH 0x08
 
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size);
 #if ESP8266_SUPLA_PROTO_VERSION >= 10

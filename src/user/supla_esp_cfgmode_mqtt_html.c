@@ -177,7 +177,7 @@ const char supla_esp_cfgmode_html_main[] ICACHE_RODATA_ATTR =
     "%s>YES</option></select><label>Auth</label></i><i "
     "id=\"mauth_usr\"><input name=\"usr\" value=\"%s\" "
     "maxlength=\"45\"><label>Username</label></i><i id=\"mauth_pwd\"><input "
-    "name=\"mwd\"><label>Password</label></i><i><input name=\"pfx\" "
+    "name=\"mwd\"><label>Password (Required)</label></i><i><input name=\"pfx\" "
     "value=\"%s\" maxlength=\"49\"><label>Topic prefix</label></i><i><input "
     "name=\"qos\" min=\"0\" max=\"2\" type=\"number\" "
     "value=\"%i\"><label>QoS</label></i><i><select name=\"ret\"><option "
@@ -246,8 +246,8 @@ uint32 ICACHE_FLASH_ATTR supla_esp_cfgmode_get_body(char *buffer,
       supla_esp_cfg.Port == 0 ? 1883 : supla_esp_cfg.Port,
       !(supla_esp_cfg.Flags & CFG_FLAG_MQTT_TLS) ? "selected" : "",
       (supla_esp_cfg.Flags & CFG_FLAG_MQTT_TLS) ? "selected" : "",
-      !(supla_esp_cfg.Flags & CFG_FLAG_MQTT_AUTH) ? "selected" : "",
-      (supla_esp_cfg.Flags & CFG_FLAG_MQTT_AUTH) ? "selected" : "",
+      (supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_AUTH) ? "selected" : "",
+      !(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_AUTH) ? "selected" : "",
       supla_esp_cfg.Username, supla_esp_cfg.MqttTopicPrefix,
       supla_esp_cfg.MqttQoS,
       !(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN) ? "selected" : "",

@@ -422,7 +422,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
   char *username = NULL;
   char *password = NULL;
 
-  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_AUTH) {
+  if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_AUTH)) {
     username = supla_esp_cfg.Username;
     password = supla_esp_cfg.Password;
   }
