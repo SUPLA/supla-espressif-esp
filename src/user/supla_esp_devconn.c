@@ -308,7 +308,7 @@ supla_esp_data_write(void *buf, int count, void *dcd) {
 		r = supla_espconn_sent(&devconn->ESPConn, buf, count);
 		//supla_log(LOG_DEBUG, "sproto send count: %i result: %i", count, r);
 
-		if ( ESPCONN_INPROGRESS == r  ) {
+		if ( ESPCONN_INPROGRESS == r  || ESPCONN_MAXNUM == r ) {
 			return supla_esp_data_write_append_buffer(buf, count);
 		} else {
 
