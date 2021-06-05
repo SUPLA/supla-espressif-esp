@@ -314,7 +314,7 @@ ssize_t ICACHE_FLASH_ATTR mqtt_pal_sendall(mqtt_pal_socket_handle methods,
   sint8 r = supla_esp_mqtt_conn_sent((uint8 *)buf, len);
   if (r == 0) {
     return len;
-  } else if (r == ESPCONN_INPROGRESS) {
+  } else if (r == ESPCONN_INPROGRESS || r == ESPCONN_MAXNUM) {
     return 0;
   }
 
@@ -325,15 +325,8 @@ ssize_t ICACHE_FLASH_ATTR mqtt_pal_recvall(mqtt_pal_socket_handle methods,
                                            void *buf, size_t bufsz, int flags) {
   ssize_t result = supla_esp_mqtt_vars->recv_len;
   supla_esp_mqtt_vars->recv_len = 0;
-  if (result > 0) {
-    return result;
-  }
 
-  return supla_esp_mqtt_vars->status == CONN_STATUS_CONNECTED ||
-                 supla_esp_mqtt_vars->status == CONN_STATUS_CONNECTING ||
-                 supla_esp_mqtt_vars->status == CONN_STATUS_READY
-             ? 0
-             : MQTT_ERROR_SOCKET_ERROR;
+  return result;
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_recv_cb(void *arg, char *pdata,
