@@ -1333,7 +1333,8 @@ supla_esp_gpio_led_blinking(int led, int time) {
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_state_disconnected(void) {
 
-	if ( supla_last_state == STATE_DISCONNECTED )
+	if ( supla_last_state == STATE_DISCONNECTED
+			|| supla_esp_cfgmode_started())
 		return;
 
 	supla_last_state = STATE_DISCONNECTED;
@@ -1360,7 +1361,8 @@ supla_esp_gpio_state_disconnected(void) {
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_state_ipreceived(void) {
 
-	if ( supla_last_state == STATE_IPRECEIVED )
+	if ( supla_last_state == STATE_IPRECEIVED
+			|| supla_esp_cfgmode_started())
 		return;
 
 	supla_last_state = STATE_IPRECEIVED;
@@ -1404,7 +1406,8 @@ supla_esp_gpio_enable_sensors(void *timer_arg) {
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_state_connected(void) {
 
-	if ( supla_last_state == STATE_CONNECTED )
+	if ( supla_last_state == STATE_CONNECTED
+			|| supla_esp_cfgmode_started())
 		return;
 
 	supla_last_state = STATE_CONNECTED;
