@@ -559,6 +559,10 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_on_wifi_status_changed(uint8 status) {
     return;
   }
 
+  supla_esp_gpio_state_ipreceived();  // We go back to the state after
+                                      // connecting to wifi, and before
+                                      // connecting to the broker
+
   uint32_t _ip = ipaddr_addr(supla_esp_cfg.Server);
 
   if (_ip == -1) {

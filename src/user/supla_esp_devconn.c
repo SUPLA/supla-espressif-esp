@@ -1641,8 +1641,12 @@ supla_esp_devconn_on_wifi_status_changed(uint8 status) {
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void) {
   if (!devconn) {
- 	return;
+    return;
   }
+
+  supla_esp_gpio_state_ipreceived();  // We go back to the state after
+                                      // connecting to wifi, and before
+                                      // connecting to the server
 
   devconn->started = 1;
   supla_esp_wifi_station_connect(supla_esp_devconn_on_wifi_status_changed);
