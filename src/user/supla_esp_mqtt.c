@@ -425,6 +425,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
                               MQTT_CONNECT_CLEAN_SESSION,
                               MQTT_KEEP_ALIVE_SEC)) {
     supla_esp_gpio_state_connected();
+    supla_esp_set_state(LOG_NOTICE, "Broker connected");
     supla_esp_mqtt_set_status(CONN_STATUS_READY);
     supla_esp_mqtt_wants_subscribe();
     supla_esp_mqtt_wants_publish(1, 255);
@@ -449,6 +450,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_disconnect(void *arg) {
   supla_esp_mqtt_set_status(CONN_STATUS_DISCONNECTED);
+  supla_esp_gpio_state_disconnected();
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
@@ -475,7 +477,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
 
   supla_esp_mqtt_espconn_diconnect();
 
-  supla_log(LOG_INFO, "Connecting to %s:%i", supla_esp_cfg.Server,
+  supla_esp_set_state(LOG_NOTICE, "Connecting to MQTT Broker");
+  supla_log(LOG_INFO, "Broker address %s:%i", supla_esp_cfg.Server,
             supla_esp_cfg.Port);
 
   supla_esp_mqtt_vars->esp_conn.proto.tcp = &supla_esp_mqtt_vars->esptcp;
