@@ -1367,8 +1367,6 @@ supla_esp_gpio_state_ipreceived(void) {
 
 	supla_last_state = STATE_IPRECEIVED;
 
-	supla_log(LOG_DEBUG, "IP Received");
-
 	#ifdef BOARD_ESP_ON_STATE_CHANGED
 	supla_esp_board_on_state_changed(supla_last_state);
 	#endif
