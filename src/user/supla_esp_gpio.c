@@ -1409,8 +1409,6 @@ supla_esp_gpio_state_connected(void) {
 
 	supla_last_state = STATE_CONNECTED;
 
-	supla_log(LOG_DEBUG, "Server connected");
-
 	#ifdef BOARD_ESP_ON_STATE_CHANGED
 	supla_esp_board_on_state_changed(supla_last_state);
 	#endif
