@@ -596,9 +596,9 @@ void ICACHE_FLASH_ATTR supla_esp_parse_request(TrivialHttpParserVars *pVars,
 
           } else if (pVars->current_var == VAR_MAU) {
             if (pVars->intval[0] - '0' == 1) {
-              cfg->Flags |= CFG_FLAG_MQTT_NO_AUTH;
-            } else {
               cfg->Flags &= ~CFG_FLAG_MQTT_NO_AUTH;
+            } else {
+              cfg->Flags |= CFG_FLAG_MQTT_NO_AUTH;
             }
 
 #ifndef CFG_TIME_VARIABLES
