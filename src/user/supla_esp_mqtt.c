@@ -964,7 +964,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
   char value[50];
   value[0] = 0;
 
-  short phase = (index - 10) / 12;
+  short phase = (index - 6) / 12;
 
   // Indexes are not allowed to be changed
 
