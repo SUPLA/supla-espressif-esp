@@ -16,12 +16,11 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <stdio.h>
-#include <string.h>
-
 #include <ip_addr.h>
 #include <mem.h>
 #include <osapi.h>
+#include <stdio.h>
+#include <string.h>
 #include <user_interface.h>
 
 #include "supla-dev/log.h"
@@ -262,9 +261,9 @@ void MAIN_ICACHE_FLASH user_init(void) {
 
 #ifdef MQTT_SUPPORT_ENABLED
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
-	  supla_esp_mqtt_init();
+    supla_esp_mqtt_init();
   } else {
-	  supla_esp_devconn_init();
+    supla_esp_devconn_init();
   }
 #else
   supla_esp_devconn_init();
@@ -293,12 +292,15 @@ void MAIN_ICACHE_FLASH user_init(void) {
 #ifdef MQTT_SUPPORT_ENABLED
   if (supla_esp_cfg.WIFI_SSID[0] == 0 || supla_esp_cfg.WIFI_PWD[0] == 0 ||
       (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED &&
-       (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Username[0] == 0)) ||
+       (supla_esp_cfg.Server[0] == 0 ||
+        (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_AUTH) &&
+         (supla_esp_cfg.Username[0] == 0 ||
+          supla_esp_cfg.Password[0] == 0)))) ||
       (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) &&
        (supla_esp_cfg.Server[0] == 0 || supla_esp_cfg.Email[0] == 0))) {
-      supla_esp_cfgmode_start();
-      return;
-    }
+    supla_esp_cfgmode_start();
+    return;
+  }
 #else
   if (((supla_esp_cfg.LocationID == 0 || supla_esp_cfg.LocationPwd[0] == 0) &&
        supla_esp_cfg.Email[0] == 0) ||
