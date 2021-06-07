@@ -122,6 +122,7 @@ const char supla_esp_cfgmode_html_header[] ICACHE_RODATA_ATTR =
     "cfgform.submit();}</script><body "
     "onload=\"protocolChanged();mAuthChanged();\">";
 
+#ifndef BOARD_CFG_HTML_CUSTOM_SVG
 const char supla_esp_cfgmode_html_svg[] ICACHE_RODATA_ATTR =
     "<svg version=\"1.1\" id=\"l\" x=\"0\" y=\"0\" "
     "viewBox=\"0 0 200 200\" xml:space=\"preserve\"><path "
@@ -151,6 +152,7 @@ const char supla_esp_cfgmode_html_svg[] ICACHE_RODATA_ATTR =
     "M167.7,88.5c-1,0-2.1,0.1-3.1,0.3c-9,1.7-14.2,10.6-10.8,18.6c2.9,6.8,11."
     "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
     "5z\"/></svg>";
+#endif /*BOARD_CFG_HTML_CUSTOM_SVG*/
 
 const char supla_esp_cfgmode_html_main[] ICACHE_RODATA_ATTR =
     "<h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
@@ -258,7 +260,16 @@ uint32 ICACHE_FLASH_ATTR supla_esp_cfgmode_get_body(char *buffer,
 }
 
 uint32 ICACHE_FLASH_ATTR
-supla_esp_board_cfg_additional_settings_html(char *buffer, uint32 buffer_size);
+supla_esp_board_cfg_html_additional_settings(char *buffer, uint32 buffer_size);
+
+#ifdef BOARD_CFG_HTML_CUSTOM_SVG
+uint32 ICACHE_FLASH_ATTR
+supla_esp_board_cfg_html_custom_svg(char *buffer, uint32 buffer_size);
+#endif /*BOARD_CFG_HTML_CUSTOM_SVG*/
+
+#ifdef BOARD_CFG_HTML_CUSTOM_BG_COLOR
+uint8 ICACHE_FLASH_ATTR supla_esp_board_cfg_html_custom_bg_color(char hex[6]);
+#endif /*BOARD_CFG_HTML_CUSTOM_BG_COLOR*/
 
 char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
     char dev_name[25], const char mac[6], const char data_saved) {
@@ -268,12 +279,18 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
   uint32 body_size = supla_esp_cfgmode_get_body(NULL, 0, dev_name, mac);
 
   char c = 0;
-  uint32 addsett_size = supla_esp_board_cfg_additional_settings_html(&c, 1);
+  uint32 addsett_size = supla_esp_board_cfg_html_additional_settings(&c, 1);
 
-  uint32 html_size = sizeof(supla_esp_cfgmode_html_header) +
-                     sizeof(supla_esp_cfgmode_html_svg) + sizeof(ds) +
-                     sizeof(div) + sizeof(supla_esp_cfgmode_html_footer) +
-                     body_size + addsett_size;
+#ifdef BOARD_CFG_HTML_CUSTOM_SVG
+  uint32 svg_size = supla_esp_board_cfg_html_custom_svg(&c, 1);
+#else
+  uint32 svg_size = sizeof(supla_esp_cfgmode_html_svg) - 1;
+#endif /*BOARD_CFG_HTML_CUSTOM_SVG*/
+
+  uint32 html_size = sizeof(supla_esp_cfgmode_html_header) + svg_size +
+                     sizeof(ds) + sizeof(div) +
+                     sizeof(supla_esp_cfgmode_html_footer) + body_size +
+                     addsett_size;
 
   char *html = malloc(html_size);
   if (!html) {
@@ -286,6 +303,28 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
   supla_esp_cfgmode_get_rostring(html, supla_esp_cfgmode_html_header);
   offset += sizeof(supla_esp_cfgmode_html_header) - 1;
 
+#ifdef BOARD_CFG_HTML_CUSTOM_BG_COLOR
+  char hex[6] = {};
+  if (supla_esp_board_cfg_html_custom_bg_color(hex)) {
+    char pattern[7] = {'#', '0', '0', 'd', '1', '5', '1'};
+    uint8 m = 0;
+    for (uint32 a = 0; a < offset; a++) {
+      if (html[a] == pattern[m]) {
+        if (m == 6) {
+          for (m = 0; m < 6; m++) {
+            html[a - 5 + m] = hex[m];
+          }
+          m = 0;
+        } else {
+          m++;
+        }
+      } else {
+        m = 0;
+      }
+    }
+  }
+#endif /*BOARD_CFG_HTML_CUSTOM_BG_COLOR*/
+
   if (data_saved) {
     memcpy(&html[offset], ds, sizeof(ds) - 1);
     offset += sizeof(ds) - 1;
@@ -294,14 +333,19 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
   memcpy(&html[offset], div, sizeof(div) - 1);
   offset += sizeof(div) - 1;
 
+#ifdef BOARD_CFG_HTML_CUSTOM_SVG
+  supla_esp_board_cfg_html_custom_svg(&html[offset], svg_size + 1);
+#else
   supla_esp_cfgmode_get_rostring(&html[offset], supla_esp_cfgmode_html_svg);
-  offset += sizeof(supla_esp_cfgmode_html_svg) - 1;
+#endif /*BOARD_CFG_HTML_CUSTOM_SVG*/
+
+  offset += svg_size;
 
   supla_esp_cfgmode_get_body(&html[offset], html_size - offset, dev_name, mac);
   offset += body_size;
 
   if (addsett_size) {
-    supla_esp_board_cfg_additional_settings_html(&html[offset],
+    supla_esp_board_cfg_html_additional_settings(&html[offset],
                                                  html_size - offset);
     offset += addsett_size;
   }
