@@ -797,7 +797,9 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
   if (cfgmode_vars.entertime != 0) return;
 
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
+#ifdef MQTT_SUPPORT_ENABLED
     supla_esp_mqtt_client_stop();
+#endif /*MQTT_SUPPORT_ENABLED*/
   } else {
     supla_esp_devconn_stop();
   }
