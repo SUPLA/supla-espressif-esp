@@ -29,6 +29,8 @@ void ICACHE_FLASH_ATTR
 supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result);
 char ICACHE_FLASH_ATTR supla_esp_update_started(void);
 
+#else
+char ICACHE_FLASH_ATTR supla_esp_update_started(void);
 #endif /* SUPLA_ESP_UPDATE_H_ */
 
 #endif

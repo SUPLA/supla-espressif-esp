@@ -79,7 +79,7 @@ static char update_step;
 static unsigned int update_checking_start_time = 0;
 
 void ICACHE_FLASH_ATTR supla_esp_update_init(void) {
-	
+
 	update = NULL;
 
 	if ( supla_esp_cfg.FirmwareUpdate == 1 ) {
@@ -122,7 +122,7 @@ supla_esp_update_reboot(char uf_finish) {
 
 void ICACHE_FLASH_ATTR
 supla_esp_check_updates(void *srpc) {
-	
+
 	if ( update_step == FUPDT_STEP_CHECK ) {
 		update_step = FUPDT_STEP_CHECKING;
 		update_checking_start_time = system_get_time();
@@ -517,9 +517,9 @@ supla_esp_update_delay_timer_func(void *timer_arg) {
 
 void ICACHE_FLASH_ATTR
 supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result) {
-	
+
 	if ( update_step != FUPDT_STEP_CHECKING ) return;
-	
+
 	//supla_log(LOG_DEBUG, "Firmware -- exists = %i, host = %s, port = %i, path = %s", url_result->exists, url_result->url.host, url_result->url.port, url_result->url.path);
 
 	if ( url_result->exists
@@ -565,7 +565,7 @@ supla_esp_update_url_result(TSD_FirmwareUpdate_UrlResult *url_result) {
 		os_timer_arm (&update->delay_timer, 2000, false);
 
 	}
-	
+
 }
 
 char ICACHE_FLASH_ATTR
@@ -578,5 +578,6 @@ supla_esp_update_started(void) {
 
 	return 0;
 }
-
+#else
+char ICACHE_FLASH_ATTR supla_esp_update_started(void) { return 0; }
 #endif

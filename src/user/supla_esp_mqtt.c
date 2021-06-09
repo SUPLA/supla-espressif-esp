@@ -88,13 +88,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_set_status(uint8 status) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_watchdog(void *ptr) {
-#ifdef __FOTA
-  uint8 update_started = supla_esp_update_started();
-#else
-  uint8 update_started = 0;
-#endif
-
-  if (supla_esp_cfgmode_started() == 0 && update_started == 0 &&
+  if (supla_esp_cfgmode_started() == 0 && supla_esp_update_started() == 0 &&
       supla_esp_mqtt_vars->disconnected_at_sec &&
       uptime_sec() - supla_esp_mqtt_vars->disconnected_at_sec >=
           WATCHDOG_TIMEOUT_SEC) {

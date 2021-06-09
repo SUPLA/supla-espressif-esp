@@ -197,15 +197,6 @@ uint8 DEVCONN_ICACHE_FLASH supla_esp_devconn_any_outgoingdata_exists(void) {
   return 0;
 }
 
-char DEVCONN_ICACHE_FLASH
-supla_esp_devconn_update_started(void) {
-#ifdef __FOTA
-	return supla_esp_update_started();
-#else
-	return 0;
-#endif
-}
-
 #pragma GCC diagnostic pop
 
 int DEVCONN_ICACHE_FLASH
@@ -1559,27 +1550,23 @@ supla_esp_devconn_resolvandconnect(void) {
 
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_watchdog_cb(void *timer_arg) {
-
-	 if ( supla_esp_cfgmode_started() == 0
-		  && supla_esp_devconn_update_started() == 0 ) {
-			if ( uptime_sec() > devconn->last_response ) {
-				if ( uptime_sec()-devconn->last_response > WATCHDOG_TIMEOUT_SEC ) {
-					supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
-					supla_system_restart();
-				} else {
-					unsigned int t = uptime_sec() - devconn->last_response;
-					if ( t >= WATCHDOG_SOFT_TIMEOUT_SEC
-						 && t > devconn->server_activity_timeout
-						 && uptime_sec() > devconn->next_wd_soft_timeout_challenge ) {
-						supla_log(LOG_DEBUG, "WATCHDOG SOFT TIMEOUT");
-						supla_esp_devconn_reconnect();
-					}
-				}
-			}
-	 }
-
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_watchdog_cb(void *timer_arg) {
+  if (supla_esp_cfgmode_started() == 0 && supla_esp_update_started() == 0) {
+    if (uptime_sec() > devconn->last_response) {
+      if (uptime_sec() - devconn->last_response > WATCHDOG_TIMEOUT_SEC) {
+        supla_log(LOG_DEBUG, "WATCHDOG TIMEOUT");
+        supla_system_restart();
+      } else {
+        unsigned int t = uptime_sec() - devconn->last_response;
+        if (t >= WATCHDOG_SOFT_TIMEOUT_SEC &&
+            t > devconn->server_activity_timeout &&
+            uptime_sec() > devconn->next_wd_soft_timeout_challenge) {
+          supla_log(LOG_DEBUG, "WATCHDOG SOFT TIMEOUT");
+          supla_esp_devconn_reconnect();
+        }
+      }
+    }
+  }
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1691,8 +1678,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn__reconnect(void *ptr) {
   devconn->next_wd_soft_timeout_challenge =
       uptime_sec() + WATCHDOG_SOFT_TIMEOUT_SEC;
 
-  if (supla_esp_cfgmode_started() == 0 &&
-      supla_esp_devconn_update_started() == 0) {
+  if (supla_esp_cfgmode_started() == 0 && supla_esp_update_started() == 0) {
     supla_esp_devconn_stop();
     supla_esp_devconn_start();
   }
