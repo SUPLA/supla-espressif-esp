@@ -259,15 +259,368 @@ int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
   return result;
 }
 
+void ICACHE_FLASH_ATTR supla_esp_parse_proto_var(TrivialHttpParserVars *pVars,
+                                                 char *pdata,
+                                                 unsigned short len,
+                                                 SuplaEspCfg *cfg) {
+  for (int a = 0; a < len; a++) {
+    if (pVars->current_var == VAR_NONE) {
+      char pro[3] = {'p', 'r', 'o'};
+
+      if (len - a >= 4 && pdata[a + 3] == '=') {
+        if (memcmp(pro, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_PRO;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+        }
+
+        a += 4;
+        pVars->offset = 0;
+      }
+    }
+
+    if (pVars->current_var == VAR_PRO) {
+      if (pVars->offset >= pVars->buff_size || a >= len - 1 ||
+          pdata[a] == '&') {
+        if (pVars->offset < pVars->buff_size)
+          pVars->pbuff[pVars->offset] = 0;
+        else
+          pVars->pbuff[pVars->buff_size - 1] = 0;
+
+        pVars->matched++;
+        pVars->current_var = VAR_NONE;
+
+        if (pVars->intval[0] - '0' == 1) {
+          cfg->Flags |= CFG_FLAG_MQTT_ENABLED;
+        } else {
+          cfg->Flags &= ~CFG_FLAG_MQTT_ENABLED;
+        }
+        return;
+      }
+    }
+  }
+}
+
+void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
+                                            char *pdata, unsigned short len,
+                                            SuplaEspCfg *cfg, char *reboot) {
+  for (int a = 0; a < len; a++) {
+    if (pVars->current_var == VAR_NONE) {
+      char sid[3] = {'s', 'i', 'd'};
+      char wpw[3] = {'w', 'p', 'w'};
+      char svr[3] = {'s', 'v', 'r'};
+      char lid[3] = {'l', 'i', 'd'};
+      char pwd[3] = {'p', 'w', 'd'};
+      char btncfg[3] = {'c', 'f', 'g'};
+      char btn1[3] = {'b', 't', '1'};
+      char btn2[3] = {'b', 't', '2'};
+      char icf[3] = {'i', 'c', 'f'};
+      char led[3] = {'l', 'e', 'd'};
+      char upd[3] = {'u', 'p', 'd'};
+      char rbt[3] = {'r', 'b', 't'};
+      char eml[3] = {'e', 'm', 'l'};
+      char usd[3] = {'u', 's', 'd'};
+      char trg[3] = {'t', 'r', 'g'};
+      char cmd[3] = {'c', 'm', 'd'};
+
+      char mvr[3] = {'m', 'v', 'r'};
+      char prt[3] = {'p', 'r', 't'};
+      char tls[3] = {'t', 'l', 's'};
+      char usr[3] = {'u', 's', 'r'};
+      char mwd[3] = {'m', 'w', 'd'};
+      char pfx[3] = {'p', 'f', 'x'};
+      char qos[3] = {'q', 'o', 's'};
+      char ret[3] = {'r', 'e', 't'};
+      char mau[3] = {'m', 'a', 'u'};
+
+#ifdef CFG_TIME_VARIABLES
+      char t10[3] = {'t', '1', '0'};
+      char t11[3] = {'t', '1', '1'};
+      char t20[3] = {'t', '2', '0'};
+      char t21[3] = {'t', '2', '1'};
+#endif /*CFG_TIME_VARIABLES*/
+
+      if (len - a >= 4 && pdata[a + 3] == '=') {
+        if (memcmp(sid, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_SID;
+          pVars->buff_size = WIFI_SSID_MAXSIZE;
+          pVars->pbuff = cfg->WIFI_SSID;
+
+        } else if (memcmp(wpw, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_WPW;
+          pVars->buff_size = WIFI_PWD_MAXSIZE;
+          pVars->pbuff = cfg->WIFI_PWD;
+
+        } else if (memcmp(svr, &pdata[a], 3) == 0) {
+          if (!(cfg->Flags & CFG_FLAG_MQTT_ENABLED)) {
+            pVars->current_var = VAR_SVR;
+            pVars->buff_size = SERVER_MAXSIZE;
+            pVars->pbuff = cfg->Server;
+          }
+
+        } else if (memcmp(lid, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_LID;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(pwd, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_PWD;
+          pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
+          pVars->pbuff = cfg->LocationPwd;
+
+        } else if (memcmp(btncfg, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_CFGBTN;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(btn1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BTN1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(btn2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BTN2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(icf, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_ICF;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(led, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_LED;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(upd, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_UPD;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(rbt, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_RBT;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(eml, &pdata[a], 3) == 0) {
+          if (!(cfg->Flags & CFG_FLAG_MQTT_ENABLED)) {
+            pVars->current_var = VAR_EML;
+            pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+            pVars->pbuff = cfg->Email;
+          }
+        } else if (memcmp(usd, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_USD;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(trg, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TRG;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(cmd, &pdata[a], 3) == 0) {
+          if (user_cmd == NULL) {
+            user_cmd = malloc(CMD_MAXSIZE);
+          }
+
+          pVars->current_var = VAR_CMD;
+          pVars->buff_size = CMD_MAXSIZE;
+          pVars->pbuff = user_cmd;
+
+        } else if (memcmp(mvr, &pdata[a], 3) == 0) {
+          if (cfg->Flags & CFG_FLAG_MQTT_ENABLED) {
+            pVars->current_var = VAR_MVR;
+            pVars->buff_size = SERVER_MAXSIZE;
+            pVars->pbuff = cfg->Server;
+          }
+
+        } else if (memcmp(prt, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_PRT;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tls, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TLS;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(usr, &pdata[a], 3) == 0) {
+          if (cfg->Flags & CFG_FLAG_MQTT_ENABLED) {
+            pVars->current_var = VAR_USR;
+            pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+            pVars->pbuff = cfg->Username;
+          }
+
+        } else if (memcmp(mwd, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_MWD;
+          pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
+          pVars->pbuff = cfg->Password;
+
+        } else if (memcmp(pfx, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_PFX;
+          pVars->buff_size = MQTT_PREFIX_SIZE;
+          pVars->pbuff = cfg->MqttTopicPrefix;
+
+        } else if (memcmp(qos, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_QOS;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(ret, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_RET;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(mau, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_MAU;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+#ifndef CFG_TIME_VARIABLES
+        }
+#else
+        } else if (memcmp(t10, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T10;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t11, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T11;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t20, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T20;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t21, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T21;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+        }
+#endif /*CFG_TIME_VARIABLES*/
+        a += 4;
+        pVars->offset = 0;
+      }
+    }
+
+    if (pVars->current_var != VAR_NONE) {
+      if (pVars->offset < pVars->buff_size && a < len && pdata[a] != '&') {
+        if (pdata[a] == '%' && a + 2 < len) {
+          pVars->pbuff[pVars->offset] = HexToInt(&pdata[a + 1], 2);
+          pVars->offset++;
+          a += 2;
+
+        } else if (pdata[a] == '+') {
+          pVars->pbuff[pVars->offset] = ' ';
+          pVars->offset++;
+
+        } else {
+          pVars->pbuff[pVars->offset] = pdata[a];
+          pVars->offset++;
+        }
+      }
+
+      if (pVars->offset >= pVars->buff_size || a >= len - 1 ||
+          pdata[a] == '&') {
+        if (pVars->offset < pVars->buff_size)
+          pVars->pbuff[pVars->offset] = 0;
+        else
+          pVars->pbuff[pVars->buff_size - 1] = 0;
+
+        if (pVars->current_var == VAR_LID) {
+          cfg->LocationID = cfg_str2int(pVars);
+
+        } else if (pVars->current_var == VAR_CFGBTN) {
+          cfg->CfgButtonType = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_BTN1) {
+          cfg->Button1Type = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_BTN2) {
+          cfg->Button2Type = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_ICF) {
+          cfg->InputCfgTriggerOff = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+
+        } else if (pVars->current_var == VAR_LED) {
+          cfg->StatusLedOff = (pVars->intval[0] - '0');
+
+        } else if (pVars->current_var == VAR_UPD) {
+          cfg->FirmwareUpdate = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_RBT) {
+          if (reboot != NULL) *reboot = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_USD) {
+          cfg->UpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+
+        } else if (pVars->current_var == VAR_TRG) {
+          cfg->Trigger = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_PRT) {
+          int port = cfg_str2int(pVars);
+          if (port > 0 && port <= 65535) {
+            cfg->Port = port;
+          }
+
+        } else if (pVars->current_var == VAR_TLS) {
+          if (pVars->intval[0] - '0' == 1) {
+            cfg->Flags |= CFG_FLAG_MQTT_TLS;
+          } else {
+            cfg->Flags &= ~CFG_FLAG_MQTT_TLS;
+          }
+
+        } else if (pVars->current_var == VAR_QOS) {
+          int qos = pVars->intval[0] - '0';
+          if (qos >= 0 && qos <= 2) {
+            cfg->MqttQoS = qos;
+          }
+
+        } else if (pVars->current_var == VAR_RET) {
+          if (pVars->intval[0] - '0' == 1) {
+            cfg->Flags |= CFG_FLAG_MQTT_NO_RETAIN;
+          } else {
+            cfg->Flags &= ~CFG_FLAG_MQTT_NO_RETAIN;
+          }
+
+        } else if (pVars->current_var == VAR_MAU) {
+          if (pVars->intval[0] - '0' == 1) {
+            cfg->Flags &= ~CFG_FLAG_MQTT_NO_AUTH;
+          } else {
+            cfg->Flags |= CFG_FLAG_MQTT_NO_AUTH;
+          }
+
+#ifndef CFG_TIME_VARIABLES
+        }
+#else
+        } else if (pVars->current_var == VAR_T10) {
+          cfg->Time1[0] = cfg_str2int(pVars);
+
+        } else if (pVars->current_var == VAR_T11) {
+          cfg->Time1[1] = cfg_str2int(pVars);
+
+        } else if (pVars->current_var == VAR_T20) {
+          cfg->Time2[0] = cfg_str2int(pVars);
+
+        } else if (pVars->current_var == VAR_T21) {
+          cfg->Time2[1] = cfg_str2int(pVars);
+        }
+#endif /*CFG_TIME_VARIABLES*/
+        pVars->matched++;
+        pVars->current_var = VAR_NONE;
+      }
+    }
+  }
+}
+
 void ICACHE_FLASH_ATTR supla_esp_parse_request(TrivialHttpParserVars *pVars,
                                                char *pdata, unsigned short len,
                                                SuplaEspCfg *cfg, char *reboot) {
   if (len == 0) return;
 
   int a, p;
-
-  // for(a=0;a<len;a++)
-  //	printf("%c", pdata[a]);
 
   if (pVars->step == STEP_TYPE) {
     char get[] = "GET";
@@ -300,328 +653,12 @@ void ICACHE_FLASH_ATTR supla_esp_parse_request(TrivialHttpParserVars *pVars,
   }
 
   if (pVars->step == STEP_PARSE_VARS) {
-    for (a = p; a < len; a++) {
-      if (pVars->current_var == VAR_NONE) {
-        char sid[3] = {'s', 'i', 'd'};
-        char wpw[3] = {'w', 'p', 'w'};
-        char svr[3] = {'s', 'v', 'r'};
-        char lid[3] = {'l', 'i', 'd'};
-        char pwd[3] = {'p', 'w', 'd'};
-        char btncfg[3] = {'c', 'f', 'g'};
-        char btn1[3] = {'b', 't', '1'};
-        char btn2[3] = {'b', 't', '2'};
-        char icf[3] = {'i', 'c', 'f'};
-        char led[3] = {'l', 'e', 'd'};
-        char upd[3] = {'u', 'p', 'd'};
-        char rbt[3] = {'r', 'b', 't'};
-        char eml[3] = {'e', 'm', 'l'};
-        char usd[3] = {'u', 's', 'd'};
-        char trg[3] = {'t', 'r', 'g'};
-        char cmd[3] = {'c', 'm', 'd'};
-
-        char pro[3] = {'p', 'r', 'o'};
-        char mvr[3] = {'m', 'v', 'r'};
-        char prt[3] = {'p', 'r', 't'};
-        char tls[3] = {'t', 'l', 's'};
-        char usr[3] = {'u', 's', 'r'};
-        char mwd[3] = {'m', 'w', 'd'};
-        char pfx[3] = {'p', 'f', 'x'};
-        char qos[3] = {'q', 'o', 's'};
-        char ret[3] = {'r', 'e', 't'};
-        char mau[3] = {'m', 'a', 'u'};
-
-#ifdef CFG_TIME_VARIABLES
-        char t10[3] = {'t', '1', '0'};
-        char t11[3] = {'t', '1', '1'};
-        char t20[3] = {'t', '2', '0'};
-        char t21[3] = {'t', '2', '1'};
-#endif /*CFG_TIME_VARIABLES*/
-
-        if (len - a >= 4 && pdata[a + 3] == '=') {
-          if (memcmp(sid, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_SID;
-            pVars->buff_size = WIFI_SSID_MAXSIZE;
-            pVars->pbuff = cfg->WIFI_SSID;
-
-          } else if (memcmp(wpw, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_WPW;
-            pVars->buff_size = WIFI_PWD_MAXSIZE;
-            pVars->pbuff = cfg->WIFI_PWD;
-
-          } else if (memcmp(svr, &pdata[a], 3) == 0) {
-            if (!(cfg->Flags & CFG_FLAG_MQTT_ENABLED)) {
-              pVars->current_var = VAR_SVR;
-              pVars->buff_size = SERVER_MAXSIZE;
-              pVars->pbuff = cfg->Server;
-            }
-
-          } else if (memcmp(lid, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_LID;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(pwd, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_PWD;
-            pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
-            pVars->pbuff = cfg->LocationPwd;
-
-          } else if (memcmp(btncfg, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_CFGBTN;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(btn1, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_BTN1;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(btn2, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_BTN2;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(icf, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_ICF;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(led, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_LED;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(upd, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_UPD;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(rbt, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_RBT;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(eml, &pdata[a], 3) == 0) {
-            if (!(cfg->Flags & CFG_FLAG_MQTT_ENABLED)) {
-              pVars->current_var = VAR_EML;
-              pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
-              pVars->pbuff = cfg->Email;
-            }
-          } else if (memcmp(usd, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_USD;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(trg, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_TRG;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(cmd, &pdata[a], 3) == 0) {
-            if (user_cmd == NULL) {
-              user_cmd = malloc(CMD_MAXSIZE);
-            }
-
-            pVars->current_var = VAR_CMD;
-            pVars->buff_size = CMD_MAXSIZE;
-            pVars->pbuff = user_cmd;
-
-          } else if (memcmp(pro, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_PRO;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(mvr, &pdata[a], 3) == 0) {
-            if (cfg->Flags & CFG_FLAG_MQTT_ENABLED) {
-              pVars->current_var = VAR_MVR;
-              pVars->buff_size = SERVER_MAXSIZE;
-              pVars->pbuff = cfg->Server;
-            }
-
-          } else if (memcmp(prt, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_PRT;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(tls, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_TLS;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(usr, &pdata[a], 3) == 0) {
-            if (cfg->Flags & CFG_FLAG_MQTT_ENABLED) {
-              pVars->current_var = VAR_USR;
-              pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
-              pVars->pbuff = cfg->Username;
-            }
-
-          } else if (memcmp(mwd, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_MWD;
-            pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
-            pVars->pbuff = cfg->Password;
-
-          } else if (memcmp(pfx, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_PFX;
-            pVars->buff_size = MQTT_PREFIX_SIZE;
-            pVars->pbuff = cfg->MqttTopicPrefix;
-
-          } else if (memcmp(qos, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_QOS;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(ret, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_RET;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(mau, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_MAU;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-#ifndef CFG_TIME_VARIABLES
-          }
-#else
-          } else if (memcmp(t10, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_T10;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(t11, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_T11;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(t20, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_T20;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-
-          } else if (memcmp(t21, &pdata[a], 3) == 0) {
-            pVars->current_var = VAR_T21;
-            pVars->buff_size = 12;
-            pVars->pbuff = pVars->intval;
-          }
-#endif /*CFG_TIME_VARIABLES*/
-          a += 4;
-          pVars->offset = 0;
-        }
-      }
-
-      if (pVars->current_var != VAR_NONE) {
-        if (pVars->offset < pVars->buff_size && a < len && pdata[a] != '&') {
-          if (pdata[a] == '%' && a + 2 < len) {
-            pVars->pbuff[pVars->offset] = HexToInt(&pdata[a + 1], 2);
-            pVars->offset++;
-            a += 2;
-
-          } else if (pdata[a] == '+') {
-            pVars->pbuff[pVars->offset] = ' ';
-            pVars->offset++;
-
-          } else {
-            pVars->pbuff[pVars->offset] = pdata[a];
-            pVars->offset++;
-          }
-        }
-
-        if (pVars->offset >= pVars->buff_size || a >= len - 1 ||
-            pdata[a] == '&') {
-          if (pVars->offset < pVars->buff_size)
-            pVars->pbuff[pVars->offset] = 0;
-          else
-            pVars->pbuff[pVars->buff_size - 1] = 0;
-
-          if (pVars->current_var == VAR_LID) {
-            cfg->LocationID = cfg_str2int(pVars);
-
-          } else if (pVars->current_var == VAR_CFGBTN) {
-            cfg->CfgButtonType = pVars->intval[0] - '0';
-
-          } else if (pVars->current_var == VAR_BTN1) {
-            cfg->Button1Type = pVars->intval[0] - '0';
-
-          } else if (pVars->current_var == VAR_BTN2) {
-            cfg->Button2Type = pVars->intval[0] - '0';
-
-          } else if (pVars->current_var == VAR_ICF) {
-            cfg->InputCfgTriggerOff = (pVars->intval[0] - '0') == 1 ? 1 : 0;
-
-          } else if (pVars->current_var == VAR_LED) {
-            cfg->StatusLedOff = (pVars->intval[0] - '0');
-
-          } else if (pVars->current_var == VAR_UPD) {
-            cfg->FirmwareUpdate = pVars->intval[0] - '0';
-
-          } else if (pVars->current_var == VAR_RBT) {
-            if (reboot != NULL) *reboot = pVars->intval[0] - '0';
-
-          } else if (pVars->current_var == VAR_USD) {
-            cfg->UpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
-
-          } else if (pVars->current_var == VAR_TRG) {
-            cfg->Trigger = pVars->intval[0] - '0';
-
-          } else if (pVars->current_var == VAR_PRO) {
-            if (pVars->intval[0] - '0' == 1) {
-              cfg->Flags |= CFG_FLAG_MQTT_ENABLED;
-            } else {
-              cfg->Flags &= ~CFG_FLAG_MQTT_ENABLED;
-            }
-
-          } else if (pVars->current_var == VAR_PRT) {
-            int port = cfg_str2int(pVars);
-            if (port > 0 && port <= 65535) {
-              cfg->Port = port;
-            }
-
-          } else if (pVars->current_var == VAR_TLS) {
-            if (pVars->intval[0] - '0' == 1) {
-              cfg->Flags |= CFG_FLAG_MQTT_TLS;
-            } else {
-              cfg->Flags &= ~CFG_FLAG_MQTT_TLS;
-            }
-
-          } else if (pVars->current_var == VAR_QOS) {
-            int qos = pVars->intval[0] - '0';
-            if (qos >= 0 && qos <= 2) {
-              cfg->MqttQoS = qos;
-            }
-
-          } else if (pVars->current_var == VAR_RET) {
-            if (pVars->intval[0] - '0' == 1) {
-              cfg->Flags |= CFG_FLAG_MQTT_NO_RETAIN;
-            } else {
-              cfg->Flags &= ~CFG_FLAG_MQTT_NO_RETAIN;
-            }
-
-          } else if (pVars->current_var == VAR_MAU) {
-            if (pVars->intval[0] - '0' == 1) {
-              cfg->Flags &= ~CFG_FLAG_MQTT_NO_AUTH;
-            } else {
-              cfg->Flags |= CFG_FLAG_MQTT_NO_AUTH;
-            }
-
-#ifndef CFG_TIME_VARIABLES
-          }
-#else
-          } else if (pVars->current_var == VAR_T10) {
-            cfg->Time1[0] = cfg_str2int(pVars);
-
-          } else if (pVars->current_var == VAR_T11) {
-            cfg->Time1[1] = cfg_str2int(pVars);
-
-          } else if (pVars->current_var == VAR_T20) {
-            cfg->Time2[0] = cfg_str2int(pVars);
-
-          } else if (pVars->current_var == VAR_T21) {
-            cfg->Time2[1] = cfg_str2int(pVars);
-          }
-#endif /*CFG_TIME_VARIABLES*/
-          pVars->matched++;
-          pVars->current_var = VAR_NONE;
-        }
-      }
-    }
+    len -= p;
+    pdata += p;
+    // First, check what protocol is selected
+    supla_esp_parse_proto_var(pVars, pdata, len, cfg);
+    // Only after checking the protocol, parse the remaining fields of the form
+    supla_esp_parse_vars(pVars, pdata, len, cfg, reboot);
   }
 }
 
