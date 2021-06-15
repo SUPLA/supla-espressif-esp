@@ -42,7 +42,6 @@ void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
   if (!supla_esp_devconn_is_registered()) {
     return;
   }
-}
 #endif /*MQTT_SUPPORT_ENABLED*/
 
   unsigned char channel_number = 0;
