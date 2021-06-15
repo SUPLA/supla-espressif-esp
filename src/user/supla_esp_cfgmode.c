@@ -71,11 +71,14 @@
 #define VAR_RET 32  // MQTT No Retain
 #define VAR_MAU 33  // MQTT Auth
 
+#define VAR_TH1 34  // Overcurrent threshold 1
+#define VAR_TH2 35  // Overcurrent threshold 2
+
 #ifdef CFG_TIME_VARIABLES
-#define VAR_T10 33
-#define VAR_T11 34
-#define VAR_T20 35
-#define VAR_T21 36
+#define VAR_T10 36
+#define VAR_T11 37
+#define VAR_T20 38
+#define VAR_T21 39
 #endif /*CFG_TIME_VARIABLES*/
 
 typedef struct {
@@ -243,7 +246,6 @@ int ICACHE_FLASH_ATTR HexToInt(char *str, int len) {
 
   return result;
 };
-
 int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
   int result = 0;
 
@@ -254,6 +256,37 @@ int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
     }
 
     s++;
+  }
+
+  return result;
+}
+
+// Converts float with 0.01 precision to int multiplied by 100, i.e. "3.1415" -> 314 
+int ICACHE_FLASH_ATTR cfg_str2centInt(TrivialHttpParserVars *pVars) {
+  int result = 0;
+
+  int decimalPlaces = -1;
+  for (int i = 0; pVars->intval[i] != 0; i++) {
+    if (pVars->intval[i] >= '0' && pVars->intval[i] <= '9') {
+      result = result * 10 + pVars->intval[i] - '0';
+      if (decimalPlaces >= 0) {
+        decimalPlaces++;
+      }
+    } else if (pVars->intval[i] == '.' || pVars->intval[i] == ',') {
+      decimalPlaces++;
+    }
+    if (decimalPlaces >= 2) {
+      break;
+    }
+  }
+
+  if (decimalPlaces < 0) {
+    decimalPlaces = 0;
+  }
+
+  while (decimalPlaces < 2) {
+    result *= 10;
+    decimalPlaces++;
   }
 
   return result;
@@ -332,6 +365,9 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char qos[3] = {'q', 'o', 's'};
       char ret[3] = {'r', 'e', 't'};
       char mau[3] = {'m', 'a', 'u'};
+
+      char th1[3] = {'t', 'h', '1'};
+      char th2[3] = {'t', 'h', '2'};
 
 #ifdef CFG_TIME_VARIABLES
       char t10[3] = {'t', '1', '0'};
@@ -476,10 +512,19 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->current_var = VAR_MAU;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
-#ifndef CFG_TIME_VARIABLES
+
+        } else if (memcmp(th1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TH1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(th2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TH2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
         }
-#else
-        } else if (memcmp(t10, &pdata[a], 3) == 0) {
+#ifdef CFG_TIME_VARIABLES
+          else if (memcmp(t10, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_T10;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
@@ -592,10 +637,17 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
             cfg->Flags |= CFG_FLAG_MQTT_NO_AUTH;
           }
 
-#ifndef CFG_TIME_VARIABLES
+        } else if (pVars->current_var == VAR_TH1) {
+          cfg->OvercurrentThreshold1 = cfg_str2centInt(pVars);
+          supla_log(LOG_DEBUG, "Found TH1 = %d", cfg->OvercurrentThreshold1);
+
+        } else if (pVars->current_var == VAR_TH2) {
+          cfg->OvercurrentThreshold2 = cfg_str2centInt(pVars);
+          supla_log(LOG_DEBUG, "Found TH2 = %d", cfg->OvercurrentThreshold2);
         }
-#else
-        } else if (pVars->current_var == VAR_T10) {
+
+#ifdef CFG_TIME_VARIABLES
+          else if (pVars->current_var == VAR_T10) {
           cfg->Time1[0] = cfg_str2int(pVars);
 
         } else if (pVars->current_var == VAR_T11) {
