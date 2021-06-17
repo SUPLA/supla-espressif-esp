@@ -261,7 +261,8 @@ int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
   return result;
 }
 
-// Converts float with 0.01 precision to int multiplied by 100, i.e. "3.1415" -> 314 
+// Converts float with 0.01 precision to int multiplied by 100, i.e. "3.1415" ->
+// 314
 int ICACHE_FLASH_ATTR cfg_str2centInt(TrivialHttpParserVars *pVars) {
   int result = 0;
 
@@ -313,13 +314,15 @@ void ICACHE_FLASH_ATTR supla_esp_parse_proto_var(TrivialHttpParserVars *pVars,
     }
 
     if (pVars->current_var == VAR_PRO) {
+      pVars->pbuff[pVars->offset] = pdata[a];
+      pVars->offset++;
+
       if (pVars->offset >= pVars->buff_size || a >= len - 1 ||
           pdata[a] == '&') {
         if (pVars->offset < pVars->buff_size)
           pVars->pbuff[pVars->offset] = 0;
         else
           pVars->pbuff[pVars->buff_size - 1] = 0;
-
         pVars->matched++;
         pVars->current_var = VAR_NONE;
 
@@ -524,7 +527,7 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->pbuff = pVars->intval;
         }
 #ifdef CFG_TIME_VARIABLES
-          else if (memcmp(t10, &pdata[a], 3) == 0) {
+        else if (memcmp(t10, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_T10;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
@@ -645,9 +648,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           cfg->OvercurrentThreshold2 = cfg_str2centInt(pVars);
           supla_log(LOG_DEBUG, "Found TH2 = %d", cfg->OvercurrentThreshold2);
         }
-
 #ifdef CFG_TIME_VARIABLES
-          else if (pVars->current_var == VAR_T10) {
+        else if (pVars->current_var == VAR_T10) {
           cfg->Time1[0] = cfg_str2int(pVars);
 
         } else if (pVars->current_var == VAR_T11) {
