@@ -383,8 +383,14 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 		if ( rs_cfg->last_position != *rs_cfg->position ) {
 
 			rs_cfg->last_position = *rs_cfg->position;
-			supla_esp_channel_value_changed(rs_cfg->up->channel, (rs_cfg->last_position-100)/100);
-		}
+			char pos = (rs_cfg->last_position-100)/100;
+			supla_esp_channel_value_changed(rs_cfg->up->channel, pos);
+
+#ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED
+                        supla_esp_board_on_rollershutter_position_changed(
+                            rs_cfg->up->channel, pos);
+#endif /*BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED*/
+                }
 
 		if ( rs_cfg->up_time > 600000 || rs_cfg->down_time > 600000 ) { // 10 min. - timeout
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);

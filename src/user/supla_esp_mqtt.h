@@ -23,6 +23,15 @@
 
 #ifdef MQTT_SUPPORT_ENABLED
 
+#define MQTT_ACTION_NONE 0
+#define MQTT_ACTION_TURN_ON 1
+#define MQTT_ACTION_TURN_OFF 2
+#define MQTT_ACTION_TOGGLE 3
+#define MQTT_ACTION_SHUT 4
+#define MQTT_ACTION_SHUT_WITH_PERCENTAGE 5
+#define MQTT_ACTION_REVEAL 6
+#define MQTT_ACTION_STOP 7
+
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
@@ -77,6 +86,17 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, uint8 index);
 #endif
+
+#ifdef MQTT_HA_ROLLERSHUTTER_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr);
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel_number, uint8 *action,
+    uint8 *percentage);
+#endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/
 
