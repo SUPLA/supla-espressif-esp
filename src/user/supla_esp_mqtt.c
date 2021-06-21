@@ -67,6 +67,7 @@ typedef struct {
 
   uint8 subscribe_idx;
   uint8 publish_idx[32];
+  uint8 publish_next;
 
   uint16 prefix_len;
   char *prefix;
@@ -189,16 +190,25 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_subscribe(void) {
 }
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
-  uint8 ret = 0;
+  uint8 idx = 0;
+  uint8 bit = 0;
+  uint8 find_next = 1;
 
-  do {
-    uint8 idx = 0;
-    uint8 bit = 0;
-    for (uint8 a = 0; a < 255; a++) {
-      bit = 1 << (a % 8);
-      if (supla_esp_mqtt_vars->publish_idx[a / 8] & bit) {
-        idx = a + 1;
+  while (find_next) {
+    if (supla_esp_mqtt_vars->publish_next == 255) {
+      supla_esp_mqtt_vars->publish_next = 0;
+    }
+
+    while (supla_esp_mqtt_vars->publish_next < 255) {
+      bit = 1 << (supla_esp_mqtt_vars->publish_next % 8);
+      if (supla_esp_mqtt_vars
+              ->publish_idx[supla_esp_mqtt_vars->publish_next / 8] &
+          bit) {
+        supla_esp_mqtt_vars->publish_next++;
+        idx = supla_esp_mqtt_vars->publish_next;
         break;
+      } else {
+        supla_esp_mqtt_vars->publish_next++;
       }
     }
 
@@ -219,7 +229,6 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
         topic_name == NULL || topic_name[0] == 0) {
       supla_esp_mqtt_vars->publish_idx[(idx - 1) / 8] &= ~bit;
     } else {
-      ret = 1;
       uint8 publish_flags = 0;
 
       switch (supla_esp_cfg.MqttQoS) {
@@ -238,7 +247,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
         publish_flags |= MQTT_PUBLISH_RETAIN;
       }
 
-      // supla_log(LOG_DEBUG, "Publish %s", topic_name);
+      // supla_log(LOG_DEBUG, "Publish %i %s", idx, topic_name);
 
       enum MQTTErrors r = mqtt_publish(&supla_esp_mqtt_vars->client, topic_name,
                                        message, message_size, publish_flags);
@@ -249,9 +258,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
         if (r == MQTT_ERROR_SEND_BUFFER_IS_FULL) {
           supla_esp_mqtt_vars->client.error = MQTT_OK;
         }
-        supla_log(LOG_DEBUG, "MQTT Publish Error %s. Retry...",
+        supla_log(LOG_DEBUG, "MQTT Publish Error %s. Will retry...",
                   mqtt_error_str(r));
       }
+      find_next = 0;
     }
 
     if (topic_name) {
@@ -263,8 +273,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
       free(message);
       message = NULL;
     }
-
-  } while (!ret);
+  }
 
   return 1;
 }
@@ -422,6 +431,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
     supla_esp_set_state(LOG_NOTICE, "Broker connected");
     supla_esp_mqtt_set_status(CONN_STATUS_READY);
     supla_esp_mqtt_wants_subscribe();
+    supla_esp_mqtt_vars->publish_next = BOARD_MAX_IDX;
     supla_esp_mqtt_wants_publish(1, 255);
 
 #ifdef ELECTRICITY_METER_COUNT
