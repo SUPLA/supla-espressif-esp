@@ -80,7 +80,7 @@ supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int ful
 #define RS_DIRECTION_UP     2
 #define RS_DIRECTION_DOWN   1
 
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_set_relay_delayed(void *timer_arg) {
 
 	supla_esp_gpio_rs_set_relay((supla_roller_shutter_cfg_t*)timer_arg, ((supla_roller_shutter_cfg_t*)timer_arg)->delayed_trigger.value, 0, 0);
@@ -165,7 +165,7 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value, uin
 	
 }
 
-uint8 
+uint8 GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg) {
 	
 	if ( rs_cfg != NULL ) {
@@ -405,7 +405,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 	rs_cfg->last_time = t;
 }
 
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg) {
 
 	if ( rs_cfg == NULL )
@@ -421,7 +421,7 @@ supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg) {
 }
 
 
-void supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 
 	if ( idx < 0
 		 || idx >= RS_MAX_COUNT
@@ -507,7 +507,7 @@ gpio__input_get(uint8 port)
 	return GPIO_INPUT_GET(GPIO_ID_PIN(port));
 }
 
-void  supla_esg_gpio_start_cfg_mode(void) {
+void GPIO_ICACHE_FLASH supla_esg_gpio_start_cfg_mode(void) {
 
 	if ( supla_esp_cfgmode_started() == 0 ) {
 
@@ -526,7 +526,7 @@ void  supla_esg_gpio_start_cfg_mode(void) {
 
 }
 
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_enable_input_port(char port) {
 
 	if ( port < 1 || port > 15 ) return;
@@ -575,7 +575,7 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 
 }
 
-supla_roller_shutter_cfg_t  *
+supla_roller_shutter_cfg_t* GPIO_ICACHE_FLASH
 supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg) {
 
 	if ( rel_cfg == NULL )
@@ -593,7 +593,7 @@ supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg) {
 	return NULL;
 }
 
-supla_roller_shutter_cfg_t  *
+supla_roller_shutter_cfg_t* GPIO_ICACHE_FLASH
 supla_esp_gpio_get_rs__cfg(int port) {
 
 	int a;
@@ -740,7 +740,8 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     return result;
 }
 
-LOCAL void supla_esp_gpio_relay_switch(supla_input_cfg_t *input_cfg, char hi) {
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_relay_switch(supla_input_cfg_t *input_cfg, char hi) {
 
 	if (  input_cfg->relay_gpio_id != 255 ) {
 
@@ -755,7 +756,7 @@ LOCAL void supla_esp_gpio_relay_switch(supla_input_cfg_t *input_cfg, char hi) {
 
 }
 
-LOCAL void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 
 	//supla_log(LOG_DEBUG, "active");
@@ -794,7 +795,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	input_cfg->last_state = 1;
 }
 
-LOCAL void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 
 	//supla_log(LOG_DEBUG, "inactive");
@@ -832,7 +833,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 	input_cfg->last_state = 0;
 }
 
-uint32 supla_esp_gpio_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
+uint32 GPIO_ICACHE_FLASH supla_esp_gpio_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
 	return CFG_BTN_PRESS_TIME;
 }
 
@@ -1252,7 +1253,7 @@ supla_esp_gpio_set_hi(int port, char hi) {
 
 }
 
-void supla_esp_gpio_set_led(char r, char g, char b) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_set_led(char r, char g, char b) {
 
 	os_timer_disarm(&supla_gpio_timer1);
 	os_timer_disarm(&supla_gpio_timer2);
@@ -1306,7 +1307,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_reinit_led(void) {
 
 
 #if defined(LED_RED_PORT) || defined(LED_GREEN_PORT) || defined(LED_BLUE_PORT)
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_led_blinking_func(void *timer_arg) {
 
 	#ifdef LED_RED_PORT
@@ -1326,7 +1327,7 @@ supla_esp_gpio_led_blinking_func(void *timer_arg) {
 
 }
 
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_led_blinking(int led, int time) {
 
 	supla_esp_gpio_set_led(0, 0, 0);
