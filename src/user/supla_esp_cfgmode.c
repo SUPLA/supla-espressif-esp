@@ -198,16 +198,29 @@ void ICACHE_FLASH_ATTR supla_esp_http_send_response(struct espconn *pespconn,
   os_timer_arm(&cfgmode_vars.response_timer, 10, 1);
 }
 
+void ICACHE_FLASH_ATTR supla_esp_http_send__response(struct espconn *pespconn,
+                                                     const char *code,
+                                                     const char *html) {
+  char *html_copy = NULL;
+  if (html) {
+    size_t size = strlen(html) + 1;
+    char *html_copy = zalloc(size);
+    ets_snprintf(html_copy, size, "%s", html);
+  }
+
+  supla_esp_http_send_response(pespconn, code, html_copy);
+}
+
 void ICACHE_FLASH_ATTR supla_esp_http_ok(struct espconn *pespconn, char *html) {
   supla_esp_http_send_response(pespconn, "200 OK", html);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_http_404(struct espconn *pespconn) {
-  supla_esp_http_send_response(pespconn, "404 Not Found", "Not Found");
+  supla_esp_http_send__response(pespconn, "404 Not Found", "Not Found");
 }
 
 void ICACHE_FLASH_ATTR supla_esp_http_error(struct espconn *pespconn) {
-  supla_esp_http_send_response(pespconn, "500 Internal Server Error", "Error");
+  supla_esp_http_send__response(pespconn, "500 Internal Server Error", "Error");
 }
 
 int ICACHE_FLASH_ATTR Power(int x, int y) {
@@ -846,8 +859,6 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
   memset(apconfig.ssid, 0, sizeof(apconfig.ssid));
   memset(apconfig.password, 0, sizeof(apconfig.password));
 
-  struct espconn *conn;
-
   if (cfgmode_vars.entertime != 0) return;
 
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
@@ -900,10 +911,8 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
 
   wifi_softap_set_config(&apconfig);
 
-  conn = (struct espconn *)malloc(sizeof(struct espconn));
-  memset(conn, 0, sizeof(struct espconn));
+  struct espconn *conn = (struct espconn *)zalloc(sizeof(struct espconn));
 
-  espconn_create(conn);
   espconn_regist_time(conn, 5, 0);
 
   conn->type = ESPCONN_TCP;
