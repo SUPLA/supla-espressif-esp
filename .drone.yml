@@ -33,13 +33,13 @@ steps:
     webhook: 
       from_secret: slack_webhook 
     channel: github
-    username: drone
+    username: drone@supla-espressif-esp
 
     # here's the template :)
     # notice that the repo endpoint is hardcoded to `https://github.com/`. 
     # you may adjust it accordingly.
     template: >
-      supla-espressif-esp *{{#success build.status}}✔{{ else }}✘{{/success}} {{ uppercasefirst build.status }}: Build #{{ build.number }}* (type: `{{ build.event }}`) in {{since build.created}}
+      *{{#success build.status}}✔{{ else }}✘{{/success}} {{ uppercasefirst build.status }}: Build #{{ build.number }}* (type: `{{ build.event }}`) in {{since build.created}}
 
       Commit: <https://github.com/{{ repo.owner }}/{{ repo.name }}/commit/{{ build.commit }}|{{ truncate build.commit 8 }}> at: <https://github.com/{{ repo.owner }}/{{ repo.name }}/commits/{{ build.branch }}|{{repo.owner}}/{{repo.name}}/{{ build.branch }}> by: {{ build.author }}
 
