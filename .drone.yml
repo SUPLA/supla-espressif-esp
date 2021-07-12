@@ -24,7 +24,7 @@ steps:
   commands:
   - mkdir -p /CProjects
   - ln -s /drone/src /CProjects/supla-espressif-esp
-# TODO add script to compile all targets 
+  - ./test/check_compilation_of_all_targets.sh
 
 - name: slack
   image: plugins/slack
