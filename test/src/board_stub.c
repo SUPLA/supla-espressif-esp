@@ -17,15 +17,14 @@
  */
 
 #include <os_type.h>
-#include <osapi.h>
-#include <stdio.h>
+#include <proto.h>
 
-void ets_timer_arm_new(os_timer_t *ptimer, uint32_t time, bool repeat_flag,
-                       bool ms_flag){};
-void os_timer_disarm(os_timer_t *ptimer){};
-void os_timer_setfn(os_timer_t *ptimer, os_timer_func_t *pfunction,
-                    void *parg){};
-void os_delay_us(uint32_t us){};
-int os_get_random(unsigned char *buf, size_t len) { return 0; }
+#include <supla_esp.h>
 
-int ets_snprintf(char *str, unsigned int size, const char *format, ...) {};
+const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
+
+void supla_esp_board_send_channel_values_with_delay(void *srpc){};
+void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size){};
+void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
+                                  unsigned char *channel_count) {};
+void supla_esp_board_gpio_init(void) {};

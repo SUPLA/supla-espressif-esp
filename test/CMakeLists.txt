@@ -6,10 +6,12 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_BUILD_TYPE Debug)
 
+
 include_directories(doubles/)
 include_directories(../)
 include_directories(../supla-common/)
 include_directories(../src/include/)
+include_directories(../src/nettle/include)
 include_directories(../src/user/)
 
 mark_as_advanced(
@@ -33,6 +35,7 @@ endif()
 
 file(GLOB TEST_SRC
   src/*.cpp
+  src/*.c
   )
 
 
@@ -43,9 +46,24 @@ file(GLOB COMMON_DOUBLE_SRC
 
 project(supla_common_test)
 file(GLOB SRC
+  ../src/user/supla_esp_gpio.c
+  ../src/user/supla_esp_cfg.c
+  ../src/user/supla_esp_cfgmode.c
+  ../src/user/supla_esp_devconn.c
+  ../src/user/supla_esp_cfgmode_html.c
+  ../src/user/supla_esp_state.c
+  ../src/user/supla_update.c
+  ../src/user/supla_esp_countdown_timer.c
+  ../src/user/supla_esp_dns_client.c
+  ../src/user/supla_esp_wifi.c
   )
 
 add_executable(supla_common_test ${SRC} ${TEST_SRC} ${COMMON_DOUBLE_SRC})
+
+target_compile_definitions(supla_common_test PUBLIC _ROLLERSHUTTER_SUPPORT)
+target_compile_definitions(supla_common_test PUBLIC __FOTA)
+target_compile_definitions(supla_common_test PUBLIC CFG_SECTOR=0x3C)
+target_compile_definitions(supla_common_test PUBLIC ESPMISSINGINCLUDES_H)
 
 target_link_libraries(supla_common_test
   gmock

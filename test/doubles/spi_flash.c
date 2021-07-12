@@ -16,16 +16,21 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <os_type.h>
-#include <osapi.h>
-#include <stdio.h>
+#include "os_type.h"
+#include "spi_flash.h"
 
-void ets_timer_arm_new(os_timer_t *ptimer, uint32_t time, bool repeat_flag,
-                       bool ms_flag){};
-void os_timer_disarm(os_timer_t *ptimer){};
-void os_timer_setfn(os_timer_t *ptimer, os_timer_func_t *pfunction,
-                    void *parg){};
-void os_delay_us(uint32_t us){};
-int os_get_random(unsigned char *buf, size_t len) { return 0; }
+SpiFlashOpResult spi_flash_erase_sector(uint16 sec) {
+  return SPI_FLASH_RESULT_OK;
+}
+SpiFlashOpResult spi_flash_write(uint32 des_addr, uint32 *src_addr,
+                                 uint32 size) {
+  return SPI_FLASH_RESULT_OK;
+}
 
-int ets_snprintf(char *str, unsigned int size, const char *format, ...) {};
+SpiFlashOpResult spi_flash_read(uint32 src_addr, uint32 *des_addr, uint32 size) {
+  return SPI_FLASH_RESULT_OK;
+}
+
+uint32 spi_flash_get_id() {
+  return 0;
+}

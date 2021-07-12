@@ -42,6 +42,8 @@ uint8 DEVCONN_ICACHE_FLASH supla_esp_devconn_any_outgoingdata_exists(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_cfgmode_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
 
+void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
+
 #ifdef ELECTRICITY_METER_COUNT
 void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue_V2 *em_ev);
 #endif /*ELECTRICITY_METER_COUNT*/

@@ -16,16 +16,10 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <os_type.h>
-#include <osapi.h>
-#include <stdio.h>
+#include <supla_esp.h>
 
-void ets_timer_arm_new(os_timer_t *ptimer, uint32_t time, bool repeat_flag,
-                       bool ms_flag){};
-void os_timer_disarm(os_timer_t *ptimer){};
-void os_timer_setfn(os_timer_t *ptimer, os_timer_func_t *pfunction,
-                    void *parg){};
-void os_delay_us(uint32_t us){};
-int os_get_random(unsigned char *buf, size_t len) { return 0; }
+void ICACHE_FLASH_ATTR supla_system_restart(void) {};
+void ICACHE_FLASH_ATTR supla_system_restart_with_delay(uint32 delay_ms) {};
 
-int ets_snprintf(char *str, unsigned int size, const char *format, ...) {};
+
+

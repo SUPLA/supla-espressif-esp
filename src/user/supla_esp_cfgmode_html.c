@@ -16,6 +16,10 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <string.h>
+#include <mem.h>
+#include <osapi.h>
+
 #include "supla-dev/log.h"
 #include "supla_esp.h"
 #include "supla_esp_cfg.h"

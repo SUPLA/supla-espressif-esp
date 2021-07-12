@@ -22,16 +22,40 @@
  *
  */
 
-#ifndef _OS_TYPES_H_
-#define _OS_TYPES_H_
+#ifndef SPI_FLASH_H
+#define SPI_FLASH_H
 
-#include "ets_sys.h"
+typedef enum {
+    SPI_FLASH_RESULT_OK,
+    SPI_FLASH_RESULT_ERR,
+    SPI_FLASH_RESULT_TIMEOUT
+} SpiFlashOpResult;
 
-#define os_signal_t ETSSignal
-#define os_param_t  ETSParam
-#define os_event_t ETSEvent
-#define os_task_t ETSTask
-#define os_timer_t  ETSTimer
-#define os_timer_func_t ETSTimerFunc
+typedef struct{
+	uint32	deviceId;
+	uint32	chip_size;    // chip size in byte
+	uint32	block_size;
+	uint32  sector_size;
+	uint32  page_size;
+	uint32  status_mask;
+} SpiFlashChip;
+
+#define SPI_FLASH_SEC_SIZE      4096
+
+uint32 spi_flash_get_id(void);
+SpiFlashOpResult spi_flash_erase_sector(uint16 sec);
+SpiFlashOpResult spi_flash_write(uint32 des_addr, uint32 *src_addr, uint32 size);
+SpiFlashOpResult spi_flash_read(uint32 src_addr, uint32 *des_addr, uint32 size);
+
+typedef SpiFlashOpResult (* user_spi_flash_read)(
+		SpiFlashChip *spi,
+		uint32 src_addr,
+		uint32 *des_addr,
+        uint32 size);
+
+void spi_flash_set_read_func(user_spi_flash_read read);
+
+bool spi_flash_erase_protect_enable(void);
+bool spi_flash_erase_protect_disable(void);
 
 #endif

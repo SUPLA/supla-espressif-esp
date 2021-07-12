@@ -19,6 +19,7 @@
 #include "supla_esp_state.h"
 
 #include <string.h>
+#include <osapi.h>
 
 #include "supla-dev/log.h"
 

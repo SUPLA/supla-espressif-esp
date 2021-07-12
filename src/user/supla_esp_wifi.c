@@ -20,6 +20,7 @@
 
 #include <osapi.h>
 #include <string.h>
+#include <user_interface.h>
 
 #include "supla-dev/log.h"
 #include "supla_esp_cfg.h"

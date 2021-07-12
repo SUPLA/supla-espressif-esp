@@ -16,6 +16,17 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include <os_type.h>
 
-void supla_esp_gpio_set_hi(int port, char hi){};
-char supla_esp_gpio_output_is_hi(int port){};
+#include "gpio.h"
+
+uint32 gpio_input_get(void) { return 0; }
+
+void gpio_output_set(uint32 set_mask, uint32 clear_mask, uint32 enable_mask,
+                     uint32 disable_mask) {
+  return;
+}
+
+void gpio_register_set(uint32 reg_id, uint32 value) {}
+
+void gpio_pin_intr_state_set(uint32 i, GPIO_INT_TYPE intr_state) {}
