@@ -455,7 +455,8 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CHANNEL_FLAG_CAP_ACTION4 0x0400                     // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_CAP_ACTION5 0x0800                     // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION 0x1000             // ver. >= 15
-// Free bits for future use: 0x2000, 0x4000, 0x8000
+#define SUPLA_CHANNEL_FLAG_CALCFG_RESET_COUNTERS 0x2000           // ver. >= 15
+// Free bits for future use: 0x4000, 0x8000
 #define SUPLA_CHANNEL_FLAG_CHANNELSTATE 0x00010000                 // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_PHASE1_UNSUPPORTED 0x00020000           // ver. >= 12
 #define SUPLA_CHANNEL_FLAG_PHASE2_UNSUPPORTED 0x00040000           // ver. >= 12
@@ -1162,9 +1163,9 @@ typedef struct {
   unsigned _supla_int16_t voltage[3];  // * 0.01 V
   unsigned _supla_int16_t
       current[3];  // * 0.001 A (0.01A FOR EM_VAR_CURRENT_OVER_65A)
-  _supla_int_t power_active[3];    // * 0.00001 kW
-  _supla_int_t power_reactive[3];  // * 0.00001 kvar
-  _supla_int_t power_apparent[3];  // * 0.00001 kVA
+  _supla_int_t power_active[3];    // * 0.00001 W or kW
+  _supla_int_t power_reactive[3];  // * 0.00001 var or kvar
+  _supla_int_t power_apparent[3];  // * 0.00001 VA or kVA
   _supla_int16_t power_factor[3];  // * 0.001
   _supla_int16_t phase_angle[3];   // * 0.1 degree
 } TElectricityMeter_Measurement;   // v. >= 10
@@ -1185,6 +1186,10 @@ typedef struct {
 #define EM_VAR_FORWARD_ACTIVE_ENERGY_BALANCED 0x2000
 #define EM_VAR_REVERSE_ACTIVE_ENERGY_BALANCED 0x4000
 #define EM_VAR_ALL 0xFFFF
+
+#define EM_VAR_POWER_ACTIVE_KWH 0x100000
+#define EM_VAR_POWER_REACTIVE_KVAR 0x200000
+#define EM_VAR_POWER_APPARENT_KVA 0x400000
 
 #ifdef __AVR__
 #define EM_MEASUREMENT_COUNT 1
@@ -1311,6 +1316,7 @@ typedef struct {
 #define SUPLA_CALCFG_CMD_DEBUG_STRING 5000                // v. >= 12
 #define SUPLA_CALCFG_CMD_PROGRESS_REPORT 5001             // v. >= 12
 #define SUPLA_CALCFG_CMD_SET_LIGHTSOURCE_LIFESPAN 6000    // v. >= 12
+#define SUPLA_CALCFG_CMD_RESET_COUNTERS 7000              // v. >= 15
 
 #define CALCFG_ZWAVE_SCREENTYPE_UNKNOWN 0
 #define CALCFG_ZWAVE_SCREENTYPE_MULTILEVEL 1
@@ -1422,7 +1428,7 @@ typedef struct {
 typedef struct {
   char hi;  // actual state of relay  - 0 turned off, >= 1 - turned on
   unsigned short flags;  // SUPLA_RELAY_FLAG_*
-} TRelayChannel_Value;
+} TRelayChannel_Value;   // v. >= 15
 
 #define DIGIGLASS_TOO_LONG_OPERATION_WARNING 0x1
 #define DIGIGLASS_PLANNED_REGENERATION_IN_PROGRESS 0x2
