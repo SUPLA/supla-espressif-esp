@@ -419,6 +419,23 @@ supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_resu
 		supla_esp_check_updates(devconn->srpc);
 		#endif
 
+#ifndef COUNTDOWN_TIMER_DISABLED
+#if ESP8266_SUPLA_PROTO_VERSION >= 12
+    for (uint8 a = 0; a < RELAY_MAX_COUNT; a++)
+      if (supla_relay_cfg[a].gpio_id != 255 &&
+          supla_relay_cfg[a].channel_flags &
+              SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+        TSuplaChannelExtendedValue *ev = (TSuplaChannelExtendedValue *)malloc(
+            sizeof(TSuplaChannelExtendedValue));
+        if (ev != NULL) {
+          supla_esp_countdown_get_state_ev(supla_relay_cfg[a].channel, ev);
+          supla_esp_channel_extendedvalue_changed(supla_relay_cfg[a].channel, ev);
+          free(ev);
+        }
+      }
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+
 		supla_esp_devconn_send_channel_values_with_delay();
 
 		#ifdef ELECTRICITY_METER_COUNT
@@ -573,6 +590,7 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 	return (v == 1 ? HI_VALUE : LO_VALUE) == _v;
 }
 
+#ifndef COUNTDOWN_TIMER_DISABLED
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_on_disarm(uint8 channel_number) {
 	for(uint8 a=0;a<RELAY_MAX_COUNT;a++)
 		if ( supla_relay_cfg[a].gpio_id != 255
@@ -589,6 +607,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_on_disarm(uint8 channel
 			break;
 		}
 }
+#endif /*COUNTDOWN_TIMER_DISABLED*/
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_on_countdown_timer_finish(uint8 gpio_id,
 		uint8 channel_number, char target_value[SUPLA_CHANNELVALUE_SIZE]) {
@@ -1148,8 +1167,8 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 				}
 				break;
 			}
-#endif /*COUNTDOWN_TIMER_DISABLED*/
 	}
+#endif /*COUNTDOWN_TIMER_DISABLED*/
 }
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 13
@@ -1615,8 +1634,10 @@ supla_esp_devconn_init(void) {
 	os_timer_setfn(&devconn->supla_watchdog_timer, (os_timer_func_t *)supla_esp_devconn_watchdog_cb, NULL);
 	os_timer_arm(&devconn->supla_watchdog_timer, 1000, 1);
 
+#ifndef COUNTDOWN_TIMER_DISABLED
 	supla_esp_countdown_set_on_disarm_cb(supla_esp_devconn_on_countdown_on_disarm);
 	supla_esp_countdown_set_finish_cb(supla_esp_devconn_on_countdown_timer_finish);
+#endif /*COUNTDOWN_TIMER_DISABLED*/
 }
 
 void DEVCONN_ICACHE_FLASH
