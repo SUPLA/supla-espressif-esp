@@ -16,11 +16,11 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef COUNTDOWN_TIMER_DISABLED
-
 #include "supla_esp_countdown_timer.h"
 #include <osapi.h>
 #include "supla-dev/log.h"
+
+#ifndef COUNTDOWN_TIMER_DISABLED
 
 typedef struct {
   _supla_int_t sender_id;
