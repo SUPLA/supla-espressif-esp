@@ -23,14 +23,14 @@
 #include <gmock/gmock.h>
 #include <proto.h>
 
-class TimeInterface {
+class UptimeInterface {
 public:
-  TimeInterface();
-  virtual ~TimeInterface();
+  UptimeInterface();
+  virtual ~UptimeInterface();
   virtual unsigned _supla_int64_t uptime_usec() = 0;
   virtual unsigned _supla_int64_t uptime_msec() = 0;
   virtual uint32_t uptime_sec() = 0;
-  static TimeInterface *instance;
+  static UptimeInterface *instance;
 };
 
 #endif

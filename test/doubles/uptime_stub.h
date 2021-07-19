@@ -23,7 +23,7 @@
 #include <c_types.h>
 #include <proto.h>
 
-class TimeStub : public TimeInterface {
+class UptimeStub : public UptimeInterface {
 public:
   unsigned _supla_int64_t uptime_usec();
   unsigned _supla_int64_t uptime_msec();

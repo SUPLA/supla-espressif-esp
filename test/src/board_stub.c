@@ -16,6 +16,7 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "board_stub.h"
 #include <os_type.h>
 #include <proto.h>
 
@@ -23,8 +24,15 @@
 
 const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 
+testBoardGpioInitCb *gpioInitCb = NULL;
+
 void supla_esp_board_send_channel_values_with_delay(void *srpc){};
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size){};
 void supla_esp_board_set_channels(TDS_SuplaDeviceChannel_C *channels,
                                   unsigned char *channel_count) {};
-void supla_esp_board_gpio_init(void) {};
+
+void supla_esp_board_gpio_init(void) {
+  if (gpioInitCb) {
+    gpioInitCb();
+  }
+};

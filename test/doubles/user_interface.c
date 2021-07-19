@@ -22,8 +22,6 @@ bool wifi_get_macaddr(uint8 if_index, uint8 *macaddr) { return true; }
 
 void system_set_os_print(uint8 onoff) {}
 
-uint32 system_get_time() { return 0; }
-
 uint32 system_get_chip_id() { return 0; }
 
 uint32 system_get_rtc_time() { return 0; }

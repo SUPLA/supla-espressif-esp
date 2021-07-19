@@ -24,7 +24,7 @@
 #include <gmock/gmock.h>
 #include <proto.h>
 
-class TimeMock : public TimeInterface {
+class UptimeMock : public UptimeInterface {
 public:
   MOCK_METHOD(unsigned _supla_int64_t, uptime_usec, (), (override));
   MOCK_METHOD(unsigned _supla_int64_t, uptime_msec, (), (override));

@@ -64,6 +64,8 @@ target_compile_definitions(supla_common_test PUBLIC _ROLLERSHUTTER_SUPPORT)
 target_compile_definitions(supla_common_test PUBLIC __FOTA)
 target_compile_definitions(supla_common_test PUBLIC CFG_SECTOR=0x3C)
 target_compile_definitions(supla_common_test PUBLIC ESPMISSINGINCLUDES_H)
+# ignore GPIO_PORT_INIT define:
+target_compile_definitions(supla_common_test PUBLIC GPIO_PORT_INIT)
 
 target_link_libraries(supla_common_test
   gmock

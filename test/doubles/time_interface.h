@@ -16,22 +16,21 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "uptime.h"
-#include "uptime_interface.h"
+#ifndef _SUPLA_TIME_INTERFACE_H_
+#define _SUPLA_TIME_INTERFACE_H_
 
-extern "C" {
-unsigned _supla_int64_t uptime_usec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_usec();
-}
+#include <c_types.h>
+#include <gmock/gmock.h>
 
-unsigned _supla_int64_t uptime_msec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_msec();
-}
+class TimeInterface {
+public:
+  TimeInterface();
+  virtual ~TimeInterface();
+  
+  virtual uint32 system_get_time() = 0;
 
-uint32 uptime_sec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_sec();
-}
-}
+  static TimeInterface *instance;
+};
+
+#endif
+

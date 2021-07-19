@@ -16,22 +16,17 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "uptime.h"
-#include "uptime_interface.h"
+#ifndef MOCK_TIME_MOCK_H_
+#define MOCK_TIME_MOCK_H_
 
-extern "C" {
-unsigned _supla_int64_t uptime_usec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_usec();
-}
+#include "time_interface.h"
+#include <c_types.h>
+#include <gmock/gmock.h>
 
-unsigned _supla_int64_t uptime_msec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_msec();
-}
+class TimeMock : public TimeInterface {
+public:
+  MOCK_METHOD(uint32, system_get_time, (), (override));
+};
 
-uint32 uptime_sec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_sec();
-}
-}
+#endif
+

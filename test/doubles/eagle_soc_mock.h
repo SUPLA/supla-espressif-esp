@@ -16,22 +16,17 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "uptime.h"
-#include "uptime_interface.h"
+#ifndef SUPLA_EAGLE_SOC_MOCK_H_
+#define SUPLA_EAGLE_SOC_MOCK_H_
 
-extern "C" {
-unsigned _supla_int64_t uptime_usec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_usec();
-}
+#include "eagle_soc_intf.h"
+#include <c_types.h>
+#include <gmock/gmock.h>
 
-unsigned _supla_int64_t uptime_msec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_msec();
-}
+class EagleSocMock : public EagleSocInterface {
+public:
+  MOCK_METHOD(uint32, gpioRegRead, (uint8 reg), (override));
+};
 
-uint32 uptime_sec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_sec();
-}
-}
+#endif /*SUPLA_EAGLE_SOC_MOCK_H_*/
+

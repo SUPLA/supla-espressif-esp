@@ -18,6 +18,6 @@
 
 #include "uptime_stub.h"
 
-unsigned _supla_int64_t TimeStub::uptime_usec() { return 0; }
-unsigned _supla_int64_t TimeStub::uptime_msec() { return 0; }
-uint32_t TimeStub::uptime_sec() { return 0; }
+unsigned _supla_int64_t UptimeStub::uptime_usec() { return 0; }
+unsigned _supla_int64_t UptimeStub::uptime_msec() { return 0; }
+uint32_t UptimeStub::uptime_sec() { return 0; }

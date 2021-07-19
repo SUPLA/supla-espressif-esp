@@ -16,22 +16,13 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "uptime.h"
-#include "uptime_interface.h"
+#ifndef _SUPLA_TEST_BOARD_INIT_H_
+#define _SUPLA_TEST_BOARD_INIT_H_
 
-extern "C" {
-unsigned _supla_int64_t uptime_usec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_usec();
-}
+#include <supla_esp_gpio.h>
 
-unsigned _supla_int64_t uptime_msec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_msec();
-}
+typedef void (testBoardGpioInitCb)(void);
 
-uint32 uptime_sec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_sec();
-}
-}
+extern testBoardGpioInitCb *gpioInitCb;
+
+#endif /*_SUPLA_TEST_BOARD_INIT_H_*/

@@ -18,8 +18,8 @@
 
 #include "uptime_interface.h"
 
-TimeInterface *TimeInterface::instance = nullptr;
+UptimeInterface *UptimeInterface::instance = nullptr;
 
-TimeInterface::TimeInterface() { instance = this; }
+UptimeInterface::UptimeInterface() { instance = this; }
 
-TimeInterface::~TimeInterface() { instance = nullptr; }
+UptimeInterface::~UptimeInterface() { instance = nullptr; }
