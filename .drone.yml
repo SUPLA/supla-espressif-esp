@@ -13,7 +13,7 @@ steps:
   image: rikorose/gcc-cmake
   commands:
   - cd test/build
-  - ./supla_common_test
+  - ./supla_common_test --gtest_shuffle --gtest_repeat=20
   depends_on:
   - tests_compilation
 
