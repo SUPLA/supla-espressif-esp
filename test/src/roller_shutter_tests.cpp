@@ -51,7 +51,10 @@ public:
 
   void SetUp() override { gpioInitCb = *gpioCallback1; }
 
-  void TearDown() override { gpioInitCb = nullptr; }
+  void TearDown() override { 
+    *supla_rs_cfg[0].position = 0;
+    gpioInitCb = nullptr; 
+  }
 };
 
 using ::testing::_;
