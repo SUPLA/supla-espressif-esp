@@ -15,10 +15,6 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-// typedef void (*testBoardGpioInitCb)(supla_input_cfg_t *supla_input_cfg,
-// supla_relay_cfg_t *supla_relay_cfg, supla_roller_shutter_cfg_t
-// *supla_rs_cfg);
-
 #include <eagle_soc_mock.h>
 #include <gtest/gtest.h>
 #include <time_mock.h>
@@ -46,6 +42,7 @@ void gpioCallback1() {
 
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
+  *supla_rs_cfg[0].position = 0;
 }
 
 class RollerShutterTestsF : public ::testing::Test {
@@ -199,3 +196,4 @@ TEST_F(RollerShutterTestsF, gpioInitWithRsAndTasks) {
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
   EXPECT_EQ(rsCfg->task.active, 1);
 }
+
