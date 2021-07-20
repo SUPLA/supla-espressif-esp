@@ -227,7 +227,7 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 
 	if ( ((*rs_cfg->position) == 100 && up == 1) || ((*rs_cfg->position) == 10100 && up == 0) ) {
 
-		if ( (*time) >= (*full_time) * 1.1 ) {
+		if ( (*time) >= (int)((*full_time) * 1.1) ) {
 
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
 			//supla_log(LOG_DEBUG, "Timeout full_time + 10%");
