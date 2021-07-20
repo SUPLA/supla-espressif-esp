@@ -18,6 +18,7 @@
 
 #include "supla_esp_dns_client.h"
 
+#include <mem.h>
 #include <espconn.h>
 #include <osapi.h>
 #include <string.h>

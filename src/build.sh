@@ -254,6 +254,8 @@ if [ "$FOTA" -eq 1 ]; then
    cp $BIN_PATH/upgrade/user"$APP"."$FLASH_SIZE".new."$SPI_SIZE_MAP".bin "$OUTDIR"/"$BOARD_NAME"_user"$APP"."$FLASH_SIZE"_"$SPI_MODE".new."${SPI_SIZE_MAP}${OUTPUT_FILENAME_SUFFIX}".sdk3x.bin && \
    cp $SDK_PATH/bin/boot_v1.6.bin $OUTDIR/boot_v1.6.bin
 
+   exit 0
+
 else
 
    cp ./ld/"$LD_DIR"/"$FLASH_SIZE"_eagle.app.v6.ld $SDK_PATH/ld/eagle.app.v6.ld || exit 1

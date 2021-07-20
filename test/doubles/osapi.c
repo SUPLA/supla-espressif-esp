@@ -16,33 +16,20 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "supla_esp_state.h"
-
-#include <string.h>
+#include <os_type.h>
 #include <osapi.h>
+#include <stdio.h>
 
-#include "supla-dev/log.h"
+os_timer_func_t *lastTimerCb = NULL;
 
-typedef struct {
-  char laststate[STATE_MAXSIZE];
-} _supla_esp_state_vars_t;
+void ets_timer_arm_new(os_timer_t *ptimer, uint32_t time, bool repeat_flag,
+                       bool ms_flag){};
+void os_timer_disarm(os_timer_t *ptimer){};
+void os_timer_setfn(os_timer_t *ptimer, os_timer_func_t *pfunction,
+                    void *parg) {
+  lastTimerCb = pfunction;
+};
+void os_delay_us(uint32_t us){};
+int os_get_random(unsigned char *buf, size_t len) { return 0; }
 
-_supla_esp_state_vars_t supla_esp_state_vars = {};
-
-void ICACHE_FLASH_ATTR supla_esp_set_state(int __pri, const char *message) {
-  if (message == NULL) return;
-
-  supla_log(__pri, message);
-
-  char laststate[STATE_MAXSIZE];
-  ets_snprintf(
-      laststate, STATE_MAXSIZE, "%s%s%s", message,
-      strnlen(supla_esp_state_vars.laststate, STATE_MAXSIZE) > 0 ? "," : "",
-      supla_esp_state_vars.laststate);
-
-  ets_snprintf(supla_esp_state_vars.laststate, STATE_MAXSIZE, "%s", laststate);
-}
-
-const char *ICACHE_FLASH_ATTR supla_esp_get_laststate(void) {
-  return supla_esp_state_vars.laststate;
-}
+int ets_snprintf(char *str, unsigned int size, const char *format, ...) {};

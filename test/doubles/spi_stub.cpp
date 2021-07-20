@@ -14,24 +14,13 @@
  You should have received a copy of the GNU General Public License
  along with this program; if not, write to the Free Software
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
- */
+*/
 
-#ifndef MOCK_UART_H_
-#define MOCK_UART_H_
+#include "spi_stub.h"
 
-#include <c_types.h>
-
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-void rx_buff_set_ptr(char* pdata, uint16 size);
-void tx_buff_set_ptr(char* pdata, uint16 size, uint16** pos);
-uint16 rx_buff_deq(char* pdata, uint16 data_len);
-void tx_buff_enq(char* pdata, uint16 data_len);
-
-#ifdef __cplusplus
-}
-#endif
-
-#endif /*MOCK_UART_H_*/
+void SpiStub::spi_init(void){};
+void SpiStub::spi_begin(void){};
+void SpiStub::spi_end(void){};
+uint8 SpiStub::spi_send_recv(uint8 data) { return 0; };
+uint32 SpiStub::spi_transaction_read(uint32 addr) { return 0; };
+uint32 SpiStub::spi_transaction_write(uint32 addr, uint32 writeData) { return 0; };
