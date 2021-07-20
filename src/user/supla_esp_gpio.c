@@ -342,23 +342,19 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 	if ( supla_esp_gpio_init_time == 0 )
 		return;
 
-	unsigned int t = system_get_time()/100000;
-
-	if ( t == 0 )
-		t = 1;
-
+	unsigned int t = system_get_time();
 
 	if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) ) {
 
 		rs_cfg->down_time = 0;
-		rs_cfg->up_time += (t-rs_cfg->last_time)*100;
+		rs_cfg->up_time += (t-rs_cfg->last_time)/1000;
 
 		supla_esp_gpio_rs_calibrate(rs_cfg, *rs_cfg->full_opening_time, rs_cfg->up_time, 100);
 		supla_esp_gpio_rs_move_position(rs_cfg, rs_cfg->full_opening_time, &rs_cfg->up_time, 1);
 
 	} else if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down) ) {
 
-		rs_cfg->down_time += (t-rs_cfg->last_time)*100;
+		rs_cfg->down_time += (t-rs_cfg->last_time)/1000;
 		rs_cfg->up_time = 0;
 
 		supla_esp_gpio_rs_calibrate(rs_cfg, *rs_cfg->full_closing_time, rs_cfg->down_time, 10100);
@@ -374,12 +370,9 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	}
 
-
-
 	supla_esp_gpio_rs_task_processing(rs_cfg);
 
-
-	if ( rs_cfg->last_time-rs_cfg->n >= 10 ) { // 10 == 1 sec.
+	if ( rs_cfg->last_time-rs_cfg->last_comm_time >= 1000 ) { // 1000 == 1 sec.
 
 		if ( rs_cfg->last_position != *rs_cfg->position ) {
 
@@ -388,10 +381,10 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 			supla_esp_channel_value_changed(rs_cfg->up->channel, pos);
 
 #ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED
-                        supla_esp_board_on_rollershutter_position_changed(
-                            rs_cfg->up->channel, pos);
+      supla_esp_board_on_rollershutter_position_changed(
+          rs_cfg->up->channel, pos);
 #endif /*BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED*/
-                }
+    }
 
     // TODO: move timeout based relay switch off out of current "if"
     // TODO: reset up/down_time to 0 just after stop
@@ -400,10 +393,8 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 		}
 		
 		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
-		rs_cfg->n = t;
+		rs_cfg->last_comm_time = t;
 	}
-
-
 
 	rs_cfg->last_time = t;
 }

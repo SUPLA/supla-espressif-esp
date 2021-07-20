@@ -84,10 +84,10 @@ typedef struct {
 
 	int *position;
 
-    unsigned int *full_opening_time;
-    unsigned int *full_closing_time;
+  unsigned int *full_opening_time;
+  unsigned int *full_closing_time;
 
-	unsigned int n;
+	unsigned int last_comm_time;
 
 	unsigned int up_time;
 	unsigned int down_time;
