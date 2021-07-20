@@ -16,26 +16,26 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "eagle_soc_intf.h"
+#include "eagle_soc_stub.h"
 
-extern "C" {
-uint32 GPIO_REG_READ(uint8 reg) {
-  assert(EagleSocInterface::instance);
-  return EagleSocInterface::instance->gpioRegRead(reg);
+EagleSocStub::EagleSocStub() : currentGpioState(0) {}
+
+uint32 EagleSocStub::gpioRegRead(uint8 reg) {
+  return currentGpioState;
 }
 
-void GPIO_OUTPUT_SET(uint32 port, uint8 value) {
-  assert(value == 0 || value == 1);
-  assert(port >= 0 && port <= 15);
-  assert(EagleSocInterface::instance);
-  return EagleSocInterface::instance->gpioOutputSet(port, value);
+void EagleSocStub::gpioOutputSet(uint32 port, uint8 value) {
+  if (value) {
+    currentGpioState |= (1 << port);
+  } else {
+    currentGpioState &= ~(1 << port);
+  }
 }
 
-void GPIO_REG_WRITE(uint8 reg, uint8 val){};
+bool EagleSocStub::getGpioValue(uint8_t port) {
+  return (currentGpioState & (1 << port));
+
 }
 
-EagleSocInterface *EagleSocInterface::instance = nullptr;
 
-EagleSocInterface::EagleSocInterface() { instance = this; }
 
-EagleSocInterface::~EagleSocInterface() { instance = nullptr; }

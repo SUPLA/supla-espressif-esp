@@ -26,7 +26,7 @@
 class EagleSocMock : public EagleSocInterface {
 public:
   MOCK_METHOD(uint32, gpioRegRead, (uint8 reg), (override));
+  MOCK_METHOD(void, gpioOutputSet, (uint32 port, uint8 value), (override));
 };
 
 #endif /*SUPLA_EAGLE_SOC_MOCK_H_*/
-

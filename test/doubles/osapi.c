@@ -20,11 +20,15 @@
 #include <osapi.h>
 #include <stdio.h>
 
+os_timer_func_t *lastTimerCb = NULL;
+
 void ets_timer_arm_new(os_timer_t *ptimer, uint32_t time, bool repeat_flag,
                        bool ms_flag){};
 void os_timer_disarm(os_timer_t *ptimer){};
 void os_timer_setfn(os_timer_t *ptimer, os_timer_func_t *pfunction,
-                    void *parg){};
+                    void *parg) {
+  lastTimerCb = pfunction;
+};
 void os_delay_us(uint32_t us){};
 int os_get_random(unsigned char *buf, size_t len) { return 0; }
 

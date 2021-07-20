@@ -84,6 +84,7 @@ void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_set_relay_delayed(void *timer_arg) {
 
 	supla_esp_gpio_rs_set_relay((supla_roller_shutter_cfg_t*)timer_arg, ((supla_roller_shutter_cfg_t*)timer_arg)->delayed_trigger.value, 0, 0);
+  // TODO reset delayed_trigger.value to 0
 
 }
 
@@ -392,6 +393,8 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 #endif /*BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED*/
                 }
 
+    // TODO: move timeout based relay switch off out of current "if"
+    // TODO: reset up/down_time to 0 just after stop
 		if ( rs_cfg->up_time > 600000 || rs_cfg->down_time > 600000 ) { // 10 min. - timeout
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
 		}

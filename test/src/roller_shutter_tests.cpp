@@ -16,11 +16,13 @@
  */
 
 #include <eagle_soc_mock.h>
+#include <eagle_soc_stub.h>
 #include <gtest/gtest.h>
 #include <time_mock.h>
 
 extern "C" {
 #include "board_stub.h"
+#include <osapi.h>
 #include <supla_esp_cfg.h>
 #include <supla_esp_gpio.h>
 }
@@ -29,37 +31,52 @@ extern "C" {
 #define RS_DIRECTION_UP 2
 #define RS_DIRECTION_DOWN 1
 
+#define UP_GPIO 1
+#define DOWN_GPIO 2
+
 // method will be called by supla_esp_gpio_init method in order to initialize
 // gpio input/outputs board configuration (supla_esb_board_gpio_init)
 void gpioCallback1() {
   // up
-  supla_relay_cfg[0].gpio_id = 1;
+  supla_relay_cfg[0].gpio_id = UP_GPIO;
   supla_relay_cfg[0].channel = 0;
 
   // down
-  supla_relay_cfg[1].gpio_id = 2;
+  supla_relay_cfg[1].gpio_id = DOWN_GPIO;
   supla_relay_cfg[1].channel = 0;
 
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   *supla_rs_cfg[0].position = 0;
+  *supla_rs_cfg[0].full_closing_time = 0;
+  *supla_rs_cfg[0].full_opening_time = 0;
 }
 
 class RollerShutterTestsF : public ::testing::Test {
 public:
   TimeMock time;
+  EagleSocStub eagleStub;
 
-  void SetUp() override { gpioInitCb = *gpioCallback1; }
+  void SetUp() override {
+    supla_esp_gpio_init_time = 0;
+    gpioInitCb = *gpioCallback1;
+  }
 
-  void TearDown() override { 
+  void TearDown() override {
+    supla_esp_gpio_init_time = 0;
+
     *supla_rs_cfg[0].position = 0;
-    gpioInitCb = nullptr; 
+    *supla_rs_cfg[0].full_closing_time = 0;
+    *supla_rs_cfg[0].full_opening_time = 0;
+    gpioInitCb = nullptr;
   }
 };
 
 using ::testing::_;
 using ::testing::InSequence;
 using ::testing::Return;
+using ::testing::ReturnPointee;
+using ::testing::SaveArg;
 
 TEST(RollerShutterTests, RsGetValueWithNullCfg) {
   EXPECT_EQ(supla_esp_gpio_rs_get_value(nullptr), RS_RELAY_OFF);
@@ -150,6 +167,7 @@ TEST_F(RollerShutterTestsF, gpioInitWithRsAndTasks) {
   EXPECT_EQ(supla_esp_gpio_get_rs__cfg(1), supla_esp_gpio_get_rs__cfg(2));
 
   supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
   EXPECT_EQ(*rsCfg->position, 0);
 
   EXPECT_EQ(rsCfg->task.percent, 0);
@@ -200,3 +218,442 @@ TEST_F(RollerShutterTestsF, gpioInitWithRsAndTasks) {
   EXPECT_EQ(rsCfg->task.active, 1);
 }
 
+TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
+  int curTime = 123;
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  os_timer_func_t *rsTimerCb = lastTimerCb;
+
+  EXPECT_EQ(rsCfg->last_time, 0);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+
+  curTime = 2000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 20);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 20);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Move RS down. Not calirbated. No stop. It should timeout after > 60s
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_DOWN, 0, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 21);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 100);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 22);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 200);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +59100.000 ms
+  curTime += 59100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 613);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 59300);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +9 min
+  curTime += 9 * 60 * 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 6013);
+  EXPECT_EQ(rsCfg->n, 6013);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 599300);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +1s
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 6023);
+  EXPECT_EQ(rsCfg->n, 6023);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 600300);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // position should not change, because RS is not calibrated
+  EXPECT_EQ(*supla_rs_cfg[0].position, 0);
+
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 6023);
+  EXPECT_EQ(rsCfg->n, 6023);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_DOWN, 0, 0);
+
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 100);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +1000.000 ms
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 1100);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_OFF, 0, 0);
+
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // position should not change, because RS is not calibrated
+  EXPECT_EQ(*supla_rs_cfg[0].position, 0);
+}
+
+TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
+  int curTime = 123;
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  os_timer_func_t *rsTimerCb = lastTimerCb;
+
+  EXPECT_EQ(rsCfg->last_time, 0);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+
+  curTime = 2000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 20);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 20);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Move RS up. Not calirbated. No stop. It should timeout after > 60s
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_UP, 0, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 21);
+  EXPECT_EQ(rsCfg->up_time, 100);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 22);
+  EXPECT_EQ(rsCfg->up_time, 200);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +59100.000 ms
+  curTime += 59100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 613);
+  EXPECT_EQ(rsCfg->up_time, 59300);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +9 min
+  curTime += 9 * 60 * 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 6013);
+  EXPECT_EQ(rsCfg->n, 6013);
+  EXPECT_EQ(rsCfg->up_time, 599300);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +1s
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 6023);
+  EXPECT_EQ(rsCfg->n, 6023);
+  EXPECT_EQ(rsCfg->up_time, 600300);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // position should not change, because RS is not calibrated
+  EXPECT_EQ(*supla_rs_cfg[0].position, 0);
+
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 6023);
+  EXPECT_EQ(rsCfg->n, 6023);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_UP, 0, 0);
+
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 100);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +1000.000 ms
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 1100);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_OFF, 0, 0);
+
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // position should not change, because RS is not calibrated
+  EXPECT_EQ(*supla_rs_cfg[0].position, 0);
+}
+
+TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
+  int curTime = 123;
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  os_timer_func_t *rsTimerCb = lastTimerCb;
+
+  EXPECT_EQ(rsCfg->last_time, 0);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+
+  curTime = 2000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 20);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 20);
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Move RS up. Not calirbated. No stop. It should timeout after > 60s
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_UP, 0, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->last_time, 21);
+  EXPECT_EQ(rsCfg->up_time, 100);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +100.000 ms
+  curTime += 100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 200);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +59100.000 ms
+  curTime += 59100000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 59300);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_DOWN, 0, 0);
+  // change to opposite direction should be executed with delay on timer
+  // Here we only check if it was set properly and trigger timer action manually
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN);
+
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  supla_esp_gpio_rs_set_relay(rsCfg, rsCfg->delayed_trigger.value, 0, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
+
+  rsTimerCb(rsCfg);
+
+  // +1s
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 1000);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +1s
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 2000);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // position should not change, because RS is not calibrated
+  EXPECT_EQ(*supla_rs_cfg[0].position, 0);
+
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 3000);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +1000.000 ms
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 4000);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_OFF, 0, 0);
+
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // position should not change, because RS is not calibrated
+  EXPECT_EQ(*supla_rs_cfg[0].position, 0);
+}

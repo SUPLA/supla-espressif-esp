@@ -29,6 +29,9 @@
 #include "os_type.h"
 #include "user_config.h"
 
+// Added for Supla test
+extern os_timer_func_t *lastTimerCb;
+
 void ets_bzero(void *s, size_t n);
 void ets_delay_us(uint32_t us);
 void ets_install_putc1(void (*p)(char c));

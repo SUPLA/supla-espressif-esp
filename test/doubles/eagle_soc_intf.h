@@ -33,6 +33,7 @@ public:
   virtual ~EagleSocInterface();
 
   virtual uint32 gpioRegRead(uint8 reg) = 0;
+  virtual void gpioOutputSet(uint32 port, uint8 value) = 0;
   static EagleSocInterface *instance;
 };
 
