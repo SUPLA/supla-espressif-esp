@@ -60,6 +60,14 @@ static ETSTimer supla_gpio_timer2;
 unsigned char supla_esp_restart_on_cfg_press = 0;
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+sint8 supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg) {
+  sint8 result = -1;
+  if (rs_cfg && *rs_cfg->position >= 100 && *rs_cfg->position <= 10100) {
+    result = (*rs_cfg->position - 100 + 50) / 100;
+  }
+  return result;
+}
+
 void
 supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int time, int pos) {
 
@@ -379,7 +387,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 			rs_cfg->last_position = *rs_cfg->position;
       // we add 50 here in order to round position to closest integer
       // instead of rounding down, which could translate 1.99% to 1%
-			char pos = (rs_cfg->last_position-100+50)/100;
+			sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
 			supla_esp_channel_value_changed(rs_cfg->up->channel, pos);
 
 #ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED
@@ -421,7 +429,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 
 	if ( idx < 0
 		 || idx >= RS_MAX_COUNT
-		 || ((*supla_rs_cfg[idx].position)-100+50)/100 == percent )
+		 || supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[idx]) == percent )
 		return;
 
 	if ( percent > 100 )

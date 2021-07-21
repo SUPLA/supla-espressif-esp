@@ -147,6 +147,7 @@ supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg);
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
 supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
+sint8 supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
 #endif /* SUPLA_ESP_GPIO_H_ */
