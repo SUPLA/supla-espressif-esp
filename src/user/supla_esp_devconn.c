@@ -327,6 +327,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 
 	if ( supla_esp_devconn_is_registered() == 1 ) {
 
+#ifdef _ROLLERSHUTTER_SUPPORT
 		int a;
 
 		for(a=0; a<RS_MAX_COUNT; a++) {
@@ -337,6 +338,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]));
 			}
 		}
+#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 		supla_esp_board_send_channel_values_with_delay(devconn->srpc);
 
