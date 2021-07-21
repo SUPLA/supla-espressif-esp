@@ -1170,7 +1170,6 @@ TEST_F(RollerShutterTestsF, MoveDownWithUnfortunateTiming2) {
 
 }
 
-/*
 TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
   uint32_t curTime = 100;
   EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
@@ -1283,8 +1282,8 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
  
   // +240 ms 
-  for (int i = 0; i < 24; i++) {
-    curTime += 10000; // +10ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 12000; // +10ms
     rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
   }
   EXPECT_GT(*rsCfg->position, (100+ (1*100)));
@@ -1293,7 +1292,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
 
   // +10 ms 
   for (int i = 0; i < 200; i++) {
-    curTime += 10000; // +10ms
+    curTime += 11000; // +10ms
     rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
   }
 
@@ -1303,8 +1302,38 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
+  // +2000 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 13000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  supla_esp_gpio_rs_add_task(0, 2);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+ 
+  // +240 ms 
+  for (int i = 0; i < 18; i++) {
+    curTime += 13000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+  EXPECT_LT(*rsCfg->position, (100+ (2*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +10 ms 
+  for (int i = 0; i < 2; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100+(2*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+
 }
-*/
 
 TEST_F(RollerShutterTestsF, TwoRelaysOnProblem) {
   uint32_t curTime = 100;
