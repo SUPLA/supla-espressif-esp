@@ -372,7 +372,7 @@ supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	supla_esp_gpio_rs_task_processing(rs_cfg);
 
-	if ( rs_cfg->last_time-rs_cfg->last_comm_time >= 1000 ) { // 1000 == 1 sec.
+	if ( rs_cfg->last_time-rs_cfg->last_comm_time >= 500000 ) { // 500 ms.
 
 		if ( rs_cfg->last_position != *rs_cfg->position ) {
 
@@ -421,7 +421,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 
 	if ( idx < 0
 		 || idx >= RS_MAX_COUNT
-		 || ((*supla_rs_cfg[idx].position)-100)/100 == percent )
+		 || ((*supla_rs_cfg[idx].position)-100+50)/100 == percent )
 		return;
 
 	if ( percent > 100 )

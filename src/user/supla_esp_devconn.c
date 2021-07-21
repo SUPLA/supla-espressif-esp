@@ -334,7 +334,7 @@ supla_esp_devconn_send_channel_values_cb(void *ptr) {
 				   && supla_rs_cfg[a].down != NULL
 				   && supla_rs_cfg[a].up->channel != 255 ) {
 
-				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, ((*supla_rs_cfg[a].position)-100)/100);
+				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, ((*supla_rs_cfg[a].position)-100+50)/100);
 
 			}
 		}

@@ -1298,7 +1298,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
-  EXPECT_EQ(*rsCfg->position, (100+(1*100)));
+  EXPECT_NEAR(*rsCfg->position, (100+(1*100)), 10);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
@@ -1321,14 +1321,14 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
 
   // +10 ms 
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 5; i++) {
     curTime += 10000; // +10ms
     rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
   }
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
-  EXPECT_EQ(*rsCfg->position, (100+(2*100)));
+  EXPECT_NEAR(*rsCfg->position, (100+(2*100)), 10);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
