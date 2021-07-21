@@ -661,7 +661,7 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           }
 
         } else if (pVars->current_var == VAR_PPD) {
-          int poolPublicationDelay = pVars->intval[0] - '0';
+          int poolPublicationDelay = cfg_str2int(pVars);
           if (poolPublicationDelay >= 0 &&
               poolPublicationDelay <= MQTT_POOL_PUBLICATION_MAX_DELAY) {
             cfg->MqttPoolPublicationDelay = poolPublicationDelay;
