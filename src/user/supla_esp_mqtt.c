@@ -47,6 +47,8 @@
 #define MQTT_CLIENTID_MAX_SIZE 23
 #define MQTT_KEEP_ALIVE_SEC 32
 
+#define UPTIME_REFRESH_INTERVAL_MSEC 1000
+
 typedef struct {
   uint8 started;
   ETSTimer iterate_timer;
@@ -58,7 +60,9 @@ typedef struct {
   uint8 error_notification;
   struct mqtt_client client;
   unsigned _supla_int64_t wait_until_ms;
+  uint32 connected_at_sec;
   uint32 disconnected_at_sec;
+  unsigned _supla_int64_t uptime_refresh_time_ms;
   uint32 ip;
 
   unsigned short recv_len;
@@ -83,8 +87,19 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_set_status(uint8 status) {
     if (!supla_esp_mqtt_vars->disconnected_at_sec) {
       supla_esp_mqtt_vars->disconnected_at_sec = uptime_sec();
     }
-  } else if (supla_esp_mqtt_vars->disconnected_at_sec) {
-    supla_esp_mqtt_vars->disconnected_at_sec = 0;
+
+    if (supla_esp_mqtt_vars->connected_at_sec) {
+      supla_esp_mqtt_vars->connected_at_sec = 0;
+    }
+
+  } else {
+    if (supla_esp_mqtt_vars->disconnected_at_sec) {
+      supla_esp_mqtt_vars->disconnected_at_sec = 0;
+    }
+
+    if (!supla_esp_mqtt_vars->connected_at_sec) {
+      supla_esp_mqtt_vars->connected_at_sec = uptime_sec();
+    }
   }
 }
 
@@ -149,11 +164,17 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void) {}
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_get_message_for_publication(
     char **topic_name, void **message, size_t *message_size, uint8 index) {
-  switch (index) {
-    case 209:
-      return supla_esp_mqtt_prepare_message(topic_name, message, message_size,
-                                            "connected", "true");
+  if (index == 209) {
+    return supla_esp_mqtt_prepare_message(topic_name, message, message_size,
+                                          "connected", "true");
   }
+
+#ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
+  if (index >= 210 && index <= 216) {
+    return supla_esp_mqtt_device_state_message(topic_name, message,
+                                               message_size, index - 209);
+  }
+#endif /*MQTT_DEVICE_STATE_SUPPORT_DISABLED*/
 
   return 0;
 }
@@ -288,6 +309,14 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_iterate(void *ptr) {
   if (supla_esp_mqtt_vars->status != CONN_STATUS_READY) {
     return;
   }
+
+#ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
+  if (uptime_msec() - supla_esp_mqtt_vars->uptime_refresh_time_ms >=
+      UPTIME_REFRESH_INTERVAL_MSEC) {
+    supla_esp_mqtt_vars->uptime_refresh_time_ms = uptime_msec();
+    supla_esp_mqtt_wants_publish(212, 214);
+  }
+#endif /*MQTT_DEVICE_STATE_SUPPORT_DISABLED*/
 
   if (supla_esp_mqtt_subscribe()) {
     return;
@@ -1665,5 +1694,92 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
 }
 
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
+
+#ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
+uint8 ICACHE_FLASH_ATTR
+supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
+                                    size_t *message_size_out, uint8 index) {
+  char value[50] = {};
+
+  switch (index) {
+    case 1: {
+      struct ip_info ipconfig;
+      if (wifi_get_ip_info(STATION_IF, &ipconfig) && ipconfig.ip.addr != 0) {
+        ets_snprintf(value, sizeof(value), "%i.%i.%i.%i",
+                     (((unsigned int)ipconfig.ip.addr) & 0xff),
+                     (((unsigned int)ipconfig.ip.addr) >> 8 & 0xff),
+                     (((unsigned int)ipconfig.ip.addr) >> 16 & 0xff),
+                     (((unsigned int)ipconfig.ip.addr) >> 24 & 0xff));
+
+        return supla_esp_mqtt_prepare_message(
+            topic_name_out, message_out, message_size_out, "state/ip", value);
+      }
+    }
+
+    case 2: {
+      unsigned char mac[6] = {};
+      if (wifi_get_macaddr(STATION_IF, mac)) {
+        ets_snprintf(value, sizeof(value), "%02X:%02X:%02X:%02X:%02X:%02X",
+                     (unsigned char)mac[0], mac[1], (unsigned char)mac[2],
+                     mac[3], (unsigned char)mac[4], mac[5]);
+        return supla_esp_mqtt_prepare_message(
+            topic_name_out, message_out, message_size_out, "state/mac", value);
+      }
+    }
+    case 3:
+
+      ets_snprintf(value, sizeof(value), "%i", uptime_sec());
+
+      return supla_esp_mqtt_prepare_message(
+          topic_name_out, message_out, message_size_out, "state/uptime", value);
+
+    case 4:
+      if (supla_esp_mqtt_vars->connected_at_sec) {
+        ets_snprintf(value, sizeof(value), "%i",
+                     uptime_sec() - supla_esp_mqtt_vars->connected_at_sec);
+
+        return supla_esp_mqtt_prepare_message(topic_name_out, message_out,
+                                              message_size_out,
+                                              "state/connection_uptime", value);
+      }
+
+    case 5:
+      ets_snprintf(value, sizeof(value), "%i", system_get_free_heap_size());
+
+      return supla_esp_mqtt_prepare_message(topic_name_out, message_out,
+                                            message_size_out,
+                                            "state/free_heap_size", value);
+
+    case 6:
+    case 7: {
+      sint8 rssi = wifi_station_get_rssi();
+      if (rssi < 10) {
+        if (index == 6) {
+          ets_snprintf(value, sizeof(value), "%i", rssi);
+          return supla_esp_mqtt_prepare_message(topic_name_out, message_out,
+                                                message_size_out, "state/rssi",
+                                                value);
+        } else {
+          if (rssi > -50) {
+            rssi = 100;
+          } else if (rssi <= -100) {
+            rssi = 0;
+          } else {
+            rssi = 2 * (rssi + 100);
+          }
+
+          ets_snprintf(value, sizeof(value), "%i", rssi);
+
+          return supla_esp_mqtt_prepare_message(
+              topic_name_out, message_out, message_size_out,
+              "state/wifi_signal_strength", value);
+        }
+      }
+    }
+  }
+
+  return 0;
+}
+#endif /*MQTT_DEVICE_STATE_SUPPORT_DISABLED*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/

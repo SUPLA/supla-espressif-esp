@@ -97,7 +97,11 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
     size_t message_size, uint8 *channel_number, uint8 *action,
     uint8 *percentage);
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
-
+#ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
+uint8 ICACHE_FLASH_ATTR
+supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
+                                    size_t *message_size_out, uint8 index);
+#endif /*MQTT_DEVICE_STATE_SUPPORT_DISABLED*/
 #endif /*MQTT_SUPPORT_ENABLED*/
 
 #endif
