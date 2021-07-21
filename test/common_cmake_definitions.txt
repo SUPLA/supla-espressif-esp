@@ -7,11 +7,13 @@ set(CMAKE_BUILD_TYPE Debug)
 include_directories(..)
 include_directories(../..)
 include_directories(doubles/)
+include_directories(../../tests/doubles/)
 include_directories(../../../../../../test/doubles/)
 include_directories(../../../../../../supla-common/)
 include_directories(../../../../../../)
 include_directories(../../../../../../src/include/)
 include_directories(../../../../../../src/user/)
+include_directories(../../../../../../src/nettle/include)
 
 mark_as_advanced(
 BUILD_GMOCK
@@ -40,6 +42,8 @@ file(GLOB TEST_SRC
 file(GLOB COMMON_DOUBLE_SRC 
   ../../../../../../test/doubles/*.cpp
   ../../../../../../test/doubles/*.c
+  ../../tests/doubles/*.cpp
+  ../../tests/doubles/*.c
   )
 file(GLOB DOUBLE_SRC doubles/*.cpp doubles/*.c)
 
