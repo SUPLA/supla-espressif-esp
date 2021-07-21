@@ -42,6 +42,8 @@ lightswitch_x2_DHT22
 lightswitch_x2_54_DHT22
 "
 
+failed_targets=""
+
 cd /CProjects/supla-espressif-esp/src
 
 for i in ${targets}
@@ -51,7 +53,25 @@ do
   echo "======================================================"
   echo
   ./build.sh $i
+  if [ "$?" -ne "0" ]
+  then
+    echo "Building target $i failed"
+    failed_targets="$failed_targets $i"
+  fi
+
+  echo "======================================================"
+
 done
+
+if [ "${#failed_targets}" -ne "0" ]
+then
+  echo "======================================================"
+  echo "Failed targets:"
+  echo "======================================================"
+  echo $failed_targets
+  echo "======================================================"
+  exit 1
+fi
 
 echo "All targets compiled successfully!"
 

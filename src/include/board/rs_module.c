@@ -114,7 +114,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(
   channels[0].Type = SUPLA_CHANNELTYPE_RELAY;
   channels[0].FuncList = SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER;
   channels[0].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER;
-  channels[0].value[0] = (*supla_rs_cfg[0].position) - 1;
+  channels[0].value[0] = supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[0]);
 
   channels[1].Number = 1;
   channels[1].Type = SUPLA_CHANNELTYPE_SENSORNO;

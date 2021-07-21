@@ -1169,3 +1169,269 @@ TEST_F(RollerShutterTestsF, MoveDownWithUnfortunateTiming2) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
 }
+
+TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
+  uint32_t curTime = 100;
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  os_timer_func_t *rsTimerCb = lastTimerCb;
+
+  *rsCfg->full_opening_time = 25000; // 20 s
+  *rsCfg->full_closing_time = 25000; 
+  *rsCfg->position = 100; // actual position: (x - 100)/100 = 0%
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Move RS down. 
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  supla_esp_gpio_rs_add_task(0, 1);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  // add task doesn't change relay state. At least one callback has to be called
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  rsTimerCb(rsCfg);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +240 ms 
+  for (int i = 0; i < 24; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+  EXPECT_LT(*rsCfg->position, (100+(1*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +10 ms 
+  for (int i = 0; i < 1; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100+(1*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  supla_esp_gpio_rs_add_task(0, 2);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+ 
+  // +240 ms 
+  for (int i = 0; i < 24; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+  EXPECT_LT(*rsCfg->position, (100+ (2*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +10 ms 
+  for (int i = 0; i < 2; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100+(2*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+
+  // +2000 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  supla_esp_gpio_rs_add_task(0, 1);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+ 
+  // +240 ms 
+  for (int i = 0; i < 20; i++) {
+    curTime += 12000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+  EXPECT_GT(*rsCfg->position, (100+ (1*100)));
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +10 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 11000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_NEAR(*rsCfg->position, (100+(1*100)), 10);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 13000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  supla_esp_gpio_rs_add_task(0, 2);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+ 
+  // +240 ms 
+  for (int i = 0; i < 18; i++) {
+    curTime += 13000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+  EXPECT_LT(*rsCfg->position, (100+ (2*100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +50 ms 
+  for (int i = 0; i < 5; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_NEAR(*rsCfg->position, (100+(2*100)), 10);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+
+}
+
+TEST_F(RollerShutterTestsF, TwoRelaysOnProblem) {
+  uint32_t curTime = 100;
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  os_timer_func_t *rsTimerCb = lastTimerCb;
+
+  *rsCfg->full_opening_time = 25000; // 20 s
+  *rsCfg->full_closing_time = 25000; 
+  *rsCfg->position = 100 + (50*100); // actual position: (x - 100)/100 = 50%
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms 
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100 + (50*100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Trigger both down and up actions
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_DOWN, 0, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_UP, 0, 0);
+  // singe UP request just switched off DOWN relay, this action should be 
+  // scheduled as delayed trigger, so both relays should be off now
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_UP);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // simulate delayed trigger execution
+  curTime += 1000000;
+  rsTimerCb(rsCfg);
+  supla_esp_gpio_rs_set_relay(rsCfg, rsCfg->delayed_trigger.value, 0, 0);
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+  EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_UP); // TODO: fix
+
+}
+
+TEST(RollerShutterTests, GetRelayPos) {
+  int position = 0;
+  supla_roller_shutter_cfg_t *rs = &supla_rs_cfg[0];
+  rs->position = &position;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(nullptr), -1);
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), -1);
+
+  position = 99;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), -1);
+
+  position = 100;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 0);
+
+  position = 200;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 1);
+
+  position = 5100;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 50);
+
+  position = 10100;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 100);
+
+  position = 150;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 1);
+
+  position = 149;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 0);
+
+  position = 151;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 1);
+
+  position = 249;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 1);
+
+  position = 250;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 2);
+
+  position = 10100;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), 100);
+
+  position = 10101;
+  EXPECT_EQ(supla_esp_gpio_rs_get_current_position(rs), -1);
+
+}

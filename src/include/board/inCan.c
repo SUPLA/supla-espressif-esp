@@ -212,7 +212,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_set_channels(
     channels[2].Type = SUPLA_CHANNELTYPE_RELAY;
     channels[2].FuncList = SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER;
     channels[2].Default = SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER;
-    channels[2].value[0] = (*supla_rs_cfg[0].position) - 1;
+    channels[2].value[0] = supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[0]);
 
 #endif
 }
