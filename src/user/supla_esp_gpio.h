@@ -57,9 +57,6 @@ typedef struct {
 	uint8 flags;
 	uint8 channel;
 	unsigned _supla_int_t channel_flags;
-
-	unsigned int last_time;
-
 }supla_relay_cfg_t;
 
 typedef struct {

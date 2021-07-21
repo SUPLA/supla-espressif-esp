@@ -606,7 +606,6 @@ supla_esp_gpio_get_rs__cfg(int port) {
 char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
 	
     unsigned int t = system_get_time();
-    unsigned int *time = NULL;
     int a;
     char result = 0;
     char *state = NULL;
@@ -623,8 +622,6 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     for(a=0;a<RELAY_MAX_COUNT;a++)
     	if ( supla_relay_cfg[a].gpio_id == port ) {
 
-    		time = &supla_relay_cfg[a].last_time;
-
     		if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE
     			 || supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE )
     			state = &supla_esp_state.Relay[a];
@@ -640,10 +637,7 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     
     system_soft_wdt_stop();
 
-    if ( save_before == 1
-         && state != NULL
-    	 && ( time == NULL
-    	      || abs(t-(*time)) >= RELAY_MIN_DELAY ) ) {
+    if (save_before == 1 && state != NULL) {
 
 		*state = hi;
 		supla_esp_save_state(0);
@@ -657,59 +651,51 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     RELAY_BEFORE_CHANGE_STATE;
 	#endif
 
-    if ( time == NULL
-    	 || abs(t-(*time)) >= RELAY_MIN_DELAY ) {
+    //supla_log(LOG_DEBUG, "1. port = %i, hi = %i", port, _hi);
 
-        //supla_log(LOG_DEBUG, "1. port = %i, hi = %i", port, _hi);
+    ETS_GPIO_INTR_DISABLE();
+    supla_esp_gpio_set_hi(port, _hi);
+    ETS_GPIO_INTR_ENABLE();
 
-    	ETS_GPIO_INTR_DISABLE();
-    	supla_esp_gpio_set_hi(port, _hi);
-    	ETS_GPIO_INTR_ENABLE();
+#ifdef RELAY_DOUBLE_TRY
+#if RELAY_DOUBLE_TRY > 0
+    os_delay_us(RELAY_DOUBLE_TRY);
 
-		#ifdef RELAY_DOUBLE_TRY
-		#if RELAY_DOUBLE_TRY > 0
-			os_delay_us(RELAY_DOUBLE_TRY);
-	
-			ETS_GPIO_INTR_DISABLE();
-			supla_esp_gpio_set_hi(port, _hi);
-			ETS_GPIO_INTR_ENABLE();
-		#endif /*RELAY_DOUBLE_TRY > 0*/
-		#endif /*RELAY_DOUBLE_TRY*/
+    ETS_GPIO_INTR_DISABLE();
+    supla_esp_gpio_set_hi(port, _hi);
+    ETS_GPIO_INTR_ENABLE();
+#endif /*RELAY_DOUBLE_TRY > 0*/
+#endif /*RELAY_DOUBLE_TRY*/
 
-    	if ( time != NULL ) {
-    		*time = t;
-    	}
+    if ( rs_cfg != NULL ) {
 
-    	if ( rs_cfg != NULL ) {
+      if ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) == 0
+          && __supla_esp_gpio_relay_is_hi(rs_cfg->down) == 0 ) {
 
-    		if ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) == 0
-    			 && __supla_esp_gpio_relay_is_hi(rs_cfg->down) == 0 ) {
+        if ( rs_cfg->start_time != 0 ) {
+          rs_cfg->start_time = 0;
+        }
 
-    			if ( rs_cfg->start_time != 0 ) {
-    				rs_cfg->start_time = 0;
-    			}
-    			
-    			if ( rs_cfg->stop_time == 0 ) {
-    				rs_cfg->stop_time = t;
-    			}
-    			
+        if ( rs_cfg->stop_time == 0 ) {
+          rs_cfg->stop_time = t;
+        }
 
-    		} else if ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) != 0
-    				    || __supla_esp_gpio_relay_is_hi(rs_cfg->down) != 0 ) {
 
-    			if ( rs_cfg->start_time == 0 ) {
-    				rs_cfg->start_time = t;
-    			}
-    			
-    			if ( rs_cfg->stop_time != 0 ) {
-    				rs_cfg->stop_time = 0;
-    			}
+      } else if ( __supla_esp_gpio_relay_is_hi(rs_cfg->up) != 0
+          || __supla_esp_gpio_relay_is_hi(rs_cfg->down) != 0 ) {
 
-    		}
+        if ( rs_cfg->start_time == 0 ) {
+          rs_cfg->start_time = t;
+        }
 
-    	}
-    	result = 1;
+        if ( rs_cfg->stop_time != 0 ) {
+          rs_cfg->stop_time = 0;
+        }
+
+      }
+
     }
+    result = 1;
 
     //supla_log(LOG_DEBUG, "2. port = %i, hi = %i, time=%i, t=%i, %i", port, hi, *time, t, t-(*time));
 
@@ -1161,8 +1147,6 @@ supla_esp_gpio_init(void) {
 			} else if (supla_relay_cfg[a].gpio_id == 16) {
 				gpio16_output_conf();
 			}
-
-			supla_relay_cfg[a].last_time = 2147483647;
 
 			if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE ) {
 
