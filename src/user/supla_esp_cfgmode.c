@@ -98,15 +98,6 @@ typedef struct {
 
 typedef struct {
   unsigned int entertime;
-  ETSTimer response_timer;
-
-  char *header;
-  uint32 header_size;
-
-  char *content;
-  uint32 content_size;
-  uint32 pos;
-
 } _cfgmode_vars_t;
 
 _cfgmode_vars_t cfgmode_vars = {};
@@ -114,89 +105,35 @@ _cfgmode_vars_t cfgmode_vars = {};
 char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
     char dev_name[25], const char mac[6], const char data_saved);
 
-void ICACHE_FLASH_ATTR
-supla_esp_http_send_response_cb(struct espconn *pespconn) {
-  char *ptr = NULL;
-  uint32 size = 0;
-
-  if (cfgmode_vars.header) {
-    if (cfgmode_vars.pos >= cfgmode_vars.header_size) {
-      free(cfgmode_vars.header);
-      cfgmode_vars.header = NULL;
-      cfgmode_vars.pos = 0;
-      return;
-    } else {
-      ptr = &cfgmode_vars.header[cfgmode_vars.pos];
-      size = cfgmode_vars.header_size;
-    }
-  } else if (cfgmode_vars.content) {
-    if (cfgmode_vars.pos >= cfgmode_vars.content_size) {
-      free(cfgmode_vars.content);
-      cfgmode_vars.content = NULL;
-      cfgmode_vars.pos = 0;
-    } else {
-      ptr = &cfgmode_vars.content[cfgmode_vars.pos];
-      size = cfgmode_vars.content_size;
-    }
-  }
-
-  if (ptr == NULL) {
-    os_timer_disarm(&cfgmode_vars.response_timer);
-    return;
-  }
-
-  size -= cfgmode_vars.pos;
-
-  if (size > 200) {
-    size = 200;
-  }
-
-  if (0 == espconn_sent(pespconn, (unsigned char *)ptr, size)) {
-    cfgmode_vars.pos += size;
-  }
-}
-
 void ICACHE_FLASH_ATTR supla_esp_http_send_response(struct espconn *pespconn,
                                                     const char *code,
                                                     char *html) {
-  os_timer_disarm(&cfgmode_vars.response_timer);
-
-  cfgmode_vars.pos = 0;
-
-  if (cfgmode_vars.header) {
-    free(cfgmode_vars.header);
-    cfgmode_vars.header = NULL;
-  }
-
-  if (cfgmode_vars.content) {
-    free(cfgmode_vars.content);
-    cfgmode_vars.content = NULL;
-  }
-
-  cfgmode_vars.content_size = html != NULL ? strlen(html) : 0;
-  cfgmode_vars.content = cfgmode_vars.content_size ? html : NULL;
-
-  char header[] =
+  char header_tmpl[] =
       "HTTP/1.1 %s\r\nAccept-Ranges: bytes\r\nContent-Length: "
       "%i\r\nContent-Type: text/html; charset=UTF-8\r\nConnection: "
       "close\r\n\r\n";
 
   char c = 0;
-  cfgmode_vars.header_size =
-      ets_snprintf(&c, 1, header, code, cfgmode_vars.content_size) + 1;
+  uint32 content_size = html != NULL ? strlen(html) : 0;
 
-  cfgmode_vars.header = os_malloc(cfgmode_vars.header_size);
-  if (!cfgmode_vars.header) {
+  uint32 header_size = ets_snprintf(&c, 1, header_tmpl, code, content_size) + 1;
+
+  char *header = os_malloc(header_size);
+  if (!header) {
     return;
   }
 
-  ets_snprintf(cfgmode_vars.header, cfgmode_vars.header_size, header, code,
-               cfgmode_vars.content_size);
-  cfgmode_vars.header_size--;
+  ets_snprintf(header, header_size, header_tmpl, code, content_size);
 
-  os_timer_setfn(&cfgmode_vars.response_timer,
-                 (os_timer_func_t *)supla_esp_http_send_response_cb, pespconn);
-  os_timer_arm(&cfgmode_vars.response_timer, 10, 1);
+  c = espconn_sent(pespconn, (uint8 *)header, header_size - 1);
+
+  free(header);
+
+  if (c != 0 || content_size == 0) {
+    return;
+  }
+
+  espconn_sent(pespconn, (uint8 *)html, content_size);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_http_send__response(struct espconn *pespconn,
@@ -818,11 +755,12 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
   char *buffer = supla_esp_cfgmode_get_html_template(dev_name, mac, data_saved);
 #endif /*BOARD_CFG_HTML_TEMPLATE*/
 
-  supla_log(LOG_DEBUG, "HTTP OK (%i) Free heap size: %i", buffer != NULL,
-            system_get_free_heap_size());
-
   if (buffer) {
     supla_esp_http_ok((struct espconn *)arg, buffer);
+    free(buffer);
+
+    supla_log(LOG_DEBUG, "HTTP OK (%i) Free heap size: %i", buffer != NULL,
+              system_get_free_heap_size());
   }
 }
 
