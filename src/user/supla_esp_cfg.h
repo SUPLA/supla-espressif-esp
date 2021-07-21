@@ -76,6 +76,8 @@ typedef struct {
   uint32_t OvercurrentThreshold1;
   uint32_t OvercurrentThreshold2;
 
+  unsigned char MqttMinRefreshTime;
+
   char zero[200];
 
 } SuplaEspCfg;
