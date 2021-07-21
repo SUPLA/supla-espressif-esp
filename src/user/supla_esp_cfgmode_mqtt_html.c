@@ -184,7 +184,9 @@ const char supla_esp_cfgmode_html_main[] ICACHE_RODATA_ATTR =
     "name=\"qos\" min=\"0\" max=\"2\" type=\"number\" "
     "value=\"%i\"><label>QoS</label></i><i><select name=\"ret\"><option "
     "value=\"0\" %s>YES</option><option value=\"1\" "
-    "%s>NO</option></select><label>Retain</label></i></div>";
+    "%s>NO</option></select><label>Retain</label></i><i><input name=\"ppd\" "
+    "min=\"0\" max=\"%i\" type=\"number\" value=\"%i\"><label>Pool publication "
+    "delay (sec.)</label></i></div>";
 
 const char supla_esp_cfgmode_html_footer[] ICACHE_RODATA_ATTR =
     "<button "
@@ -253,7 +255,8 @@ uint32 ICACHE_FLASH_ATTR supla_esp_cfgmode_get_body(char *buffer,
       supla_esp_cfg.Username, supla_esp_cfg.MqttTopicPrefix,
       supla_esp_cfg.MqttQoS,
       !(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN) ? "selected" : "",
-      (supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN) ? "selected" : "");
+      (supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN) ? "selected" : "",
+      MQTT_POOL_PUBLICATION_MAX_DELAY, supla_esp_cfg.MqttPoolPublicationDelay);
 
   free(body_tmpl);
   return result;

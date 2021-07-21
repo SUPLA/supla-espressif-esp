@@ -63,15 +63,17 @@ typedef struct {
   uint32 connected_at_sec;
   uint32 disconnected_at_sec;
   unsigned _supla_int64_t uptime_refresh_time_ms;
-  uint32 ip;
+  unsigned _supla_int64_t hold_publishing_until_ms;
+  uint32 uint32 ip;
 
   unsigned short recv_len;
   uint8 recvbuf[MQTT_RECVBUF_SIZE];
   uint8 sendbuf[MQTT_SENDBUF_SIZE] __attribute__((aligned(4)));
 
   uint8 subscribe_idx;
-  uint8 publish_idx[32];
+  uint8 publish_idx[32];  // Publication pool
   uint8 publish_next;
+  uint32 pool_overrun_counter;
 
   uint16 prefix_len;
   char *prefix;
@@ -215,9 +217,24 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
   uint8 bit = 0;
   uint8 find_next = 1;
 
+  if (supla_esp_mqtt_vars->hold_publishing_until_ms) {
+    if (supla_esp_mqtt_vars->hold_publishing_until_ms > uptime_msec()) {
+      return 0;
+    }
+    supla_esp_mqtt_vars->hold_publishing_until_ms = 0;
+  }
+
   while (find_next) {
     if (supla_esp_mqtt_vars->publish_next == 255) {
       supla_esp_mqtt_vars->publish_next = 0;
+      supla_esp_mqtt_vars->pool_overrun_counter++;
+
+      if (supla_esp_cfg.MqttPoolPublicationDelay > 0 &&
+          supla_esp_mqtt_vars->pool_overrun_counter > 1) {
+        supla_esp_mqtt_vars->hold_publishing_until_ms =
+            uptime_msec() + supla_esp_cfg.MqttPoolPublicationDelay * 1000;
+        return 0;
+      }
     }
 
     while (supla_esp_mqtt_vars->publish_next < 255) {
@@ -460,6 +477,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
     supla_esp_set_state(LOG_NOTICE, "Broker connected");
     supla_esp_mqtt_set_status(CONN_STATUS_READY);
     supla_esp_mqtt_wants_subscribe();
+    supla_esp_mqtt_vars->hold_publishing_until_ms = 0;
+    supla_esp_mqtt_vars->pool_overrun_counter = 0;
     supla_esp_mqtt_vars->publish_next = BOARD_MAX_IDX;
     supla_esp_mqtt_wants_publish(1, 255);
 

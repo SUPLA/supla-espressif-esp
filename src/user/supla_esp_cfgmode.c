@@ -16,12 +16,11 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include <mem.h>
-
 #include "supla_esp_cfgmode.h"
 
 #include <espconn.h>
 #include <ip_addr.h>
+#include <mem.h>
 #include <osapi.h>
 #include <spi_flash.h>
 #include <user_interface.h>
@@ -71,15 +70,16 @@
 #define VAR_QOS 31  // MQTT QoS
 #define VAR_RET 32  // MQTT No Retain
 #define VAR_MAU 33  // MQTT Auth
+#define VAR_PPD 34  // MQTT Pool publication delay
 
-#define VAR_TH1 34  // Overcurrent threshold 1
-#define VAR_TH2 35  // Overcurrent threshold 2
+#define VAR_TH1 35  // Overcurrent threshold 1
+#define VAR_TH2 36  // Overcurrent threshold 2
 
 #ifdef CFG_TIME_VARIABLES
-#define VAR_T10 36
-#define VAR_T11 37
-#define VAR_T20 38
-#define VAR_T21 39
+#define VAR_T10 37
+#define VAR_T11 38
+#define VAR_T20 39
+#define VAR_T21 40
 #endif /*CFG_TIME_VARIABLES*/
 
 typedef struct {
@@ -382,6 +382,7 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char qos[3] = {'q', 'o', 's'};
       char ret[3] = {'r', 'e', 't'};
       char mau[3] = {'m', 'a', 'u'};
+      char ppd[3] = {'p', 'p', 'd'};
 
       char th1[3] = {'t', 'h', '1'};
       char th2[3] = {'t', 'h', '2'};
@@ -530,6 +531,11 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
+        } else if (memcmp(ppd, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_PPD;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
         } else if (memcmp(th1, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_TH1;
           pVars->buff_size = 12;
@@ -654,6 +660,12 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
             cfg->Flags |= CFG_FLAG_MQTT_NO_AUTH;
           }
 
+        } else if (pVars->current_var == VAR_PPD) {
+          int poolPublicationDelay = pVars->intval[0] - '0';
+          if (poolPublicationDelay >= 0 &&
+              poolPublicationDelay <= MQTT_POOL_PUBLICATION_MAX_DELAY) {
+            cfg->MqttPoolPublicationDelay = poolPublicationDelay;
+          }
         } else if (pVars->current_var == VAR_TH1) {
           cfg->OvercurrentThreshold1 = cfg_str2centInt(pVars);
           supla_log(LOG_DEBUG, "Found TH1 = %d", cfg->OvercurrentThreshold1);

@@ -76,7 +76,7 @@ typedef struct {
   uint32_t OvercurrentThreshold1;
   uint32_t OvercurrentThreshold2;
 
-  unsigned char MqttMinRefreshTime;
+  unsigned char MqttPoolPublicationDelay;
 
   char zero[200];
 
