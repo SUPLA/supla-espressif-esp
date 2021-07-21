@@ -64,7 +64,7 @@ typedef struct {
   uint32 disconnected_at_sec;
   unsigned _supla_int64_t uptime_refresh_time_ms;
   unsigned _supla_int64_t hold_publishing_until_ms;
-  uint32 uint32 ip;
+  uint32 ip;
 
   unsigned short recv_len;
   uint8 recvbuf[MQTT_RECVBUF_SIZE];
