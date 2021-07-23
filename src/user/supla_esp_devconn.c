@@ -1084,37 +1084,75 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 				if ( ot < 0 )
 					ot = 0;
 
-				if ( ct != supla_esp_cfg.Time2[a]
-					 || ot != supla_esp_cfg.Time1[a] ) {
+        bool resetRsConfig = false;
+        bool performAutoCalibration = false;
+        if (supla_rs_cfg[a].up->channel_flags &
+            SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION) {
+          // Handling of time when auto calibration is supported
+          if (ct != 0 || ot != 0) {
+            if (supla_esp_cfg.RsAutoCalibrationFlag[a] == RS_AUTOCALIBRATION_ENABLED) {
+              supla_esp_cfg.RsAutoCalibrationFlag[a] = RS_AUTOCALIBRATION_DISABLED;
+              resetRsConfig = true;
+            } else {
+              if (ct != supla_esp_cfg.Time2[a] || ot != supla_esp_cfg.Time1[a]) {
+                resetRsConfig = true;
+              }
+            }
+          } else {
+            // ct == 0 && ot == 0
+            if (supla_esp_cfg.RsAutoCalibrationFlag[a] == RS_AUTOCALIBRATION_DISABLED) {
+              // enable auto calibration
+              supla_esp_cfg.RsAutoCalibrationFlag[a] = RS_AUTOCALIBRATION_ENABLED;
+              performAutoCalibration = true;
+              resetRsConfig = true;
+            } else {
+              performAutoCalibration = true;
+              // If auto calibration is enabled and send times are 0, then do
+              // nothing here
+            }
+          }
+        } else {
+          // Default behavior when auto calibration is not supported
+          if (ct != supla_esp_cfg.Time2[a] || ot != supla_esp_cfg.Time1[a]) {
+            resetRsConfig = true;
+          }
+        }
+        if (resetRsConfig) {
+          supla_esp_cfg.Time2[a] = ct;
+          supla_esp_cfg.Time1[a] = ot;
 
-					supla_esp_cfg.Time2[a] = ct;
-					supla_esp_cfg.Time1[a] = ot;
+          // Reset position to 0. It means that RS is not calibrated
+          supla_esp_state.rs_position[a] = 0;
 
-					supla_esp_state.rs_position[a] = 0;
-					supla_esp_save_state(0);
-					supla_esp_cfg_save(&supla_esp_cfg);
+          supla_esp_save_state(0);
+          supla_esp_cfg_save(&supla_esp_cfg);
+        }
 
-					//supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
-
-				}
-
-				//supla_log(LOG_DEBUG, "V=%i", v);
+        // calibration is not needed if times are already set
+        if (performAutoCalibration &&
+            (supla_esp_cfg.Time1[a] > 0 || supla_esp_cfg.Time2[a] > 0)) {
+          performAutoCalibration = false;
+        }
 
 				if ( v >= 10 && v <= 110 ) {
-
 					supla_esp_gpio_rs_add_task(a, v-10);
-
-				} else {
-
+				} else if (!performAutoCalibration) {
 					if ( v == 1 ) {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 1);
+						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
 					} else if ( v == 2 ) {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 1);
+						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
 					} else {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 1);
+						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
 					}
-
-				}
+				} else {
+          // performAutoCalibration == true
+          if (v == 1) {
+            supla_esp_gpio_rs_add_task(a, 100); // close
+          } else if (v == 2) {
+            supla_esp_gpio_rs_add_task(a, 0); // open
+          }
+          supla_esp_gpio_rs_start_auto_calibration(&supla_rs_cfg[a]);
+        }
 
 				Success = 1;
 				return;

@@ -76,29 +76,34 @@ typedef struct {
 
 typedef struct {
 
-	supla_relay_cfg_t *up;
-	supla_relay_cfg_t *down;
+  supla_relay_cfg_t *up;
+  supla_relay_cfg_t *down;
 
-	int *position;
+  int *position;
 
   unsigned int *full_opening_time;
   unsigned int *full_closing_time;
 
-	unsigned int last_comm_time;
+  unsigned int *last_external_opening_time;
+  unsigned int *last_external_closing_time;
 
-	unsigned int up_time;
-	unsigned int down_time;
-	unsigned int last_time;
-	unsigned int stop_time;
-	unsigned int start_time;
+  unsigned int last_comm_time;
 
-	ETSTimer timer;
-	supla_rs_delayed_trigger delayed_trigger;
-	rs_task_t task;
+  unsigned int up_time;
+  unsigned int down_time;
+  unsigned int last_time;
+  unsigned int stop_time;
+  unsigned int start_time;
 
-	int last_position;
+  unsigned int auto_calibration_step;
 
-}supla_roller_shutter_cfg_t;
+  ETSTimer timer;
+  supla_rs_delayed_trigger delayed_trigger;
+  rs_task_t task;
+
+  int last_position;
+
+} supla_roller_shutter_cfg_t;
 
 extern supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
@@ -148,6 +153,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
 supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 sint8 supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg);
+void supla_esp_gpio_rs_start_auto_calibration(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
 #endif /* SUPLA_ESP_GPIO_H_ */

@@ -101,4 +101,7 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_get_channel_int_params(unsigned char channel_number);
 #endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value);
+
 #endif /* SUPLA_ESP_CLIENT_H_ */

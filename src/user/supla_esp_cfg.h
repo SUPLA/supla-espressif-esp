@@ -27,6 +27,9 @@
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
 
+#define RS_AUTOCALIBRATION_DISABLED 0
+#define RS_AUTOCALIBRATION_ENABLED 1
+
 typedef struct {
   char TAG[6];
   char GUID[SUPLA_GUID_SIZE];
@@ -78,6 +81,12 @@ typedef struct {
 
   unsigned char MqttPoolPublicationDelay;
 
+  // auto calibration flag is used to determine what was last configuration
+  // set by user on server/cfgmode. When user configured closing/opening
+  // time to 0, it means that auto calibration should be enabled. 
+  // Otherwise it is set to disabled.
+  uint8_t RsAutoCalibrationFlag[RS_MAX_COUNT];
+
   char zero[200];
 
 } SuplaEspCfg;
@@ -86,37 +95,37 @@ typedef struct {
 
 	char TAG[6];
 	char GUID[SUPLA_GUID_SIZE];
-    char AuthKey[SUPLA_AUTHKEY_SIZE];
+  char AuthKey[SUPLA_AUTHKEY_SIZE];
 
 	char Server[SERVER_MAXSIZE];
 	char Email[SUPLA_EMAIL_MAXSIZE];
 
 	int LocationID;
-    char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
+  char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
 
-    char WIFI_SSID[WIFI_SSID_MAXSIZE];
-    char WIFI_PWD[WIFI_PWD_MAXSIZE];
+  char WIFI_SSID[WIFI_SSID_MAXSIZE];
+  char WIFI_PWD[WIFI_PWD_MAXSIZE];
 
-    char CfgButtonType;
-    char Button1Type;
-    char Button2Type;
+  char CfgButtonType;
+  char Button1Type;
+  char Button2Type;
 
-    char StatusLedOff;
-    char InputCfgTriggerOff;
+  char StatusLedOff;
+  char InputCfgTriggerOff;
 
-    char FirmwareUpdate;
-    char Test;
+  char FirmwareUpdate;
+  char Test;
 
-    char UpsideDown;
+  char UpsideDown;
 
-    unsigned int Time1[2];
-    unsigned int Time2[2];
+  unsigned int Time1[2];
+  unsigned int Time2[2];
 
-    char Trigger;
+  char Trigger;
 
-    char zero[200];
+  char zero[200];
 
-}SuplaEspCfg_old_v6;
+} SuplaEspCfg_old_v6;
 
 typedef struct {
 

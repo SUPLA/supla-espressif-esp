@@ -19,6 +19,7 @@
 #include "board_stub.h"
 #include <os_type.h>
 #include <proto.h>
+#include <assert.h>
 
 #include <supla_esp.h>
 
@@ -36,3 +37,16 @@ void supla_esp_board_gpio_init(void) {
     gpioInitCb();
   }
 };
+
+bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
+  assert(rs_cfg);
+  if (rs_cfg->up_time > 0 && rs_cfg->up_time < 1100) {
+    return true;
+  }
+
+  if (rs_cfg->down_time > 0 && rs_cfg->down_time < 1200) {
+    return true;
+  }
+
+  return false;
+}
