@@ -48,6 +48,7 @@
 #define MQTT_KEEP_ALIVE_SEC 32
 
 #define UPTIME_REFRESH_INTERVAL_MSEC 1000
+#define MQTT_SEND_BUFFER_FULL_HOLD_TIME_MS 5000
 
 typedef struct {
   uint8 started;
@@ -295,8 +296,15 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
       } else {
         if (r == MQTT_ERROR_SEND_BUFFER_IS_FULL) {
           supla_esp_mqtt_vars->client.error = MQTT_OK;
+
+          // The idea of waiting a predetermined amount of time when the queue
+          // is full is not entirely satisfactory. Perhaps this will require a
+          // change of concept.
+          supla_esp_mqtt_vars->hold_publishing_until_ms =
+              uptime_msec() + MQTT_SEND_BUFFER_FULL_HOLD_TIME_MS;
         }
-        supla_log(LOG_DEBUG, "MQTT Publish Error %s. Will retry...",
+        supla_log(LOG_DEBUG, "MQTT Publish Error %s. MQ_len %i. Will retry...",
+                  mqtt_mq_length(&supla_esp_mqtt_vars->client.mq),
                   mqtt_error_str(r));
       }
       find_next = 0;
@@ -393,6 +401,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_recv_cb(void *arg, char *pdata,
   memcpy(&supla_esp_mqtt_vars->recvbuf[supla_esp_mqtt_vars->recv_len], pdata,
          len);
   supla_esp_mqtt_vars->recv_len += len;
+
+  mqtt_sync(&supla_esp_mqtt_vars->client);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_on_message_received(
@@ -591,7 +601,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_dns__found(ip_addr_t *ip) {
 
   os_timer_setfn(&supla_esp_mqtt_vars->iterate_timer,
                  (os_timer_func_t *)supla_esp_mqtt_iterate, NULL);
-  os_timer_arm(&supla_esp_mqtt_vars->iterate_timer, 100, 1);
+  os_timer_arm(&supla_esp_mqtt_vars->iterate_timer, 50, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_dns_found_cb(const char *name,
