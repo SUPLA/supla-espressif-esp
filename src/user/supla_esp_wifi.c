@@ -38,7 +38,9 @@ typedef struct {
 
 _supla_esp_wifi_vars_t supla_esp_wifi_vars = {};
 
-void ICACHE_FLASH_ATTR supla_esp_wifi_init(void) {}
+void ICACHE_FLASH_ATTR supla_esp_wifi_init(void) {
+  supla_esp_wifi_vars.last_status = STATION_GOT_IP + 1;
+}
 
 void ICACHE_FLASH_ATTR supla_esp_wifi_check_status(void *ptr) {
   uint8 status = wifi_station_get_connect_status();
@@ -80,9 +82,6 @@ void ICACHE_FLASH_ATTR
 supla_esp_wifi_station_connect(_wifi_void_status status_cb) {
   supla_esp_wifi_vars.status_cb = status_cb;
 
-  supla_esp_wifi_vars.last_status = STATION_GOT_IP + 1;
-  supla_esp_wifi_check_status(NULL);
-
   supla_esp_set_state(LOG_NOTICE, "WiFi - Connecting...");
 
   wifi_station_disconnect();
@@ -109,6 +108,10 @@ supla_esp_wifi_station_connect(_wifi_void_status status_cb) {
   wifi_station_set_auto_connect(1);
 
   wifi_station_connect();
+
+  if (supla_esp_wifi_vars.last_status == STATION_GOT_IP + 1) {
+    supla_esp_wifi_check_status(NULL)
+  }
 
   os_timer_disarm(&supla_esp_wifi_vars.timer);
   os_timer_setfn(&supla_esp_wifi_vars.timer,
