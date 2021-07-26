@@ -110,7 +110,7 @@ supla_esp_wifi_station_connect(_wifi_void_status status_cb) {
   wifi_station_connect();
 
   if (supla_esp_wifi_vars.last_status == STATION_GOT_IP + 1) {
-    supla_esp_wifi_check_status(NULL)
+    supla_esp_wifi_check_status(NULL);
   }
 
   os_timer_disarm(&supla_esp_wifi_vars.timer);
