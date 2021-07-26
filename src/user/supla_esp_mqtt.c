@@ -169,7 +169,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_get_message_for_publication(
     char **topic_name, void **message, size_t *message_size, uint8 index) {
   if (index == 209) {
     return supla_esp_mqtt_prepare_message(topic_name, message, message_size,
-                                          "connected", "true");
+                                          "state/connected", "true");
   }
 
 #ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
@@ -469,7 +469,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
       (unsigned char)supla_esp_cfg.GUID[15]);
 
   char *will_topic = NULL;
-  supla_esp_mqtt_prepare_topic(&will_topic, "connected");
+  supla_esp_mqtt_prepare_topic(&will_topic, "state/connected");
 
   char *username = NULL;
   char *password = NULL;
@@ -1293,7 +1293,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/"
+      "{\"avty\":{\"topic\":\"%s/state/"
       "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
       "\"false\"},\"~\":\"%s/channels/"
       "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
@@ -1349,7 +1349,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/"
+      "{\"avty\":{\"topic\":\"%s/state"
       "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
       "\"false\"},\"~\":\"%s/channels/"
       "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
@@ -1622,7 +1622,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
       "execute_action\",\"dev_cla\":\"shutter\",\"pl_open\":\"REVEAL\",\"pl_"
       "cls\":\"SHUT\",\"pl_stop\":\"STOP\",\"set_pos_t\":\"~/set/"
       "closing_percentage\",\"pos_t\":\"~/state/"
-      "shut\",\"pos_open\":0,\"pos_clsd\":100,\"avty_t\":\"%s/"
+      "shut\",\"pos_open\":0,\"pos_clsd\":100,\"avty_t\":\"%s/state"
       "connected\",\"pl_avail\":\"true\",\"pl_not_avail\":\"false\",\"pos_"
       "tpl\":\"{%% if value is defined %%}{%% if value | int < 0 %%}0{%% elif "
       "value | int > 100 %%}100{%% else %%}{{value | int}}{%% endif %%}{%% "
