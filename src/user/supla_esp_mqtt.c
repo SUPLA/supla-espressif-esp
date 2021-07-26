@@ -131,7 +131,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
     user_prefix_len += 1;
   }
   uint8 name_len = strnlen(MQTT_DEVICE_NAME, 100);
-  size_t prefix_size = user_prefix_len + name_len + 21;
+  size_t prefix_size = user_prefix_len + name_len + 22;
   supla_esp_mqtt_vars->prefix = malloc(prefix_size);
 
   if (supla_esp_mqtt_vars->prefix) {
