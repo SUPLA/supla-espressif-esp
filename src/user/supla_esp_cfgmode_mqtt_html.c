@@ -193,7 +193,7 @@ const char supla_esp_cfgmode_html_footer[] ICACHE_RODATA_ATTR =
     "type=\"submit\">SAVE</button><br><br><button type=\"button\" "
     "onclick=\"saveAndReboot();\">SAVE &amp; RESTART</button><input "
     "type=\"hidden\" name=\"rbt\" value=\"0\" "
-    "/></form></div><br><br></body></html>!";
+    "/></form></div><br><br></body></html>";
 
 void ICACHE_FLASH_ATTR supla_esp_cfgmode_get_rostring(char *buf,
                                                       const char *addr) {
