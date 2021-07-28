@@ -48,6 +48,7 @@
 #define MQTT_KEEP_ALIVE_SEC 32
 
 #define UPTIME_REFRESH_INTERVAL_MSEC 1000
+#define MQTT_SEND_BUFFER_FULL_HOLD_TIME_MS 5000
 
 typedef struct {
   uint8 started;
@@ -130,7 +131,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
     user_prefix_len += 1;
   }
   uint8 name_len = strnlen(MQTT_DEVICE_NAME, 100);
-  size_t prefix_size = user_prefix_len + name_len + 21;
+  size_t prefix_size = user_prefix_len + name_len + 22;
   supla_esp_mqtt_vars->prefix = malloc(prefix_size);
 
   if (supla_esp_mqtt_vars->prefix) {
@@ -168,7 +169,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_get_message_for_publication(
     char **topic_name, void **message, size_t *message_size, uint8 index) {
   if (index == 209) {
     return supla_esp_mqtt_prepare_message(topic_name, message, message_size,
-                                          "connected", "true");
+                                          "state/connected", "true");
   }
 
 #ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
@@ -295,8 +296,15 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
       } else {
         if (r == MQTT_ERROR_SEND_BUFFER_IS_FULL) {
           supla_esp_mqtt_vars->client.error = MQTT_OK;
+
+          // The idea of waiting a predetermined amount of time when the queue
+          // is full is not entirely satisfactory. Perhaps this will require a
+          // change of concept.
+          supla_esp_mqtt_vars->hold_publishing_until_ms =
+              uptime_msec() + MQTT_SEND_BUFFER_FULL_HOLD_TIME_MS;
         }
-        supla_log(LOG_DEBUG, "MQTT Publish Error %s. Will retry...",
+        supla_log(LOG_DEBUG, "MQTT Publish Error %s. MQ_len %i. Will retry...",
+                  mqtt_mq_length(&supla_esp_mqtt_vars->client.mq),
                   mqtt_error_str(r));
       }
       find_next = 0;
@@ -393,6 +401,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_recv_cb(void *arg, char *pdata,
   memcpy(&supla_esp_mqtt_vars->recvbuf[supla_esp_mqtt_vars->recv_len], pdata,
          len);
   supla_esp_mqtt_vars->recv_len += len;
+
+  mqtt_sync(&supla_esp_mqtt_vars->client);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_on_message_received(
@@ -459,7 +469,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
       (unsigned char)supla_esp_cfg.GUID[15]);
 
   char *will_topic = NULL;
-  supla_esp_mqtt_prepare_topic(&will_topic, "connected");
+  supla_esp_mqtt_prepare_topic(&will_topic, "state/connected");
 
   char *username = NULL;
   char *password = NULL;
@@ -591,7 +601,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_dns__found(ip_addr_t *ip) {
 
   os_timer_setfn(&supla_esp_mqtt_vars->iterate_timer,
                  (os_timer_func_t *)supla_esp_mqtt_iterate, NULL);
-  os_timer_arm(&supla_esp_mqtt_vars->iterate_timer, 100, 1);
+  os_timer_arm(&supla_esp_mqtt_vars->iterate_timer, 50, 1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_dns_found_cb(const char *name,
@@ -1283,7 +1293,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/"
+      "{\"avty\":{\"topic\":\"%s/state/"
       "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
       "\"false\"},\"~\":\"%s/channels/"
       "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
@@ -1339,7 +1349,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/"
+      "{\"avty\":{\"topic\":\"%s/state"
       "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
       "\"false\"},\"~\":\"%s/channels/"
       "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
@@ -1612,7 +1622,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
       "execute_action\",\"dev_cla\":\"shutter\",\"pl_open\":\"REVEAL\",\"pl_"
       "cls\":\"SHUT\",\"pl_stop\":\"STOP\",\"set_pos_t\":\"~/set/"
       "closing_percentage\",\"pos_t\":\"~/state/"
-      "shut\",\"pos_open\":0,\"pos_clsd\":100,\"avty_t\":\"%s/"
+      "shut\",\"pos_open\":0,\"pos_clsd\":100,\"avty_t\":\"%s/state"
       "connected\",\"pl_avail\":\"true\",\"pl_not_avail\":\"false\",\"pos_"
       "tpl\":\"{%% if value is defined %%}{%% if value | int < 0 %%}0{%% elif "
       "value | int > 100 %%}100{%% else %%}{{value | int}}{%% endif %%}{%% "
