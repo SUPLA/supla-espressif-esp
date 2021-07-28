@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_BUILD_TYPE Debug)
 
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address -static-libasan)
 
 include_directories(doubles/)
 include_directories(../)
