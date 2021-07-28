@@ -71,6 +71,7 @@ typedef struct {
 
 	ETSTimer timer;
 	uint8 value;
+  bool autoCal_request;
 
 }supla_rs_delayed_trigger;
 
@@ -84,9 +85,6 @@ typedef struct {
   unsigned int *full_opening_time;
   unsigned int *full_closing_time;
 
-  unsigned int *last_external_opening_time;
-  unsigned int *last_external_closing_time;
-
   unsigned int last_comm_time;
 
   unsigned int up_time;
@@ -95,13 +93,15 @@ typedef struct {
   unsigned int stop_time;
   unsigned int start_time;
 
-  unsigned int auto_calibration_step;
+  unsigned int autoCal_step;
 
   ETSTimer timer;
   supla_rs_delayed_trigger delayed_trigger;
   rs_task_t task;
 
   int last_position;
+  bool performAutoCalibration;
+  bool autoCal_button_request;
 
 } supla_roller_shutter_cfg_t;
 
@@ -153,7 +153,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
 supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 sint8 supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg);
-void supla_esp_gpio_rs_start_auto_calibration(supla_roller_shutter_cfg_t *rs_cfg);
+void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
 #endif /* SUPLA_ESP_GPIO_H_ */

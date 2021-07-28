@@ -1085,7 +1085,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 					ot = 0;
 
         bool resetRsConfig = false;
-        bool performAutoCalibration = false;
+        supla_rs_cfg[a].performAutoCalibration = false;
         if (supla_rs_cfg[a].up->channel_flags &
             SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION) {
           // Handling of time when auto calibration is supported
@@ -1103,10 +1103,10 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
             if (supla_esp_cfg.RsAutoCalibrationFlag[a] == RS_AUTOCALIBRATION_DISABLED) {
               // enable auto calibration
               supla_esp_cfg.RsAutoCalibrationFlag[a] = RS_AUTOCALIBRATION_ENABLED;
-              performAutoCalibration = true;
+              supla_rs_cfg[a].performAutoCalibration = true;
               resetRsConfig = true;
-            } else {
-              performAutoCalibration = true;
+            } else if (supla_rs_cfg[a].autoCal_step == 0) {
+              supla_rs_cfg[a].performAutoCalibration = true;
               // If auto calibration is enabled and send times are 0, then do
               // nothing here
             }
@@ -1129,29 +1129,19 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
         }
 
         // calibration is not needed if times are already set
-        if (performAutoCalibration &&
+        if (supla_rs_cfg[a].performAutoCalibration &&
             (supla_esp_cfg.Time1[a] > 0 || supla_esp_cfg.Time2[a] > 0)) {
-          performAutoCalibration = false;
+          supla_rs_cfg[a].performAutoCalibration = false;
         }
 
 				if ( v >= 10 && v <= 110 ) {
 					supla_esp_gpio_rs_add_task(a, v-10);
-				} else if (!performAutoCalibration) {
-					if ( v == 1 ) {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
-					} else if ( v == 2 ) {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
-					} else {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
-					}
-				} else {
-          // performAutoCalibration == true
-          if (v == 1) {
-            supla_esp_gpio_rs_add_task(a, 100); // close
-          } else if (v == 2) {
-            supla_esp_gpio_rs_add_task(a, 0); // open
-          }
-          supla_esp_gpio_rs_start_auto_calibration(&supla_rs_cfg[a]);
+        } else if ( v == 1 ) {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
+        } else if ( v == 2 ) {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
+        } else {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
         }
 
 				Success = 1;
