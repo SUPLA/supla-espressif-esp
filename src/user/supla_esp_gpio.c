@@ -61,6 +61,31 @@ static ETSTimer supla_gpio_timer2;
 unsigned char supla_esp_restart_on_cfg_press = 0;
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+int GPIO_ICACHE_FLASH
+supla_esp_gpio_rs_get_idx_by_ptr(supla_roller_shutter_cfg_t *rs_cfg) {
+  for (int i = 0; i < RS_MAX_COUNT; i++) {
+    if (&supla_rs_cfg[i] == rs_cfg) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void supla_esp_gpio_rs_check_if_autocal_is_needed(
+    supla_roller_shutter_cfg_t *rs_cfg) {
+  if (rs_cfg == NULL) {
+    return;
+  }
+  int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
+
+  if (rs_cfg->up->channel_flags & SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION &&
+      supla_esp_cfg.RsAutoCalibrationFlag[idx] == RS_AUTOCALIBRATION_ENABLED &&
+      *rs_cfg->full_opening_time == 0 && *rs_cfg->full_closing_time == 0 && 
+      rs_cfg->autoCal_step == 0) {
+    rs_cfg->performAutoCalibration = true;
+  }
+}
+
 sint8 supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg) {
   sint8 result = -1;
   if (rs_cfg && *rs_cfg->position >= 100 && *rs_cfg->position <= 10100) {
@@ -446,21 +471,6 @@ void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
   }
 }
 
-void supla_esp_gpio_rs_check_if_autocal_is_needed(
-    supla_roller_shutter_cfg_t *rs_cfg) {
-  if (rs_cfg == NULL) {
-    return;
-  }
-  int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
-
-  if (rs_cfg->up->channel_flags & SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION &&
-      supla_esp_cfg.RsAutoCalibrationFlag[idx] == RS_AUTOCALIBRATION_ENABLED &&
-      *rs_cfg->full_opening_time == 0 && *rs_cfg->full_closing_time == 0 && 
-      rs_cfg->autoCal_step == 0) {
-    rs_cfg->performAutoCalibration = true;
-  }
-}
-
 void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	supla_roller_shutter_cfg_t *rs_cfg = (supla_roller_shutter_cfg_t*)timer_arg;
@@ -543,16 +553,6 @@ supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg) {
 	rs_cfg->task.direction = RS_DIRECTION_NONE;
 
 	supla_esp_save_state(RS_SAVE_STATE_DELAY);
-}
-
-int GPIO_ICACHE_FLASH
-supla_esp_gpio_rs_get_idx_by_ptr(supla_roller_shutter_cfg_t *rs_cfg) {
-  for (int i = 0; i < RS_MAX_COUNT; i++) {
-    if (&supla_rs_cfg[i] == rs_cfg) {
-      return i;
-    }
-  }
-  return -1;
 }
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
