@@ -84,6 +84,8 @@ typedef struct {
 
   unsigned int *full_opening_time;
   unsigned int *full_closing_time;
+  unsigned int *auto_opening_time;
+  unsigned int *auto_closing_time;
 
   unsigned int last_comm_time;
 

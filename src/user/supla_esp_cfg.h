@@ -81,11 +81,8 @@ typedef struct {
 
   unsigned char MqttPoolPublicationDelay;
 
-  // auto calibration flag is used to determine what was last configuration
-  // set by user on server/cfgmode. When user configured closing/opening
-  // time to 0, it means that auto calibration should be enabled. 
-  // Otherwise it is set to disabled.
-  uint8_t RsAutoCalibrationFlag[RS_MAX_COUNT];
+  unsigned int AutoCalOpenTime[RS_MAX_COUNT];
+  unsigned int AutoCalCloseTime[RS_MAX_COUNT];
 
   char zero[200];
 
