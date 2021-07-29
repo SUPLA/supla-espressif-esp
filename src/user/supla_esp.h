@@ -79,8 +79,20 @@
 #ifndef RS_AUTOCAL_FILTERING_TIME
 // 100 ms of filtering time since RS start movement and we start to check if
 // RS motor is taking current
-#define RS_AUTOCAL_FILTERING_TIME 100
+#define RS_AUTOCAL_FILTERING_TIME 300
 #endif /*RS_AUTOCAL_FILTERING_TIME*/
+
+#ifndef RS_AUTOCAL_MIN_TIME
+// auto calibration with calculated times below 500 ms will be considered as
+// error
+#define RS_AUTOCAL_MIN_TIME 500
+#endif /*RS_AUTOCAL_MIN_TIME*/
+
+#ifndef RS_AUTOCAL_MAX_TIME
+// auto calibration with calculated time above 9 min 50 s will be considered as
+// error
+#define RS_AUTOCAL_MAX_TIME ((9 * 60 + 50) * 1000)
+#endif /*RS_AUTOCAL_MAX_TIME*/
 
 #ifndef CFG_TIME1_COUNT
 #define CFG_TIME1_COUNT 8

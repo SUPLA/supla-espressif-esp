@@ -26,6 +26,8 @@
 const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 
 testBoardGpioInitCb *gpioInitCb = NULL;
+int upTime = 1100;
+int downTime = 1200;
 
 void supla_esp_board_send_channel_values_with_delay(void *srpc){};
 void supla_esp_board_set_device_name(char *buffer, uint8 buffer_size){};
@@ -40,11 +42,11 @@ void supla_esp_board_gpio_init(void) {
 
 bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
   assert(rs_cfg);
-  if (rs_cfg->up_time > 0 && rs_cfg->up_time < 1100) {
+  if (rs_cfg->up_time > 0 && rs_cfg->up_time < upTime) {
     return true;
   }
 
-  if (rs_cfg->down_time > 0 && rs_cfg->down_time < 1200) {
+  if (rs_cfg->down_time > 0 && rs_cfg->down_time < downTime) {
     return true;
   }
 

@@ -436,6 +436,16 @@ bool supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
 #endif /*RS_AUTOCALIBRATION_SUPPORTED*/
 }
 
+void supla_esp_gpio_rs_abort_calibration(supla_roller_shutter_cfg_t *rs_cfg) {
+
+          rs_cfg->autoCal_step = 0;
+          *rs_cfg->auto_opening_time = 0;
+          *rs_cfg->auto_closing_time = 0;
+          *rs_cfg->position = 0;
+          // off with cancel task
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 0);
+}
+
 void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
   if (rs_cfg == NULL || rs_cfg->autoCal_step == 0) {
     return;
@@ -455,28 +465,44 @@ void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
         rs_cfg->autoCal_step = 2;
         rs_cfg->autoCal_button_request = true;
         supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
+      } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME) {
+        supla_esp_gpio_rs_abort_calibration(rs_cfg);
       }
       break;
     }
     case 2: {
       if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
-        rs_cfg->autoCal_step = 3;
-        *rs_cfg->auto_closing_time = rs_cfg->down_time;
-        rs_cfg->autoCal_button_request = true;
-        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
+        if (rs_cfg->down_time < RS_AUTOCAL_MIN_TIME) {
+          // calibration failed
+          supla_esp_gpio_rs_abort_calibration(rs_cfg);
+        } else {
+          rs_cfg->autoCal_step = 3;
+          *rs_cfg->auto_closing_time = rs_cfg->down_time;
+          rs_cfg->autoCal_button_request = true;
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
+        }
+      } else if (rs_cfg->down_time > RS_AUTOCAL_MAX_TIME) {
+        supla_esp_gpio_rs_abort_calibration(rs_cfg);
       }
       break;
     }
     case 3: {
       if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
-        rs_cfg->autoCal_step = 0;
-        *rs_cfg->auto_opening_time = rs_cfg->up_time;
+        if (rs_cfg->up_time < RS_AUTOCAL_MIN_TIME) {
+          // calibration failed
+          supla_esp_gpio_rs_abort_calibration(rs_cfg);
+        } else {
+          rs_cfg->autoCal_step = 0;
+          *rs_cfg->auto_opening_time = rs_cfg->up_time;
 
-        *rs_cfg->position = 100; // fully open and calibrated
-        supla_esp_save_state(RS_SAVE_STATE_DELAY);
-        supla_esp_cfg_save(&supla_esp_cfg);
-        rs_cfg->autoCal_button_request = true;
-        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
+          *rs_cfg->position = 100; // fully open and calibrated
+          supla_esp_save_state(RS_SAVE_STATE_DELAY);
+          supla_esp_cfg_save(&supla_esp_cfg);
+          rs_cfg->autoCal_button_request = true;
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
+        }
+      } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME) {
+        supla_esp_gpio_rs_abort_calibration(rs_cfg);
       }
       break;
     }
@@ -498,9 +524,18 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
   if (supla_esp_gpio_rs_is_autocal_enabled(idx)) {
     full_opening_time = *rs_cfg->auto_opening_time;
     full_closing_time = *rs_cfg->auto_closing_time;
+    if (full_opening_time == 0 && full_closing_time == 0) {
+      *rs_cfg->position = 0;
+    }
   } else {
     full_opening_time = *rs_cfg->full_opening_time;
     full_closing_time = *rs_cfg->full_closing_time;
+    if (*rs_cfg->auto_closing_time != 0 || *rs_cfg->auto_opening_time != 0 || rs_cfg->autoCal_step != 0) {
+      *rs_cfg->auto_opening_time = 0;
+      *rs_cfg->auto_closing_time = 0;
+      *rs_cfg->position = 0;
+      rs_cfg->autoCal_step = 0;
+    }
   }
 
 	if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) ) {
