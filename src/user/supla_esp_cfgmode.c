@@ -197,13 +197,14 @@ int ICACHE_FLASH_ATTR HexToInt(char *str, int len) {
 
   return result;
 };
-int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
+
+unsigned int ICACHE_FLASH_ATTR cfg_str2int(const char *str) {
   int result = 0;
 
   short s = 0;
-  while (pVars->intval[s] != 0) {
-    if (pVars->intval[s] >= '0' && pVars->intval[s] <= '9') {
-      result = result * 10 + pVars->intval[s] - '0';
+  while (str[s] != 0) {
+    if (str[s] >= '0' && str[s] <= '9') {
+      result = result * 10 + str[s] - '0';
     }
 
     s++;
@@ -212,22 +213,23 @@ int ICACHE_FLASH_ATTR cfg_str2int(TrivialHttpParserVars *pVars) {
   return result;
 }
 
-// Converts float with 0.01 precision to int multiplied by 100, i.e. "3.1415" ->
-// 314
-int ICACHE_FLASH_ATTR cfg_str2centInt(TrivialHttpParserVars *pVars) {
+// Converts float with the precision specified by decLimit to int multiplied by
+// 10 raised to the power of decLimit, so if decLimit == 2 then "3.1415" -> 314
+unsigned int ICACHE_FLASH_ATTR cfg_str2centInt(const char *str,
+                                               unsigned short decLimit) {
   int result = 0;
 
   int decimalPlaces = -1;
-  for (int i = 0; pVars->intval[i] != 0; i++) {
-    if (pVars->intval[i] >= '0' && pVars->intval[i] <= '9') {
-      result = result * 10 + pVars->intval[i] - '0';
+  for (int i = 0; str[i] != 0; i++) {
+    if (str[i] >= '0' && str[i] <= '9') {
+      result = result * 10 + str[i] - '0';
       if (decimalPlaces >= 0) {
         decimalPlaces++;
       }
-    } else if (pVars->intval[i] == '.' || pVars->intval[i] == ',') {
+    } else if (str[i] == '.' || str[i] == ',') {
       decimalPlaces++;
     }
-    if (decimalPlaces >= 2) {
+    if (decimalPlaces >= decLimit) {
       break;
     }
   }
@@ -236,7 +238,7 @@ int ICACHE_FLASH_ATTR cfg_str2centInt(TrivialHttpParserVars *pVars) {
     decimalPlaces = 0;
   }
 
-  while (decimalPlaces < 2) {
+  while (decimalPlaces < decLimit) {
     result *= 10;
     decimalPlaces++;
   }
@@ -535,7 +537,7 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->pbuff[pVars->buff_size - 1] = 0;
 
         if (pVars->current_var == VAR_LID) {
-          cfg->LocationID = cfg_str2int(pVars);
+          cfg->LocationID = cfg_str2int(pVars->intval);
 
         } else if (pVars->current_var == VAR_CFGBTN) {
           cfg->CfgButtonType = pVars->intval[0] - '0';
@@ -565,7 +567,7 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           cfg->Trigger = pVars->intval[0] - '0';
 
         } else if (pVars->current_var == VAR_PRT) {
-          int port = cfg_str2int(pVars);
+          int port = cfg_str2int(pVars->intval);
           if (port > 0 && port <= 65535) {
             cfg->Port = port;
           }
@@ -598,31 +600,35 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           }
 
         } else if (pVars->current_var == VAR_PPD) {
-          int poolPublicationDelay = cfg_str2int(pVars);
+          int poolPublicationDelay = cfg_str2int(pVars->intval);
           if (poolPublicationDelay >= 0 &&
               poolPublicationDelay <= MQTT_POOL_PUBLICATION_MAX_DELAY) {
             cfg->MqttPoolPublicationDelay = poolPublicationDelay;
           }
         } else if (pVars->current_var == VAR_TH1) {
-          cfg->OvercurrentThreshold1 = cfg_str2centInt(pVars);
+          cfg->OvercurrentThreshold1 = cfg_str2centInt(pVars->intval, 2);
           supla_log(LOG_DEBUG, "Found TH1 = %d", cfg->OvercurrentThreshold1);
 
         } else if (pVars->current_var == VAR_TH2) {
-          cfg->OvercurrentThreshold2 = cfg_str2centInt(pVars);
+          cfg->OvercurrentThreshold2 = cfg_str2centInt(pVars->intval, 2);
           supla_log(LOG_DEBUG, "Found TH2 = %d", cfg->OvercurrentThreshold2);
         }
 #ifdef CFG_TIME_VARIABLES
         else if (pVars->current_var == VAR_T10) {
-          cfg->Time1[0] = cfg_str2int(pVars);
+          cfg->Time1[0] =
+              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
 
         } else if (pVars->current_var == VAR_T11) {
-          cfg->Time1[1] = cfg_str2int(pVars);
+          cfg->Time1[1] =
+              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
 
         } else if (pVars->current_var == VAR_T20) {
-          cfg->Time2[0] = cfg_str2int(pVars);
+          cfg->Time2[0] =
+              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
 
         } else if (pVars->current_var == VAR_T21) {
-          cfg->Time2[1] = cfg_str2int(pVars);
+          cfg->Time2[1] =
+              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
         }
 #endif /*CFG_TIME_VARIABLES*/
         pVars->matched++;

@@ -22,7 +22,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.8.16"
+#define SUPLA_ESP_SOFTVER "2.8.18"
 
 #define STATE_UNKNOWN 0
 #define STATE_DISCONNECTED 1
@@ -372,5 +372,11 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void);
 unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void);
 uint32 MAIN_ICACHE_FLASH uptime_sec(void);
+
+#ifdef CFG_TIME_VARIABLES
+#ifndef CFG_TIME_VARIABLES_PRECISION
+#define CFG_TIME_VARIABLES_PRECISION 0
+#endif /*CFG_TIME_VARIABLES_PRECISION*/
+#endif /*CFG_TIME_VARIABLES*/
 
 #endif /* SUPLA_ESP_H_ */
