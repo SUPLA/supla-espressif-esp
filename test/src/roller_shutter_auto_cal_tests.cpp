@@ -82,6 +82,92 @@ public:
   }
 };
 
+// method will be called by supla_esp_gpio_init method in order to initialize
+// gpio input/outputs board configuration (supla_esb_board_gpio_init)
+void gpioCallbackFourRs() {
+  // First RS with autocal
+  // up
+  supla_relay_cfg[0].gpio_id = 1;
+  supla_relay_cfg[0].channel = 0;
+  supla_relay_cfg[0].channel_flags = SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION;
+
+  // down
+  supla_relay_cfg[1].gpio_id = 2;
+  supla_relay_cfg[1].channel = 0;
+  supla_relay_cfg[1].channel_flags = SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION;
+
+  supla_rs_cfg[0].up = &supla_relay_cfg[0];
+  supla_rs_cfg[0].down = &supla_relay_cfg[1];
+  supla_rs_cfg[0].delayed_trigger.value = 0;
+
+  // Second RS with autocal
+  // up
+  supla_relay_cfg[2].gpio_id = 3;
+  supla_relay_cfg[2].channel = 1;
+  supla_relay_cfg[2].channel_flags = SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION;
+
+  // down
+  supla_relay_cfg[3].gpio_id = 4;
+  supla_relay_cfg[3].channel = 1;
+  supla_relay_cfg[3].channel_flags = SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION;
+
+  supla_rs_cfg[1].up = &supla_relay_cfg[2];
+  supla_rs_cfg[1].down = &supla_relay_cfg[3];
+  supla_rs_cfg[1].delayed_trigger.value = 0;
+
+  // Third RS without autocal
+  // up
+  supla_relay_cfg[4].gpio_id = 5;
+  supla_relay_cfg[4].channel = 2;
+  supla_relay_cfg[4].channel_flags = 0;
+
+  // down
+  supla_relay_cfg[5].gpio_id = 6;
+  supla_relay_cfg[5].channel = 2;
+  supla_relay_cfg[5].channel_flags = 0;
+
+  supla_rs_cfg[2].up = &supla_relay_cfg[4];
+  supla_rs_cfg[2].down = &supla_relay_cfg[5];
+  supla_rs_cfg[2].delayed_trigger.value = 0;
+
+  // Fourth RS with autocal
+  // up
+  supla_relay_cfg[6].gpio_id = 7;
+  supla_relay_cfg[6].channel = 3;
+  supla_relay_cfg[6].channel_flags = SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION;
+
+  // down
+  supla_relay_cfg[7].gpio_id = 8;
+  supla_relay_cfg[7].channel = 3;
+  supla_relay_cfg[7].channel_flags = SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION;
+
+  supla_rs_cfg[3].up = &supla_relay_cfg[6];
+  supla_rs_cfg[3].down = &supla_relay_cfg[7];
+  supla_rs_cfg[3].delayed_trigger.value = 0;
+}
+
+class RollerShutterFourAutoCalF : public ::testing::Test {
+public:
+  TimeMock time;
+  EagleSocStub eagleStub;
+
+  void SetUp() override {
+    memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
+    memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    cleanupTimers();
+    supla_esp_gpio_init_time = 0;
+    gpioInitCb = *gpioCallbackFourRs;
+  }
+
+  void TearDown() override {
+    memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
+    memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    supla_esp_gpio_init_time = 0;
+    cleanupTimers();
+
+    gpioInitCb = nullptr;
+  }
+};
 TEST_F(RollerShutterAutoCalF, RsNotCalibrated_ServerReqRelayDown) {
   int curTime = 10000; // start at +10 ms
   EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
@@ -1258,8 +1344,7 @@ TEST_F(RollerShutterAutoCalF,
 
   // +2000 ms
   for (int i = 0; i < 200; i++) {
-    curTime += 10000; // +10ms
-    executeTimers();
+    curTime += 10000; // +10ms executeTimers();
   }
 
   // nothing should change
@@ -1321,7 +1406,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  // start autocalibration with closing by button
+  // down button should not trigger autocal
   supla_esp_gpio_rs_set_relay(rsCfg, RS_RELAY_DOWN, 1, 0);
 
   for (int i = 0; i < 800; i++) {
@@ -1339,6 +1424,152 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 }
 
+TEST_F(RollerShutterFourAutoCalF, AutoCalFourRS) {
+  int curTime = 10000; // start at +10 ms
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[0], RS_AUTOCALIBRATION_ENABLED);
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[1], RS_AUTOCALIBRATION_ENABLED);
+  // third RS doesn't support autocal, however it doesn't affect below flag
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[2], RS_AUTOCALIBRATION_ENABLED);
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[4], RS_AUTOCALIBRATION_ENABLED);
+
+  supla_roller_shutter_cfg_t *rsCfg1 = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg1, nullptr);
+
+  supla_roller_shutter_cfg_t *rsCfg2 = supla_esp_gpio_get_rs__cfg(3);
+  ASSERT_NE(rsCfg2, nullptr);
+
+  supla_roller_shutter_cfg_t *rsCfg3 = supla_esp_gpio_get_rs__cfg(5);
+  ASSERT_NE(rsCfg3, nullptr);
+
+  supla_roller_shutter_cfg_t *rsCfg4 = supla_esp_gpio_get_rs__cfg(7);
+  ASSERT_NE(rsCfg4, nullptr);
+
+  os_timer_func_t *rsTimerCb = lastTimerCb;
+  ASSERT_NE(rsTimerCb, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  // RS 1
+  EXPECT_EQ(rsCfg1->up_time, 0);
+  EXPECT_EQ(rsCfg1->down_time, 0);
+  EXPECT_EQ(*rsCfg1->position, 0);
+  EXPECT_EQ(*rsCfg1->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg1->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[0], RS_AUTOCALIBRATION_ENABLED);
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // RS 2
+  EXPECT_EQ(rsCfg2->up_time, 0);
+  EXPECT_EQ(rsCfg2->down_time, 0);
+  EXPECT_EQ(*rsCfg2->position, 0);
+  EXPECT_EQ(*rsCfg2->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg2->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[1], RS_AUTOCALIBRATION_ENABLED);
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // RS 3
+  EXPECT_EQ(rsCfg3->up_time, 0);
+  EXPECT_EQ(rsCfg3->down_time, 0);
+  EXPECT_EQ(*rsCfg3->position, 0);
+  EXPECT_EQ(*rsCfg3->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg3->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[2], RS_AUTOCALIBRATION_ENABLED);
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+
+  // RS 4
+  EXPECT_EQ(rsCfg4->up_time, 0);
+  EXPECT_EQ(rsCfg4->down_time, 0);
+  EXPECT_EQ(*rsCfg4->position, 0);
+  EXPECT_EQ(*rsCfg4->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg4->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.RsAutoCalibrationFlag[3], RS_AUTOCALIBRATION_ENABLED);
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+
+  // Calibrate first RS
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  // closing and opening time is coded in 0.1s units on 2x16 bit blocks of
+  // DurationMS
+  // In autocalibration, server sends ct/ot == 0
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 10+10; // position 10
+  supla_esp_channel_set_value(&reqValue);
+
+  // Manual time calibration second RS
+  reqValue.ChannelNumber = 1;
+  reqValue.DurationMS = (9) | (8 << 16);
+  reqValue.value[0] = 10+40; // position 40
+  supla_esp_channel_set_value(&reqValue);
+
+  // Change position without time on RS which doesn't support autocal, so
+  // nothing should happen
+  reqValue.ChannelNumber = 2;
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 10+40; // position 40
+  supla_esp_channel_set_value(&reqValue);
+
+  // Calibrate fourth RS
+  reqValue.ChannelNumber = 3;
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 10+70; // position 70
+  supla_esp_channel_set_value(&reqValue);
+
+  // Move time by 10 s
+  for (int i = 0; i < 1000; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg1->up_time, 0);
+  EXPECT_EQ(rsCfg1->down_time, 0);
+  EXPECT_NEAR(*rsCfg1->position, 100 + (10 * 100), 90);
+  EXPECT_EQ(*rsCfg1->full_opening_time, 1100);
+  EXPECT_EQ(*rsCfg1->full_closing_time, 1200);
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  EXPECT_EQ(rsCfg1->autoCal_step, 0);
+
+  EXPECT_EQ(rsCfg2->up_time, 0);
+  EXPECT_EQ(rsCfg2->down_time, 0);
+  EXPECT_NEAR(*rsCfg2->position, 100 + (40 * 100), 90);
+  EXPECT_EQ(*rsCfg2->full_opening_time, 800);
+  EXPECT_EQ(*rsCfg2->full_closing_time, 900);
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_EQ(rsCfg2->autoCal_step, 0);
+
+  EXPECT_EQ(rsCfg3->up_time, 0);
+  EXPECT_EQ(rsCfg3->down_time, 0);
+  EXPECT_EQ(*rsCfg3->position, 0);
+  EXPECT_EQ(*rsCfg3->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg3->full_closing_time, 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_EQ(rsCfg3->autoCal_step, 0);
+
+  EXPECT_EQ(rsCfg4->up_time, 0);
+  EXPECT_EQ(rsCfg4->down_time, 0);
+  EXPECT_NEAR(*rsCfg4->position, 100 + (70 * 100), 90);
+  EXPECT_EQ(*rsCfg4->full_opening_time, 1100);
+  EXPECT_EQ(*rsCfg4->full_closing_time, 1200);
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+  EXPECT_EQ(rsCfg4->autoCal_step, 0);
+
+}
 
 /* TODO:
  * - test to check setting ct/ot and triggering calibration from mqtt/cfgmode

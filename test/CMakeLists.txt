@@ -69,6 +69,7 @@ target_compile_definitions(supla_common_test PUBLIC ESPMISSINGINCLUDES_H)
 # ignore GPIO_PORT_INIT define:
 target_compile_definitions(supla_common_test PUBLIC GPIO_PORT_INIT)
 target_compile_definitions(supla_common_test PUBLIC RS_AUTOCALIBRATION_SUPPORTED)
+target_compile_definitions(supla_common_test PUBLIC RELAY_MAX_COUNT=8)
 
 target_link_libraries(supla_common_test
   gmock
