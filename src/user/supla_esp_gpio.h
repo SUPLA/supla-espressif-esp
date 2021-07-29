@@ -142,6 +142,7 @@ void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+void supla_esp_gpio_rs_apply_new_times(int a, int ct, int ot);
 void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
                                  uint8 value, uint8 cancel_task,
                                  uint8 stop_delay);

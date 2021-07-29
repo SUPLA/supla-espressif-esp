@@ -1337,5 +1337,8 @@ TEST_F(RollerShutterAutoCalF,
 
 /* TODO:
  * - test to check setting ct/ot and triggering calibration from mqtt/cfgmode
+ * - what if board returns "RS not in move" just after filtering 100 ms time? 
+ * - what if board returns "RS in move" for a very long time (timeout)?
+ * - calibration on calcfg request - feedback in progress?
  *
  */
