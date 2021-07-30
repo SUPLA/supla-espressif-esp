@@ -1605,7 +1605,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
 #endif /*MQTT_HA_EM_SUPPORT*/
 
 #ifdef MQTT_HA_ROLLERSHUTTER_SUPPORT
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr) {
   if (!supla_esp_mqtt_prepare_ha_cfg_topic("cover", topic_name_out,
