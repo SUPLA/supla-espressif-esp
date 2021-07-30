@@ -451,9 +451,9 @@ void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
     return;
   }
 
-  if (rs_cfg->up_time < RS_AUTOCAL_FILTERING_TIME &&
-      rs_cfg->down_time < RS_AUTOCAL_FILTERING_TIME) {
-    // we ignore first RS_AUTOCAL_FILTERING_TIME ms during 
+  if (rs_cfg->up_time < RS_AUTOCAL_FILTERING_TIME_MS &&
+      rs_cfg->down_time < RS_AUTOCAL_FILTERING_TIME_MS) {
+    // we ignore first RS_AUTOCAL_FILTERING_TIME_MS ms during 
     // autocalibration
     return;
   }
@@ -465,14 +465,14 @@ void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
         rs_cfg->autoCal_step = 2;
         rs_cfg->autoCal_button_request = true;
         supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
-      } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME) {
+      } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME_MS) {
         supla_esp_gpio_rs_abort_calibration(rs_cfg);
       }
       break;
     }
     case 2: {
       if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
-        if (rs_cfg->down_time < RS_AUTOCAL_MIN_TIME) {
+        if (rs_cfg->down_time < RS_AUTOCAL_MIN_TIME_MS) {
           // calibration failed
           supla_esp_gpio_rs_abort_calibration(rs_cfg);
         } else {
@@ -481,14 +481,14 @@ void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
           rs_cfg->autoCal_button_request = true;
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
         }
-      } else if (rs_cfg->down_time > RS_AUTOCAL_MAX_TIME) {
+      } else if (rs_cfg->down_time > RS_AUTOCAL_MAX_TIME_MS) {
         supla_esp_gpio_rs_abort_calibration(rs_cfg);
       }
       break;
     }
     case 3: {
       if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
-        if (rs_cfg->up_time < RS_AUTOCAL_MIN_TIME) {
+        if (rs_cfg->up_time < RS_AUTOCAL_MIN_TIME_MS) {
           // calibration failed
           supla_esp_gpio_rs_abort_calibration(rs_cfg);
         } else {
@@ -501,7 +501,7 @@ void supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
           rs_cfg->autoCal_button_request = true;
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
         }
-      } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME) {
+      } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME_MS) {
         supla_esp_gpio_rs_abort_calibration(rs_cfg);
       }
       break;
