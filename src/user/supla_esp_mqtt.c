@@ -238,6 +238,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
       }
     }
 
+    idx = 0;
+
     while (supla_esp_mqtt_vars->publish_next < 255) {
       bit = 1 << (supla_esp_mqtt_vars->publish_next % 8);
       if (supla_esp_mqtt_vars
