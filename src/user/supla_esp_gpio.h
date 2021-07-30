@@ -71,34 +71,41 @@ typedef struct {
 
 	ETSTimer timer;
 	uint8 value;
+  bool autoCal_request;
 
 }supla_rs_delayed_trigger;
 
 typedef struct {
 
-	supla_relay_cfg_t *up;
-	supla_relay_cfg_t *down;
+  supla_relay_cfg_t *up;
+  supla_relay_cfg_t *down;
 
-	int *position;
+  int *position;
 
   unsigned int *full_opening_time;
   unsigned int *full_closing_time;
+  unsigned int *auto_opening_time;
+  unsigned int *auto_closing_time;
 
-	unsigned int last_comm_time;
+  unsigned int last_comm_time;
 
-	unsigned int up_time;
-	unsigned int down_time;
-	unsigned int last_time;
-	unsigned int stop_time;
-	unsigned int start_time;
+  unsigned int up_time;
+  unsigned int down_time;
+  unsigned int last_time;
+  unsigned int stop_time;
+  unsigned int start_time;
 
-	ETSTimer timer;
-	supla_rs_delayed_trigger delayed_trigger;
-	rs_task_t task;
+  unsigned int autoCal_step;
 
-	int last_position;
+  ETSTimer timer;
+  supla_rs_delayed_trigger delayed_trigger;
+  rs_task_t task;
 
-}supla_roller_shutter_cfg_t;
+  int last_position;
+  bool performAutoCalibration;
+  bool autoCal_button_request;
+
+} supla_roller_shutter_cfg_t;
 
 extern supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
@@ -137,6 +144,7 @@ void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+void supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms, int ot_ms);
 void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
                                  uint8 value, uint8 cancel_task,
                                  uint8 stop_delay);
@@ -148,6 +156,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
 supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 sint8 supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg);
+void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
 #endif /* SUPLA_ESP_GPIO_H_ */

@@ -78,6 +78,9 @@ typedef struct {
 
   unsigned char MqttPoolPublicationDelay;
 
+  unsigned int AutoCalOpenTime[RS_MAX_COUNT];
+  unsigned int AutoCalCloseTime[RS_MAX_COUNT];
+
   char zero[200];
 
 } SuplaEspCfg;
@@ -86,37 +89,37 @@ typedef struct {
 
 	char TAG[6];
 	char GUID[SUPLA_GUID_SIZE];
-    char AuthKey[SUPLA_AUTHKEY_SIZE];
+  char AuthKey[SUPLA_AUTHKEY_SIZE];
 
 	char Server[SERVER_MAXSIZE];
 	char Email[SUPLA_EMAIL_MAXSIZE];
 
 	int LocationID;
-    char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
+  char LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE];
 
-    char WIFI_SSID[WIFI_SSID_MAXSIZE];
-    char WIFI_PWD[WIFI_PWD_MAXSIZE];
+  char WIFI_SSID[WIFI_SSID_MAXSIZE];
+  char WIFI_PWD[WIFI_PWD_MAXSIZE];
 
-    char CfgButtonType;
-    char Button1Type;
-    char Button2Type;
+  char CfgButtonType;
+  char Button1Type;
+  char Button2Type;
 
-    char StatusLedOff;
-    char InputCfgTriggerOff;
+  char StatusLedOff;
+  char InputCfgTriggerOff;
 
-    char FirmwareUpdate;
-    char Test;
+  char FirmwareUpdate;
+  char Test;
 
-    char UpsideDown;
+  char UpsideDown;
 
-    unsigned int Time1[2];
-    unsigned int Time2[2];
+  unsigned int Time1[2];
+  unsigned int Time2[2];
 
-    char Trigger;
+  char Trigger;
 
-    char zero[200];
+  char zero[200];
 
-}SuplaEspCfg_old_v6;
+} SuplaEspCfg_old_v6;
 
 typedef struct {
 

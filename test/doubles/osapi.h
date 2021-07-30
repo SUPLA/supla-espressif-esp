@@ -98,5 +98,12 @@ int ets_snprintf(char *str, unsigned int size, const char *format, ...)  __attri
 unsigned long os_random(void);
 int os_get_random(unsigned char *buf, size_t len);
 
+// SUPLA TEST
+extern struct _ETSTIMER_ *timer_first;
+void executeTimers();
+void cleanupTimers();
+
+// END OF SUPLA TESTS
+
 #endif
 

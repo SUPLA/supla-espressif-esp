@@ -6,6 +6,8 @@ set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_BUILD_TYPE Debug)
 
+add_compile_options(-fsanitize=address)
+add_link_options(-fsanitize=address -static-libasan)
 
 include_directories(doubles/)
 include_directories(../)
@@ -66,6 +68,8 @@ target_compile_definitions(supla_common_test PUBLIC CFG_SECTOR=0x3C)
 target_compile_definitions(supla_common_test PUBLIC ESPMISSINGINCLUDES_H)
 # ignore GPIO_PORT_INIT define:
 target_compile_definitions(supla_common_test PUBLIC GPIO_PORT_INIT)
+target_compile_definitions(supla_common_test PUBLIC RS_AUTOCALIBRATION_SUPPORTED)
+target_compile_definitions(supla_common_test PUBLIC RELAY_MAX_COUNT=8)
 
 target_link_libraries(supla_common_test
   gmock

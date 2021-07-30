@@ -1084,37 +1084,17 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 				if ( ot < 0 )
 					ot = 0;
 
-				if ( ct != supla_esp_cfg.Time2[a]
-					 || ot != supla_esp_cfg.Time1[a] ) {
-
-					supla_esp_cfg.Time2[a] = ct;
-					supla_esp_cfg.Time1[a] = ot;
-
-					supla_esp_state.rs_position[a] = 0;
-					supla_esp_save_state(0);
-					supla_esp_cfg_save(&supla_esp_cfg);
-
-					//supla_log(LOG_DEBUG, "Reset RS[%i] position", a);
-
-				}
-
-				//supla_log(LOG_DEBUG, "V=%i", v);
+        supla_esp_gpio_rs_apply_new_times(a, ct, ot);
 
 				if ( v >= 10 && v <= 110 ) {
-
 					supla_esp_gpio_rs_add_task(a, v-10);
-
-				} else {
-
-					if ( v == 1 ) {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 1);
-					} else if ( v == 2 ) {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 1);
-					} else {
-						supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 1);
-					}
-
-				}
+        } else if ( v == 1 ) {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
+        } else if ( v == 2 ) {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
+        } else {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+        }
 
 				Success = 1;
 				return;

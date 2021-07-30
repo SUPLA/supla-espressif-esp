@@ -25,4 +25,7 @@ typedef void (testBoardGpioInitCb)(void);
 
 extern testBoardGpioInitCb *gpioInitCb;
 
+extern int upTime;
+extern int downTime;
+
 #endif /*_SUPLA_TEST_BOARD_INIT_H_*/
