@@ -77,7 +77,7 @@
 #endif /*RS_SAVE_STATE_DELAY*/
 
 #ifndef RS_AUTOCAL_FILTERING_TIME
-// 100 ms of filtering time since RS start movement and we start to check if
+// 300 ms of filtering time since RS start movement and we start to check if
 // RS motor is taking current
 #define RS_AUTOCAL_FILTERING_TIME 300
 #endif /*RS_AUTOCAL_FILTERING_TIME*/
