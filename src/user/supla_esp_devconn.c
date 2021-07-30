@@ -1302,7 +1302,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #endif /*__FOTA*/
 #ifdef BOARD_CALCFG
       case SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST:
-        supla_esp_board_calcfg_request(rd.data.sd_device_calcfg_request);
+        supla_esp_calcfg_request(rd.data.sd_device_calcfg_request);
         break;
 #endif /*BOARD_CALCFG*/
 #ifdef BOARD_ON_USER_LOCALTIME_RESULT
@@ -1742,6 +1742,52 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 	if (supla_esp_devconn_is_registered() == 1) {
 		srpc_ds_async_device_calcfg_result(devconn->srpc, result);
 	}
+}
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
+  if (!request) {
+    return;
+  }
+
+  supla_log(LOG_DEBUG, "CALCFG received, cmd %d, datatype %d, datasize %d",
+      request->Command, request->DataType, request->DataSize);
+
+  // execute board specific calcfg handling
+  supla_esp_board_calcfg_request(request);
+
+#ifdef _ROLLERSHUTTER_SUPPORT
+  TDS_DeviceCalCfgResult result = {};
+  result.ReceiverID = request->SenderID;
+  result.ChannelNumber = request->ChannelNumber;
+  result.Command = request->Command;
+  result.Result = SUPLA_CALCFG_RESULT_NOT_SUPPORTED;
+
+  if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE) {
+    for (int i = 0; i < RS_MAX_COUNT; i++) {
+      if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
+          supla_rs_cfg[i].up->channel == request->ChannelNumber &&
+          supla_rs_cfg[i].up->channel_flags &
+          SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE) {
+        if (!request->SuperUserAuthorized) {
+          result.Result = SUPLA_CALCFG_RESULT_UNAUTHORIZED;
+        } else {
+          result.Result = SUPLA_CALCFG_RESULT_DONE;
+
+          supla_rs_cfg[i].autoCal_step = 0;
+          *(supla_rs_cfg[i].auto_opening_time) = 0;
+          *(supla_rs_cfg[i].auto_closing_time) = 0;
+          *(supla_rs_cfg[i].position) = 0; // not calibrated
+          // trigger calibration by setting position to fully open
+          supla_esp_gpio_rs_add_task(i, 0); 
+
+        }
+      }
+    }
+
+    supla_esp_calcfg_result(&result);
+  }
+#endif
 }
 #endif /*BOARD_CALCFG*/
 
