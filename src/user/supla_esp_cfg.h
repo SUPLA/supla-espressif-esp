@@ -27,9 +27,6 @@
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
 
-#define RS_AUTOCALIBRATION_DISABLED 0
-#define RS_AUTOCALIBRATION_ENABLED 1
-
 typedef struct {
   char TAG[6];
   char GUID[SUPLA_GUID_SIZE];
