@@ -636,8 +636,16 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent) {
 
 }
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms, int ot_ms) {
+bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
+                                                          int ot_ms,
+                                                          bool save) {
   bool resetRsConfig = false;
+  bool result = false;
+  if (idx >= RS_MAX_COUNT || supla_rs_cfg[idx].up == NULL ||
+      supla_rs_cfg[idx].down == NULL) {
+    return false;
+  }
+
   if (supla_rs_cfg[idx].up->channel_flags &
       SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION) {
     // Handling of time when auto calibration is supported
@@ -675,8 +683,11 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms, int
     // Reset position to 0. It means that RS is not calibrated
     supla_esp_state.rs_position[idx] = 0;
 
-    supla_esp_save_state(0);
-    supla_esp_cfg_save(&supla_esp_cfg);
+    if (save) {
+      supla_esp_save_state(0);
+      supla_esp_cfg_save(&supla_esp_cfg);
+    }
+    result = true;
   }
 
   // calibration is not needed if times are already set
@@ -684,6 +695,12 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms, int
       (supla_esp_cfg.Time1[idx] > 0 || supla_esp_cfg.Time2[idx] > 0)) {
     supla_rs_cfg[idx].performAutoCalibration = false;
   }
+
+  return result;
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms, int ot_ms) {
+	supla_esp_gpio_rs_apply_new__times(idx, ct_ms, ot_ms, true);
 }
 
 #endif /*_ROLLERSHUTTER_SUPPORT*/

@@ -761,6 +761,20 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
     if (new_cfg.WIFI_PWD[0] == 0)
       memcpy(new_cfg.WIFI_PWD, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
 
+#ifdef _ROLLERSHUTTER_SUPPORT
+    bool save_state = false;
+    for (int idx = 0; idx < CFG_TIME1_COUNT; idx++) {
+      if (supla_esp_gpio_rs_apply_new__times(idx, new_cfg.Time2[idx],
+                                             new_cfg.Time1[idx], false)) {
+        save_state = true;
+      }
+    }
+
+    if (save_state) {
+      supla_esp_save_state(0);
+    }
+#endif /*_ROLLERSHUTTER_SUPPORT*/
+
     if (1 == supla_esp_cfg_save(&new_cfg)) {
       memcpy(&supla_esp_cfg, &new_cfg, sizeof(SuplaEspCfg));
       data_saved = 1;
