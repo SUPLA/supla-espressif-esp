@@ -427,6 +427,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_start_autoCal(
   supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 
 }
+#ifdef RS_AUTOCALIBRATION_SUPPORTED
+bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg);
+#endif /*RS_AUTOCALIBRATION_SUPPORTED*/
 
 bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
 #ifdef RS_AUTOCALIBRATION_SUPPORTED
