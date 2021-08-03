@@ -78,8 +78,10 @@
 #ifdef CFG_TIME_VARIABLES
 #define VAR_T10 37
 #define VAR_T11 38
-#define VAR_T20 39
-#define VAR_T21 40
+#define VAR_T12 39
+#define VAR_T20 40
+#define VAR_T21 41
+#define VAR_T22 42
 #endif /*CFG_TIME_VARIABLES*/
 
 typedef struct {
@@ -329,8 +331,10 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 #ifdef CFG_TIME_VARIABLES
       char t10[3] = {'t', '1', '0'};
       char t11[3] = {'t', '1', '1'};
+      char t12[3] = {'t', '1', '2'};
       char t20[3] = {'t', '2', '0'};
       char t21[3] = {'t', '2', '1'};
+      char t22[3] = {'t', '2', '2'};
 #endif /*CFG_TIME_VARIABLES*/
 
       if (len - a >= 4 && pdata[a + 3] == '=') {
@@ -496,6 +500,11 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
+        } else if (memcmp(t12, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T12;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
         } else if (memcmp(t20, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_T20;
           pVars->buff_size = 12;
@@ -503,6 +512,10 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (memcmp(t21, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_T21;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+        } else if (memcmp(t22, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T22;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
         }
@@ -615,20 +628,35 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
         }
 #ifdef CFG_TIME_VARIABLES
         else if (pVars->current_var == VAR_T10) {
-          cfg->Time1[0] =
-              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
-
+          if (CFG_TIME1_COUNT > 0) {
+            cfg->Time1[0] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
         } else if (pVars->current_var == VAR_T11) {
-          cfg->Time1[1] =
-              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
-
+          if (CFG_TIME1_COUNT > 1) {
+            cfg->Time1[1] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T12) {
+          if (CFG_TIME1_COUNT > 2) {
+            cfg->Time1[2] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
         } else if (pVars->current_var == VAR_T20) {
-          cfg->Time2[0] =
-              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
-
+          if (CFG_TIME1_COUNT > 0) {
+            cfg->Time2[0] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
         } else if (pVars->current_var == VAR_T21) {
-          cfg->Time2[1] =
-              cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          if (CFG_TIME1_COUNT > 1) {
+            cfg->Time2[1] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T22) {
+          if (CFG_TIME1_COUNT > 2) {
+            cfg->Time2[2] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
         }
 #endif /*CFG_TIME_VARIABLES*/
         pVars->matched++;
