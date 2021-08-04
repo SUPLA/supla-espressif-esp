@@ -104,6 +104,7 @@ typedef struct {
 	channel_value_delayed cvd[CVD_MAX_COUNT];
 	#endif /*CVD_MAX_COUNT*/
 
+	bool resolving_started;
 
 
 }devconn_params;
@@ -1488,7 +1489,13 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_disconnect_cb(void *arg) {
 }
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_dns__found(ip_addr_t *ip) {
-  //supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
+  // supla_log(LOG_DEBUG, "supla_esp_devconn_dns_found_cb");
+
+  if (devconn == NULL) {
+    return;
+  }
+
+  devconn->resolving_started = false;
 
   if (ip == NULL) {
     supla_esp_set_state(LOG_NOTICE, "Domain not found.");
@@ -1531,23 +1538,30 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_dns_found_cb(const char *name,
   supla_esp_devconn_dns__found(ip);
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_resolvandconnect(void) {
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_resolvandconnect(void) {
+  if (!devconn || devconn->resolving_started) {
+    // Calling espconn_gethostbyname twice causes Fatal exception 29
+    // (StoreProhibitedCause)
+    supla_log(LOG_DEBUG, "Resolving already started!");
+    return;
+  }
 
-	//supla_log(LOG_DEBUG, "supla_esp_devconn_resolvandconnect");
-	supla_espconn_disconnect(&devconn->ESPConn);
+  devconn->resolving_started = true;
 
-	uint32_t _ip = ipaddr_addr(supla_esp_cfg.Server);
+  // supla_log(LOG_DEBUG, "supla_esp_devconn_resolvandconnect");
+  supla_espconn_disconnect(&devconn->ESPConn);
 
-	if ( _ip == -1 ) {
-		 supla_log(LOG_DEBUG, "Resolv %s", supla_esp_cfg.Server);
+  uint32_t _ip = ipaddr_addr(supla_esp_cfg.Server);
 
-		 espconn_gethostbyname(&devconn->ESPConn, supla_esp_cfg.Server, &devconn->ipaddr, supla_esp_devconn_dns_found_cb);
-	} else {
-		 supla_esp_devconn_dns_found_cb(supla_esp_cfg.Server, (ip_addr_t *)&_ip, NULL);
-	}
+  if (_ip == -1) {
+    supla_log(LOG_DEBUG, "Resolv %s", supla_esp_cfg.Server);
 
-
+    espconn_gethostbyname(&devconn->ESPConn, supla_esp_cfg.Server,
+                          &devconn->ipaddr, supla_esp_devconn_dns_found_cb);
+  } else {
+    supla_esp_devconn_dns_found_cb(supla_esp_cfg.Server, (ip_addr_t *)&_ip,
+                                   NULL);
+  }
 }
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_watchdog_cb(void *timer_arg) {
