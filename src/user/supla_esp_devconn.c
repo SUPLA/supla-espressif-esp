@@ -1339,18 +1339,22 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 }
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 10
-void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_set_channels(TDS_SuplaRegisterDevice_E *srd) {
-#else
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_set_channels(TDS_SuplaRegisterDevice_D *srd) {
-#endif /*ESP8266_SUPLA_PROTO_VERSION >= 10*/
-
   supla_esp_board_set_channels(srd->channels, &srd->channel_count);
 
-  for (uint8 a = 0; a < RELAY_MAX_COUNT; a++) {
+  uint8 a = 0;
+  uint8 b = 0;
+
+  for (a = 0; a < srd->channel_count; a++) {
+    if (srd->channels[a].FuncList &
+        SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER) {
+      srd->channels[a].Flags |= SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEROLLERSHUTTER;
+    }
+  }
+
+  for (a = 0; a < RELAY_MAX_COUNT; a++) {
     if (supla_relay_cfg[a].gpio_id != 255) {
-      for (uint8 b = 0; b < srd->channel_count; b++) {
+      for (b = 0; b < srd->channel_count; b++) {
         if (srd->channels[b].Number == supla_relay_cfg[a].channel) {
           supla_relay_cfg[a].channel_flags = srd->channels[b].Flags;
           break;
@@ -1359,6 +1363,7 @@ supla_esp_devconn_set_channels(TDS_SuplaRegisterDevice_D *srd) {
     }
   }
 }
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 10*/
 
 void
 supla_esp_devconn_iterate(void *timer_arg) {
@@ -1404,7 +1409,7 @@ supla_esp_devconn_iterate(void *timer_arg) {
 					os_memcpy(srd.GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
 					os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 
-					supla_esp_devconn_set_channels(&srd);
+					supla_esp_board_set_channels(srd.channels, &srd.channel_count);
 
 					srpc_ds_async_registerdevice_d(devconn->srpc, &srd);
 				#endif
