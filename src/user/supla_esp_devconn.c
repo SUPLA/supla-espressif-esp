@@ -1339,6 +1339,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 }
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 10
+void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_set_channels(TDS_SuplaRegisterDevice_E *srd) {
   supla_esp_board_set_channels(srd->channels, &srd->channel_count);
 
@@ -1348,7 +1349,7 @@ supla_esp_devconn_set_channels(TDS_SuplaRegisterDevice_E *srd) {
   for (a = 0; a < srd->channel_count; a++) {
     if (srd->channels[a].FuncList &
         SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER) {
-      srd->channels[a].Flags |= SUPLA_BIT_RELAYFUNC_CONTROLLINGTHEROLLERSHUTTER;
+      srd->channels[a].Flags |= SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE;
     }
   }
 
