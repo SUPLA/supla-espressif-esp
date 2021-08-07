@@ -22,7 +22,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.8.19"
+#define SUPLA_ESP_SOFTVER "2.8.21"
 
 #define STATE_UNKNOWN 0
 #define STATE_DISCONNECTED 1
@@ -76,23 +76,23 @@
 #define RS_SAVE_STATE_DELAY 0
 #endif /*RS_SAVE_STATE_DELAY*/
 
-#ifndef RS_AUTOCAL_FILTERING_TIME
+#ifndef RS_AUTOCAL_FILTERING_TIME_MS
 // 300 ms of filtering time since RS start movement and we start to check if
 // RS motor is taking current
-#define RS_AUTOCAL_FILTERING_TIME 300
-#endif /*RS_AUTOCAL_FILTERING_TIME*/
+#define RS_AUTOCAL_FILTERING_TIME_MS 300
+#endif /*RS_AUTOCAL_FILTERING_TIME_MS*/
 
-#ifndef RS_AUTOCAL_MIN_TIME
+#ifndef RS_AUTOCAL_MIN_TIME_MS
 // auto calibration with calculated times below 500 ms will be considered as
 // error
-#define RS_AUTOCAL_MIN_TIME 500
-#endif /*RS_AUTOCAL_MIN_TIME*/
+#define RS_AUTOCAL_MIN_TIME_MS 500
+#endif /*RS_AUTOCAL_MIN_TIME_MS*/
 
-#ifndef RS_AUTOCAL_MAX_TIME
+#ifndef RS_AUTOCAL_MAX_TIME_MS
 // auto calibration with calculated time above 9 min 50 s will be considered as
 // error
-#define RS_AUTOCAL_MAX_TIME ((9 * 60 + 50) * 1000)
-#endif /*RS_AUTOCAL_MAX_TIME*/
+#define RS_AUTOCAL_MAX_TIME_MS ((9 * 60 + 50) * 1000)
+#endif /*RS_AUTOCAL_MAX_TIME_MS*/
 
 #ifndef CFG_TIME1_COUNT
 #define CFG_TIME1_COUNT 8

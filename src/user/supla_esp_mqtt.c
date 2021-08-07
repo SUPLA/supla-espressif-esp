@@ -80,6 +80,8 @@ typedef struct {
   char *prefix;
   char *device_id;
 
+  bool resolving_started;
+
 } _supla_esp_mqtt_vars_t;
 
 _supla_esp_mqtt_vars_t *supla_esp_mqtt_vars = NULL;
@@ -237,6 +239,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
         return 0;
       }
     }
+
+    idx = 0;
 
     while (supla_esp_mqtt_vars->publish_next < 255) {
       bit = 1 << (supla_esp_mqtt_vars->publish_next % 8);
@@ -588,6 +592,12 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_subscribe(void) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_dns__found(ip_addr_t *ip) {
+  if (supla_esp_mqtt_vars == NULL) {
+    return;
+  }
+
+  supla_esp_mqtt_vars->resolving_started = false;
+
   if (ip == NULL) {
     supla_esp_set_state(LOG_NOTICE, "Domain not found.");
     return;
@@ -624,6 +634,15 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_on_wifi_status_changed(uint8 status) {
   supla_esp_gpio_state_ipreceived();  // We go back to the state after
                                       // connecting to wifi, and before
                                       // connecting to the broker
+
+  if (!supla_esp_mqtt_vars || supla_esp_mqtt_vars->resolving_started) {
+    // Calling espconn_gethostbyname twice causes Fatal exception 29
+    // (StoreProhibitedCause)
+    supla_log(LOG_DEBUG, "Resolving already started!");
+    return;
+  }
+
+  supla_esp_mqtt_vars->resolving_started = true;
 
   uint32_t _ip = ipaddr_addr(supla_esp_cfg.Server);
 
