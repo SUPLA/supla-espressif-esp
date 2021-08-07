@@ -20,8 +20,6 @@
 #ifndef SUPLA_ESP_CLIENT_H_
 #define SUPLA_ESP_CLIENT_H_
 
-// remove when it is added to proto.h
-#define SUPLA_CALCFG_CMD_RECALIBRATE 1234
 
 
 #include "supla_esp.h"
