@@ -1301,11 +1301,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
         supla_esp_update_url_result(rd.data.sc_firmware_update_url_result);
         break;
 #endif /*__FOTA*/
-#ifdef BOARD_CALCFG
       case SUPLA_SD_CALL_DEVICE_CALCFG_REQUEST:
         supla_esp_calcfg_request(rd.data.sd_device_calcfg_request);
         break;
-#endif /*BOARD_CALCFG*/
 #ifdef BOARD_ON_USER_LOCALTIME_RESULT
       case SUPLA_DCS_CALL_GET_USER_LOCALTIME_RESULT:
         supla_esp_board_on_user_localtime_result(
@@ -1767,7 +1765,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char chann
 }
 #endif /*ELECTRICITY_METER_COUNT*/
 
-#ifdef BOARD_CALCFG
 void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result) {
 	if (supla_esp_devconn_is_registered() == 1) {
 		srpc_ds_async_device_calcfg_result(devconn->srpc, result);
@@ -1783,8 +1780,10 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
   supla_log(LOG_DEBUG, "CALCFG received, cmd %d, datatype %d, datasize %d",
       request->Command, request->DataType, request->DataSize);
 
+#ifdef BOARD_CALCFG
   // execute board specific calcfg handling
   supla_esp_board_calcfg_request(request);
+#endif /*BOARD_CALCFG*/
 
 #ifdef _ROLLERSHUTTER_SUPPORT
   TDS_DeviceCalCfgResult result = {};
@@ -1819,7 +1818,6 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
   }
 #endif
 }
-#endif /*BOARD_CALCFG*/
 
 #ifdef BOARD_ON_USER_LOCALTIME_RESULT
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_get_user_localtime(void) {
