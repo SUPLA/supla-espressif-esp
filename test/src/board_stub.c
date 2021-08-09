@@ -52,3 +52,5 @@ bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
 
   return false;
 }
+
+void supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request) {}

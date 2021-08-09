@@ -16,8 +16,11 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+
 #ifndef SUPLA_ESP_CLIENT_H_
 #define SUPLA_ESP_CLIENT_H_
+
+
 
 #include "supla_esp.h"
 #include "supla_esp_state.h"
@@ -88,9 +91,10 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 
 #endif
 
-#ifdef BOARD_CALCFG
-void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result);
-#endif /*BOARD_CALCFG*/
+void DEVCONN_ICACHE_FLASH
+supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result);
+void DEVCONN_ICACHE_FLASH
+supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request);
 
 #ifdef BOARD_ON_USER_LOCALTIME_RESULT
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_get_user_localtime(void);
@@ -101,6 +105,7 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_get_channel_int_params(unsigned char channel_number);
 #endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 
+// moved to public interface for testing purposes
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value);
 
