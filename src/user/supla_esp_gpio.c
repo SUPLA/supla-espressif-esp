@@ -439,17 +439,19 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *
 #endif /*RS_AUTOCALIBRATION_SUPPORTED*/
 }
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_abort_calibration(supla_roller_shutter_cfg_t *rs_cfg) {
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_rs_abort_calibration(supla_roller_shutter_cfg_t *rs_cfg) {
 
-          rs_cfg->autoCal_step = 0;
-          *rs_cfg->auto_opening_time = 0;
-          *rs_cfg->auto_closing_time = 0;
-          *rs_cfg->position = 0;
-          // off with cancel task
-          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 0);
+  rs_cfg->autoCal_step = 0;
+  *rs_cfg->auto_opening_time = 0;
+  *rs_cfg->auto_closing_time = 0;
+  *rs_cfg->position = 0;
+  // off with cancel task
+  supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 0);
 }
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
   if (rs_cfg == NULL || rs_cfg->autoCal_step == 0) {
     return;
   }
