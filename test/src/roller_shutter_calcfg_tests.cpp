@@ -206,6 +206,13 @@ TEST_F(RollerShutterCalCfgNotSupportedF, CalCfgRecalibrateNotSupported) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 1000;
+  rsSettings.FullOpeningTimeMS = 1000;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
 
   supla_esp_calcfg_request(&request);
 
@@ -367,6 +374,13 @@ TEST_F(RollerShutterCalCfgAutoCalF, RsAutoCalibrated_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 0;
+  rsSettings.FullOpeningTimeMS = 0;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
 
   supla_esp_calcfg_request(&request);
 
@@ -451,6 +465,13 @@ TEST_F(RollerShutterCalCfgAutoCalF, RsNotCalibrated_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 0;
+  rsSettings.FullOpeningTimeMS = 0;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
 
   supla_esp_calcfg_request(&request);
 
@@ -547,6 +568,14 @@ TEST_F(RollerShutterCalCfgAutoCalF, RsDuringCalibration_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 0;
+  rsSettings.FullOpeningTimeMS = 0;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
+
 
   supla_esp_calcfg_request(&request);
 
@@ -626,6 +655,14 @@ TEST_F(RollerShutterCalCfgAutoCalF, RsManuallyCalibrated_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 1400;
+  rsSettings.FullOpeningTimeMS = 1300;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
+
 
   supla_esp_calcfg_request(&request);
 
@@ -688,6 +725,13 @@ TEST_F(RollerShutterCalCfgManualCalF, RsCalibrated_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 1400;
+  rsSettings.FullOpeningTimeMS = 1300;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
 
   supla_esp_calcfg_request(&request);
 
@@ -750,6 +794,13 @@ TEST_F(RollerShutterCalCfgManualCalF, RsNotCalibrated_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 1400;
+  rsSettings.FullOpeningTimeMS = 1300;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
 
   supla_esp_calcfg_request(&request);
 
@@ -823,6 +874,13 @@ TEST_F(RollerShutterCalCfgManualCalF, RsDuringCalibration_CalCfgRecalibrate) {
   request.ChannelNumber = 0;
   request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
   request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 1400;
+  rsSettings.FullOpeningTimeMS = 1300;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
 
   supla_esp_calcfg_request(&request);
 
@@ -850,3 +908,78 @@ TEST_F(RollerShutterCalCfgManualCalF, RsDuringCalibration_CalCfgRecalibrate) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 }
+
+TEST_F(RollerShutterCalCfgAutoCalF, RsManuallyCalibrated_AutoCalCfgRecalibrate) {
+
+  supla_esp_cfg.Time1[0] = 1300;
+  supla_esp_cfg.Time2[0] = 1400;
+  supla_esp_cfg.AutoCalCloseTime[0] = 0;
+  supla_esp_cfg.AutoCalOpenTime[0] = 0;
+  supla_esp_state.rs_position[0] = 400;
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 400);
+  EXPECT_EQ(*rsCfg->full_opening_time, 1300);
+  EXPECT_EQ(*rsCfg->full_closing_time, 1400);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 0);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+  
+  // request from client
+  TSD_DeviceCalCfgRequest request = {};
+  request.ChannelNumber = 0;
+  request.Command = SUPLA_CALCFG_CMD_RECALIBRATE;
+  request.SuperUserAuthorized = 1;
+  request.DataType = SUPLA_CALCFG_DATATYPE_RS_SETTINGS;
+  request.DataSize = sizeof(TCalCfg_RollerShutterSettings);
+
+  TCalCfg_RollerShutterSettings rsSettings = {};
+  rsSettings.FullClosingTimeMS = 0;
+  rsSettings.FullOpeningTimeMS = 0;
+  memcpy(request.Data, &rsSettings, sizeof(TCalCfg_RollerShutterSettings));
+
+
+  supla_esp_calcfg_request(&request);
+
+  EXPECT_EQ(*rsCfg->position, 0);
+  EXPECT_EQ(*rsCfg->auto_opening_time, 0);
+  EXPECT_EQ(*rsCfg->auto_closing_time, 0);
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 0);
+  EXPECT_EQ(rsCfg->autoCal_step, 0);
+ 
+  // +8000 ms
+  for (int i = 0; i < 800; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->auto_opening_time, 1100);
+  EXPECT_EQ(*rsCfg->auto_closing_time, 1200);
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1100);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1200);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+  EXPECT_EQ(rsCfg->autoCal_step, 0);
+}
+

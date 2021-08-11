@@ -1805,10 +1805,15 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
         } else {
           result.Result = SUPLA_CALCFG_RESULT_DONE;
 
+          TCalCfg_RollerShutterSettings *rsSettings =
+            (TCalCfg_RollerShutterSettings *)(request->Data);
+
           supla_rs_cfg[i].autoCal_step = 0;
           *(supla_rs_cfg[i].auto_opening_time) = 0;
           *(supla_rs_cfg[i].auto_closing_time) = 0;
           *(supla_rs_cfg[i].position) = 0;  // not calibrated
+          supla_esp_gpio_rs_apply_new_times(i, rsSettings->FullClosingTimeMS,
+              rsSettings->FullOpeningTimeMS);
           // trigger calibration by setting position to fully open
           supla_esp_gpio_rs_add_task(i, 0);
         }
