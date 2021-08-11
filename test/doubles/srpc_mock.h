@@ -67,6 +67,7 @@ public:
   virtual _supla_int_t srpc_sd_async_get_firmware_update_url(void *_srpc, TDS_FirmwareUpdateParams *params) = 0;
 
   static SrpcInterface *instance;
+  _func_srpc_event_OnRemoteCallReceived on_remote_call_received;
 };
 
 class SrpcMock : public SrpcInterface {

@@ -65,6 +65,7 @@ srpc_ds_async_device_calcfg_result(void *_srpc,
 
 void *srpc_init(TsrpcParams *params) {
   assert(SrpcInterface::instance);
+  SrpcInterface::instance->on_remote_call_received = params->on_remote_call_received;
   return SrpcInterface::instance->srpc_init(params);
 }
 
@@ -127,6 +128,7 @@ char srpc_output_dataexists(void *_srpc) {
 _supla_int_t srpc_ds_async_channel_value_changed(void *_srpc,
                                                  unsigned char channel_number,
                                                  char *value) {
+  assert(false);
   assert(SrpcInterface::instance);
   return SrpcInterface::instance->srpc_ds_async_channel_value_changed(
       _srpc, channel_number, value);
@@ -159,8 +161,14 @@ srpc_sd_async_get_firmware_update_url(void *_srpc,
                                                                         params);
 }
 
-SrpcInterface::SrpcInterface() { instance = this; }
+SrpcInterface::SrpcInterface() {
+  instance = this;
+  on_remote_call_received = nullptr;
+}
 
-SrpcInterface::~SrpcInterface() { instance = nullptr; }
+SrpcInterface::~SrpcInterface() {
+  instance = nullptr;
+  on_remote_call_received = nullptr;
+}
 
 SrpcInterface *SrpcInterface::instance = nullptr;
