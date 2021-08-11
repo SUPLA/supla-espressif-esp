@@ -1841,3 +1841,11 @@ supla_esp_devconn_get_channel_int_params(unsigned char channel_number) {
   }
 }
 #endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
+
+// Method is used in tests to cleanup memory allocations
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_release(void) {
+  supla_esp_devconn_stop();
+
+  free(devconn);
+  devconn = NULL;
+}

@@ -2028,5 +2028,7 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   EXPECT_EQ(*rsCfg->full_closing_time, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_devconn_release();
 }
 
