@@ -1778,7 +1778,7 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
   }
 
   supla_log(LOG_DEBUG, "CALCFG received, cmd %d, datatype %d, datasize %d",
-      request->Command, request->DataType, request->DataSize);
+            request->Command, request->DataType, request->DataSize);
 
 #ifdef BOARD_CALCFG
   // execute board specific calcfg handling
@@ -1792,24 +1792,30 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
   result.Command = request->Command;
   result.Result = SUPLA_CALCFG_RESULT_NOT_SUPPORTED;
 
-  if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE) {
+  if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
+      request->DataType == SUPLA_CALCFG_DATATYPE_RS_SETTINGS &&
+      request->DataSize == sizeof(TCalCfg_RollerShutterSettings)) {
     for (int i = 0; i < RS_MAX_COUNT; i++) {
       if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
           supla_rs_cfg[i].up->channel == request->ChannelNumber &&
           supla_rs_cfg[i].up->channel_flags &
-          SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE) {
+              SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE) {
         if (!request->SuperUserAuthorized) {
           result.Result = SUPLA_CALCFG_RESULT_UNAUTHORIZED;
         } else {
           result.Result = SUPLA_CALCFG_RESULT_DONE;
 
+          TCalCfg_RollerShutterSettings *rsSettings =
+            (TCalCfg_RollerShutterSettings *)(request->Data);
+
           supla_rs_cfg[i].autoCal_step = 0;
           *(supla_rs_cfg[i].auto_opening_time) = 0;
           *(supla_rs_cfg[i].auto_closing_time) = 0;
-          *(supla_rs_cfg[i].position) = 0; // not calibrated
+          *(supla_rs_cfg[i].position) = 0;  // not calibrated
+          supla_esp_gpio_rs_apply_new_times(i, rsSettings->FullClosingTimeMS,
+              rsSettings->FullOpeningTimeMS);
           // trigger calibration by setting position to fully open
-          supla_esp_gpio_rs_add_task(i, 0); 
-
+          supla_esp_gpio_rs_add_task(i, 0);
         }
       }
     }

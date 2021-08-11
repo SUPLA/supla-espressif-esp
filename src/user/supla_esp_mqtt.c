@@ -1361,7 +1361,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
-    const char *stat_t, uint8 precision, int n) {
+    const char *stat_t, uint8 precision, int n, const char *val_tmpl,
+    const char *device_class, bool last_reset) {
   if (!supla_esp_mqtt_prepare_ha_cfg_topic("sensor", topic_name_out,
                                            channel_number, n)) {
     return 0;
@@ -1375,8 +1376,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
       "s\"},\"name\":\"#%i Electricity Meter "
       "(%s)\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\",\"qos\":0,"
       "\"unit_"
-      "of_meas\":\"%s\",\"stat_t\":\"~/%s\",\"val_tpl\":\"{{ value | round(%i) "
-      "}}\"}";
+      "of_meas\":\"%s\",\"stat_t\":\"~/%s\",\"val_tpl\":\"{{ %s | "
+      "round(%i)}}\",\"state_class\":\"measurement\"%s%s}";
 
   char c = 0;
 
@@ -1385,6 +1386,16 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
 
   unsigned char mac[6] = {};
   wifi_get_macaddr(STATION_IF, mac);
+
+  char *_device_class = NULL;
+  int len = 0;
+
+  if (device_class && (len = strnlen(device_class, 100) + 15)) {
+    _device_class = malloc(len + 1);
+    if (_device_class) {
+      ets_snprintf(_device_class, len + 1, ",\"dev_cla\":\"%s\"", device_class);
+    }
+  }
 
   size_t buffer_size = 0;
 
@@ -1395,8 +1406,17 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
                      channel_number, supla_esp_mqtt_vars->device_id, mfr,
                      device_name, SUPLA_ESP_SOFTVER, channel_number, name,
                      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
-                     channel_number, n, unit, stat_t, precision) +
+                     channel_number, n, unit, stat_t,
+                     val_tmpl ? val_tmpl : "value", precision,
+                     _device_class ? _device_class : "",
+                     last_reset ? ",\"last_reset_topic\":\"~/state/support\", "
+                                  "\"last_reset_value_template\": "
+                                  "\"1970-01-01T00:00:00Z\""
+                                : "") +
         1;
+
+    // ~/state/support in last_reset_topic was used only to keep the topic
+    // active.
 
     if (!a) {
       *message_out = malloc(buffer_size);
@@ -1405,19 +1425,29 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
           free(*topic_name_out);
           *topic_name_out = NULL;
         }
-        return 0;
+        break;
       }
     }
   }
 
-  *message_size_out = strnlen(*message_out, buffer_size);
-  return 1;
+  if (_device_class) {
+    free(_device_class);
+    _device_class = NULL;
+  }
+
+  if (message_out) {
+    *message_size_out = strnlen(*message_out, buffer_size);
+    return 1;
+  }
+
+  return 0;
 }
 
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
-    const char *stat_t, uint8 precision, uint8 phase, int n) {
+    const char *stat_t, uint8 precision, uint8 phase, int n,
+    const char *val_tmpl, const char *device_class, bool last_reset) {
   size_t _stat_t_size = strlen(stat_t) + 20;
   char *_stat_t = malloc(_stat_t_size);
   if (!_stat_t) {
@@ -1437,7 +1467,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
 
   uint8 result = supla_esp_mqtt_ha_em__prepare_message(
       topic_name_out, message_out, message_size_out, channel_number, mfr, _name,
-      unit, _stat_t, precision, n);
+      unit, _stat_t, precision, n, val_tmpl, device_class, last_reset);
 
   free(_stat_t);
   free(_name);
@@ -1459,7 +1489,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_em__prepare_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total forward active energy", "kWh",
-            "state/total_forward_active_energy", 5, index);
+            "state/total_forward_active_energy", 5, index, NULL, "energy",
+            true);
       }
       break;
     case 2:
@@ -1467,7 +1498,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_em__prepare_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total reverse active energy", "kWh",
-            "state/total_reverse_active_energy", 5, index);
+            "state/total_reverse_active_energy", 5, index, NULL, "energy",
+            true);
       }
       break;
 
@@ -1476,7 +1508,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_em__prepare_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total forward active energy - balanced", "kWh",
-            "state/total_forward_active_energy_balanced", 5, index);
+            "state/total_forward_active_energy_balanced", 5, index, NULL,
+            "energy", true);
       }
 
       break;
@@ -1485,7 +1518,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_em__prepare_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total reverse active energy - balanced", "kWh",
-            "state/total_reverse_active_energy_balanced", 5, index);
+            "state/total_reverse_active_energy_balanced", 5, index, NULL,
+            "energy", true);
       }
 
       break;
@@ -1501,7 +1535,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total forward active energy", "kWh", "total_forward_active_energy",
-            5, phase, index);
+            5, phase, index, NULL, "energy", true);
       }
       break;
 
@@ -1512,7 +1546,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total reverse active energy", "kWh", "total_reverse_active_energy",
-            5, phase, index);
+            5, phase, index, NULL, "energy", true);
       }
       break;
 
@@ -1523,7 +1557,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total forward reactive energy", "kvarh",
-            "total_forward_reactive_energy", 5, phase, index);
+            "total_forward_reactive_energy", 5, phase, index, NULL, NULL, true);
       }
       break;
 
@@ -1534,7 +1568,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
             "Total reverse reactive energy", "kvarh",
-            "total_reverse_reactive_energy", 5, phase, index);
+            "total_reverse_reactive_energy", 5, phase, index, NULL, NULL, true);
       }
       break;
 
@@ -1544,7 +1578,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_FREQ) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Frequency", "Hz", "frequency", 2, phase, index);
+            "Frequency", "Hz", "frequency", 2, phase, index, NULL, NULL, false);
       }
       break;
 
@@ -1554,7 +1588,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_VOLTAGE) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Voltage", "V", "voltage", 2, phase, index);
+            "Voltage", "V", "voltage", 2, phase, index, NULL, "voltage", false);
       }
       break;
 
@@ -1564,7 +1598,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_CURRENT) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Current", "A", "current", 3, phase, index);
+            "Current", "A", "current", 3, phase, index, NULL, "current", false);
       }
       break;
 
@@ -1574,7 +1608,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_POWER_ACTIVE) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Power active", "W", "power_active", 5, phase, index);
+            "Power active", "W", "power_active", 5, phase, index, NULL, "power",
+            false);
       }
       break;
 
@@ -1584,7 +1619,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_POWER_REACTIVE) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Power reactive", "var", "power_reactive", 5, phase, index);
+            "Power reactive", "var", "power_reactive", 5, phase, index, NULL,
+            NULL, false);
       }
       break;
 
@@ -1594,7 +1630,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_POWER_APPARENT) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Power apparent", "VA", "power_apparent", 5, phase, index);
+            "Power apparent", "VA", "power_apparent", 5, phase, index, NULL,
+            NULL, false);
       }
       break;
 
@@ -1604,7 +1641,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_POWER_FACTOR) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Power factor", "", "power_factor", 3, phase, index);
+            "Power factor", "%", "power_factor", 3, phase, index,
+            "(float(value) * 100.0)", "power_factor", false);
       }
       break;
 
@@ -1614,7 +1652,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
       if (measured_values & EM_VAR_PHASE_ANGLE) {
         return supla_esp_mqtt_ha_prepare_em_phase_message(
             topic_name_out, message_out, message_size_out, channel_number, mfr,
-            "Phase angle", "°", "phase_angle", 1, phase, index);
+            "Phase angle", "°", "phase_angle", 1, phase, index, NULL, NULL,
+            false);
       }
       break;
   }
