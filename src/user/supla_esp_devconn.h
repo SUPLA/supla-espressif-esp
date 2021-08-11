@@ -31,6 +31,7 @@
 
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_init(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_release(void);
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_start(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop(void);
 char DEVCONN_ICACHE_FLASH supla_esp_devconn_is_registered(void);
 void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVALUE_SIZE]);
