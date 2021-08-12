@@ -61,6 +61,20 @@ static ETSTimer supla_gpio_timer2;
 unsigned char supla_esp_restart_on_cfg_press = 0;
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_flag(
+    supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
+  if (rsCfg) {
+    rsCfg->flags |= flag;
+  }
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_clear_flag(
+    supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
+  if (rsCfg) {
+    rsCfg->flags &= ~flag;
+  }
+}
+
 int GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_get_idx_by_ptr(supla_roller_shutter_cfg_t *rs_cfg) {
   for (int i = 0; i < RS_MAX_COUNT; i++) {
@@ -445,20 +459,6 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *
 #else
   return false;
 #endif /*RS_AUTOCALIBRATION_SUPPORTED*/
-}
-
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_flag(
-    supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
-  if (rsCfg) {
-    rsCfg->flags |= flag;
-  }
-}
-
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_clear_flag(
-    supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
-  if (rsCfg) {
-    rsCfg->flags &= ~flag;
-  }
 }
 
 void GPIO_ICACHE_FLASH
