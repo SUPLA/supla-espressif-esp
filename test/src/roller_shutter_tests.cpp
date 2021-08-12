@@ -69,6 +69,7 @@ public:
   }
 
   void TearDown() override {
+    cleanupTimers();
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     supla_esp_gpio_init_time = 0;
