@@ -141,9 +141,9 @@ sint8 GPIO_ICACHE_FLASH supla_esp_gpio_rs_get_current_position(
 }
 
 // calibration with manually provided times
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg,
-    unsigned int full_time, unsigned int time,
-    int pos) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(
+    supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time,
+    unsigned int time, int pos) {
 
   if ((*rs_cfg->position < 100 || *rs_cfg->position > 10100) && full_time > 0) {
 
@@ -157,8 +157,32 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *r
   }
 }
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_check_motor(supla_roller_shutter_cfg_t *rs_cfg) {
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_rs_check_motor(supla_roller_shutter_cfg_t *rs_cfg, bool moveUp) {
+  if (!rs_cfg) {
+    return;
+  }
 
+  // ignore first RS_AUTOCAL_FILTERING_TIME_MS after movement started
+  unsigned int t = system_get_time();
+  if (t - rs_cfg->start_time < RS_AUTOCAL_FILTERING_TIME_MS * 1000) {
+    return;
+  }
+
+  int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
+  if (idx >= 0) {
+    if (supla_esp_gpio_rs_is_autocal_done(idx)) {
+      if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
+        // we don't check if motor is working properly close to fully 
+        // open/closed positions
+        if ((moveUp && supla_esp_gpio_rs_get_current_position(rs_cfg) > 5) || 
+            (!moveUp && supla_esp_gpio_rs_get_current_position(rs_cfg) < 95)) {
+          // TODO  motor problem error
+          supla_esp_gpio_rs_set_flag(rs_cfg, 0x04);
+        }
+      }
+    }
+  }
 }
 
 
@@ -619,23 +643,23 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
     rs_cfg->down_time = 0;
     rs_cfg->up_time += (t - rs_cfg->last_time) / 1000;
 
+    supla_esp_gpio_rs_check_motor(rs_cfg, true); // true  = up
     supla_esp_gpio_rs_autocalibrate(rs_cfg);
     supla_esp_gpio_rs_calibrate(rs_cfg, full_opening_time, rs_cfg->up_time, 100);
     supla_esp_gpio_rs_move_position(rs_cfg, full_opening_time, &rs_cfg->up_time,
         1);
-    supla_esp_gpio_rs_check_motor(rs_cfg);
 
   } else if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
 
     rs_cfg->down_time += (t - rs_cfg->last_time) / 1000;
     rs_cfg->up_time = 0;
 
+    supla_esp_gpio_rs_check_motor(rs_cfg, false); // false = down
     supla_esp_gpio_rs_autocalibrate(rs_cfg);
     supla_esp_gpio_rs_calibrate(rs_cfg, full_closing_time, rs_cfg->down_time,
         10100);
     supla_esp_gpio_rs_move_position(rs_cfg, full_closing_time, 
         &rs_cfg->down_time, 0);
-    supla_esp_gpio_rs_check_motor(rs_cfg);
   } else {
     // if relays are off and we are not during autocal, then reset "calibration
     // in progress" flag

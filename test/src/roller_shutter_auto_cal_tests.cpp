@@ -666,15 +666,9 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_SetNewPosition) {
   reqValue.DurationMS = (0) | (0 << 16);
   reqValue.value[0] = 30; // target posiotion = 20
 
-
-  // Move RS down.
-  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   // simulate request from server
   supla_esp_channel_set_value(&reqValue);
-  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
-
-  // +2000 ms
   for (int i = 0; i < 200; i++) {
     curTime += 10000; // +10ms
     executeTimers();
