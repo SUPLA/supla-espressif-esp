@@ -76,7 +76,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_clear_flag(
 }
 
 #ifdef RS_AUTOCALIBRATION_SUPPORTED
-bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg);
+bool GPIO_ICACHE_FLASH supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*RS_AUTOCALIBRATION_SUPPORTED*/
 
 bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
@@ -141,7 +141,7 @@ sint8 GPIO_ICACHE_FLASH supla_esp_gpio_rs_get_current_position(
 }
 
 // calibration with manually provided times
-void supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg,
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg,
     unsigned int full_time, unsigned int time,
     int pos) {
 
@@ -156,6 +156,11 @@ void supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg,
     }
   }
 }
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_check_motor(supla_roller_shutter_cfg_t *rs_cfg) {
+
+}
+
 
 #define RS_DIRECTION_NONE   0
 #define RS_DIRECTION_UP     2
@@ -172,7 +177,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_relay_delayed(void *timer_arg) {
   // TODO reset delayed_trigger.value to 0
 }
 
-void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
     uint8 value, uint8 cancel_task,
     uint8 stop_delay) {
 	if ( rs_cfg == NULL ) {
@@ -286,7 +291,7 @@ supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg) {
 	return RS_RELAY_OFF;
 }
 
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int *time, uint8 up) {
 
 
@@ -367,14 +372,14 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 }
 
 
-uint8
+uint8 GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_time_margin(supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time, unsigned int time, uint8 m) {
 
 	return  (full_time > 0 && ( time * 100 / full_time ) < m ) ? 1 : 0;
 
 }
 
-void
+void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 	if ( rs_cfg->task.active == 0 || rs_cfg->autoCal_step > 0) {
 		return;
@@ -579,7 +584,7 @@ supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
   }
 }
 
-void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	supla_roller_shutter_cfg_t *rs_cfg = (supla_roller_shutter_cfg_t*)timer_arg;
 
@@ -618,6 +623,7 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
     supla_esp_gpio_rs_calibrate(rs_cfg, full_opening_time, rs_cfg->up_time, 100);
     supla_esp_gpio_rs_move_position(rs_cfg, full_opening_time, &rs_cfg->up_time,
         1);
+    supla_esp_gpio_rs_check_motor(rs_cfg);
 
   } else if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
 
@@ -629,6 +635,7 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
         10100);
     supla_esp_gpio_rs_move_position(rs_cfg, full_closing_time, 
         &rs_cfg->down_time, 0);
+    supla_esp_gpio_rs_check_motor(rs_cfg);
   } else {
     // if relays are off and we are not during autocal, then reset "calibration
     // in progress" flag

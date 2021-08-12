@@ -2998,3 +2998,4 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveDown) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 }
+
