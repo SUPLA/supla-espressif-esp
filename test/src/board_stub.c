@@ -23,6 +23,8 @@
 
 #include <supla_esp.h>
 
+#include <user_interface.h>
+
 const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 
 testBoardGpioInitCb *gpioInitCb = NULL;
@@ -41,13 +43,23 @@ void supla_esp_board_gpio_init(void) {
 };
 
 bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
+
   assert(rs_cfg);
-  if (rs_cfg->up_time > 0 && rs_cfg->up_time < upTime) {
-    return true;
+  assert(rs_cfg->up_time == 0 || rs_cfg->down_time == 0);
+  unsigned int t = system_get_time();
+  if (rs_cfg->up_time == 0 && rs_cfg->down_time == 0) {
+    return false;
+  }
+  if (rs_cfg->up_time > 0) {
+    if (t - rs_cfg->start_time < upTime * 1000) {
+      return true;
+    }
   }
 
-  if (rs_cfg->down_time > 0 && rs_cfg->down_time < downTime) {
-    return true;
+  if (rs_cfg->down_time > 0) {
+    if (t - rs_cfg->start_time < downTime * 1000) {
+      return true;
+    }
   }
 
   return false;

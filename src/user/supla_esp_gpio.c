@@ -75,6 +75,19 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_clear_flag(
   }
 }
 
+#ifdef RS_AUTOCALIBRATION_SUPPORTED
+bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg);
+#endif /*RS_AUTOCALIBRATION_SUPPORTED*/
+
+bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
+#ifdef RS_AUTOCALIBRATION_SUPPORTED
+  return supla_esp_board_is_rs_in_move(rs_cfg);
+#else
+  return false;
+#endif /*RS_AUTOCALIBRATION_SUPPORTED*/
+}
+
+
 int GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_get_idx_by_ptr(supla_roller_shutter_cfg_t *rs_cfg) {
   for (int i = 0; i < RS_MAX_COUNT; i++) {
@@ -315,18 +328,36 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
 
 	}
 
-	if ( ((*rs_cfg->position) == 100 && up == 1) || ((*rs_cfg->position) == 10100 && up == 0) ) {
+  if (((*rs_cfg->position) == 100 && up == 1) ||
+      ((*rs_cfg->position) == 10100 && up == 0)) {
 
-		if ( (*time) >= (int)(full_time * 1.1) ) {
+    // This time margin starts counting time when RS reach either 0 or 100%. So
+    // it adds "full_time * 110%" of enabled relay after it was expected to
+    // reach fully open or closed RS.
+    // This part of code is executed only for "MOVE UP/DOWN" actions (either
+    // from physical buttons or in app). It is not executed when new position
+    // is given in % value.
+    if ((*time) >= (int)(full_time * 1.1)) {
+      int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
+      if (idx >= 0) {
+        if (supla_esp_gpio_rs_is_autocal_done(idx)) {
+          // when RS is fully closed/opened, we add 110% of time to finilize
+          // operation. In such case we expect that motor will shut down
+          // within that 110% time margin. If it doesn't, it means that we
+          // lost RS calibration (it is still in move, while it should already
+          // stop.
+          if (supla_esp_gpio_is_rs_in_move(rs_cfg)) {
+            // TODO calibration lost error
+            supla_esp_gpio_rs_set_flag(rs_cfg, 0x08);
+          }
+        }
+      }
+      supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
+      // supla_log(LOG_DEBUG, "Timeout full_time + 10%");
+    }
 
-			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
-			//supla_log(LOG_DEBUG, "Timeout full_time + 10%");
-
-		}
-
-		return;
-	}
-
+    return;
+  }
 
 	if ( x <= (*time) )
 		(*time) -= x;
@@ -425,6 +456,21 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
 			//supla_log(LOG_DEBUG, "DOWN MARGIN 5%");
 
 		} else {
+      int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
+      if (idx >= 0 && (rs_cfg->task.percent == 0 || rs_cfg->task.percent == 100)) {
+        if (supla_esp_gpio_rs_is_autocal_done(idx)) {
+          // when RS is fully closed/opened, we add 10% of time to finilize 
+          // operation. In such case we expect that motor will shut down
+          // within that 10% time margin. If it doesn't, it means that we
+          // lost RS calibration (it is still in move, while it should already
+          // stop.
+          if (supla_esp_gpio_is_rs_in_move(rs_cfg)) {
+            // TODO calibration lost error
+            supla_esp_gpio_rs_set_flag(rs_cfg, 0x08);
+          }
+        }
+      }
+
 
 			rs_cfg->task.active = 0;
 			supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
@@ -449,18 +495,6 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_start_autoCal(
   supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 
 }
-#ifdef RS_AUTOCALIBRATION_SUPPORTED
-bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg);
-#endif /*RS_AUTOCALIBRATION_SUPPORTED*/
-
-bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
-#ifdef RS_AUTOCALIBRATION_SUPPORTED
-  return supla_esp_board_is_rs_in_move(rs_cfg);
-#else
-  return false;
-#endif /*RS_AUTOCALIBRATION_SUPPORTED*/
-}
-
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_calibration_failed(supla_roller_shutter_cfg_t *rs_cfg) {
 
@@ -566,7 +600,8 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
   } else {
     full_opening_time = *rs_cfg->full_opening_time;
     full_closing_time = *rs_cfg->full_closing_time;
-    if (*rs_cfg->auto_closing_time != 0 || *rs_cfg->auto_opening_time != 0 || rs_cfg->autoCal_step != 0) {
+    if (*rs_cfg->auto_closing_time != 0 || *rs_cfg->auto_opening_time != 0 ||
+        rs_cfg->autoCal_step != 0) {
       *rs_cfg->auto_opening_time = 0;
       *rs_cfg->auto_closing_time = 0;
       *rs_cfg->position = 0;
@@ -574,25 +609,27 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
     }
   }
 
-	if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up) ) {
+  if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up)) {
 
-		rs_cfg->down_time = 0;
-		rs_cfg->up_time += (t-rs_cfg->last_time)/1000;
-
-    supla_esp_gpio_rs_autocalibrate(rs_cfg);
-		supla_esp_gpio_rs_calibrate(rs_cfg, full_opening_time, rs_cfg->up_time, 100);
-		supla_esp_gpio_rs_move_position(rs_cfg, full_opening_time, &rs_cfg->up_time, 1);
-
-	} else if ( 1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down) ) {
-
-		rs_cfg->down_time += (t-rs_cfg->last_time)/1000;
-		rs_cfg->up_time = 0;
+    rs_cfg->down_time = 0;
+    rs_cfg->up_time += (t - rs_cfg->last_time) / 1000;
 
     supla_esp_gpio_rs_autocalibrate(rs_cfg);
-		supla_esp_gpio_rs_calibrate(rs_cfg, full_closing_time, rs_cfg->down_time, 10100);
-		supla_esp_gpio_rs_move_position(rs_cfg, full_closing_time, &rs_cfg->down_time, 0);
+    supla_esp_gpio_rs_calibrate(rs_cfg, full_opening_time, rs_cfg->up_time, 100);
+    supla_esp_gpio_rs_move_position(rs_cfg, full_opening_time, &rs_cfg->up_time,
+        1);
 
-	} else {
+  } else if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
+
+    rs_cfg->down_time += (t - rs_cfg->last_time) / 1000;
+    rs_cfg->up_time = 0;
+
+    supla_esp_gpio_rs_autocalibrate(rs_cfg);
+    supla_esp_gpio_rs_calibrate(rs_cfg, full_closing_time, rs_cfg->down_time,
+        10100);
+    supla_esp_gpio_rs_move_position(rs_cfg, full_closing_time, 
+        &rs_cfg->down_time, 0);
+  } else {
     // if relays are off and we are not during autocal, then reset "calibration
     // in progress" flag
     if (rs_cfg->autoCal_step == 0) {
@@ -622,6 +659,7 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 			sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
       value[0] = pos;
       // TODO change to proper struct after proto.h update
+      supla_log(LOG_DEBUG, "New RS value: pos %d, flags %4x", pos, rs_cfg->flags);
       memcpy(value+3, &rs_cfg->flags, sizeof(rs_cfg->flags));
 			supla_esp_channel_value__changed(rs_cfg->up->channel, value);
 

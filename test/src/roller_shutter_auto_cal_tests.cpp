@@ -599,9 +599,35 @@ TEST_F(RollerShutterAutoCalF, RsAutoCalibrated_DisableAutoCal) {
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
 }
 
-TEST_F(RollerShutterAutoCalF, RsAutoCalibrated_SetNewPosition) {
-  int curTime = 10000; // start at +10 ms
-  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_SetNewPosition) {
+  char expectedValue1[8] = {};
+  upTime = 1000;
+  downTime = 1000;
+  expectedValue1[0] = static_cast<char>(1);
+  EXPECT_CALL(srpc,
+      valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({3, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 0, ElementsAreArray({20, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 0, ElementsAreArray({26, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 0, ElementsAreArray({77, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 0, ElementsAreArray({100, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
   supla_esp_cfg.Time2[0] = 0;
@@ -640,15 +666,23 @@ TEST_F(RollerShutterAutoCalF, RsAutoCalibrated_SetNewPosition) {
   reqValue.DurationMS = (0) | (0 << 16);
   reqValue.value[0] = 30; // target posiotion = 20
 
+
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   // simulate request from server
   supla_esp_channel_set_value(&reqValue);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
-  EXPECT_EQ(*rsCfg->position, 200); // postion 10
+  EXPECT_EQ(*rsCfg->position, 100 + (100* 20)); // postion 20
   EXPECT_EQ(*rsCfg->full_opening_time, 0);
   EXPECT_EQ(*rsCfg->full_closing_time, 0);
   EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
@@ -657,6 +691,31 @@ TEST_F(RollerShutterAutoCalF, RsAutoCalibrated_SetNewPosition) {
   EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 110; // target posiotion = 100
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  // remaining downTime is 800 ms (we are at pos 20 and target pos is 100)
+  downTime = 800;
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100 + (100* 100)); // postion 20
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
 }
 
 TEST_F(RollerShutterAutoCalWithSrpc, RsNotCalibrated_TriggerAutoCalServerStop) {
@@ -2604,6 +2663,338 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooLongDownTime) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 }
-/* TODO:
- * - calibration on calcfg request - feedback in progress?
- */
+
+TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLost) {
+
+  // Set how long [ms] "is_in_move" method will return true
+  upTime = 2000;
+  downTime = 2000;
+
+  char expectedValue1[8] = {};
+  expectedValue1[0] = static_cast<char>(1);
+  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue1)))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  char expectedValue2[8] = {};
+  expectedValue2[0] = static_cast<char>(3);
+  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
+    .WillOnce(Return(0));
+
+  char expectedValue3[8] = {};
+  expectedValue3[0] = static_cast<char>(54);
+  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue3)))
+    .WillOnce(Return(0));
+
+  char expectedValue4[8] = {};
+  expectedValue4[0] = static_cast<char>(100);
+  expectedValue4[3] = static_cast<char>(0x08); // calibration lost
+  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
+    .WillOnce(Return(0));
+
+  supla_esp_cfg.Time1[0] = 0;
+  supla_esp_cfg.Time2[0] = 0;
+  supla_esp_cfg.AutoCalCloseTime[0] = 1000;
+  supla_esp_cfg.AutoCalOpenTime[0] = 1000;
+  supla_esp_state.rs_position[0] = 200;
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 200);
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  // closing and opening time is coded in 0.1s units on 2x16 bit blocks of
+  // DurationMS
+  // In autocalibration, server sends ct/ot == 0
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 110; // fully close
+
+  // Move RS down.
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+//  EXPECT_EQ(rsCfg->up_time, 0);
+//  EXPECT_EQ(rsCfg->down_time, 0);
+
+  EXPECT_EQ(*rsCfg->position, 10100);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
+
+TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostPos0) {
+
+  // Set how long [ms] "is_in_move" method will return true
+  upTime = 2000;
+  downTime = 2000;
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0x08, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  supla_esp_cfg.Time1[0] = 0;
+  supla_esp_cfg.Time2[0] = 0;
+  supla_esp_cfg.AutoCalCloseTime[0] = 1000;
+  supla_esp_cfg.AutoCalOpenTime[0] = 1000;
+  supla_esp_state.rs_position[0] = 200;
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 200);
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  // closing and opening time is coded in 0.1s units on 2x16 bit blocks of
+  // DurationMS
+  // In autocalibration, server sends ct/ot == 0
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 10; // fully open
+
+  // Move RS down.
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+//  EXPECT_EQ(rsCfg->up_time, 0);
+//  EXPECT_EQ(rsCfg->down_time, 0);
+
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
+
+TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveUp) {
+
+  // Set how long [ms] "is_in_move" method will return true
+  upTime = 2000;
+  downTime = 2000;
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0x08, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  supla_esp_cfg.Time1[0] = 0;
+  supla_esp_cfg.Time2[0] = 0;
+  supla_esp_cfg.AutoCalCloseTime[0] = 1000;
+  supla_esp_cfg.AutoCalOpenTime[0] = 1000;
+  supla_esp_state.rs_position[0] = 200;
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 200);
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  // closing and opening time is coded in 0.1s units on 2x16 bit blocks of
+  // DurationMS
+  // In autocalibration, server sends ct/ot == 0
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 2; // move up
+
+  // Move RS down.
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+//  EXPECT_EQ(rsCfg->up_time, 0);
+//  EXPECT_EQ(rsCfg->down_time, 0);
+
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
+
+TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveDown) {
+
+  // Set how long [ms] "is_in_move" method will return true
+  upTime = 5000;
+  downTime = 5000;
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({4, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({55, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({100, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({100, 0, 0, 0x08, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  supla_esp_cfg.Time1[0] = 0;
+  supla_esp_cfg.Time2[0] = 0;
+  supla_esp_cfg.AutoCalCloseTime[0] = 1000;
+  supla_esp_cfg.AutoCalOpenTime[0] = 1000;
+  supla_esp_state.rs_position[0] = 200;
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 200);
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  // closing and opening time is coded in 0.1s units on 2x16 bit blocks of
+  // DurationMS
+  // In autocalibration, server sends ct/ot == 0
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 1; // move up
+
+  // Move RS down.
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  for (int i = 0; i < 800; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+//  EXPECT_EQ(rsCfg->up_time, 0);
+//  EXPECT_EQ(rsCfg->down_time, 0);
+
+  EXPECT_EQ(*rsCfg->position, 10100);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
