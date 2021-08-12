@@ -16,6 +16,7 @@
 
 #include "srpc_mock.h"
 #include <supla-common/srpc.h>
+#include <vector>
 
 _supla_int_t
 srpc_ds_async_channel_extendedvalue_changed(void *_srpc,
@@ -128,10 +129,9 @@ char srpc_output_dataexists(void *_srpc) {
 _supla_int_t srpc_ds_async_channel_value_changed(void *_srpc,
                                                  unsigned char channel_number,
                                                  char *value) {
-  assert(false);
   assert(SrpcInterface::instance);
-  return SrpcInterface::instance->srpc_ds_async_channel_value_changed(
-      _srpc, channel_number, value);
+  std::vector<char> vec(value, value + 8);
+  return SrpcInterface::instance->valueChanged(_srpc, channel_number, vec);
 }
 
 _supla_int_t srpc_ds_async_get_channel_functions(void *_srpc) {

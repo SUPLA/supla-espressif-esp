@@ -106,17 +106,21 @@ sint8 GPIO_ICACHE_FLASH supla_esp_gpio_rs_get_current_position(
     supla_roller_shutter_cfg_t *rs_cfg) {
   sint8 result = -1;
   if (rs_cfg && *rs_cfg->position >= 100 && *rs_cfg->position <= 10100) {
+    // we add 50 here in order to round position to closest integer
+    // instead of rounding down, which could translate 1.99% to 1%
     result = (*rs_cfg->position - 100 + 50) / 100;
   }
   return result;
 }
 
+// calibration with manually provided times
 void supla_esp_gpio_rs_calibrate(supla_roller_shutter_cfg_t *rs_cfg,
     unsigned int full_time, unsigned int time,
     int pos) {
 
   if ((*rs_cfg->position < 100 || *rs_cfg->position > 10100) && full_time > 0) {
 
+    supla_esp_gpio_rs_set_flag(rs_cfg, 0x10);
     full_time *= 1.1; // 10% margin
 
     if (time >= full_time) {
@@ -183,6 +187,10 @@ void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
 		}
 
 	} else {
+    // TODO add defines for error flags
+    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x02);
+    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x04);
+    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x08);
 
 		supla_relay_cfg_t *rel = value == RS_RELAY_UP ? rs_cfg->down : rs_cfg->up;
 
@@ -439,13 +447,31 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs_in_move(supla_roller_shutter_cfg_t *
 #endif /*RS_AUTOCALIBRATION_SUPPORTED*/
 }
 
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_flag(
+    supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
+  if (rsCfg) {
+    rsCfg->flags |= flag;
+  }
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_clear_flag(
+    supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
+  if (rsCfg) {
+    rsCfg->flags &= ~flag;
+  }
+}
+
 void GPIO_ICACHE_FLASH
-supla_esp_gpio_rs_abort_calibration(supla_roller_shutter_cfg_t *rs_cfg) {
+supla_esp_gpio_rs_calibration_failed(supla_roller_shutter_cfg_t *rs_cfg) {
 
   rs_cfg->autoCal_step = 0;
   *rs_cfg->auto_opening_time = 0;
   *rs_cfg->auto_closing_time = 0;
   *rs_cfg->position = 0;
+  // TODO add define - calibration failed
+  supla_esp_gpio_rs_set_flag(rs_cfg, 0x02);
+  supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
+  
   // off with cancel task
   supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 0);
 }
@@ -453,8 +479,12 @@ supla_esp_gpio_rs_abort_calibration(supla_roller_shutter_cfg_t *rs_cfg) {
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
   if (rs_cfg == NULL || rs_cfg->autoCal_step == 0) {
+    // TODO
+    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
     return;
   }
+  // TODO
+  supla_esp_gpio_rs_set_flag(rs_cfg, 0x10);
 
   if (rs_cfg->up_time < RS_AUTOCAL_FILTERING_TIME_MS &&
       rs_cfg->down_time < RS_AUTOCAL_FILTERING_TIME_MS) {
@@ -471,7 +501,7 @@ supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
         rs_cfg->autoCal_button_request = true;
         supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
       } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME_MS) {
-        supla_esp_gpio_rs_abort_calibration(rs_cfg);
+        supla_esp_gpio_rs_calibration_failed(rs_cfg);
       }
       break;
     }
@@ -479,7 +509,7 @@ supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
       if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
         if (rs_cfg->down_time < RS_AUTOCAL_MIN_TIME_MS) {
           // calibration failed
-          supla_esp_gpio_rs_abort_calibration(rs_cfg);
+          supla_esp_gpio_rs_calibration_failed(rs_cfg);
         } else {
           rs_cfg->autoCal_step = 3;
           *rs_cfg->auto_closing_time = rs_cfg->down_time;
@@ -487,7 +517,7 @@ supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
         }
       } else if (rs_cfg->down_time > RS_AUTOCAL_MAX_TIME_MS) {
-        supla_esp_gpio_rs_abort_calibration(rs_cfg);
+        supla_esp_gpio_rs_calibration_failed(rs_cfg);
       }
       break;
     }
@@ -495,19 +525,20 @@ supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
       if (!supla_esp_gpio_is_rs_in_move(rs_cfg)) {
         if (rs_cfg->up_time < RS_AUTOCAL_MIN_TIME_MS) {
           // calibration failed
-          supla_esp_gpio_rs_abort_calibration(rs_cfg);
+          supla_esp_gpio_rs_calibration_failed(rs_cfg);
         } else {
           rs_cfg->autoCal_step = 0;
           *rs_cfg->auto_opening_time = rs_cfg->up_time;
 
           *rs_cfg->position = 100; // fully open and calibrated
+          supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
           supla_esp_save_state(RS_SAVE_STATE_DELAY);
           supla_esp_cfg_save(&supla_esp_cfg);
           rs_cfg->autoCal_button_request = true;
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
         }
       } else if (rs_cfg->up_time > RS_AUTOCAL_MAX_TIME_MS) {
-        supla_esp_gpio_rs_abort_calibration(rs_cfg);
+        supla_esp_gpio_rs_calibration_failed(rs_cfg);
       }
       break;
     }
@@ -562,6 +593,11 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 		supla_esp_gpio_rs_move_position(rs_cfg, full_closing_time, &rs_cfg->down_time, 0);
 
 	} else {
+    // if relays are off and we are not during autocal, then reset "calibration
+    // in progress" flag
+    if (rs_cfg->autoCal_step == 0) {
+      supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
+    }
 
 		if ( rs_cfg->up_time != 0 )
 			rs_cfg->up_time = 0;
@@ -576,13 +612,18 @@ void supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	if ( rs_cfg->last_time-rs_cfg->last_comm_time >= 500000 ) { // 500 ms.
 
-		if ( rs_cfg->last_position != *rs_cfg->position ) {
+    if (rs_cfg->last_position != *rs_cfg->position ||
+        rs_cfg->flags != rs_cfg->last_flags) {
 
 			rs_cfg->last_position = *rs_cfg->position;
-      // we add 50 here in order to round position to closest integer
-      // instead of rounding down, which could translate 1.99% to 1%
+      rs_cfg->last_flags = rs_cfg->flags;
+
+      char value[SUPLA_CHANNELVALUE_SIZE] = {};
 			sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
-			supla_esp_channel_value_changed(rs_cfg->up->channel, pos);
+      value[0] = pos;
+      // TODO change to proper struct after proto.h update
+      memcpy(value+3, &rs_cfg->flags, sizeof(rs_cfg->flags));
+			supla_esp_channel_value__changed(rs_cfg->up->channel, value);
 
 #ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED
       supla_esp_board_on_rollershutter_position_changed(

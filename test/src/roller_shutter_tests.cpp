@@ -1935,8 +1935,6 @@ char custom_srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned _supla_int
   return 1;
 }
 
-
-
 TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   SrpcMock srpc;
   UptimeStub uptime;
@@ -1951,15 +1949,16 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
 
   EXPECT_CALL(srpc, srpc_getdata(_, _, _)).WillOnce(DoAll(Invoke(custom_srpc_getdata), Return(1)));
   EXPECT_CALL(srpc, srpc_rd_free(_));
+  EXPECT_CALL(srpc, srpc_free(_));
+  EXPECT_CALL(srpc, srpc_dcs_async_set_activity_timeout(_, _));
 
   supla_esp_devconn_init();
   supla_esp_srpc_init();
   ASSERT_NE(srpc.on_remote_call_received, nullptr);
 
   srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
-
   supla_esp_gpio_init();
-
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
 
   supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
   ASSERT_NE(rsCfg, nullptr);
