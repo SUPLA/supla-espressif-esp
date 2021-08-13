@@ -147,7 +147,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(
 
   if ((*rs_cfg->position < 100 || *rs_cfg->position > 10100) && full_time > 0) {
 
-    supla_esp_gpio_rs_set_flag(rs_cfg, 0x10);
+    supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
     full_time *= 1.1; // 10% margin
 
     if (time >= full_time) {
@@ -177,8 +177,7 @@ supla_esp_gpio_rs_check_motor(supla_roller_shutter_cfg_t *rs_cfg, bool moveUp) {
         // open/closed positions
         if ((moveUp && supla_esp_gpio_rs_get_current_position(rs_cfg) > 5) || 
             (!moveUp && supla_esp_gpio_rs_get_current_position(rs_cfg) < 95)) {
-          // TODO  motor problem error
-          supla_esp_gpio_rs_set_flag(rs_cfg, 0x04);
+          supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_MOTOR_PROBLEM);
         }
       }
     }
@@ -243,10 +242,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *r
 		}
 
 	} else {
-    // TODO add defines for error flags
-    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x02);
-    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x04);
-    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x08);
+    supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_FAILED);
+    supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_MOTOR_PROBLEM);
+    supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_LOST);
 
 		supla_relay_cfg_t *rel = value == RS_RELAY_UP ? rs_cfg->down : rs_cfg->up;
 
@@ -376,8 +374,7 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg, unsigned int
           // lost RS calibration (it is still in move, while it should already
           // stop.
           if (supla_esp_gpio_is_rs_in_move(rs_cfg)) {
-            // TODO calibration lost error
-            supla_esp_gpio_rs_set_flag(rs_cfg, 0x08);
+            supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_LOST);
           }
         }
       }
@@ -494,8 +491,7 @@ supla_esp_gpio_rs_task_processing(supla_roller_shutter_cfg_t *rs_cfg) {
           // lost RS calibration (it is still in move, while it should already
           // stop.
           if (supla_esp_gpio_is_rs_in_move(rs_cfg)) {
-            // TODO calibration lost error
-            supla_esp_gpio_rs_set_flag(rs_cfg, 0x08);
+            supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_LOST);
           }
         }
       }
@@ -531,9 +527,8 @@ supla_esp_gpio_rs_calibration_failed(supla_roller_shutter_cfg_t *rs_cfg) {
   *rs_cfg->auto_opening_time = 0;
   *rs_cfg->auto_closing_time = 0;
   *rs_cfg->position = 0;
-  // TODO add define - calibration failed
-  supla_esp_gpio_rs_set_flag(rs_cfg, 0x02);
-  supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
+  supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_FAILED);
+  supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
   
   // off with cancel task
   supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 0);
@@ -542,12 +537,10 @@ supla_esp_gpio_rs_calibration_failed(supla_roller_shutter_cfg_t *rs_cfg) {
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
   if (rs_cfg == NULL || rs_cfg->autoCal_step == 0) {
-    // TODO
-    supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
+    supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
     return;
   }
-  // TODO
-  supla_esp_gpio_rs_set_flag(rs_cfg, 0x10);
+  supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
 
   if (rs_cfg->up_time < RS_AUTOCAL_FILTERING_TIME_MS &&
       rs_cfg->down_time < RS_AUTOCAL_FILTERING_TIME_MS) {
@@ -594,7 +587,8 @@ supla_esp_gpio_rs_autocalibrate(supla_roller_shutter_cfg_t *rs_cfg) {
           *rs_cfg->auto_opening_time = rs_cfg->up_time;
 
           *rs_cfg->position = 100; // fully open and calibrated
-          supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
+          supla_esp_gpio_rs_clear_flag(rs_cfg, 
+              RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
           supla_esp_save_state(RS_SAVE_STATE_DELAY);
           supla_esp_cfg_save(&supla_esp_cfg);
           rs_cfg->autoCal_button_request = true;
@@ -681,7 +675,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
     // if relays are off and we are not during autocal, then reset "calibration
     // in progress" flag
     if (rs_cfg->autoCal_step == 0) {
-      supla_esp_gpio_rs_clear_flag(rs_cfg, 0x10);
+      supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
     }
 
 		if ( rs_cfg->up_time != 0 )
@@ -704,11 +698,13 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
       rs_cfg->last_flags = rs_cfg->flags;
 
       char value[SUPLA_CHANNELVALUE_SIZE] = {};
-			sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
+      sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
+      TRollerShutterValue rsValue = {};
+      rsValue.position = pos;
+      rsValue.flags = rs_cfg->flags;
       value[0] = pos;
-      // TODO change to proper struct after proto.h update
       supla_log(LOG_DEBUG, "New RS value: pos %d, flags %4x", pos, rs_cfg->flags);
-      memcpy(value+3, &rs_cfg->flags, sizeof(rs_cfg->flags));
+      memcpy(value, &rsValue, sizeof(rsValue));
 			supla_esp_channel_value__changed(rs_cfg->up->channel, value);
 
 #ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED

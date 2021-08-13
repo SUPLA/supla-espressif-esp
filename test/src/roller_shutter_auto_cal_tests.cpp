@@ -479,7 +479,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS); 
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 
@@ -790,7 +790,8 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsNotCalibrated_TriggerAutoCalServerStop) {
 }
 
 // Button actions should not start calibration
-TEST_F(RollerShutterAutoCalWithSrpc, RsNotCalibrated_ButtonMovementsThenServerReq) {
+TEST_F(RollerShutterAutoCalWithSrpc,
+    RsNotCalibrated_ButtonMovementsThenServerReq) {
   int curTime = 10000; // start at +10 ms
   EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
 
@@ -802,7 +803,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsNotCalibrated_ButtonMovementsThenServerRe
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 
@@ -1216,7 +1217,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS); 
   {
     InSequence seq;
     EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue)))
@@ -2308,13 +2309,13 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooShortTime) {
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 
   char expectedValue2[8] = {};
   expectedValue2[0] = static_cast<char>(0xFF);
-  expectedValue2[3] = static_cast<char>(0x02); // calibration failed
+  expectedValue2[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_FAILED);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
     .WillOnce(Return(0));
 
@@ -2398,7 +2399,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooShortTimeOnMoveUp) 
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .Times(2)
     .WillRepeatedly(Return(0));
@@ -2406,7 +2407,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooShortTimeOnMoveUp) 
   // First calibration fails
   char expectedValue2[8] = {};
   expectedValue2[0] = static_cast<char>(0xFF);
-  expectedValue2[3] = static_cast<char>(0x02); // calibration failed
+  expectedValue2[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_FAILED);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
     .WillOnce(Return(0));
 
@@ -2515,13 +2516,13 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooLongTime) {
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 
   char expectedValue2[8] = {};
   expectedValue2[0] = static_cast<char>(0xFF);
-  expectedValue2[3] = static_cast<char>(0x02); // calibration failed
+  expectedValue2[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_FAILED);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
     .WillOnce(Return(0));
 
@@ -2597,13 +2598,13 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooLongDownTime) {
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 
   char expectedValue2[8] = {};
   expectedValue2[0] = static_cast<char>(0xFF);
-  expectedValue2[3] = static_cast<char>(0x02); // calibration failed
+  expectedValue2[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_FAILED);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
     .WillOnce(Return(0));
 
@@ -2688,7 +2689,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLost) {
 
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(100);
-  expectedValue4[3] = static_cast<char>(0x08); // calibration lost
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_LOST); // calibration lost
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 
@@ -2768,8 +2769,10 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostPos0) {
     .WillRepeatedly(Return(0));
 
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0x08, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+        ElementsAreArray({0, 0, 0,
+          RS_VALUE_FLAG_CALIBRATION_LOST,
+          0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -2848,8 +2851,10 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveUp) {
     .WillRepeatedly(Return(0));
 
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0x08, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+        ElementsAreArray({0, 0, 0,
+          RS_VALUE_FLAG_CALIBRATION_LOST,
+          0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -2936,8 +2941,10 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveDown) {
     .WillRepeatedly(Return(0));
 
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({100, 0, 0, 0x08, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+        ElementsAreArray({100, 0, 0,
+          RS_VALUE_FLAG_CALIBRATION_LOST,
+          0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -3017,7 +3024,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationWithLongStartupTime) {
   // Calibration started (proper flag added)
   char expectedValue4[8] = {};
   expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(0x10); 
+  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS); 
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
     .WillOnce(Return(0));
 

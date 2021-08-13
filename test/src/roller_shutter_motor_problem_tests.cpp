@@ -148,7 +148,7 @@ TEST_F(RollerShutterMotorProblem, MotorProblemMoveDown) {
     .WillRepeatedly(Return(0));
 
   EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({100, 0, 0, 0x04, 0, 0, 0, 0})))
+      valueChanged(_, 0, ElementsAreArray({100, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -220,8 +220,10 @@ TEST_F(RollerShutterMotorProblem, MotorProblemMoveUp) {
       valueChanged(_, 0, ElementsAreArray({47, 0, 0, 0, 0, 0, 0, 0})))
     .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0x04, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc,
+      valueChanged(_, 0,
+        ElementsAreArray({0, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+          0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -439,8 +441,10 @@ TEST_F(RollerShutterMotorProblem, MotorProblemByTask) {
       valueChanged(_, 0, ElementsAreArray({52, 0, 0, 0, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({90, 0, 0, 0x04, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+        ElementsAreArray({90, 0, 0,
+          RS_VALUE_FLAG_MOTOR_PROBLEM, 0,
+          0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -514,12 +518,16 @@ TEST_F(RollerShutterMotorProblem, MotorProblemWithLongStartupTime) {
     .Times(2)
     .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({53, 0, 0, 0x04, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+        ElementsAreArray({53, 0, 0,
+          RS_VALUE_FLAG_MOTOR_PROBLEM, 0,
+          0, 0, 0})))
     .WillOnce(Return(0));
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({90, 0, 0, 0x04, 0, 0, 0, 0})))
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+        ElementsAreArray({90, 0, 0,
+          RS_VALUE_FLAG_MOTOR_PROBLEM, 0,
+          0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
