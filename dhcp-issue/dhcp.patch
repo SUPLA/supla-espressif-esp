@@ -1,0 +1,37 @@
+1075,1081c1075,1077
+<   } else {
+<     /* subnet mask not given, choose a safe subnet mask given the network class */
+<     u8_t first_octet = ip4_addr1(&dhcp->offered_ip_addr);
+<     if (first_octet <= 127) {
+<       ip4_addr_set_u32(&sn_mask, PP_HTONL(0xff000000));
+<     } else if (first_octet >= 192) {
+<       ip4_addr_set_u32(&sn_mask, PP_HTONL(0xffffff00));
+---
+>   } else { 
+>     if (!ip_addr_isany(&netif->ip_addr)) {
+>        sn_mask = netif->netmask;
+1083c1079,1087
+<       ip4_addr_set_u32(&sn_mask, PP_HTONL(0xffff0000));
+---
+>        /* subnet mask not given, choose a safe subnet mask given the network class */
+>        u8_t first_octet = ip4_addr1(&dhcp->offered_ip_addr);
+>         if (first_octet <= 127) {
+>           ip4_addr_set_u32(&sn_mask, PP_HTONL(0xff000000));
+>         } else if (first_octet >= 192) {
+>           ip4_addr_set_u32(&sn_mask, PP_HTONL(0xffffff00));
+>         } else {
+>           ip4_addr_set_u32(&sn_mask, PP_HTONL(0xffff0000));
+>         }
+1087,1093c1091,1094
+<   ip_addr_copy(gw_addr, dhcp->offered_gw_addr);
+<   /* gateway address not given? */
+<   if (ip_addr_isany(&gw_addr)) {
+<     /* copy network address */
+<     ip_addr_get_network(&gw_addr, &dhcp->offered_ip_addr, &sn_mask);
+<     /* use first host address on network as gateway */
+<     ip4_addr_set_u32(&gw_addr, ip4_addr_get_u32(&gw_addr) | PP_HTONL(0x00000001));
+---
+>   if (ip_addr_isany(&dhcp->offered_gw_addr) && !ip_addr_isany(&netif->gw)) { 
+>      ip_addr_copy(gw_addr, netif->gw);
+>   } else {
+>      ip_addr_copy(gw_addr, dhcp->offered_gw_addr);
