@@ -51,13 +51,13 @@ bool supla_esp_board_is_rs_in_move(supla_roller_shutter_cfg_t *rs_cfg) {
   if (t - rs_cfg->start_time < startupTimeDelay * 1000) {
     return false;
   }
-  if (rs_cfg->up_time > 0) {
+  if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up)) {
     if (t - rs_cfg->start_time >= (upTime + startupTimeDelay) * 1000) {
       return false;
     }
   }
 
-  if (rs_cfg->down_time > 0) {
+  if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
     if (t - rs_cfg->start_time >= (downTime + startupTimeDelay) * 1000) {
       return false;
     }
