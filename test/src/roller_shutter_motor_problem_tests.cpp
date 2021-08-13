@@ -84,6 +84,7 @@ public:
   int curTime;
 
   void SetUp() override {
+    startupTimeDelay = 0;
     upTime = 1100;
     downTime = 1200;
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
@@ -118,6 +119,7 @@ public:
 
   void TearDown() override {
     supla_esp_devconn_release();
+    startupTimeDelay = 0;
     upTime = 1100;
     downTime = 1200;
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
@@ -435,6 +437,85 @@ TEST_F(RollerShutterMotorProblem, MotorProblemByTask) {
 
   EXPECT_CALL(srpc, 
       valueChanged(_, 0, ElementsAreArray({52, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({90, 0, 0, 0x04, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  supla_esp_cfg.Time1[0] = 0;
+  supla_esp_cfg.Time2[0] = 0;
+  supla_esp_cfg.AutoCalCloseTime[0] = 1000;
+  supla_esp_cfg.AutoCalOpenTime[0] = 1000;
+  supla_esp_state.rs_position[0] = 100 + (50*100);
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100 + (50*100));
+  EXPECT_EQ(*rsCfg->full_opening_time, 0);
+  EXPECT_EQ(*rsCfg->full_closing_time, 0);
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  // closing and opening time is coded in 0.1s units on 2x16 bit blocks of
+  // DurationMS
+  // In autocalibration, server sends ct/ot == 0
+  reqValue.DurationMS = (0) | (0 << 16);
+  reqValue.value[0] = 100; // postion 90
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  for (int i = 0; i < 800; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(*rsCfg->position, 100 + (90*100));
+  EXPECT_EQ(supla_esp_cfg.Time1[0], 0);
+  EXPECT_EQ(supla_esp_cfg.Time2[0], 0);
+  EXPECT_EQ(supla_esp_cfg.AutoCalOpenTime[0], 1000);
+  EXPECT_EQ(supla_esp_cfg.AutoCalCloseTime[0], 1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
+
+TEST_F(RollerShutterMotorProblem, MotorProblemWithLongStartupTime) {
+  // Set how long [ms] "is_in_move" method will return true
+  // auto cal times < 500 ms are considered as errors
+  startupTimeDelay = 1000; // it takes 1s to start RS movement power consumption
+  upTime = 0;
+  downTime = 0;
+
+
+  // Set how long [ms] "is_in_move" method will return true
+  upTime = 0;
+  downTime = 0;
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({50, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({53, 0, 0, 0x04, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   EXPECT_CALL(srpc, 

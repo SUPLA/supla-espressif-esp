@@ -107,7 +107,7 @@ typedef struct {
 
   unsigned _supla_int16_t flags;
   unsigned _supla_int16_t last_flags;
-
+  bool detectedPowerConsumption;
 } supla_roller_shutter_cfg_t;
 
 extern supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
