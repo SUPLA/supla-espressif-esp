@@ -1275,6 +1275,19 @@ typedef struct {
   unsigned _supla_int64_t counter;
 } TDS_ImpulseCounter_Value;
 
+#define RS_VALUE_FLAG_TILT_IS_SET 0x1
+#define RS_VALUE_FLAG_CALIBRATION_FAILED 0x2
+#define RS_VALUE_FLAG_CALIBRATION_LOST 0x4
+#define RS_VALUE_FLAG_MOTOR_PROBLEM 0x8
+#define RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS 0x10
+
+typedef struct {
+  char position;  // -1 == calibration. -1 - 100%
+  char tilt;
+  char bottom_position;  // Percentage points to the windowsill
+  _supla_int16_t flags;
+} TRollerShutterValue;
+
 typedef struct {
   unsigned _supla_int64_t calculated_value;  // * 0.001
 } TSC_ImpulseCounter_Value;                  // v. >= 10
@@ -1416,7 +1429,6 @@ typedef struct {
 typedef struct {
   _supla_int_t FullOpeningTimeMS;
   _supla_int_t FullClosingTimeMS;
-
 } TCalCfg_RollerShutterSettings;
 
 #define RGBW_BRIGHTNESS_ONOFF 0x1
