@@ -111,7 +111,7 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_is_autocal_done(int idx) {
   if (idx < 0 || idx > RS_MAX_COUNT) {
     return false;
   }
-  return supla_esp_cfg.AutoCalOpenTime[idx] > 0 ||
+  return supla_esp_cfg.AutoCalOpenTime[idx] > 0 &&
     supla_esp_cfg.AutoCalCloseTime[idx] > 0;
 }
 
