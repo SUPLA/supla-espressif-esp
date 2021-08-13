@@ -25,6 +25,7 @@ typedef void (testBoardGpioInitCb)(void);
 
 extern testBoardGpioInitCb *gpioInitCb;
 
+extern int startupTimeDelay;
 extern int upTime;
 extern int downTime;
 

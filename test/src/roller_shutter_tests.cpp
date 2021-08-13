@@ -19,6 +19,8 @@
 #include <eagle_soc_stub.h>
 #include <gtest/gtest.h>
 #include <time_mock.h>
+#include <srpc_mock.h>
+#include <uptime_stub.h>
 
 extern "C" {
 #include "board_stub.h"
@@ -67,6 +69,7 @@ public:
   }
 
   void TearDown() override {
+    cleanupTimers();
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     supla_esp_gpio_init_time = 0;
@@ -83,6 +86,9 @@ using ::testing::InSequence;
 using ::testing::Return;
 using ::testing::ReturnPointee;
 using ::testing::SaveArg;
+using ::testing::DoAll;
+using ::testing::SetArgPointee;
+using ::testing::Invoke;
 
 TEST(RollerShutterTests, RsGetValueWithNullCfg) {
   EXPECT_EQ(supla_esp_gpio_rs_get_value(nullptr), RS_RELAY_OFF);
@@ -1922,11 +1928,38 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithRelayUpFromServer) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 }
 
+TSD_SuplaRegisterDeviceResult regResult;
+
+char custom_srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned _supla_int_t rr_id) {
+  rd->call_type = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
+  rd->data.sd_register_device_result = &regResult;
+  return 1;
+}
+
 TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
+  SrpcMock srpc;
+  UptimeStub uptime;
   int curTime = 10000; // start at +10 ms
   EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
 
+  EXPECT_CALL(srpc, srpc_params_init(_));
+  EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
+  EXPECT_CALL(srpc, srpc_set_proto_version(_, 15));
+
+  regResult.result_code = SUPLA_RESULTCODE_TRUE;
+
+  EXPECT_CALL(srpc, srpc_getdata(_, _, _)).WillOnce(DoAll(Invoke(custom_srpc_getdata), Return(1)));
+  EXPECT_CALL(srpc, srpc_rd_free(_));
+  EXPECT_CALL(srpc, srpc_free(_));
+  EXPECT_CALL(srpc, srpc_dcs_async_set_activity_timeout(_, _));
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
   supla_esp_gpio_init();
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
 
   supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
   ASSERT_NE(rsCfg, nullptr);
@@ -1995,5 +2028,7 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   EXPECT_EQ(*rsCfg->full_closing_time, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_devconn_release();
 }
 

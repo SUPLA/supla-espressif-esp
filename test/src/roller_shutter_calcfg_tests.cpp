@@ -71,6 +71,7 @@ public:
   void SetUp() override {
     curTime = 10000; // start at +10 ms
     EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+    startupTimeDelay = 0;
     upTime = 1100;
     downTime = 1200;
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
@@ -81,6 +82,7 @@ public:
   }
 
   void TearDown() override {
+    startupTimeDelay = 0;
     upTime = 1100;
     downTime = 1200;
     *supla_rs_cfg[0].position = 0;
