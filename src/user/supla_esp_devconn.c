@@ -361,126 +361,139 @@ supla_esp_devconn_send_channel_values_with_delay(void) {
 	supla_esp_devconn_send_channel_values_with__delay(1500);
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_on_register_result(TSD_SuplaRegisterDeviceResult *register_device_result) {
+void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
+    TSD_SuplaRegisterDeviceResult *register_device_result) {
+  char *buff = NULL;
 
-	char *buff = NULL;
+  switch (register_device_result->result_code) {
+    case SUPLA_RESULTCODE_BAD_CREDENTIALS:
+      supla_esp_set_state(LOG_ERR, "Bad credentials!");
+      break;
+    case SUPLA_RESULTCODE_TEMPORARILY_UNAVAILABLE:
+      supla_esp_set_state(LOG_NOTICE, "Temporarily unavailable!");
+      break;
 
-	switch(register_device_result->result_code) {
-	case SUPLA_RESULTCODE_BAD_CREDENTIALS:
-		supla_esp_set_state(LOG_ERR, "Bad credentials!");
-		break;
-	case SUPLA_RESULTCODE_TEMPORARILY_UNAVAILABLE:
-		supla_esp_set_state(LOG_NOTICE, "Temporarily unavailable!");
-		break;
+    case SUPLA_RESULTCODE_LOCATION_CONFLICT:
+      supla_esp_set_state(LOG_ERR, "Location conflict!");
+      break;
 
-	case SUPLA_RESULTCODE_LOCATION_CONFLICT:
-		supla_esp_set_state(LOG_ERR, "Location conflict!");
-		break;
+    case SUPLA_RESULTCODE_CHANNEL_CONFLICT:
+      supla_esp_set_state(LOG_ERR, "Channel conflict!");
+      break;
 
-	case SUPLA_RESULTCODE_CHANNEL_CONFLICT:
-		supla_esp_set_state(LOG_ERR, "Channel conflict!");
-		break;
+    case SUPLA_RESULTCODE_REGISTRATION_DISABLED:
+      supla_esp_set_state(LOG_ERR, "Registration disabled!");
+      break;
+    case SUPLA_RESULTCODE_AUTHKEY_ERROR:
+      supla_esp_set_state(LOG_NOTICE, "Incorrect device AuthKey!");
+      break;
+    case SUPLA_RESULTCODE_NO_LOCATION_AVAILABLE:
+      supla_esp_set_state(LOG_ERR, "No location available!");
+      break;
+    case SUPLA_RESULTCODE_USER_CONFLICT:
+      supla_esp_set_state(LOG_ERR, "User conflict!");
+      break;
 
-	case SUPLA_RESULTCODE_REGISTRATION_DISABLED:
-		supla_esp_set_state(LOG_ERR, "Registration disabled!");
-		break;
-	case SUPLA_RESULTCODE_AUTHKEY_ERROR:
-		supla_esp_set_state(LOG_NOTICE, "Incorrect device AuthKey!");
-		break;
-	case SUPLA_RESULTCODE_NO_LOCATION_AVAILABLE:
-		supla_esp_set_state(LOG_ERR, "No location available!");
-		break;
-	case SUPLA_RESULTCODE_USER_CONFLICT:
-		supla_esp_set_state(LOG_ERR, "User conflict!");
-		break;
+    case SUPLA_RESULTCODE_TRUE:
 
-	case SUPLA_RESULTCODE_TRUE:
+      devconn->server_activity_timeout =
+          register_device_result->activity_timeout;
+      devconn->registered = 1;
+      devconn->register_time_sec = uptime_sec();
 
-		devconn->server_activity_timeout = register_device_result->activity_timeout;
-		devconn->registered = 1;
-		devconn->register_time_sec = uptime_sec();
+      // supla_esp_gpio_state_connected()
+      // should be called after setting
+      // devconn->registered to 1
+      supla_esp_gpio_state_connected();
 
-		// supla_esp_gpio_state_connected()
-		// should be called after setting
-		// devconn->registered to 1
-		supla_esp_gpio_state_connected();
+      supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
+      supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
 
-		supla_esp_set_state(LOG_DEBUG, "Registered and ready.");
-		supla_log(LOG_DEBUG, "Free heap size: %i", system_get_free_heap_size());
+      if (devconn->server_activity_timeout != ACTIVITY_TIMEOUT) {
+        TDCS_SuplaSetActivityTimeout at;
+        at.activity_timeout = ACTIVITY_TIMEOUT;
+        srpc_dcs_async_set_activity_timeout(devconn->srpc, &at);
+      }
 
-		if ( devconn->server_activity_timeout != ACTIVITY_TIMEOUT ) {
+#ifdef __FOTA
+      supla_esp_check_updates(devconn->srpc);
+#endif
 
-			TDCS_SuplaSetActivityTimeout at;
-			at.activity_timeout = ACTIVITY_TIMEOUT;
-			srpc_dcs_async_set_activity_timeout(devconn->srpc, &at);
+#if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
+      {
+        TDS_GetChannelConfigRequest request = {};
+        for (uint8 a = 0; a < 8; a++) {
+          if (RETREIVE_CHANNEL_CONFIG & (1 << a)) {
+            request.ChannelNumber = a;
+            srpc_ds_async_get_channel_config(devconn->srpc, &request);
+          }
+        }
+      }
 
-		}
-
-		#ifdef __FOTA
-		supla_esp_check_updates(devconn->srpc);
-		#endif
+#endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
 
 #ifndef COUNTDOWN_TIMER_DISABLED
 #if ESP8266_SUPLA_PROTO_VERSION >= 12
-    for (uint8 a = 0; a < RELAY_MAX_COUNT; a++)
-      if (supla_relay_cfg[a].gpio_id != 255 &&
-          supla_relay_cfg[a].channel_flags &
-              SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
-        TSuplaChannelExtendedValue *ev = (TSuplaChannelExtendedValue *)malloc(
-            sizeof(TSuplaChannelExtendedValue));
-        if (ev != NULL) {
-          supla_esp_countdown_get_state_ev(supla_relay_cfg[a].channel, ev);
-          supla_esp_channel_extendedvalue_changed(supla_relay_cfg[a].channel, ev);
-          free(ev);
+      for (uint8 a = 0; a < RELAY_MAX_COUNT; a++)
+        if (supla_relay_cfg[a].gpio_id != 255 &&
+            supla_relay_cfg[a].channel_flags &
+                SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+          TSuplaChannelExtendedValue *ev = (TSuplaChannelExtendedValue *)malloc(
+              sizeof(TSuplaChannelExtendedValue));
+          if (ev != NULL) {
+            supla_esp_countdown_get_state_ev(supla_relay_cfg[a].channel, ev);
+            supla_esp_channel_extendedvalue_changed(supla_relay_cfg[a].channel,
+                                                    ev);
+            free(ev);
+          }
         }
-      }
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 
-		supla_esp_devconn_send_channel_values_with_delay();
+      supla_esp_devconn_send_channel_values_with_delay();
 
-		#ifdef ELECTRICITY_METER_COUNT
-		supla_esp_em_device_registered();
-		#endif
+#ifdef ELECTRICITY_METER_COUNT
+      supla_esp_em_device_registered();
+#endif
 
-		#ifdef IMPULSE_COUNTER_COUNT
-		supla_esp_ic_device_registered();
-		#endif
+#ifdef IMPULSE_COUNTER_COUNT
+      supla_esp_ic_device_registered();
+#endif
 
-		#ifdef BOARD_ON_DEVICE_REGISTERED
-			BOARD_ON_DEVICE_REGISTERED;
-		#endif
+#ifdef BOARD_ON_DEVICE_REGISTERED
+      BOARD_ON_DEVICE_REGISTERED;
+#endif
 
-		return;
+      return;
 
-	case SUPLA_RESULTCODE_DEVICE_DISABLED:
-		supla_esp_set_state(LOG_NOTICE, "Device is disabled!");
-		break;
+    case SUPLA_RESULTCODE_DEVICE_DISABLED:
+      supla_esp_set_state(LOG_NOTICE, "Device is disabled!");
+      break;
 
-	case SUPLA_RESULTCODE_LOCATION_DISABLED:
-		supla_esp_set_state(LOG_NOTICE, "Location is disabled!");
-		break;
+    case SUPLA_RESULTCODE_LOCATION_DISABLED:
+      supla_esp_set_state(LOG_NOTICE, "Location is disabled!");
+      break;
 
-	case SUPLA_RESULTCODE_DEVICE_LIMITEXCEEDED:
-		supla_esp_set_state(LOG_NOTICE, "Device limit exceeded!");
-		break;
+    case SUPLA_RESULTCODE_DEVICE_LIMITEXCEEDED:
+      supla_esp_set_state(LOG_NOTICE, "Device limit exceeded!");
+      break;
 
-	case SUPLA_RESULTCODE_GUID_ERROR:
-		supla_esp_set_state(LOG_NOTICE, "Incorrect device GUID!");
-		break;
+    case SUPLA_RESULTCODE_GUID_ERROR:
+      supla_esp_set_state(LOG_NOTICE, "Incorrect device GUID!");
+      break;
 
-	default:
-		buff = os_malloc(30);
-		ets_snprintf(buff, 30, "Unknown code %i", register_device_result->result_code);
-		supla_esp_set_state(LOG_NOTICE, buff);
-		os_free(buff);
-		buff = NULL;
+    default:
+      buff = os_malloc(30);
+      ets_snprintf(buff, 30, "Unknown code %i",
+                   register_device_result->result_code);
+      supla_esp_set_state(LOG_NOTICE, buff);
+      os_free(buff);
+      buff = NULL;
 
-		break;
-	}
+      break;
+  }
 
-	supla_esp_devconn_stop_with_delay();
+  supla_esp_devconn_stop_with_delay();
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1327,6 +1340,11 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
         break;
 #endif /*BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT*/
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+#if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
+      case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT:
+        supla_esp_board_on_get_channel_config_result(rd.data.sd_channel_config);
+        break;
+#endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
     }
 
     srpc_rd_free(&rd);
