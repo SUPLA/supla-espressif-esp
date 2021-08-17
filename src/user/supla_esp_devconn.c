@@ -1336,7 +1336,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 #if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
       case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT:
-        supla_esp_board_on_get_channel_config_result(rd.data.sd_channel_config);
+        supla_esp_board_on_channel_config(rd.data.sd_channel_config);
         break;
 #endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
     }
