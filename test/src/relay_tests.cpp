@@ -390,33 +390,20 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2s) {
   {
     InSequence seq;
 
-    /* // turn on relay on channel 0 */
-    /* EXPECT_CALL(srpc, */ 
-    /*     valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0}))) */
-    /*   .WillOnce(Return(0)); */
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
 
-    /* EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1)) */
-    /*   .Times(1) */
-    /*   ; */
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
 
-    /* // turn on relay on channel 0 */
-    /* EXPECT_CALL(srpc, */ 
-    /*     valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0}))) */
-    /*   .WillOnce(Return(0)); */
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
 
-    /* EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1)) */
-    /*   .Times(1) */
-    /*   ; */
-
-
-    /* // turn off relay on channel 0 */
-    /* EXPECT_CALL(srpc, */ 
-    /*     valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0}))) */
-    /*   .WillOnce(Return(0)); */
-
-    /* EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1)) */
-    /*   .Times(1) */
-    /*   ; */
   }
 
   supla_esp_gpio_init();
@@ -447,8 +434,8 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2s) {
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
  
-  // +700 ms
-  for (int i = 0; i < 7; i++) {
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
     curTime += 100000; // +100ms
     executeTimers();
   }
