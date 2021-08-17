@@ -96,7 +96,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 // CS  - client -> server
 // SC  - server -> client
 
-#define SUPLA_PROTO_VERSION 15
+#define SUPLA_PROTO_VERSION 16
 #define SUPLA_PROTO_VERSION_MIN 1
 #if defined(ARDUINO_ARCH_AVR)     // Arduino IDE for Arduino HW
 #define SUPLA_MAX_DATA_SIZE 1248  // Registration header + 32 channels x 21 B
@@ -225,8 +225,6 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_SC_CALL_SET_CHANNEL_CAPTION_RESULT 650          // ver. >= 12
 #define SUPLA_CS_CALL_SET_LOCATION_CAPTION 645                // ver. >= 14
 #define SUPLA_SC_CALL_SET_LOCATION_CAPTION_RESULT 655         // ver. >= 14
-#define SUPLA_DS_CALL_GET_CHANNEL_INT_PARAMS 660              // ver. >= 14
-#define SUPLA_SD_CALL_GET_CHANNEL_INT_PARAMS_RESULT 670       // ver. >= 14
 #define SUPLA_DS_CALL_GET_CHANNEL_CONFIG 680                  // ver. >= 16
 #define SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT 690           // ver. >= 16
 
@@ -617,7 +615,11 @@ typedef struct {
   unsigned char Number;
   _supla_int_t Type;
 
-  _supla_int_t FuncList;
+  union {
+    _supla_int_t FuncList;
+    unsigned _supla_int_t ActionTriggerCaps;  // ver. >= 16
+  };
+
   _supla_int_t Default;
   _supla_int_t Flags;
 
@@ -1777,6 +1779,7 @@ typedef struct {
 typedef struct {
   unsigned char ChannelNumber;
   _supla_int_t Func;
+  unsigned char ConfigType;
   unsigned short ConfigSize;
   char Config[SUPLA_CHANNEL_CONFIG_MAXSIZE];  // Last variable in struct! v. >=
                                               // 16. TSD_DeviceChannelConfig_*
@@ -1801,8 +1804,6 @@ typedef struct {
   unsigned char On;
 } TCS_TimerArmRequest;  // v. >= 16
 
-#define SUPLA_ACTION_MAXCOUNT 10
-
 #define SUPLA_ACTION_CAP_BTN_HOLD_1SEC 1
 #define SUPLA_ACTION_CAP_BTN_HOLD_2SEC 2
 #define SUPLA_ACTION_CAP_BTN_HOLD_3SEC 3
@@ -1824,11 +1825,6 @@ typedef struct {
 #define SUPLA_ACTION_CAP_BTN_PRESS_9TIMES 109
 #define SUPLA_ACTION_CAP_BTN_PRESS_10TIMES 110
 #define SUPLA_ACTION_CAP_BTN_UNPRESS 200
-
-typedef struct {
-  unsigned char ChannelNumber;
-  _supla_int_t ActionCap[SUPLA_ACTION_MAXCOUNT];
-} TDS_SuplaRegisterAction;  // v. >= 16
 
 #define SUPLA_VALVE_FLAG_FLOODING 0x1
 #define SUPLA_VALVE_FLAG_MANUALLY_CLOSED 0x2
