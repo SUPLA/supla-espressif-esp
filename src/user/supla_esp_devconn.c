@@ -1323,12 +1323,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
             rd.data.sdc_user_localtime_result);
         break;
 #endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
-#if defined(BOARD_ON_CHANNEL_INT_PARAMS_RESULT) && ESP8266_SUPLA_PROTO_VERSION >= 14
-      case SUPLA_SD_CALL_GET_CHANNEL_INT_PARAMS_RESULT:
-        supla_esp_board_on_channel_int_params_result(
-            rd.data.sd_channel_int_params);
-        break;
-#endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 #if ESP8266_SUPLA_PROTO_VERSION >= 12
       case SUPLA_CSD_CALL_GET_CHANNEL_STATE:
         supla_esp_get_channel__state(_srpc, rd.data.csd_channel_state_request);
@@ -1850,15 +1844,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_get_user_localtime(void) {
   }
 }
 #endif /*BOARD_ON_USER_LOCALTIME_RESULT*/
-
-#ifdef BOARD_ON_CHANNEL_INT_PARAMS_RESULT
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_get_channel_int_params(unsigned char channel_number) {
-  if (supla_esp_devconn_is_registered() == 1) {
-	  srpc_ds_async_get_channel_int_params(devconn->srpc, channel_number);
-  }
-}
-#endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 
 // Method is used in tests to cleanup memory allocations
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_release(void) {
