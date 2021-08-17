@@ -52,12 +52,11 @@ typedef struct {
 
 
 typedef struct {
-
-	uint8 gpio_id;
-	uint8 flags;
-	uint8 channel;
-	unsigned _supla_int_t channel_flags;
-}supla_relay_cfg_t;
+  uint8 gpio_id;
+  uint8 flags;  // RELAY_FLAG_*
+  uint8 channel;
+  unsigned _supla_int_t channel_flags; // SUPLA_CHANNEL_FLAG_*
+} supla_relay_cfg_t;
 
 typedef struct {
 
@@ -105,8 +104,8 @@ typedef struct {
   bool performAutoCalibration;
   bool autoCal_button_request;
 
-  unsigned _supla_int16_t flags;
-  unsigned _supla_int16_t last_flags;
+  unsigned _supla_int16_t flags; // RS_VALUE_FLAG_*
+  unsigned _supla_int16_t last_flags; // last send RS_VALUE_FLAG_*
   bool detectedPowerConsumption;
 } supla_roller_shutter_cfg_t;
 

@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 #include <time_mock.h>
 #include <srpc_mock.h>
-#include <uptime_stub.h>
 
 extern "C" {
 #include "board_stub.h"
@@ -108,7 +107,6 @@ public:
 class RollerShutterAutoCalWithSrpc : public ::testing::Test {
 public:
   SrpcMock srpc;
-  UptimeStub uptime;
   TimeMock time;
   EagleSocStub eagleStub;
   int curTime;

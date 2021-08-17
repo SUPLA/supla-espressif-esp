@@ -16,22 +16,19 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "uptime.h"
-#include "uptime_interface.h"
+#ifndef _SUPLA_UPTIME_H_
+#define _SUPLA_UPTIME_H_
 
-extern "C" {
-unsigned _supla_int64_t uptime_usec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_usec();
-}
+#include <supla_esp.h>
+#include <c_types.h>
+#include <supla-dev/proto.h>
 
-unsigned _supla_int64_t uptime_msec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_msec();
-}
+void MAIN_ICACHE_FLASH supla_esp_uptime_init(void);
 
-uint32 uptime_sec(void) {
-  assert(UptimeInterface::instance);
-  return UptimeInterface::instance->uptime_sec();
-}
-}
+unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void);
+
+unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void);
+
+uint32 MAIN_ICACHE_FLASH uptime_sec(void);
+
+#endif /*_SUPLA_UPTIME_H_*/

@@ -20,7 +20,6 @@
 #include <gtest/gtest.h>
 #include <time_mock.h>
 #include <srpc_mock.h>
-#include <uptime_stub.h>
 
 extern "C" {
 #include "board_stub.h"
@@ -1938,7 +1937,6 @@ char custom_srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned _supla_int
 
 TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   SrpcMock srpc;
-  UptimeStub uptime;
   int curTime = 10000; // start at +10 ms
   EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
 

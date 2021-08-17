@@ -42,8 +42,14 @@ void system_soft_wdt_stop(void) { return; }
 
 void system_soft_wdt_restart(void) { return; }
 
+static struct rst_info info = {};
+
+void set_reset_reason(uint32 reason) {
+  info.reason = reason;
+}
+
 struct rst_info *system_get_rst_info(void) {
-  return 0;
+  return &info;
 }
 
 uint8 wifi_station_get_connect_status(void) { return 0; }

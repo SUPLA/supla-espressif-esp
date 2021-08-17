@@ -62,6 +62,8 @@ struct rst_info{
     uint32 depc;
 };
 
+void set_reset_reason(uint32 reason);
+
 struct rst_info* system_get_rst_info(void);
 
 #define UPGRADE_FW_BIN1         0x00
