@@ -344,9 +344,7 @@ TEST_F(RelayTests, ChangeState) {
   EXPECT_TRUE(eagleStub.getGpioValue(6)); // ivnerted logic
 
   // turn off relay on gpio 5 (ch 4)
-  supla_esp_gpio_relay_hi(5, 0, 0);
-  supla_esp_channel_value_changed(
-      4, supla_esp_gpio_relay_is_hi(5));
+  supla_esp_gpio_relay_switch(5, 0);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -357,9 +355,7 @@ TEST_F(RelayTests, ChangeState) {
 
 
   // turn on relay on gpio 5 (ch 4)
-  supla_esp_gpio_relay_hi(5, 1, 0);
-  supla_esp_channel_value_changed(
-      4, supla_esp_gpio_relay_is_hi(5));
+  supla_esp_gpio_relay_switch(5, 1);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -370,9 +366,7 @@ TEST_F(RelayTests, ChangeState) {
 
 
   // toggle relay on gpio 5 (ch 4)
-  supla_esp_gpio_relay_hi(5, 255, 0);
-  supla_esp_channel_value_changed(
-      4, supla_esp_gpio_relay_is_hi(5));
+  supla_esp_gpio_relay_switch(5, 255);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -381,6 +375,124 @@ TEST_F(RelayTests, ChangeState) {
   EXPECT_TRUE(eagleStub.getGpioValue(5)); // ivnerted logic
   EXPECT_TRUE(eagleStub.getGpioValue(6)); // ivnerted logic
 
+}
+
+TEST_F(RelayTests, Scenario1) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+    
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+    
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 0; 
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  reqValue.value[0] = 1; 
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  reqValue.value[0] = 1; 
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  reqValue.value[0] = 0; 
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
 }
 
 TEST_F(RelayTests, CountdownTimerTurnOnFor2s) {
@@ -444,3 +556,1213 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2s) {
 
 }
 
+
+TEST_F(RelayTests, CountdownTimerTurnOnAfter2s) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnedOnTurnOnFor2s) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 1; // turn on
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +3500 ms
+  for (int i = 0; i < 35; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+}
+
+TEST_F(RelayTests, CountdownTimerTurnedOnTurnOffandTurnOnAfter2s) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 1; // turn on
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +3500 ms
+  for (int i = 0; i < 35; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithCancel) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithInstantTurnOn) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 1; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithResetTimer) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1.5 s
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +15 s
+  for (int i = 0; i < 150; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithTurnOnFor2s) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1.5 s
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +15 s
+  for (int i = 0; i < 150; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOff) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 0; // turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOn) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 0;
+  reqValue.value[0] = 1; // turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOffFor2s) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +5 s
+  for (int i = 0; i < 50; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenResetTimer) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1.3 s
+  for (int i = 0; i < 13; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +0.2 s
+  for (int i = 0; i < 2; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenTurnOnByButton) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  // turn off relay on gpio 1 (ch 0)
+  supla_esp_gpio_relay_switch(1, 1);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  for (int i = 0; i < 63; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenTurnOffByButton) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  // turn off relay on gpio 1 (ch 0)
+  supla_esp_gpio_relay_switch(1, 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  for (int i = 0; i < 63; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenToggleByButton) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 1; // turn on for 2s, then turn off
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+ 
+  // turn off relay on gpio 1 (ch 0)
+  supla_esp_gpio_relay_switch(1, 255); // 255=toggle
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  for (int i = 0; i < 63; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+}
+
+TEST_F(RelayTests, CountdownTimerTurnOffFor2sThenToggleByButton) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  supla_esp_state.Relay[0] = 0;
+
+  {
+    InSequence seq;
+
+    // turn on relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, srpc_ds_async_set_channel_result(_, 0, 0, 1))
+      .Times(1)
+      ;
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_gpio_init();
+  // +2000 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = 2000;
+  reqValue.value[0] = 0; // turn off for 2s, then turn on
+
+  // simulate request from server
+  supla_esp_channel_set_value(&reqValue);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+ 
+  // turn on relay on gpio 1 (ch 0)
+  supla_esp_gpio_relay_switch(1, 255); // 255=toggle
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+  for (int i = 0; i < 63; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+}
