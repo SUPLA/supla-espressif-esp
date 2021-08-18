@@ -1944,7 +1944,7 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
 
   EXPECT_CALL(srpc, srpc_params_init(_));
   EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
-  EXPECT_CALL(srpc, srpc_set_proto_version(_, 15));
+  EXPECT_CALL(srpc, srpc_set_proto_version(_, 16));
 
   regResult.result_code = SUPLA_RESULTCODE_TRUE;
 
