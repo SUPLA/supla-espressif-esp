@@ -422,7 +422,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
 #if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
       {
         TDS_GetChannelConfigRequest request = {};
-        for (uint8 a = 0; a < 8; a++) {
+        for (uint8 a = 0; a < CHANNEL_CONFIG_LIMIT; a++) {
           if (RETREIVE_CHANNEL_CONFIG & (1 << a)) {
             request.ChannelNumber = a;
             srpc_ds_async_get_channel_config(devconn->srpc, &request);
