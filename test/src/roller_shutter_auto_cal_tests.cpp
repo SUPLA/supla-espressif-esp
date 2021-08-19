@@ -85,6 +85,7 @@ public:
     downTime = 1200;
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     cleanupTimers();
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallback2;
@@ -117,6 +118,7 @@ public:
     downTime = 1200;
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     cleanupTimers();
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallback2;

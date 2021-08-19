@@ -22,7 +22,9 @@ _supla_int_t
 srpc_ds_async_channel_extendedvalue_changed(void *_srpc,
                                             unsigned char channel_number,
                                             TSuplaChannelExtendedValue *value) {
-  return 0;
+  assert(SrpcInterface::instance);
+  return SrpcInterface::instance->srpc_ds_async_channel_extendedvalue_changed(
+      _srpc, channel_number, value);
 }
 
 _supla_int_t

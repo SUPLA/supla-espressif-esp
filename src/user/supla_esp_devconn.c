@@ -1119,51 +1119,17 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 		if ( supla_relay_cfg[a].gpio_id != 255
 			 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
 
-			Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v, new_value->ChannelNumber);
+      Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v,
+          new_value->ChannelNumber);
+      supla_esp_gpio_relay_set_duration_timer(supla_relay_cfg[a].channel, v,
+          new_value->DurationMS,
+          new_value->SenderID);
 			break;
 		}
 
-	srpc_ds_async_set_channel_result(devconn->srpc, new_value->ChannelNumber, new_value->SenderID, Success);
+  srpc_ds_async_set_channel_result(devconn->srpc, new_value->ChannelNumber,
+      new_value->SenderID, Success);
 
-#ifndef COUNTDOWN_TIMER_DISABLED
-
-	supla_esp_countdown_timer_disarm(new_value->ChannelNumber);
-
-	if ( new_value->DurationMS > 0 ) {
-
-		for(a=0;a<RELAY_MAX_COUNT;a++)
-			if ( supla_relay_cfg[a].gpio_id != 255
-				 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
-
-				if (v == 1
-					|| supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
-
-					char target_value[SUPLA_CHANNELVALUE_SIZE];
-					memcpy(target_value, new_value->value, SUPLA_CHANNELVALUE_SIZE);
-					target_value[0] = v ? 0 : 1;
-
-					supla_esp_countdown_timer_countdown(new_value->DurationMS,
-							supla_relay_cfg[a].gpio_id,
-							supla_relay_cfg[a].channel,
-							target_value,
-							new_value->SenderID);
-
-	                #if ESP8266_SUPLA_PROTO_VERSION >= 12
-					if (supla_relay_cfg[a].channel_flags & SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
-						TSuplaChannelExtendedValue *ev =
-						     (TSuplaChannelExtendedValue *)malloc(sizeof(TSuplaChannelExtendedValue));
-						if (ev != NULL) {
-							supla_esp_countdown_get_state_ev(new_value->ChannelNumber, ev);
-							supla_esp_channel_extendedvalue_changed(new_value->ChannelNumber, ev);
-							free(ev);
-						}
-					}
-	                #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
-				}
-				break;
-			}
-	}
-#endif /*COUNTDOWN_TIMER_DISABLED*/
 }
 
 #if ESP8266_SUPLA_PROTO_VERSION >= 13

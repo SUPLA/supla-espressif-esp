@@ -1125,18 +1125,7 @@ char supla_esp_gpio_relay_hi(int port, unsigned char hi, char save_before) {
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch_by_input(
     supla_input_cfg_t *input_cfg, unsigned char hi) {
-
-	if (  input_cfg->relay_gpio_id != 255 ) {
-
-		//supla_log(LOG_DEBUG, "RELAY");
-
-		supla_esp_gpio_relay_hi(input_cfg->relay_gpio_id, hi, 0);
-
-		if ( input_cfg->channel != 255 )
-			supla_esp_channel_value_changed(input_cfg->channel, supla_esp_gpio_relay_is_hi(input_cfg->relay_gpio_id));
-
-	}
-
+  supla_esp_gpio_relay_switch(input_cfg->relay_gpio_id, hi);
 }
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
@@ -1150,7 +1139,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
             supla_esp_gpio_relay_is_hi(port));
 
 #ifndef COUNTDOWN_TIMER_DISABLED
-        supla_esp_countdown_timer_disarm(supla_relay_cfg[i].channel);
+      supla_esp_gpio_relay_set_duration_timer(supla_relay_cfg[i].channel, hi,
+          0, 0);
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 
       }
@@ -1178,14 +1168,6 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-        #ifndef COUNTDOWN_TIMER_DISABLED
-		if (input_cfg->channel != 255) {
-		   supla_esp_countdown_timer_disarm(input_cfg->channel);
-		}
-        #endif /*COUNTDOWN_TIMER_DISABLED*/
-
-		//supla_log(LOG_DEBUG, "RELAY");
 		supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
 
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
@@ -1217,15 +1199,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-        #ifndef COUNTDOWN_TIMER_DISABLED
-		if (input_cfg->channel != 255) {
-		   supla_esp_countdown_timer_disarm(input_cfg->channel);
-		}
-        #endif /*COUNTDOWN_TIMER_DISABLED*/
-
 		supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
-
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 			    &&  input_cfg->channel != 255 ) {
 
@@ -1932,6 +1906,54 @@ char  supla_esp_gpio_relay_on(int port) {
 	return supla_esp_gpio_output_is_hi(port) == HI_VALUE ? 1 : 0;
 }
 
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
+    int newValue,
+    int durationMs,
+    int senderID) {
+#ifndef COUNTDOWN_TIMER_DISABLED
+  if (supla_esp_cfg.Time1[channel] > 0) {
+    // this is for staircase timer - we reset duration ms to the duration
+    // that was configred on the server.
+    // Staircase timer uses the same implementation as Countdown timer
+    if (newValue == 0) {
+      durationMs = 0;
+    } else {
+      durationMs = supla_esp_cfg.Time1[channel];
+    }
+  }
 
+  supla_esp_countdown_timer_disarm(channel);
 
+  if (durationMs > 0) {
 
+    for (int a = 0; a < RELAY_MAX_COUNT; a++)
+      if (supla_relay_cfg[a].gpio_id != 255 &&
+          channel == supla_relay_cfg[a].channel) {
+
+        if (newValue == 1 || supla_relay_cfg[a].channel_flags &
+            SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+
+          char target_value[SUPLA_CHANNELVALUE_SIZE] = {};
+          target_value[0] = newValue ? 0 : 1;
+
+          supla_esp_countdown_timer_countdown(durationMs,
+              supla_relay_cfg[a].gpio_id,
+              channel, target_value, senderID);
+        }
+#if ESP8266_SUPLA_PROTO_VERSION >= 12
+        if (supla_relay_cfg[a].channel_flags &
+            SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+          TSuplaChannelExtendedValue *ev = (TSuplaChannelExtendedValue *)malloc(
+              sizeof(TSuplaChannelExtendedValue));
+          if (ev != NULL) {
+            supla_esp_countdown_get_state_ev(channel, ev);
+            supla_esp_channel_extendedvalue_changed(channel, ev);
+            free(ev);
+          }
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+        }
+        break;
+      }
+  }
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+}

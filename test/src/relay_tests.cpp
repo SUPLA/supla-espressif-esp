@@ -97,6 +97,7 @@ public:
     downTime = 1200;
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     cleanupTimers();
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallbackRelay;
@@ -115,13 +116,6 @@ public:
     EXPECT_CALL(srpc, srpc_free(_));
     EXPECT_CALL(srpc, srpc_iterate(_)).WillRepeatedly(Return(SUPLA_RESULT_TRUE));
     EXPECT_CALL(srpc, srpc_dcs_async_set_activity_timeout(_, _));
-
-    supla_esp_devconn_init();
-    supla_esp_srpc_init();
-    ASSERT_NE(srpc.on_remote_call_received, nullptr);
-
-    srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
-    EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
 
   }
 
@@ -155,7 +149,16 @@ TEST_F(RelayTests, StartupRestoreOff) {
   supla_esp_state.Relay[4] = 0;
   supla_esp_state.Relay[5] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_FALSE(eagleStub.getGpioValue(2));
@@ -179,7 +182,16 @@ TEST_F(RelayTests, StartupRestoreOn) {
   supla_esp_state.Relay[4] = 1;
   supla_esp_state.Relay[5] = 1;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -203,6 +215,9 @@ TEST_F(RelayTests, ChangeState) {
   supla_esp_state.Relay[3] = 0;
   supla_esp_state.Relay[4] = 0;
   supla_esp_state.Relay[5] = 0;
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
 
   {
     InSequence seq;
@@ -272,6 +287,12 @@ TEST_F(RelayTests, ChangeState) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -381,6 +402,9 @@ TEST_F(RelayTests, Scenario1) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
   {
     InSequence seq;
 
@@ -423,6 +447,12 @@ TEST_F(RelayTests, Scenario1) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -499,6 +529,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2s) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(2);
+
   {
     InSequence seq;
 
@@ -519,6 +552,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2s) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -561,6 +600,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2s) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(2);
+
   {
     InSequence seq;
 
@@ -581,6 +623,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2s) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -629,6 +677,9 @@ TEST_F(RelayTests, CountdownTimerTurnedOnTurnOnFor2s) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(2);
+
   {
     InSequence seq;
 
@@ -658,6 +709,12 @@ TEST_F(RelayTests, CountdownTimerTurnedOnTurnOnFor2s) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -714,6 +771,9 @@ TEST_F(RelayTests, CountdownTimerTurnedOnTurnOffandTurnOnAfter2s) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(2);
+
   {
     InSequence seq;
 
@@ -743,6 +803,12 @@ TEST_F(RelayTests, CountdownTimerTurnedOnTurnOffandTurnOnAfter2s) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -799,6 +865,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithCancel) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -824,6 +893,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithCancel) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -878,6 +953,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithInstantTurnOn) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -903,6 +981,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithInstantTurnOn) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -959,6 +1043,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithResetTimer) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(4);
+
   {
     InSequence seq;
 
@@ -988,6 +1075,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithResetTimer) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1052,6 +1145,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithTurnOnFor2s) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(4);
+
   {
     InSequence seq;
 
@@ -1081,6 +1177,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnAfter2sWithTurnOnFor2s) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1145,6 +1247,9 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOff) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -1170,6 +1275,12 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOff) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1225,6 +1336,9 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOn) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -1250,6 +1364,12 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOn) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1305,6 +1425,9 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOffFor2s) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(4);
+
   {
     InSequence seq;
 
@@ -1334,6 +1457,12 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenTurnOffFor2s) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1389,6 +1518,9 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenResetTimer) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(4);
+
   {
     InSequence seq;
 
@@ -1418,6 +1550,12 @@ TEST_F(RelayTests, CountdownTimerTurnedOnFor2sThenResetTimer) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1481,6 +1619,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenTurnOnByButton) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -1501,6 +1642,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenTurnOnByButton) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1554,6 +1701,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenTurnOffByButton) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -1574,6 +1724,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenTurnOffByButton) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1627,6 +1783,9 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenToggleByButton) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -1647,6 +1806,12 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sThenToggleByButton) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms
@@ -1699,6 +1864,9 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sThenToggleByButton) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   supla_esp_state.Relay[0] = 0;
 
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(3);
+
   {
     InSequence seq;
 
@@ -1719,6 +1887,12 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sThenToggleByButton) {
   }
 
   supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   // +2000 ms
   for (int i = 0; i < 20; i++) {
     curTime += 100000; // +100ms

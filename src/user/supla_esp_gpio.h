@@ -171,5 +171,7 @@ sint8 supla_esp_gpio_rs_get_current_position(
 void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
+    int newValue, int durationMs, int senderID);
 #endif /* SUPLA_ESP_GPIO_H_ */
 
