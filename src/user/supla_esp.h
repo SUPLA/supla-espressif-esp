@@ -369,6 +369,10 @@ extern const uint8_t rsa_public_key_bytes[RSA_NUM_BYTES];
 #define DEVICE_STATE_INACTIVE
 #endif
 
+#ifndef CHANNEL_CONFIG_LIMIT
+#define CHANNEL_CONFIG_LIMIT 8
+#endif /*CHANNEL_CONFIG_LIMIT*/
+
 unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void);
 unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void);
 uint32 MAIN_ICACHE_FLASH uptime_sec(void);

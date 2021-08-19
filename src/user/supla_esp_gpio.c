@@ -696,7 +696,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	}
 
-  supla_esp_gpio_rs_check_if_autocal_is_needed(rs_cfg);
+    supla_esp_gpio_rs_check_if_autocal_is_needed(rs_cfg);
 	supla_esp_gpio_rs_task_processing(rs_cfg, isRsInMove);
 
 	if ( rs_cfg->last_time-rs_cfg->last_comm_time >= 500000 ) { // 500 ms.
@@ -704,18 +704,16 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
     if (rs_cfg->last_position != *rs_cfg->position ||
         rs_cfg->flags != rs_cfg->last_flags) {
 
-			rs_cfg->last_position = *rs_cfg->position;
+	  rs_cfg->last_position = *rs_cfg->position;
       rs_cfg->last_flags = rs_cfg->flags;
 
       char value[SUPLA_CHANNELVALUE_SIZE] = {};
       sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
-      TRollerShutterValue rsValue = {};
-      rsValue.position = pos;
-      rsValue.flags = rs_cfg->flags;
-      value[0] = pos;
+      TRollerShutterValue *rsValue = (TRollerShutterValue*)value;
+      rsValue->position = pos;
+      rsValue->flags = rs_cfg->flags;
       supla_log(LOG_DEBUG, "New RS value: pos %d, flags %4x", pos, rs_cfg->flags);
-      memcpy(value, &rsValue, sizeof(rsValue));
-			supla_esp_channel_value__changed(rs_cfg->up->channel, value);
+	  supla_esp_channel_value__changed(rs_cfg->up->channel, value);
 
 #ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED
       supla_esp_board_on_rollershutter_position_changed(
