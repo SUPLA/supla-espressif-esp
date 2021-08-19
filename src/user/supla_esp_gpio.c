@@ -1924,7 +1924,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
 
   if (durationMs > 0) {
 
-    for (int a = 0; a < RELAY_MAX_COUNT; a++)
+    for (int a = 0; a < RELAY_MAX_COUNT; a++) {
       if (supla_relay_cfg[a].gpio_id != 255 &&
           channel == supla_relay_cfg[a].channel) {
 
@@ -1948,10 +1948,11 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
             supla_esp_channel_extendedvalue_changed(channel, ev);
             free(ev);
           }
-#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
         }
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
         break;
       }
+    }
   }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 }
