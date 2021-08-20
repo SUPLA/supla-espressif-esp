@@ -1119,11 +1119,12 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 		if ( supla_relay_cfg[a].gpio_id != 255
 			 && new_value->ChannelNumber == supla_relay_cfg[a].channel ) {
 
-      Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v,
-          new_value->ChannelNumber);
       supla_esp_gpio_relay_set_duration_timer(supla_relay_cfg[a].channel, v,
           new_value->DurationMS,
           new_value->SenderID);
+
+      Success = _supla_esp_channel_set_value(supla_relay_cfg[a].gpio_id, v,
+          new_value->ChannelNumber);
 			break;
 		}
 

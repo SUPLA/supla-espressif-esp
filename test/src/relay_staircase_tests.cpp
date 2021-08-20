@@ -58,7 +58,7 @@ using ::testing::ElementsAreArray;
 void gpioCallbackRelayStaircase() {
   supla_relay_cfg[0].gpio_id = 1;
   supla_relay_cfg[0].channel = 0;
-  supla_relay_cfg[0].flags = 0;
+  supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE;
   supla_relay_cfg[0].channel_flags =  
     SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED;
 
@@ -373,3 +373,205 @@ TEST_F(StaircaseTests, TurnOnByButton) {
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
 }
+
+TEST_F(StaircaseTests, TurnOnFor2sAfterRestart) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
+  {
+    InSequence seq;
+
+    // Values send on startup during registration are filled by board methods,
+    // so it can't be verified here. However we check gpio state if relay is
+    // enabled.
+    // turn on relay on channel 0
+//    EXPECT_CALL(srpc, 
+//        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+//      .WillOnce(Return(0));
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_state.Relay[0] = 1;
+  supla_esp_state.Time1Left[0] = 2000;
+
+  supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 500);
+ 
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+}
+
+TEST_F(StaircaseTests, TurnOffFor3sAfterRestart) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
+  {
+    InSequence seq;
+
+    // Values send on startup during registration are filled by board methods,
+    // so it can't be verified here. However we check gpio state if relay is
+    // enabled.
+//    EXPECT_CALL(srpc, 
+//        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+//      .WillOnce(Return(0));
+
+
+  }
+
+  supla_esp_state.Relay[0] = 0;
+  supla_esp_state.Time1Left[0] = 2000;
+
+  supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+ 
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  for (int i = 0; i < 60; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+}
+
+TEST_F(StaircaseTests, TurnOnFor2sAfterRestartThenTriggerByButton) {
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(2);
+
+  {
+    InSequence seq;
+
+    // Values send on startup during registration are filled by board methods,
+    // so it can't be verified here. However we check gpio state if relay is
+    // enabled.
+    // turn on relay on channel 0
+//    EXPECT_CALL(srpc, 
+//        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+//      .WillOnce(Return(0));
+
+    // turn off relay on channel 0
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  }
+
+  supla_esp_state.Relay[0] = 1;
+  supla_esp_state.Time1Left[0] = 2000;
+
+  supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+
+
+  // +1500 ms
+  for (int i = 0; i < 15; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 500);
+ 
+  // +600 ms
+  for (int i = 0; i < 6; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+
+  supla_esp_gpio_relay_switch(1, 1);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  // +2800 ms
+  for (int i = 0; i < 28; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_EQ(supla_esp_state.Time1Left[0], 200);
+  //
+  // +300 ms
+  for (int i = 0; i < 3; i++) {
+    curTime += 100000; // +100ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+}
+
