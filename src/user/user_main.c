@@ -210,6 +210,12 @@ void MAIN_ICACHE_FLASH user_init(void) {
   struct rst_info *rtc_info = system_get_rst_info();
   supla_log(LOG_DEBUG, "RST reason: %i", rtc_info->reason);
 
+  // setting DHCP hostname
+  char hostname[32] = {};
+  // hostname max length is 32, but it has to end with \0
+  supla_esp_cfgmode_generate_ssid_name(hostname, sizeof(hostname) - 1);
+  wifi_station_set_hostname(hostname);
+
   system_soft_wdt_restart();
 
   wifi_status_led_uninstall();
