@@ -123,6 +123,10 @@ void ICACHE_FLASH_ATTR supla_system_restart(void) {
   }
 #endif
 
+#ifndef COUNTDOWN_TIMER_DISABLED
+  supla_esp_save_state(0);
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+
 #ifdef MQTT_SUPPORT_ENABLED
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
     supla_esp_mqtt_before_system_restart();
@@ -210,6 +214,11 @@ void MAIN_ICACHE_FLASH user_init(void) {
 
   wifi_status_led_uninstall();
   supla_esp_cfg_init();
+
+#ifndef COUNTDOWN_TIMER_DISABLED
+  supla_esp_countdown_timer_init();
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+
   supla_esp_gpio_init();
   supla_esp_wifi_init();
 
@@ -226,10 +235,6 @@ void MAIN_ICACHE_FLASH user_init(void) {
 #ifdef __FOTA
   supla_esp_update_init();
 #endif
-
-#ifndef COUNTDOWN_TIMER_DISABLED
-  supla_esp_countdown_timer_init();
-#endif /*COUNTDOWN_TIMER_DISABLED*/
 
 #ifndef ADDITIONAL_DNS_CLIENT_DISABLED
   supla_esp_dns_client_init();
