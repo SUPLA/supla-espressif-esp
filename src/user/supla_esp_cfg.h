@@ -211,6 +211,13 @@ char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_save(SuplaEspCfg *cfg);
 void CFG_ICACHE_FLASH_ATTR supla_esp_save_state(int delay);
 void CFG_ICACHE_FLASH_ATTR factory_defaults(char save);
 
+#ifdef BOARD_SAVE_STATE
+bool CFG_ICACHE_FLASH_ATTR supla_esp_board_save_state(SuplaEspCfg *);
+#endif /*BOARD_SAVE_STATE*/
+
+#ifdef BOARD_LOAD_STATE
+bool CFG_ICACHE_FLASH_ATTR supla_esp_board_load_state(SuplaEspCfg *);
+#endif /*BOARD_LOAD_STATE*/
 
 //char CFG_ICACHE_FLASH_ATTR supla_esp_write_log(char *log);
 
