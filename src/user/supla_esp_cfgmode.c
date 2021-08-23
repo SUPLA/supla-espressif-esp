@@ -838,9 +838,39 @@ void ICACHE_FLASH_ATTR supla_esp_connectcb(void *arg) {
   espconn_regist_disconcb(conn, supla_esp_discon_callback);
 }
 
-void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
+int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *name,
+    int max_length) {
   char APSSID[] = AP_SSID;
   char mac[6];
+
+  wifi_get_macaddr(STATION_IF, (unsigned char *)mac);
+  int apssid_len = strnlen(APSSID, max_length);
+
+  memcpy(name, APSSID, apssid_len);
+
+  char mac_str[14] = {};
+
+#ifdef CFGMODE_SSID_LIMIT_MACLEN
+  ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X", (unsigned char)mac[4],
+      (unsigned char)mac[5]);
+#else
+  ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X%02X%02X%02X%02X",
+      (unsigned char)mac[0], (unsigned char)mac[1],
+      (unsigned char)mac[2], (unsigned char)mac[3],
+      (unsigned char)mac[4], (unsigned char)mac[5]);
+#endif /*CFGMODE_SSID_LIMIT_MACLEN*/
+  int mac_str_len = strnlen(mac_str, sizeof(mac_str));
+
+  if (apssid_len + mac_str_len > max_length) {
+    apssid_len -= apssid_len + mac_str_len - max_length;
+  }
+
+  memcpy(&name[apssid_len], mac_str, mac_str_len);
+
+  return mac_str_len + apssid_len;
+}
+
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
 
 #ifdef BOARD_BEFORE_CFGMODE_START
   supla_esp_board_before_cfgmode_start();
@@ -850,7 +880,6 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
     supla_esp_devconn_before_cfgmode_start();
   }
 
-  wifi_get_macaddr(SOFTAP_IF, (unsigned char *)mac);
 
   struct softap_config apconfig;
   wifi_softap_get_config(&apconfig);
@@ -877,29 +906,10 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
   wifi_set_sleep_type(NONE_SLEEP_T);
 #endif
 
-  int apssid_len = strnlen(APSSID, sizeof(apconfig.ssid));
-  memcpy(apconfig.ssid, APSSID, apssid_len);
+  int ssid_name_length = supla_esp_cfgmode_generate_ssid_name(
+      (char *)apconfig.ssid, sizeof(apconfig.ssid));
 
-  char mac_str[14] = {};
-
-#ifdef CFGMODE_SSID_LIMIT_MACLEN
-  ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X", (unsigned char)mac[4],
-               (unsigned char)mac[5]);
-#else
-  ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X%02X%02X%02X%02X",
-               (unsigned char)mac[0], (unsigned char)mac[1],
-               (unsigned char)mac[2], (unsigned char)mac[3],
-               (unsigned char)mac[4], (unsigned char)mac[5]);
-#endif /*CFGMODE_SSID_LIMIT_MACLEN*/
-
-  int mac_str_len = strnlen(mac_str, sizeof(mac_str));
-
-  if (apssid_len + mac_str_len > sizeof(apconfig.ssid)) {
-    apssid_len -= apssid_len + mac_str_len - sizeof(apconfig.ssid);
-  }
-
-  memcpy(&apconfig.ssid[apssid_len], mac_str, mac_str_len);
-  apconfig.ssid_len = apssid_len + mac_str_len;
+  apconfig.ssid_len = ssid_name_length;
   apconfig.channel = 1;
   apconfig.authmode = AUTH_OPEN;
   apconfig.ssid_hidden = 0;

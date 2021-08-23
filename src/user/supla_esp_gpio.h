@@ -52,12 +52,11 @@ typedef struct {
 
 
 typedef struct {
-
-	uint8 gpio_id;
-	uint8 flags;
-	uint8 channel;
-	unsigned _supla_int_t channel_flags;
-}supla_relay_cfg_t;
+  uint8 gpio_id;
+  uint8 flags;  // RELAY_FLAG_*
+  uint8 channel;
+  unsigned _supla_int_t channel_flags; // SUPLA_CHANNEL_FLAG_*
+} supla_relay_cfg_t;
 
 typedef struct {
 
@@ -105,8 +104,8 @@ typedef struct {
   bool performAutoCalibration;
   bool autoCal_button_request;
 
-  unsigned _supla_int16_t flags;
-  unsigned _supla_int16_t last_flags;
+  unsigned _supla_int16_t flags; // RS_VALUE_FLAG_*
+  unsigned _supla_int16_t last_flags; // last send RS_VALUE_FLAG_*
   bool detectedPowerConsumption;
 } supla_roller_shutter_cfg_t;
 
@@ -136,12 +135,17 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 
 void supla_esp_gpio_start_input_timer(supla_input_cfg_t *input_cfg);
 
-void supla_esp_gpio_set_hi(int port, char hi);
+void supla_esp_gpio_set_hi(int port, unsigned char hi);
 char supla_esp_gpio_output_is_hi(int port);
 char supla_esp_gpio_relay_is_hi(int port);
 char __supla_esp_gpio_relay_is_hi(supla_relay_cfg_t *relay_cfg);
-char supla_esp_gpio_relay_hi(int port, char hi, char save_before);
+char supla_esp_gpio_relay_hi(int port, unsigned char hi, char save_before);
 char supla_esp_gpio_relay_on(int port);
+
+// use this method to control relay from local buttons etc.
+// It will send updated channel value and manage countdown timers
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port,
+    unsigned char hi);
 
 void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
@@ -167,5 +171,7 @@ sint8 supla_esp_gpio_rs_get_current_position(
 void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
+    int newValue, int durationMs, int senderID);
 #endif /* SUPLA_ESP_GPIO_H_ */
 

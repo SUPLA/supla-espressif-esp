@@ -37,6 +37,7 @@
 #include "supla_esp_impulse_counter.h"
 #include "supla_esp_pwm.h"
 #include "supla_esp_wifi.h"
+#include "uptime.h"
 
 #ifdef MQTT_SUPPORT_ENABLED
 #include "supla_esp_mqtt.h"
@@ -113,32 +114,7 @@ static const partition_item_t at_partition_table[] = {
 #include "supla_update.h"
 #endif
 
-typedef struct {
-  uint32 cycles;
-  uint32 last_system_time;
-  ETSTimer timer;
-} _t_usermain_uptime;
-
-_t_usermain_uptime usermain_uptime;
 ETSTimer system_restart_delay_timer;
-
-unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_usec(void) {
-  uint32 time = system_get_time();
-  if (time < usermain_uptime.last_system_time) {
-    usermain_uptime.cycles++;
-  }
-  usermain_uptime.last_system_time = time;
-  return usermain_uptime.cycles * (unsigned _supla_int64_t)0xffffffff +
-         (unsigned _supla_int64_t)time;
-}
-
-unsigned _supla_int64_t MAIN_ICACHE_FLASH uptime_msec(void) {
-  return uptime_usec() / (unsigned _supla_int64_t)1000;
-}
-
-uint32 MAIN_ICACHE_FLASH uptime_sec(void) {
-  return uptime_msec() / (unsigned _supla_int64_t)1000;
-}
 
 void ICACHE_FLASH_ATTR supla_system_restart(void) {
 #ifdef BOARD_IS_RESTART_ALLOWED
@@ -146,6 +122,10 @@ void ICACHE_FLASH_ATTR supla_system_restart(void) {
     return;
   }
 #endif
+
+#ifndef COUNTDOWN_TIMER_DISABLED
+  supla_esp_save_state(0);
+#endif /*COUNTDOWN_TIMER_DISABLED*/
 
 #ifdef MQTT_SUPPORT_ENABLED
   if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
@@ -211,10 +191,6 @@ uint32 MAIN_ICACHE_FLASH user_rf_cal_sector_set(void) {
 
 void MAIN_ICACHE_FLASH user_rf_pre_init(){};
 
-void MAIN_ICACHE_FLASH supla_esp_uptime_counter_watchdog_cb(void *ptr) {
-  uptime_usec();
-}
-
 void MAIN_ICACHE_FLASH user_pre_init(void) {
   if (!system_partition_table_regist(
           at_partition_table,
@@ -225,12 +201,7 @@ void MAIN_ICACHE_FLASH user_pre_init(void) {
 }
 
 void MAIN_ICACHE_FLASH user_init(void) {
-  memset(&usermain_uptime, 0, sizeof(_t_usermain_uptime));
-
-  os_timer_disarm(&usermain_uptime.timer);
-  os_timer_setfn(&usermain_uptime.timer,
-                 (os_timer_func_t *)supla_esp_uptime_counter_watchdog_cb, NULL);
-  os_timer_arm(&usermain_uptime.timer, 10000, 1);
+  supla_esp_uptime_init();
 
 #ifdef BOARD_USER_INIT
   BOARD_USER_INIT;
@@ -239,10 +210,21 @@ void MAIN_ICACHE_FLASH user_init(void) {
   struct rst_info *rtc_info = system_get_rst_info();
   supla_log(LOG_DEBUG, "RST reason: %i", rtc_info->reason);
 
+  // setting DHCP hostname
+  char hostname[32] = {};
+  // hostname max length is 32, but it has to end with \0
+  supla_esp_cfgmode_generate_ssid_name(hostname, sizeof(hostname) - 1);
+  wifi_station_set_hostname(hostname);
+
   system_soft_wdt_restart();
 
   wifi_status_led_uninstall();
   supla_esp_cfg_init();
+
+#ifndef COUNTDOWN_TIMER_DISABLED
+  supla_esp_countdown_timer_init();
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+
   supla_esp_gpio_init();
   supla_esp_wifi_init();
 
@@ -259,10 +241,6 @@ void MAIN_ICACHE_FLASH user_init(void) {
 #ifdef __FOTA
   supla_esp_update_init();
 #endif
-
-#ifndef COUNTDOWN_TIMER_DISABLED
-  supla_esp_countdown_timer_init();
-#endif /*COUNTDOWN_TIMER_DISABLED*/
 
 #ifndef ADDITIONAL_DNS_CLIENT_DISABLED
   supla_esp_dns_client_init();

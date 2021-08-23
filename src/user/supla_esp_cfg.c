@@ -52,20 +52,29 @@ supla_esp_cfg_save(SuplaEspCfg *cfg) {
 	return 0;
 }
 
-void CFG_ICACHE_FLASH_ATTR
-_supla_esp_save_state(void *timer_arg) {
+void CFG_ICACHE_FLASH_ATTR _supla_esp_save_state(void *timer_arg) {
 #ifndef DEVICE_STATE_INACTIVE
-	ets_intr_lock();
-	spi_flash_erase_sector(CFG_SECTOR+STATE_SECTOR_OFFSET);
+#ifdef BOARD_SAVE_STATE
+  if (supla_esp_board_save_state(&supla_esp_state)) {
+    supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
+    return;
+  }
+  supla_log(LOG_DEBUG, "STATE WRITE FAIL!");
+#else  /*BOARD_SAVE_STATE*/
+  ets_intr_lock();
+  spi_flash_erase_sector(CFG_SECTOR + STATE_SECTOR_OFFSET);
 
-	if ( SPI_FLASH_RESULT_OK == spi_flash_write((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
-		supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
-		ets_intr_unlock();
-		return;
-	}
+  if (SPI_FLASH_RESULT_OK ==
+      spi_flash_write((CFG_SECTOR + STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE,
+        (uint32 *)&supla_esp_state, sizeof(SuplaEspState))) {
+    supla_log(LOG_DEBUG, "STATE WRITE SUCCESS");
+    ets_intr_unlock();
+    return;
+  }
 
-	ets_intr_unlock();
-	supla_log(LOG_DEBUG, "STATE WRITE FAIL!");
+  ets_intr_unlock();
+  supla_log(LOG_DEBUG, "STATE WRITE FAIL!");
+#endif /*BOARD_SAVE_STATE*/
 #endif /*DEVICE_STATE_INACTIVE*/
 }
 
@@ -275,13 +284,21 @@ supla_esp_cfg_init(void) {
 	   supla_log(LOG_DEBUG, "InputCfgTriggerOff: %i", supla_esp_cfg.InputCfgTriggerOff);
 	   */
 
-       #ifndef DEVICE_STATE_INACTIVE
-		if ( SPI_FLASH_RESULT_OK == spi_flash_read((CFG_SECTOR+STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE, (uint32*)&supla_esp_state, sizeof(SuplaEspState)) ) {
-			supla_log(LOG_DEBUG, "STATE READ SUCCESS!");
-		} else {
-			supla_log(LOG_DEBUG, "STATE READ FAIL!");
-		}
-       #endif /*DEVICE_STATE_INACTIVE*/
+#ifndef DEVICE_STATE_INACTIVE
+     if
+#ifdef BOARD_LOAD_STATE
+       (supla_esp_board_load_state(&supla_esp_state))
+#else /*BOARD_LOAD_STATE*/
+         (SPI_FLASH_RESULT_OK ==
+          spi_flash_read((CFG_SECTOR + STATE_SECTOR_OFFSET) * SPI_FLASH_SEC_SIZE,
+            (uint32 *)&supla_esp_state, sizeof(SuplaEspState)))
+#endif /*BOARD_LOAD_STATE*/
+         {
+           supla_log(LOG_DEBUG, "STATE READ SUCCESS!");
+         } else {
+           supla_log(LOG_DEBUG, "STATE READ FAIL!");
+         }
+#endif /*DEVICE_STATE_INACTIVE*/
 	   return 1;
    }
 

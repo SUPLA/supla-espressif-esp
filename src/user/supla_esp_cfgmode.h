@@ -27,5 +27,6 @@ void ICACHE_FLASH_ATTR supla_esp_channel_value_changed(int channel_number,
                                                        char v);
 
 unsigned int ICACHE_FLASH_ATTR supla_esp_cfgmode_entertime(void);
+int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *, int);
 
 #endif /* SUPLA_ESP_CFGMODE_H_ */

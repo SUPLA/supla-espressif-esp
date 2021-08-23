@@ -1004,7 +1004,7 @@ supla_esp_gpio_get_rs__cfg(int port) {
 	return NULL;
 }
 
-char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
+char supla_esp_gpio_relay_hi(int port, unsigned char hi, char save_before) {
 
     unsigned int t = system_get_time();
     int a;
@@ -1121,20 +1121,34 @@ char supla_esp_gpio_relay_hi(int port, char hi, char save_before) {
     return result;
 }
 
-void GPIO_ICACHE_FLASH
-supla_esp_gpio_relay_switch(supla_input_cfg_t *input_cfg, char hi) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch_by_input(
+    supla_input_cfg_t *input_cfg, unsigned char hi) {
+  supla_esp_gpio_relay_switch(input_cfg->relay_gpio_id, hi);
+}
 
-	if (  input_cfg->relay_gpio_id != 255 ) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
 
-		//supla_log(LOG_DEBUG, "RELAY");
+	if (port != 255 ) {
+    int channel = -1;
+    for (int i = 0; i < RELAY_MAX_COUNT; i++) {
+      if ( supla_relay_cfg[i].gpio_id == port ) {
+        channel = supla_relay_cfg[i].channel;
+      }
+    }
+    
+#ifndef COUNTDOWN_TIMER_DISABLED
+    if (channel >= 0) {
+      supla_esp_gpio_relay_set_duration_timer(channel, hi, 0, 0);
+    }
+#endif /*COUNTDOWN_TIMER_DISABLED*/
 
-		supla_esp_gpio_relay_hi(input_cfg->relay_gpio_id, hi, 0);
+		supla_esp_gpio_relay_hi(port, hi, 0);
 
-		if ( input_cfg->channel != 255 )
-			supla_esp_channel_value_changed(input_cfg->channel, supla_esp_gpio_relay_is_hi(input_cfg->relay_gpio_id));
-
+    if (channel >= 0) {
+        supla_esp_channel_value_changed(channel, 
+            supla_esp_gpio_relay_is_hi(port));
+    }
 	}
-
 }
 
 void GPIO_ICACHE_FLASH
@@ -1157,15 +1171,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-        #ifndef COUNTDOWN_TIMER_DISABLED
-		if (input_cfg->channel != 255) {
-		   supla_esp_countdown_timer_disarm(input_cfg->channel);
-		}
-        #endif /*COUNTDOWN_TIMER_DISABLED*/
-
-		//supla_log(LOG_DEBUG, "RELAY");
-		supla_esp_gpio_relay_switch(input_cfg, 255);
+		supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
 
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 				&&  input_cfg->channel != 255 ) {
@@ -1196,15 +1202,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 		#endif /*_ROLLERSHUTTER_SUPPORT*/
 	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
 		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-        #ifndef COUNTDOWN_TIMER_DISABLED
-		if (input_cfg->channel != 255) {
-		   supla_esp_countdown_timer_disarm(input_cfg->channel);
-		}
-        #endif /*COUNTDOWN_TIMER_DISABLED*/
-
-		supla_esp_gpio_relay_switch(input_cfg, 255);
-
+		supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
 	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
 			    &&  input_cfg->channel != 255 ) {
 
@@ -1551,20 +1549,23 @@ supla_esp_gpio_init(void) {
 				gpio16_output_conf();
 			}
 
-			if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE ) {
-
-				//supla_log(LOG_DEBUG, "RESTORE_FORCE, %i, %i, %i", a, supla_relay_cfg[a].gpio_id, supla_esp_state.Relay[a]);
-				supla_esp_gpio_relay_hi(supla_relay_cfg[a].gpio_id, supla_esp_state.Relay[a], 255);
-
-			} else if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE ) {
-
-				struct rst_info *rtc_info = system_get_rst_info();
-
-				if ( rtc_info->reason == 0 ) {
-					   //supla_log(LOG_DEBUG, "RESTORE");
-					   supla_esp_gpio_relay_hi(supla_relay_cfg[a].gpio_id, supla_esp_state.Relay[a], 255);
-				}
-
+      if (supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE ||
+          (supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE &&
+           system_get_rst_info()->reason == 0)) {
+				//supla_log(LOG_DEBUG, "RESTORE, %i, %i, %i", a, supla_relay_cfg[a].gpio_id, supla_esp_state.Relay[a]);
+#ifndef COUNTDOWN_TIMER_DISABLED
+        if (supla_relay_cfg[a].channel >= 0) {
+          supla_log(LOG_DEBUG, 
+              "Restoring relay state: ch %d, value %d, duration %d",
+              supla_relay_cfg[a].channel, supla_esp_state.Relay[a],
+              supla_esp_state.Time1Left[a]);
+          supla_esp_gpio_relay_set_duration_timer(supla_relay_cfg[a].channel,
+              supla_esp_state.Relay[a],
+              supla_esp_state.Time1Left[a], 0);
+        }
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+				supla_esp_gpio_relay_hi(supla_relay_cfg[a].gpio_id, 
+            supla_esp_state.Relay[a], 255);
 			} else if ( supla_relay_cfg[a].flags & RELAY_FLAG_RESET ) {
 
 				//supla_log(LOG_DEBUG, "LO_VALUE");
@@ -1617,8 +1618,7 @@ supla_esp_gpio_init(void) {
 
 }
 
-void
-supla_esp_gpio_set_hi(int port, char hi) {
+void supla_esp_gpio_set_hi(int port, unsigned char hi) {
 
     //supla_log(LOG_DEBUG, "supla_esp_gpio_set_hi %i, %i", port, hi);
 
@@ -1912,6 +1912,58 @@ char  supla_esp_gpio_relay_on(int port) {
 	return supla_esp_gpio_output_is_hi(port) == HI_VALUE ? 1 : 0;
 }
 
+void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
+    int newValue,
+    int durationMs,
+    int senderID) {
+#ifndef COUNTDOWN_TIMER_DISABLED
+  if (supla_esp_cfg.Time1[channel] > 0) {
+    // this is for staircase timer - we reset duration ms to the duration
+    // that was configred on the server.
+    // Staircase timer uses the same implementation as Countdown timer
+    if (newValue == 0) {
+      durationMs = 0;
+      supla_esp_state.Time1Left[channel] = 0;
+    } else {
+      if (durationMs == 0 || supla_esp_state.Time1Left[channel] != durationMs) {
+        durationMs = supla_esp_cfg.Time1[channel];
+      }
+    }
+  }
 
+  supla_esp_countdown_timer_disarm(channel);
 
+  if (durationMs > 0) {
 
+    for (int a = 0; a < RELAY_MAX_COUNT; a++) {
+      if (supla_relay_cfg[a].gpio_id != 255 &&
+          channel == supla_relay_cfg[a].channel) {
+
+        if (newValue == 1 || supla_relay_cfg[a].channel_flags &
+            SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+
+          char target_value[SUPLA_CHANNELVALUE_SIZE] = {};
+          target_value[0] = newValue ? 0 : 1;
+
+          supla_esp_countdown_timer_countdown(durationMs,
+              supla_relay_cfg[a].gpio_id,
+              channel, target_value, senderID);
+        }
+#if ESP8266_SUPLA_PROTO_VERSION >= 12
+        if (supla_relay_cfg[a].channel_flags &
+            SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED) {
+          TSuplaChannelExtendedValue *ev = (TSuplaChannelExtendedValue *)malloc(
+              sizeof(TSuplaChannelExtendedValue));
+          if (ev != NULL) {
+            supla_esp_countdown_get_state_ev(channel, ev);
+            supla_esp_channel_extendedvalue_changed(channel, ev);
+            free(ev);
+          }
+        }
+#endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
+        break;
+      }
+    }
+  }
+#endif /*COUNTDOWN_TIMER_DISABLED*/
+}

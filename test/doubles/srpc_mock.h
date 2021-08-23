@@ -61,9 +61,16 @@ public:
   virtual unsigned char srpc_out_queue_item_count(void *srpc) = 0;
   virtual char srpc_output_dataexists(void *_srpc) = 0;
   virtual _supla_int_t srpc_ds_async_get_channel_functions(void *_srpc) = 0;
-  virtual _supla_int_t srpc_ds_async_channel_value_changed_b(void *_srpc, unsigned char channel_number, char *value, unsigned char offline) = 0;
+  virtual _supla_int_t
+    srpc_ds_async_channel_value_changed_b(void *_srpc, unsigned char channel_number,
+        char *value, unsigned char offline) = 0;
   virtual void srpc_free(void *_srpc) = 0;
-  virtual _supla_int_t srpc_sd_async_get_firmware_update_url(void *_srpc, TDS_FirmwareUpdateParams *params) = 0;
+  virtual _supla_int_t
+    srpc_sd_async_get_firmware_update_url(void *_srpc,
+        TDS_FirmwareUpdateParams *params) = 0;
+  virtual _supla_int_t srpc_ds_async_channel_extendedvalue_changed(
+      void *_srpc, unsigned char channel_number,
+      TSuplaChannelExtendedValue *value) = 0;
 
   static SrpcInterface *instance;
   _func_srpc_event_OnRemoteCallReceived on_remote_call_received;
@@ -100,10 +107,17 @@ public:
               (override));
   MOCK_METHOD(unsigned char, srpc_out_queue_item_count, (void *), (override));
   MOCK_METHOD(char, srpc_output_dataexists, (void *), (override));
-  MOCK_METHOD(_supla_int_t, srpc_ds_async_get_channel_functions, (void *), (override));
-  MOCK_METHOD(_supla_int_t, srpc_ds_async_channel_value_changed_b, (void *, unsigned char, char *, unsigned char), (override));
+  MOCK_METHOD(_supla_int_t, srpc_ds_async_get_channel_functions, (void *),
+      (override));
+  MOCK_METHOD(_supla_int_t, srpc_ds_async_channel_value_changed_b,
+      (void *, unsigned char, char *, unsigned char), (override));
   MOCK_METHOD(void, srpc_free, (void *), (override));
-  MOCK_METHOD(_supla_int_t, srpc_sd_async_get_firmware_update_url, (void *, TDS_FirmwareUpdateParams *), (override));
+  MOCK_METHOD(_supla_int_t, srpc_sd_async_get_firmware_update_url,
+      (void *, TDS_FirmwareUpdateParams *), (override));
+  MOCK_METHOD(_supla_int_t, srpc_ds_async_channel_extendedvalue_changed,
+      (void *_srpc, unsigned char channel_number,
+       TSuplaChannelExtendedValue *value),
+      (override));
 
 };
 
