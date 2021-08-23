@@ -906,10 +906,9 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
   wifi_set_sleep_type(NONE_SLEEP_T);
 #endif
 
-  char ssid_name[sizeof(apconfig.ssid)] = {};
-  int ssid_name_length = supla_esp_cfgmode_generate_ssid_name(ssid_name, sizeof(apconfig.ssid));
+  int ssid_name_length = supla_esp_cfgmode_generate_ssid_name(
+      (char *)apconfig.ssid, sizeof(apconfig.ssid));
 
-  memcpy(&apconfig.ssid, ssid_name, ssid_name_length);
   apconfig.ssid_len = ssid_name_length;
   apconfig.channel = 1;
   apconfig.authmode = AUTH_OPEN;

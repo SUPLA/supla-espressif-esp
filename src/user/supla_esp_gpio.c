@@ -1925,9 +1925,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
       durationMs = 0;
       supla_esp_state.Time1Left[channel] = 0;
     } else {
-      if (supla_esp_state.Time1Left[channel] > 0) {
-        durationMs = supla_esp_state.Time1Left[channel];
-      } else {
+      if (durationMs == 0 || supla_esp_state.Time1Left[channel] != durationMs) {
         durationMs = supla_esp_cfg.Time1[channel];
       }
     }
