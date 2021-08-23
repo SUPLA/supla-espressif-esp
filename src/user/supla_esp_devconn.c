@@ -854,7 +854,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_cb(devconn_smooth *_smooth) {
 }
 
 void
-_supla_esp_devconn_smooth_cb(void) {
+_supla_esp_devconn_smooth_cb(void *ptr) {
 
 
 	int a;
@@ -940,7 +940,7 @@ supla_esp_channel_set_rgbw_value(int ChannelNumber, int Color, char ColorBrightn
 	 }
      #endif /*CVD_MAX_COUNT*/
 
-	supla_esp_hw_timer_init(FRC1_SOURCE, 1, NULL, _supla_esp_devconn_smooth_cb);
+	supla_esp_hw_timer_init(FRC1_SOURCE, 1, _supla_esp_devconn_smooth_cb, NULL);
 	supla_esp_hw_timer_arm(10000);
 #endif
 
@@ -1020,12 +1020,18 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 					if (ColorBrightness > 0) {
 						ColorBrightness = supla_esp_state.color_brightness[new_value->ChannelNumber];
+						if (ColorBrightness < 1) {
+							ColorBrightness = 1;
+						}
 					} else {
 						supla_esp_state.turnedOff[new_value->ChannelNumber] |= 0x1;
 					}
 
 					if ( Brightness > 0) {
 						Brightness = supla_esp_state.brightness[new_value->ChannelNumber];
+						if (Brightness < 1) {
+							Brightness = 1;
+						}
 					} else {
 						supla_esp_state.turnedOff[new_value->ChannelNumber] |= 0x2;
 					}
@@ -1039,6 +1045,9 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 				} else {
 					if ( Brightness > 0) {
 						Brightness = supla_esp_state.brightness[new_value->ChannelNumber];
+						if (Brightness < 1) {
+							Brightness = 1;
+						}
 					} else {
 						supla_esp_state.turnedOff[new_value->ChannelNumber] |= 0x2;
 					}
