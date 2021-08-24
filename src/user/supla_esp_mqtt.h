@@ -98,6 +98,17 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
     uint8 *percentage);
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
 #ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
+
+#ifdef MQTT_DIMMER_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_dimmer_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr);
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_brightness(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel_number, uint8 *brightness);
+#endif /*MQTT_DIMMER_SUPPORT*/
+
 uint8 ICACHE_FLASH_ATTR
 supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
                                     size_t *message_size_out, uint8 index);

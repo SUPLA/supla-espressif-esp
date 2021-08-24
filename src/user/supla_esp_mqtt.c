@@ -1782,6 +1782,106 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
 
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
 
+#ifdef MQTT_DIMMER_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_dimmer_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr) {
+  if (!supla_esp_mqtt_prepare_ha_cfg_topic("light", topic_name_out,
+                                           channel_number, 0)) {
+    return 0;
+  }
+
+  const char cfg[] =
+      "{\"avty\":{\"topic\":\"%s/state/"
+      "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
+      "\"false\"},\"~\":\"%s/channels/"
+      "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
+      "s\"},\"name\":\"#%i Light switch"
+      "\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\",\"qos\":0,"
+      "\"ret\":false,\"cmd_t\":\"~/"
+      "execute_action\",\"pl_on\":\"TURN_ON\",\"pl_off\":\"TURN_OFF\",\"stat_"
+      "t\":\"~/state/on\",\"stat_val_tpl\":\"{%% if value == \\\"true\\\" "
+      "%%}TURN_ON{%% else %%}TURN_OFF{%% endif "
+      "%%}\",\"on_cmd_type\":\"first\",\"bri_cmd_t\":\"~/set/"
+      "brightness\",\"bri_scl\":100,\"bri_stat_t\":\"~/state/brightness\"}";
+  char c = 0;
+
+  char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
+  supla_esp_board_set_device_name(device_name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+  unsigned char mac[6] = {};
+  wifi_get_macaddr(STATION_IF, mac);
+
+  size_t buffer_size = 0;
+
+  for (uint8 a = 0; a < 2; a++) {
+    buffer_size =
+        ets_snprintf(a ? *message_out : &c, a ? buffer_size : 1, cfg,
+                     supla_esp_mqtt_vars->prefix, supla_esp_mqtt_vars->prefix,
+                     channel_number, supla_esp_mqtt_vars->device_id, mfr,
+                     device_name, SUPLA_ESP_SOFTVER, channel_number, mac[0],
+                     mac[1], mac[2], mac[3], mac[4], mac[5], channel_number) +
+        1;
+
+    if (!a) {
+      *message_out = malloc(buffer_size);
+      if (*message_out == NULL) {
+        if (*topic_name_out) {
+          free(*topic_name_out);
+          *topic_name_out = NULL;
+        }
+        return 0;
+      }
+    }
+  }
+
+  *message_size_out = strnlen(*message_out, buffer_size);
+  return 1;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_brightness(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel_number, uint8 *brightness) {
+  if (!topic_name || topic_name_size == 0 || !message || message_size == 0 ||
+      !channel_number || !brightness || !supla_esp_mqtt_vars->prefix ||
+      supla_esp_mqtt_vars->prefix[0] == 0 ||
+      supla_esp_mqtt_vars->prefix_len + 1 >= topic_name_size) {
+    return 0;
+  }
+
+  char *tn = (char *)topic_name;
+
+  if (memcmp(tn, supla_esp_mqtt_vars->prefix,
+             supla_esp_mqtt_vars->prefix_len) == 0) {
+    tn += supla_esp_mqtt_vars->prefix_len + 1;
+    topic_name_size -= supla_esp_mqtt_vars->prefix_len + 1;
+  } else {
+    return 0;
+  }
+
+  uint8 err = 1;
+  *channel_number = supla_esp_mqtt_parse_int_with_prefix(
+      "channels/", 9, &tn, &topic_name_size, &err);
+
+  if (err) {
+    return 0;
+  }
+
+  if (topic_name_size == 14 &&
+      memcmp(tn, "set/brightness", topic_name_size) == 0) {
+    uint8 err = 1;
+    int p = supla_esp_mqtt_str2int(message, message_size, &err);
+    if (!err && p >= 0 && p <= 100) {
+      *brightness = p;
+      return 1;
+    }
+  };
+
+  return 0;
+}
+
+#endif /*MQTT_DIMMER_SUPPORT*/
+
 #ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
 uint8 ICACHE_FLASH_ATTR
 supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
