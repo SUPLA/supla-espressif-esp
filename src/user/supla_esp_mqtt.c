@@ -526,8 +526,6 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
     if (!supla_esp_mqtt_vars->error_notification) {
       if (client->error == MQTT_ERROR_CONNECTION_REFUSED) {
         supla_esp_set_state(LOG_NOTICE, "Connection refused");
-      } else if (client->error == MQTT_ERROR_CONNECT_NOT_CALLED) {
-        supla_esp_set_state(LOG_NOTICE, "Unable to connect to the broker");
       } else {
         supla_log(LOG_DEBUG, mqtt_error_str(client->error));
       }
