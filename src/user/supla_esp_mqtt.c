@@ -49,6 +49,7 @@
 
 #define UPTIME_REFRESH_INTERVAL_MSEC 1000
 #define MQTT_SEND_BUFFER_FULL_HOLD_TIME_MS 5000
+#define MQTT_SENDING_STUCK_TIME_MS 1000
 
 typedef struct {
   uint8 started;
@@ -376,6 +377,9 @@ ssize_t ICACHE_FLASH_ATTR mqtt_pal_sendall(mqtt_pal_socket_handle methods,
   if (r == 0) {
     return len;
   } else if (r == ESPCONN_INPROGRESS || r == ESPCONN_MAXNUM) {
+    supla_esp_mqtt_vars->hold_publishing_until_ms =
+        uptime_msec() + MQTT_SENDING_STUCK_TIME_MS;
+
     return 0;
   }
 
