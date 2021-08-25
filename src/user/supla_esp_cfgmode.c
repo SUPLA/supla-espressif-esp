@@ -99,6 +99,7 @@ typedef struct {
 } TrivialHttpParserVars;
 
 typedef struct {
+  ETSTimer timer;
   unsigned int entertime;
 } _cfgmode_vars_t;
 
@@ -839,7 +840,7 @@ void ICACHE_FLASH_ATTR supla_esp_connectcb(void *arg) {
 }
 
 int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *name,
-    int max_length) {
+                                                           int max_length) {
   char APSSID[] = AP_SSID;
   char mac[6];
 
@@ -852,12 +853,12 @@ int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *name,
 
 #ifdef CFGMODE_SSID_LIMIT_MACLEN
   ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X", (unsigned char)mac[4],
-      (unsigned char)mac[5]);
+               (unsigned char)mac[5]);
 #else
   ets_snprintf(mac_str, sizeof(mac_str), "-%02X%02X%02X%02X%02X%02X",
-      (unsigned char)mac[0], (unsigned char)mac[1],
-      (unsigned char)mac[2], (unsigned char)mac[3],
-      (unsigned char)mac[4], (unsigned char)mac[5]);
+               (unsigned char)mac[0], (unsigned char)mac[1],
+               (unsigned char)mac[2], (unsigned char)mac[3],
+               (unsigned char)mac[4], (unsigned char)mac[5]);
 #endif /*CFGMODE_SSID_LIMIT_MACLEN*/
   int mac_str_len = strnlen(mac_str, sizeof(mac_str));
 
@@ -870,41 +871,12 @@ int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *name,
   return mac_str_len + apssid_len;
 }
 
-void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
-
-#ifdef BOARD_BEFORE_CFGMODE_START
-  supla_esp_board_before_cfgmode_start();
-#endif
-
-  if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED)) {
-    supla_esp_devconn_before_cfgmode_start();
-  }
-
-
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_enter_ap_mode(void *ptr) {
   struct softap_config apconfig;
   wifi_softap_get_config(&apconfig);
 
   memset(apconfig.ssid, 0, sizeof(apconfig.ssid));
   memset(apconfig.password, 0, sizeof(apconfig.password));
-
-  if (cfgmode_vars.entertime != 0) return;
-
-  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
-#ifdef MQTT_SUPPORT_ENABLED
-    supla_esp_mqtt_client_stop();
-#endif /*MQTT_SUPPORT_ENABLED*/
-  } else {
-    supla_esp_devconn_stop();
-  }
-
-  cfgmode_vars.entertime = system_get_time();
-
-  supla_log(LOG_DEBUG, "ENTER CFG MODE");
-  supla_esp_gpio_state_cfgmode();
-
-#ifdef WIFI_SLEEP_DISABLE
-  wifi_set_sleep_type(NONE_SLEEP_T);
-#endif
 
   int ssid_name_length = supla_esp_cfgmode_generate_ssid_name(
       (char *)apconfig.ssid, sizeof(apconfig.ssid));
@@ -932,6 +904,42 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
 
   espconn_regist_connectcb(conn, supla_esp_connectcb);
   espconn_accept(conn);
+}
+
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
+#ifdef BOARD_BEFORE_CFGMODE_START
+  supla_esp_board_before_cfgmode_start();
+#endif
+
+  if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED)) {
+    supla_esp_devconn_before_cfgmode_start();
+  }
+
+  if (cfgmode_vars.entertime != 0) return;
+
+  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED) {
+#ifdef MQTT_SUPPORT_ENABLED
+    supla_esp_mqtt_client_stop();
+#endif /*MQTT_SUPPORT_ENABLED*/
+  } else {
+    supla_esp_devconn_stop();
+  }
+
+  cfgmode_vars.entertime = system_get_time();
+
+  supla_log(LOG_DEBUG, "ENTER CFG MODE");
+  supla_esp_gpio_state_cfgmode();
+
+#ifdef WIFI_SLEEP_DISABLE
+  wifi_set_sleep_type(NONE_SLEEP_T);
+#endif
+
+  // Go into AP mode with a delay, otherwise stopping connections may cause a
+  // crash.
+  os_timer_disarm(&cfgmode_vars.timer);
+  os_timer_setfn(&cfgmode_vars.timer,
+                 (os_timer_func_t *)supla_esp_cfgmode_enter_ap_mode, NULL);
+  os_timer_arm(&cfgmode_vars.timer, 1000, 0);
 }
 
 char ICACHE_FLASH_ATTR supla_esp_cfgmode_started(void) {
