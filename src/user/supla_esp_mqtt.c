@@ -445,11 +445,6 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
   memset(supla_esp_mqtt_vars->publish_idx, 0,
          sizeof(supla_esp_mqtt_vars->publish_idx));
 
-  mqtt_reinit(&supla_esp_mqtt_vars->client, 0, supla_esp_mqtt_vars->sendbuf,
-              sizeof(supla_esp_mqtt_vars->sendbuf),
-              supla_esp_mqtt_vars->recvbuf,
-              sizeof(supla_esp_mqtt_vars->recvbuf));
-
   char clientId[MQTT_CLIENTID_MAX_SIZE];
 
   ets_snprintf(
@@ -527,6 +522,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
     if (!supla_esp_mqtt_vars->error_notification) {
       if (client->error == MQTT_ERROR_CONNECTION_REFUSED) {
         supla_esp_set_state(LOG_NOTICE, "Connection refused");
+      } else if (client->error == MQTT_ERROR_CONNECT_NOT_CALLED) {
+        supla_esp_set_state(LOG_NOTICE, "Unable to connect to the broker");
       } else {
         supla_log(LOG_DEBUG, mqtt_error_str(client->error));
       }
@@ -557,6 +554,11 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_reconnect(struct mqtt_client *client,
   supla_esp_mqtt_vars->esp_conn.proto.tcp->remote_port = supla_esp_cfg.Port;
   os_memcpy(supla_esp_mqtt_vars->esp_conn.proto.tcp->remote_ip,
             &supla_esp_mqtt_vars->ip, 4);
+
+  mqtt_reinit(&supla_esp_mqtt_vars->client, 0, supla_esp_mqtt_vars->sendbuf,
+              sizeof(supla_esp_mqtt_vars->sendbuf),
+              supla_esp_mqtt_vars->recvbuf,
+              sizeof(supla_esp_mqtt_vars->recvbuf));
 
   espconn_regist_recvcb(&supla_esp_mqtt_vars->esp_conn,
                         supla_esp_mqtt_conn_recv_cb);
