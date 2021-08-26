@@ -88,11 +88,12 @@ typedef struct {
 _supla_esp_mqtt_vars_t *supla_esp_mqtt_vars = NULL;
 
 #ifdef MQTT_HA_RELAY_SUPPORT
-void ICACHE_FLASH_ATTR supla_esp_mqtt_on_countdown_timer_finish(uint8 gpio_id,
-		uint8 channel_number, char target_value[SUPLA_CHANNELVALUE_SIZE]);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_on_countdown_timer_finish(
+    uint8 gpio_id, uint8 channel_number,
+    char target_value[SUPLA_CHANNELVALUE_SIZE]);
 
-char ICACHE_FLASH_ATTR
-supla_esp_mqtt_channel_set_value(int port, char v, int channel_number);
+char ICACHE_FLASH_ATTR supla_esp_mqtt_channel_set_value(int port, char v,
+    int channel_number);
 #endif /*MQTT_HA_RELAY_SUPPORT*/
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_set_status(uint8 status) {
@@ -175,7 +176,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void) {
 
 #ifdef MQTT_HA_RELAY_SUPPORT
 #ifndef COUNTDOWN_TIMER_DISABLED
-	supla_esp_countdown_set_finish_cb(supla_esp_mqtt_on_countdown_timer_finish);
+  supla_esp_countdown_set_finish_cb(supla_esp_mqtt_on_countdown_timer_finish);
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 #endif /*MQTT_HA_RELAY_SUPPORT*/
 }
@@ -1985,23 +1986,25 @@ supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
 #endif /*MQTT_DEVICE_STATE_SUPPORT_DISABLED*/
 
 #ifdef MQTT_HA_RELAY_SUPPORT
-char ICACHE_FLASH_ATTR
-supla_esp_mqtt_channel_set_value(int port, char v, int channel_number) {
+char ICACHE_FLASH_ATTR supla_esp_mqtt_channel_set_value(int port, char v,
+    int channel_number) {
 
-	char _v = v == 1 ? HI_VALUE : LO_VALUE;
+  char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
-	supla_esp_gpio_relay_hi(port, _v, 1);
+  supla_esp_gpio_relay_hi(port, _v, 1);
 
-	_v = supla_esp_gpio_relay_is_hi(port);
+  _v = supla_esp_gpio_relay_is_hi(port);
 
   supla_esp_board_mqtt_on_relay_state_changed(channel_number);
 
-	return (v == 1 ? HI_VALUE : LO_VALUE) == _v;
+  return (v == 1 ? HI_VALUE : LO_VALUE) == _v;
 }
 
-void ICACHE_FLASH_ATTR supla_esp_mqtt_on_countdown_timer_finish(uint8 gpio_id,
-		uint8 channel_number, char target_value[SUPLA_CHANNELVALUE_SIZE]) {
-	supla_esp_mqtt_channel_set_value(gpio_id, target_value[0] == 0 ? LO_VALUE : HI_VALUE, channel_number);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_on_countdown_timer_finish(
+    uint8 gpio_id, uint8 channel_number,
+    char target_value[SUPLA_CHANNELVALUE_SIZE]) {
+  supla_esp_mqtt_channel_set_value(
+      gpio_id, target_value[0] == 0 ? LO_VALUE : HI_VALUE, channel_number);
 }
 
 #endif /*MQTT_HA_RELAY_SUPPORT*/
