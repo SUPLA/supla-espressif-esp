@@ -17,12 +17,12 @@
 
 /* Note:
  * Channel function with staircase duration time is read on device startup
- * and stored in supla_esp_cfg.Time1[channelNumber].
- * Implementation depends on an assumption that if supla_esp_cfg.Time1[] > 0
+ * and stored in supla_esp_cfg.Time2[channelNumber].
+ * Implementation depends on an assumption that if supla_esp_cfg.Time2[] > 0
  * then it is staircase timer. In all other cases it will work as relay
  * with countdown timer.
  *
- * Thus all tests below have Time1 set and they ignore DurationMs send from
+ * Thus all tests below have Time2 set and they ignore DurationMs send from
  * server.
  */
 
@@ -109,7 +109,7 @@ public:
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
-    supla_esp_cfg.Time1[0] = 3000; // 3 s staircase timer on channel 0
+    supla_esp_cfg.Time2[0] = 3000; // 3 s staircase timer on channel 0
     cleanupTimers();
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallbackRelayStaircase;
@@ -399,7 +399,7 @@ TEST_F(StaircaseTests, TurnOnFor2sAfterRestart) {
   }
 
   supla_esp_state.Relay[0] = 1;
-  supla_esp_state.Time1Left[0] = 2000;
+  supla_esp_state.Time2Left[0] = 2000;
 
   supla_esp_gpio_init();
 
@@ -419,14 +419,14 @@ TEST_F(StaircaseTests, TurnOnFor2sAfterRestart) {
   }
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 500);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 500);
  
   // +600 ms
   for (int i = 0; i < 6; i++) {
     curTime += 100000; // +100ms
     executeTimers();
   }
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
 
@@ -452,7 +452,7 @@ TEST_F(StaircaseTests, TurnOffFor3sAfterRestart) {
   }
 
   supla_esp_state.Relay[0] = 0;
-  supla_esp_state.Time1Left[0] = 2000;
+  supla_esp_state.Time2Left[0] = 2000;
 
   supla_esp_gpio_init();
 
@@ -472,7 +472,7 @@ TEST_F(StaircaseTests, TurnOffFor3sAfterRestart) {
   }
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
  
   // +600 ms
   for (int i = 0; i < 6; i++) {
@@ -488,7 +488,7 @@ TEST_F(StaircaseTests, TurnOffFor3sAfterRestart) {
   }
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 }
 
 TEST_F(StaircaseTests, TurnOnFor2sAfterRestartThenTriggerByButton) {
@@ -524,7 +524,7 @@ TEST_F(StaircaseTests, TurnOnFor2sAfterRestartThenTriggerByButton) {
   }
 
   supla_esp_state.Relay[0] = 1;
-  supla_esp_state.Time1Left[0] = 2000;
+  supla_esp_state.Time2Left[0] = 2000;
 
   supla_esp_gpio_init();
 
@@ -544,7 +544,7 @@ TEST_F(StaircaseTests, TurnOnFor2sAfterRestartThenTriggerByButton) {
   }
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 500);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 500);
  
   // +600 ms
   for (int i = 0; i < 6; i++) {
@@ -553,7 +553,7 @@ TEST_F(StaircaseTests, TurnOnFor2sAfterRestartThenTriggerByButton) {
   }
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 
   supla_esp_gpio_relay_switch(1, 1);
   EXPECT_TRUE(eagleStub.getGpioValue(1));
@@ -564,7 +564,7 @@ TEST_F(StaircaseTests, TurnOnFor2sAfterRestartThenTriggerByButton) {
   }
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 200);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 200);
   //
   // +300 ms
   for (int i = 0; i < 3; i++) {
