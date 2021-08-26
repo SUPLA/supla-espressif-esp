@@ -79,6 +79,10 @@ void ICACHE_FLASH_ATTR supla_esp_board_mqtt_on_message_received(
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 light, uint8 channel_number, const char *mfr);
+
+void ICACHE_FLASH_ATTR
+supla_esp_board_mqtt_on_relay_state_changed(uint8 channel);
+
 #endif /*MQTT_HA_RELAY_SUPPORT*/
 
 #ifdef MQTT_HA_EM_SUPPORT
