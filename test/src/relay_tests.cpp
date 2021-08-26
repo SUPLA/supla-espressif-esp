@@ -1966,7 +1966,7 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sAfterRestart) {
   }
 
   supla_esp_state.Relay[0] = 1;
-  supla_esp_state.Time1Left[0] = 2000;
+  supla_esp_state.Time2Left[0] = 2000;
 
   supla_esp_gpio_init();
 
@@ -1986,7 +1986,7 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sAfterRestart) {
   }
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 500);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 500);
  
   // +600 ms
   for (int i = 0; i < 6; i++) {
@@ -1995,7 +1995,7 @@ TEST_F(RelayTests, CountdownTimerTurnOnFor2sAfterRestart) {
   }
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 
 }
 
@@ -2023,7 +2023,7 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sAfterRestart) {
   }
 
   supla_esp_state.Relay[0] = 0;
-  supla_esp_state.Time1Left[0] = 2000;
+  supla_esp_state.Time2Left[0] = 2000;
 
   supla_esp_gpio_init();
 
@@ -2043,7 +2043,7 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sAfterRestart) {
   }
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 500);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 500);
  
   // +600 ms
   for (int i = 0; i < 6; i++) {
@@ -2052,7 +2052,7 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sAfterRestart) {
   }
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 
   for (int i = 0; i < 60; i++) {
     curTime += 100000; // +100ms
@@ -2060,7 +2060,7 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sAfterRestart) {
   }
 
   EXPECT_TRUE(eagleStub.getGpioValue(1));
-  EXPECT_EQ(supla_esp_state.Time1Left[0], 0);
+  EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 }
 
 
