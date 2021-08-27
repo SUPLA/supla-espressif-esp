@@ -739,7 +739,8 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
   };
 
   if (pVars->type == TYPE_POST) {
-    supla_log(LOG_DEBUG, "Matched: %i, step: %i", pVars->matched, pVars->step);
+    supla_log(LOG_DEBUG, "Matched: %i, step: %i reboot: %i", pVars->matched,
+              pVars->step, reboot);
 
     if (pVars->matched < 4) {
       return;
@@ -747,7 +748,7 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
 
     if (reboot > 0) {
       if (reboot == 2) {
-        supla_system_restart_with_delay(1500);
+        supla_system_restart_with_delay(2500);
       } else {
         supla_system_restart();
         return;
