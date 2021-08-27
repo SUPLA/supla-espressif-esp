@@ -124,7 +124,9 @@ void ICACHE_FLASH_ATTR supla_system_restart(void) {
 #endif
 
 #ifndef COUNTDOWN_TIMER_DISABLED
-  supla_esp_save_state(0);
+  if (supla_esp_cfgmode_started() == 0) {
+	  supla_esp_save_state(0);
+  }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 
 #ifdef MQTT_SUPPORT_ENABLED
