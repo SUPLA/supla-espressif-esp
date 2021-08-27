@@ -126,6 +126,7 @@ void ICACHE_FLASH_ATTR supla_system_restart(void) {
 #ifndef COUNTDOWN_TIMER_DISABLED
   if (supla_esp_cfgmode_started() == 0) {
 	  supla_esp_save_state(0);
+	  os_delay_us(500);
   }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 
