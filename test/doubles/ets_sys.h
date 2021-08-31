@@ -70,6 +70,10 @@ void ets_isr_unmask(uint32 unmask);
 
 void NmiTimSetFunc(void (*func)(void));
 
+// Added for tests
+extern ets_isr_t ets_gpio_intr_func;
+void ets_clear_isr();
+
 #define ETS_INTR_LOCK() \
     ets_intr_lock()
 

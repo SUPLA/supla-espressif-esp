@@ -16,30 +16,32 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _SUPLA_TEST_EAGLE_SOC_INTF_H
-#define _SUPLA_TEST_EAGLE_SOC_INTF_H
+#ifndef _TEST_SUPLA_ESP_MOCK_H
+#define _TEST_SUPLA_ESP_MOCK_H
 
 #include <c_types.h>
 #include <gmock/gmock.h>
 
 extern "C" {
-#include "eagle_soc.h"
-
- 
-uint32 GPIO_REG_READ(uint32 reg);
-void GPIO_REG_WRITE(uint32 reg, uint32 val);
-
-}
-
-class EagleSocInterface {
-public:
-  EagleSocInterface();
-  virtual ~EagleSocInterface();
-
-  virtual uint32 gpioRegRead(uint32 reg) = 0;
-  virtual void gpioRegWrite(uint32 reg, uint32 value) = 0;
-  virtual void gpioOutputSet(uint32 port, uint8 value) = 0;
-  static EagleSocInterface *instance;
+#include <supla_esp.h>
 };
 
-#endif /*_SUPLA_TEST_EAGLE_SOC_INTF_H*/
+class BoardInterface {
+public:
+  BoardInterface();
+  virtual ~BoardInterface();
+
+  virtual void supla_system_restart() = 0;
+  virtual void supla_system_restart_with_delay(uint32 delayMs) = 0;
+  static BoardInterface *instance;
+};
+
+class BoardMock : public BoardInterface {
+public:
+  MOCK_METHOD(void, supla_system_restart, (), (override));
+  MOCK_METHOD(void, supla_system_restart_with_delay, (uint32 delayMs), (override));
+};
+
+#endif /*_TEST_SUPLA_ESP_MOCK_H*/
+
+

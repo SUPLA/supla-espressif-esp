@@ -18,8 +18,19 @@
 
 #include "ets_sys.h"
 
+ets_isr_t ets_gpio_intr_func = NULL;
+
 void ets_intr_lock(){};
 void ets_intr_unlock(){};
 void ets_isr_mask(uint32 mask){};
 void ets_isr_unmask(uint32 unmask){};
-void ets_isr_attach(int i, ets_isr_t func, void *arg) {}
+void ets_isr_attach(int i, ets_isr_t func, void *arg) {
+  if (ETS_GPIO_INUM == i) {
+    ets_gpio_intr_func = func;
+  }
+}
+
+void ets_clear_isr() {
+  ets_gpio_intr_func = NULL;
+}
+

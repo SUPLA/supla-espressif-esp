@@ -95,6 +95,8 @@
 
 //GPIO reg {{
 // Commented out for testing in Supla
+uint32 GPIO_REG_READ(uint32 reg);
+void GPIO_REG_WRITE(uint32 reg, uint32 value);
 //#define GPIO_REG_READ(reg)                         READ_PERI_REG(PERIPHS_GPIO_BASEADDR + reg)
 //#define GPIO_REG_WRITE(reg, val)                 WRITE_PERI_REG(PERIPHS_GPIO_BASEADDR + reg, val)
 #define GPIO_OUT_ADDRESS                         0x00

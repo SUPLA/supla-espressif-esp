@@ -949,3 +949,9 @@ char ICACHE_FLASH_ATTR supla_esp_cfgmode_started(void) {
 unsigned int ICACHE_FLASH_ATTR supla_esp_cfgmode_entertime(void) {
   return cfgmode_vars.entertime;
 }
+
+// method needed only in UT tests
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_clear_vars(void) {
+  cfgmode_vars.entertime = 0;
+  os_timer_disarm(&cfgmode_vars.timer);
+}
