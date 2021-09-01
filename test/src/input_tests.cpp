@@ -74,6 +74,34 @@ void gpioCallbackInput() {
   } else if (gpioConfigId == 7) {
     supla_input_cfg[0].flags = INPUT_FLAG_PULLUP;
     supla_input_cfg[0].type = INPUT_TYPE_BTN_BISTABLE;
+  } else if (gpioConfigId == 8) {
+    supla_input_cfg[0].flags = INPUT_FLAG_CFG_BTN;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE_RS;
+    supla_input_cfg[0].relay_gpio_id = 3;
+
+    supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE_RS;
+    supla_input_cfg[1].gpio_id = 2;
+    supla_input_cfg[1].flags = 0;
+    supla_input_cfg[1].channel = 255; // used only for sensor input
+    supla_input_cfg[1].relay_gpio_id = 4;
+
+    // up
+    supla_relay_cfg[0].gpio_id = 3;
+    supla_relay_cfg[0].channel = 0;
+    supla_relay_cfg[0].flags = 0;
+    supla_relay_cfg[0].channel_flags = 0;
+
+    // down
+    supla_relay_cfg[1].gpio_id = 4;
+    supla_relay_cfg[1].channel = 0;
+
+    supla_rs_cfg[0].up = &supla_relay_cfg[0];
+    supla_rs_cfg[0].down = &supla_relay_cfg[1];
+    *supla_rs_cfg[0].position = 0;
+    *supla_rs_cfg[0].full_closing_time = 0;
+    *supla_rs_cfg[0].full_opening_time = 0;
+    supla_rs_cfg[0].delayed_trigger.value = 0;
+
   } else {
     assert(false);
   }
@@ -1096,4 +1124,191 @@ TEST_F(InputsFixture, MonostableButtonWithRelayInactiveOnTrigger) {
 
   EXPECT_TRUE(eagleStub.getGpioValue(2));
 
+}
+
+
+// MONOSTABLE_RS buttons works in a following way:
+// when button is pressed, it starts RS movement
+// button release, stops RS movement
+TEST_F(InputsFixture, MonostableRsCfgButton) {
+  gpioConfigId = 8;
+
+  // GPIO 1 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  // GPIO 2 - input button 
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // GPIO 3 - RS 
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  // GPIO 4 - RS
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  
+  EXPECT_TRUE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +700 ms
+  for (int i = 0; i < 120; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+ 
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(2, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_TRUE(eagleStub.getGpioValue(4));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +700 ms
+  for (int i = 0; i < 700; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
+  // enter cfg mode
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +6 s
+  for (int i = 0; i < 600; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
+
+  // Button click >3s after enter cfg mode should trigger cfgmode exit
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+ 
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // only 900 ms passed, so we should still be in cfgmode
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
+
+  // +2500 ms
+  for (int i = 0; i < 250; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+ 
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
+ 
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  EXPECT_CALL(board, supla_system_restart()).Times(1);
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
 }
