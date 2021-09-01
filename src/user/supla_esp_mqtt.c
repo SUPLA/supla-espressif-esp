@@ -1808,6 +1808,26 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
   return 0;
 }
 
+void ICACHE_FLASH_ATTR
+supla_esp_mqtt_rs_recalibrate(unsigned char channelNumber) {
+  for (int i = 0; i < RS_MAX_COUNT; i++) {
+    if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
+        supla_rs_cfg[i].up->channel == channelNumber &&
+        supla_rs_cfg[i].up->channel_flags &
+            SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE) {
+      supla_rs_cfg[i].autoCal_step = 0;
+      *(supla_rs_cfg[i].auto_opening_time) = 0;
+      *(supla_rs_cfg[i].auto_closing_time) = 0;
+      *(supla_rs_cfg[i].position) = 0;  // not calibrated
+
+      supla_esp_gpio_rs_apply_new_times(i, supla_esp_cfg.Time2[i],
+                                        supla_esp_cfg.Time1[i]);
+      // trigger calibration by setting position to fully open
+      supla_esp_gpio_rs_add_task(i, 0);
+    }
+  }
+}
+
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
 
 #ifdef MQTT_DIMMER_SUPPORT
