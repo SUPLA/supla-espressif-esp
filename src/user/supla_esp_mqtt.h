@@ -31,6 +31,7 @@
 #define MQTT_ACTION_SHUT_WITH_PERCENTAGE 5
 #define MQTT_ACTION_REVEAL 6
 #define MQTT_ACTION_STOP 7
+#define MQTT_ACTION_RECALIBRATE 8
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);

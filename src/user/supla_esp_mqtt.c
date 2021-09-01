@@ -19,9 +19,9 @@
 #include "supla_esp_mqtt.h"
 
 #include "supla_esp_cfgmode.h"
+#include "supla_esp_countdown_timer.h"
 #include "supla_esp_electricity_meter.h"
 #include "supla_update.h"
-#include "supla_esp_countdown_timer.h"
 
 #ifdef MQTT_SUPPORT_ENABLED
 
@@ -94,7 +94,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_on_countdown_timer_finish(
     char target_value[SUPLA_CHANNELVALUE_SIZE]);
 
 char ICACHE_FLASH_ATTR supla_esp_mqtt_channel_set_value(int port, char v,
-    int channel_number);
+                                                        int channel_number);
 #endif /*MQTT_HA_RELAY_SUPPORT*/
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_set_status(uint8 status) {
@@ -1794,6 +1794,14 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
                supla_esp_mqtt_lc_equal("stop", message, message_size)) {
       *action = MQTT_ACTION_STOP;
       return 1;
+    } else if (message_size == 11 &&
+               supla_esp_mqtt_lc_equal("recalibrate", message, message_size)) {
+      *action = MQTT_ACTION_RECALIBRATE;
+      return 1;
+    } else if (message_size == 9 &&
+               supla_esp_mqtt_lc_equal("calibrate", message, message_size)) {
+      *action = MQTT_ACTION_RECALIBRATE;
+      return 1;
     }
   }
 
@@ -1991,8 +1999,7 @@ supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
 
 #ifdef MQTT_HA_RELAY_SUPPORT
 char ICACHE_FLASH_ATTR supla_esp_mqtt_channel_set_value(int port, char v,
-    int channel_number) {
-
+                                                        int channel_number) {
   char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
   supla_esp_gpio_relay_hi(port, _v, 1);
