@@ -33,6 +33,9 @@
 #define RS_RELAY_UP    2
 #define RS_RELAY_DOWN  1
 
+#define INPUT_STATE_ACTIVE 1
+#define INPUT_STATE_INACTIVE 0
+
 typedef struct {
 
 	uint8 gpio_id;
@@ -134,6 +137,26 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 #endif
 
 void supla_esp_gpio_start_input_timer(supla_input_cfg_t *input_cfg);
+
+// This method should be called if board use custom input method
+// other than simple HIGH/LOW state directly on GPIO.
+// It will make sure that all reactions associasted with buttons
+// will be executed properly (i.e. on hold, on multiclick, enter 
+// cfg mode, etc.)
+void GPIO_ICACHE_FLASH supla_esp_gpio_notify_input_state_change(
+    supla_input_cfg_t *inputCfg, int newValue);
+
+// when this method is called, it will execute default action configured for
+// this input when its state changes to "active", i.e. button is pressed.
+// (i.e. it will toggle relay state on button press)
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg);
+
+// when this method is called, it will execute default action configured for
+// this input when its state changes to "inactive", i.e. button is released.
+// (i.e. it will toggle relay state on button release)
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg);
 
 void supla_esp_gpio_set_hi(int port, unsigned char hi);
 char supla_esp_gpio_output_is_hi(int port);

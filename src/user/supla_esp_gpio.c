@@ -1182,6 +1182,15 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	input_cfg->last_state = 1;
 }
 
+void GPIO_ICACHE_FLASH supla_esp_gpio_notify_input_state_change(
+    supla_input_cfg_t *inputCfg, int newValue) {
+  if (newValue == INPUT_STATE_ACTIVE) {
+    supla_esp_gpio_on_input_active(inputCfg);
+  } else if (newValue == INPUT_STATE_INACTIVE) {
+    supla_esp_gpio_on_input_inactive(inputCfg);
+  }
+}
+
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 
@@ -1245,7 +1254,8 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 
 			if ( input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
 
-				supla_esp_gpio_on_input_inactive(input_cfg);
+        supla_esp_gpio_notify_input_state_change(input_cfg, 
+            INPUT_STATE_INACTIVE);
 
 			} else if ( input_cfg->cycle_counter < 255 ) {
 
@@ -1301,9 +1311,8 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 			if ( input_cfg->step == 2
 				 && input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
 
-
-				supla_esp_gpio_on_input_active(input_cfg);
-
+        supla_esp_gpio_notify_input_state_change(input_cfg, 
+            INPUT_STATE_ACTIVE);
 
 				if ( (input_cfg->flags & INPUT_FLAG_CFG_BTN) == 0
 						|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
@@ -1365,9 +1374,8 @@ supla_esp_gpio_input_timer_cb(void *timer_arg) {
 					supla_system_restart();
 
 				} else {
-
-					supla_esp_gpio_on_input_inactive(input_cfg);
-
+          supla_esp_gpio_notify_input_state_change(input_cfg, 
+              INPUT_STATE_INACTIVE);
 				}
 
 
