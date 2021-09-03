@@ -43,13 +43,10 @@
 #define LED_GREEN  0x2
 #define LED_BLUE   0x4
 
-#define CFG_BTN_PRESS_COUNT     10
-
 #define RS_STATE_STOP           0
 #define RS_STATE_DOWN           1
 #define RS_STATE_UP             2
 
-supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
 supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
 supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
@@ -902,25 +899,6 @@ gpio__input_get(uint8 port)
 	return GPIO_INPUT_GET(GPIO_ID_PIN(port));
 }
 
-void GPIO_ICACHE_FLASH supla_esg_gpio_start_cfg_mode(void) {
-
-	if ( supla_esp_cfgmode_started() == 0 ) {
-
-		#ifdef BEFORE_CFG_ENTER
-			BEFORE_CFG_ENTER
-		#endif
-
-        #ifdef MQTT_SUPPORT_ENABLED
-        supla_esp_mqtt_client_stop();
-        #endif /*MQTT_SUPPORT_ENABLED*/
-
-		supla_esp_devconn_stop();
-		supla_esp_cfgmode_start();
-
-	};
-
-}
-
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_enable_input_port(char port) {
 
@@ -1160,6 +1138,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	BOARD_ON_INPUT_ACTIVE;
 	#endif
 
+
 	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
 
 		//supla_log(LOG_DEBUG, "RELAY HI");
@@ -1179,16 +1158,6 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 		supla_esp_channel_value_changed(input_cfg->channel, 1);
 	}
 
-	input_cfg->last_state = 1;
-}
-
-void GPIO_ICACHE_FLASH supla_esp_gpio_notify_input_state_change(
-    supla_input_cfg_t *inputCfg, int newValue) {
-  if (newValue == INPUT_STATE_ACTIVE) {
-    supla_esp_gpio_on_input_active(inputCfg);
-  } else if (newValue == INPUT_STATE_INACTIVE) {
-    supla_esp_gpio_on_input_inactive(inputCfg);
-  }
 }
 
 void GPIO_ICACHE_FLASH
@@ -1218,194 +1187,6 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 		supla_esp_channel_value_changed(input_cfg->channel, 0);
 	}
 
-	input_cfg->last_state = 0;
-}
-
-uint32 GPIO_ICACHE_FLASH supla_esp_gpio_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
-	return CFG_BTN_PRESS_TIME;
-}
-
-LOCAL void
-supla_esp_gpio_input_timer_cb(void *timer_arg) {
-
-	supla_input_cfg_t *input_cfg = (supla_input_cfg_t *)timer_arg;
-	uint8 v = gpio__input_get(input_cfg->gpio_id);
-	uint8 active = (input_cfg->flags & INPUT_FLAG_PULLUP) ? 0 : 1;
-
-	if ( input_cfg->step == 1 ) {
-
-		if ( v == active ) {
-
-			input_cfg->cycle_counter = 1;
-
-			if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-				 && ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-					  || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
-				      || (system_get_time() - input_cfg->last_active) >= 2000000 ) ) {
-
-				input_cfg->cfg_counter = 0;
-				//supla_log(LOG_DEBUG, "RESET cfg_counter = 0");
-			}
-
-			input_cfg->step = 2;
-			return;
-
-		} else {
-
-			if ( input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
-
-        supla_esp_gpio_notify_input_state_change(input_cfg, 
-            INPUT_STATE_INACTIVE);
-
-			} else if ( input_cfg->cycle_counter < 255 ) {
-
-				input_cfg->cycle_counter++;
-				return;
-			}
-		}
-
-	} else if ( input_cfg->step > 1 ) {
-
-		if ( input_cfg->cycle_counter < 255 )
-			input_cfg->cycle_counter++;
-
-		if ( v == active ) {
-
-			if ( input_cfg->step == 3
-					&& input_cfg->flags & INPUT_FLAG_CFG_BTN
-					&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-						 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) ) {
-
-				if ( input_cfg->cfg_counter < 2048 )
-					input_cfg->cfg_counter++;
-
-				if ( supla_esp_restart_on_cfg_press == 1 ) {
-					supla_system_restart();
-					return;
-				}
-
-				if ( (input_cfg->cfg_counter * INPUT_CYCLE_TIME) >= GET_CFG_PRESS_TIME(input_cfg) ) {
-
-					// CFG MODE
-					if ( supla_esp_cfgmode_started() == 0 ) {
-
-						supla_esg_gpio_start_cfg_mode();
-
-					} else if ( input_cfg->flags & INPUT_FLAG_FACTORY_RESET ) {
-
-						factory_defaults(1);
-						supla_log(LOG_DEBUG, "Factory defaults");
-						os_delay_us(500000);
-						supla_system_restart();
-					}
-
-
-					input_cfg->step = 0;
-					os_timer_disarm(&input_cfg->timer);
-					return;
-				}
-
-			}
-
-
-			if ( input_cfg->step == 2
-				 && input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
-
-        supla_esp_gpio_notify_input_state_change(input_cfg, 
-            INPUT_STATE_ACTIVE);
-
-				if ( (input_cfg->flags & INPUT_FLAG_CFG_BTN) == 0
-						|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-					os_timer_disarm(&input_cfg->timer);
-
-				}
-
-
-				input_cfg->cycle_counter = 1;
-				input_cfg->last_active = system_get_time();
-				input_cfg->step = 3;
-
-			}
-
-
-			return;
-		}
-
-
-		if ( input_cfg->step == 3 ) {
-
-			if ( input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
-
-				if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-						&& input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-					input_cfg->cfg_counter++;
-
-					//supla_log(LOG_DEBUG, "cfg_counter = %i", input_cfg->cfg_counter);
-
-					if ( supla_esp_cfgmode_started() == 0 ) {
-
-						if ( input_cfg->cfg_counter >= CFG_BTN_PRESS_COUNT ) {
-							input_cfg->cfg_counter = 0;
-
-							// CFG MODE
-							supla_esg_gpio_start_cfg_mode();
-						}
-
-					} else if ( (system_get_time() - supla_esp_cfgmode_entertime()) > 3000000 ) {
-
-						//  EXIT CFG MODE
-						supla_system_restart();
-
-					}
-
-
-
-				}
-
-				if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-						&& supla_esp_cfgmode_started() == 1
-						&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-							 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS )
-						&& (system_get_time() - supla_esp_cfgmode_entertime()) > 3000000 ) {
-
-					// EXIT CFG MODE
-					supla_system_restart();
-
-				} else {
-          supla_esp_gpio_notify_input_state_change(input_cfg, 
-              INPUT_STATE_INACTIVE);
-				}
-
-
-			} else {
-				return;
-			}
-
-		}
-
-	}
-
-
-    input_cfg->step = 0;
-    os_timer_disarm(&input_cfg->timer);
-
-}
-
-void
-supla_esp_gpio_start_input_timer(supla_input_cfg_t *input_cfg) {
-    if ( input_cfg->type != INPUT_TYPE_CUSTOM &&
-    		( input_cfg->step == 0
-    		  || input_cfg->step == 3 ) ) {
-
-    	if ( input_cfg->step == 0 )
-        	input_cfg->step = 1;
-
-    	os_timer_disarm(&input_cfg->timer);
-    	os_timer_setfn(&input_cfg->timer, supla_esp_gpio_input_timer_cb, input_cfg);
-    	os_timer_arm (&input_cfg->timer, INPUT_CYCLE_TIME, true);
-    }
 }
 
 LOCAL void supla_esp_gpio_intr_handler(void *params) {
@@ -1431,8 +1212,8 @@ LOCAL void supla_esp_gpio_intr_handler(void *params) {
           gpio_status &
           BIT(input_cfg->gpio_id));  // //clear interrupt status
 
-   supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
-      supla_esp_gpio_start_input_timer(input_cfg);
+      supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
+      supla_esp_input_start_debounce_timer(input_cfg);
 
       gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
           GPIO_PIN_INTR_ANYEDGE);

@@ -16,29 +16,11 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#include "supla_esp_mock.h"
+// this file is included as a "board" configuration file in UT tests
 
-extern "C" {
-#include <supla_esp.h>
+#ifndef _TEST_SUPLA_BOARD_UT_TESTING_H
+#define _TEST_SUPLA_BOARD_UT_TESTING_H
 
-void supla_system_restart(void) {
-  assert(BoardInterface::instance);
-  return BoardInterface::instance->supla_system_restart();
-}
+#define BOARD_ESP_FACTORY_DEFAULTS factory_reset_mock();
 
-void supla_system_restart_with_delay(uint32 delay_ms) {
-  assert(BoardInterface::instance);
-  return BoardInterface::instance->supla_system_restart_with_delay(delay_ms);
-}
-
-void factory_reset_mock() {
-  assert(BoardInterface::instance);
-  return BoardInterface::instance->factory_reset();
-}
-}
-
-BoardInterface *BoardInterface::instance = nullptr;
-
-BoardInterface::BoardInterface() { instance = this; }
-
-BoardInterface::~BoardInterface() { instance = nullptr; }
+#endif /*_TEST_SUPLA_BOARD_UT_TESTING_H*/

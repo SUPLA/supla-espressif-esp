@@ -33,13 +33,16 @@ public:
 
   virtual void supla_system_restart() = 0;
   virtual void supla_system_restart_with_delay(uint32 delayMs) = 0;
+  virtual void factory_reset() = 0;
   static BoardInterface *instance;
 };
 
 class BoardMock : public BoardInterface {
 public:
   MOCK_METHOD(void, supla_system_restart, (), (override));
-  MOCK_METHOD(void, supla_system_restart_with_delay, (uint32 delayMs), (override));
+  MOCK_METHOD(void, supla_system_restart_with_delay, (uint32 delayMs),
+      (override));
+  MOCK_METHOD(void, factory_reset, (), (override));
 };
 
 #endif /*_TEST_SUPLA_ESP_MOCK_H*/

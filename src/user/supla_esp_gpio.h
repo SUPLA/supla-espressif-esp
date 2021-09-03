@@ -21,6 +21,7 @@
 #define SUPLA_ESP_GPIO_H_
 
 #include "supla_esp.h"
+#include "supla_esp_input.h"
 
 #define RELAY_FLAG_RESET              0x01
 #define RELAY_FLAG_RESTORE            0x02
@@ -32,27 +33,6 @@
 #define RS_RELAY_OFF   0
 #define RS_RELAY_UP    2
 #define RS_RELAY_DOWN  1
-
-#define INPUT_STATE_ACTIVE 1
-#define INPUT_STATE_INACTIVE 0
-
-typedef struct {
-
-	uint8 gpio_id;
-	uint8 flags;
-	uint8 type;
-	uint8 step;
-	uint8 cycle_counter;
-	uint16 cfg_counter;
-	uint8 relay_gpio_id;
-	uint8 channel;
-	uint8 last_state;
-
-	ETSTimer timer;
-	unsigned int last_active;
-
-}supla_input_cfg_t;
-
 
 typedef struct {
   uint8 gpio_id;
@@ -112,7 +92,6 @@ typedef struct {
   bool detectedPowerConsumption;
 } supla_roller_shutter_cfg_t;
 
-extern supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
 extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 extern unsigned int supla_esp_gpio_init_time;
@@ -135,16 +114,6 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_state_cfgmode(void);
 #ifdef __FOTA
 void GPIO_ICACHE_FLASH supla_esp_gpio_state_update(void);
 #endif
-
-void supla_esp_gpio_start_input_timer(supla_input_cfg_t *input_cfg);
-
-// This method should be called if board use custom input method
-// other than simple HIGH/LOW state directly on GPIO.
-// It will make sure that all reactions associasted with buttons
-// will be executed properly (i.e. on hold, on multiclick, enter 
-// cfg mode, etc.)
-void GPIO_ICACHE_FLASH supla_esp_gpio_notify_input_state_change(
-    supla_input_cfg_t *inputCfg, int newValue);
 
 // when this method is called, it will execute default action configured for
 // this input when its state changes to "active", i.e. button is pressed.
