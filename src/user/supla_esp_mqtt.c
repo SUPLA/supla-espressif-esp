@@ -1382,7 +1382,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
     const char *stat_t, uint8 precision, int n, const char *val_tmpl,
-    const char *device_class, bool last_reset) {
+    const char *device_class, bool total_increasing) {
   if (!supla_esp_mqtt_prepare_ha_cfg_topic("sensor", topic_name_out,
                                            channel_number, n)) {
     return 0;
@@ -1397,7 +1397,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
       "(%s)\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\",\"qos\":0,"
       "\"unit_"
       "of_meas\":\"%s\",\"stat_t\":\"~/%s\",\"val_tpl\":\"{{ %s | "
-      "round(%i)}}\",\"state_class\":\"measurement\"%s%s}";
+      "round(%i)}}\",\"state_class\":\"%s\"%s}";
 
   char c = 0;
 
@@ -1428,11 +1428,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
                      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
                      channel_number, n, unit, stat_t,
                      val_tmpl ? val_tmpl : "value", precision,
-                     _device_class ? _device_class : "",
-                     last_reset ? ",\"last_reset_topic\":\"~/state/support\", "
-                                  "\"last_reset_value_template\": "
-                                  "\"1970-01-01T00:00:00Z\""
-                                : "") +
+                     total_increasing ? "total_increasing" : "measurement",
+                     _device_class ? _device_class : "") +
         1;
 
     // ~/state/support in last_reset_topic was used only to keep the topic
@@ -1467,7 +1464,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
     const char *stat_t, uint8 precision, uint8 phase, int n,
-    const char *val_tmpl, const char *device_class, bool last_reset) {
+    const char *val_tmpl, const char *device_class, bool total_increasing) {
   size_t _stat_t_size = strlen(stat_t) + 20;
   char *_stat_t = malloc(_stat_t_size);
   if (!_stat_t) {
@@ -1487,7 +1484,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
 
   uint8 result = supla_esp_mqtt_ha_em__prepare_message(
       topic_name_out, message_out, message_size_out, channel_number, mfr, _name,
-      unit, _stat_t, precision, n, val_tmpl, device_class, last_reset);
+      unit, _stat_t, precision, n, val_tmpl, device_class, total_increasing);
 
   free(_stat_t);
   free(_name);
