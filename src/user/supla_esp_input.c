@@ -141,12 +141,15 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
           supla_esp_input_start_cfg_mode();
           return;
         }
-      } else if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE && 
-          system_get_time() - supla_esp_cfgmode_entertime() > 3000000) {
-        // If we are in CFG mode and there was button press 3s after entering 
-        // CFG mode, then EXIT CFG MODE
-        supla_system_restart();
-        return;
+      } else {
+        input_cfg->cfg_counter = 1;
+        if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE && 
+            system_get_time() - supla_esp_cfgmode_entertime() > 3000000) {
+          // If we are in CFG mode and there was button press 3s after entering 
+          // CFG mode, then EXIT CFG MODE
+          supla_system_restart();
+          return;
+        }
       }
     }
 
@@ -172,7 +175,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
   } else if (new_state == INPUT_STATE_INACTIVE) {
     if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
       // Handling of CFG BTN functionality
-      if ( supla_esp_cfgmode_started() == 1 && 
+      if ( input_cfg->cfg_counter > 0 && supla_esp_cfgmode_started() == 1 && 
           (system_get_time() - supla_esp_cfgmode_entertime() > 3000000)) {
         // If we are in CFG mode and there was button press 3s after entering 
         // CFG mode, then EXIT CFG MODE
