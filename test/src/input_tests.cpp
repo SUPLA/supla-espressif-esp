@@ -111,6 +111,9 @@ void gpioCallbackInput() {
   } else if (gpioConfigId == 10) {
     supla_input_cfg[0].flags = INPUT_FLAG_CFG_BTN | INPUT_FLAG_FACTORY_RESET;
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+  } else if (gpioConfigId == 11) {
+    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   } else {
     assert(false);
   }
@@ -1820,5 +1823,57 @@ TEST_F(InputsFixture, MonostableCfgButtonWithLongHold) {
   }
 
   EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+}
+
+TEST_F(InputsFixture, MonostableButtonTriggerOnPress) {
+  gpioConfigId = 11;
+
+  // GPIO 1 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  // GPIO 2 - relay
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_CALL(board, factory_reset()).Times(0);
+  EXPECT_CALL(board, supla_system_restart()).Times(0);
+
+  // enter cfg mode
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
 
 }
