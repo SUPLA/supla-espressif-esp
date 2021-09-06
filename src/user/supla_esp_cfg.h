@@ -27,6 +27,9 @@
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
 
+#define STAIRCASE_BTN_TYPE_RESET  0
+#define STAIRCASE_BTN_TYPE_TOGGLE 1
+
 typedef struct {
   char TAG[6];
   char GUID[SUPLA_GUID_SIZE];
@@ -80,6 +83,8 @@ typedef struct {
 
   unsigned int AutoCalOpenTime[RS_MAX_COUNT];
   unsigned int AutoCalCloseTime[RS_MAX_COUNT];
+
+  char StaircaseButtonType;
 
   char zero[200];
 

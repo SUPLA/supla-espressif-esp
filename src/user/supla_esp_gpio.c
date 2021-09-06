@@ -1115,7 +1115,18 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
     }
     
 #ifndef COUNTDOWN_TIMER_DISABLED
+    // If Time2 > 0 then it is configured as staircase timer. In such case 
+    // button behavior depends on cfg parameter
+    if (hi != 0 && supla_esp_cfg.Time2[channel] > 0 &&
+        supla_esp_cfg.StaircaseButtonType == STAIRCASE_BTN_TYPE_RESET) {
+      hi = HI_VALUE;
+    } 
+    if ( hi == 255 ) {
+      hi = supla_esp_gpio_relay_is_hi(port) == 1 ? LO_VALUE : HI_VALUE;
+    }
+
     if (channel >= 0) {
+      supla_esp_state.Time2Left[channel] = 0;
       supla_esp_gpio_relay_set_duration_timer(channel, hi, 0, 0);
     }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
@@ -1123,8 +1134,17 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
 		supla_esp_gpio_relay_hi(port, hi, 0);
 
     if (channel >= 0) {
+#ifdef BOARD_CHANNEL_VALUE_CHANGED
+      BOARD_CHANNEL_VALUE_CHANGED
+#else
         supla_esp_channel_value_changed(channel, 
             supla_esp_gpio_relay_is_hi(port));
+#endif
+#ifdef MQTT_SUPPORT_ENABLED
+#ifdef MQTT_HA_RELAY_SUPPORT
+      supla_esp_board_mqtt_on_relay_state_changed(channel);
+#endif
+#endif
     }
 	}
 }

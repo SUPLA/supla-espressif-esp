@@ -75,6 +75,8 @@
 #define VAR_TH1 35  // Overcurrent threshold 1
 #define VAR_TH2 36  // Overcurrent threshold 2
 
+#define VAR_SBT 37  // Staircase Button Type
+
 #ifdef CFG_TIME_VARIABLES
 #define VAR_T10 37
 #define VAR_T11 38
@@ -329,6 +331,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char th1[3] = {'t', 'h', '1'};
       char th2[3] = {'t', 'h', '2'};
 
+      char sbt[3] = {'s', 'b', 't'};
+
 #ifdef CFG_TIME_VARIABLES
       char t10[3] = {'t', '1', '0'};
       char t11[3] = {'t', '1', '1'};
@@ -373,6 +377,11 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (memcmp(btn1, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_BTN1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(sbt, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_SBT;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
@@ -561,6 +570,9 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (pVars->current_var == VAR_BTN2) {
           cfg->Button2Type = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_SBT) {
+          cfg->StaircaseButtonType = pVars->intval[0] - '0';
 
         } else if (pVars->current_var == VAR_ICF) {
           cfg->InputCfgTriggerOff = (pVars->intval[0] - '0') == 1 ? 1 : 0;

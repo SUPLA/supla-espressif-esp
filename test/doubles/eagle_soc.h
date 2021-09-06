@@ -25,6 +25,8 @@
 #ifndef _EAGLE_SOC_H_
 #define _EAGLE_SOC_H_
 
+#include <c_types.h>
+
 //Register Bits{{
 #define BIT31   0x80000000
 #define BIT30   0x40000000
