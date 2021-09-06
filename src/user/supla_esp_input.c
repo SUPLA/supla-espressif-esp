@@ -113,6 +113,22 @@ void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
   supla_esp_input_legacy_state_change_handling(input_cfg, new_state);
 }
 
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_cfg_on_hold_enabled(supla_input_cfg_t *input_cfg) {
+  if (!input_cfg) {
+    return false;
+  }
+  if (!(input_cfg->flags & INPUT_FLAG_CFG_BTN)) {
+    return false;
+  }
+  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE || 
+      input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
+    if (!(input_cfg->flags & INPUT_FLAG_CFG_ON_TOGGLE)) {
+      return true;
+    }
+  }
+  return false;
+}
 
 // Handling of inputs in standard (pre ActionTrigger) way
 // Called only on state change
@@ -126,15 +142,14 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
     if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
       // Handling of CFG BTN functionality
       if ( supla_esp_cfgmode_started() == 0 ) {
-        if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-            input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ||
+        if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg) || 
             (system_get_time() - input_cfg->last_active >= 2000000)) {
           input_cfg->cfg_counter = 1;
         } else {
           input_cfg->cfg_counter++;
         }
 
-        if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE &&
+        if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
             input_cfg->cfg_counter >= CFG_BTN_PRESS_COUNT) {
           input_cfg->cfg_counter = 0;
           // CFG MODE
@@ -143,7 +158,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
         }
       } else {
         input_cfg->cfg_counter = 1;
-        if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE && 
+        if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
             system_get_time() - supla_esp_cfgmode_entertime() > 3000000) {
           // If we are in CFG mode and there was button press 3s after entering 
           // CFG mode, then EXIT CFG MODE
@@ -162,9 +177,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
     }
 
    
-    if (input_cfg->flags & INPUT_FLAG_CFG_BTN &&
-        (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-         input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS)) {
+    if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
       os_timer_arm(&input_cfg->timer, INPUT_CYCLE_TIME, true);
     }
 
@@ -193,9 +206,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
 void GPIO_ICACHE_FLASH
 supla_esp_input_legacy_timer_handling(supla_input_cfg_t *input_cfg, int state) {
   if (state == INPUT_STATE_ACTIVE) {
-    if (input_cfg->flags & INPUT_FLAG_CFG_BTN &&
-        (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-         input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS)) {
+    if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
       // if input is used for config and it is monostable, then cfg_counter is
       // used to calculate how long button is active
       input_cfg->cfg_counter++;

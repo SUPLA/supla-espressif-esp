@@ -114,6 +114,11 @@ void gpioCallbackInput() {
   } else if (gpioConfigId == 11) {
     supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS;
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+  } else if (gpioConfigId == 12) {
+    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS | 
+                               INPUT_FLAG_CFG_BTN | 
+                               INPUT_FLAG_CFG_ON_TOGGLE;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   } else {
     assert(false);
   }
@@ -1214,6 +1219,8 @@ TEST_F(InputsFixture, MonostableRsCfgButton) {
   EXPECT_FALSE(eagleStub.getGpioValue(3));
   EXPECT_FALSE(eagleStub.getGpioValue(4));
 
+  EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
+
   // simulate button press on gpio 1
   eagleStub.gpioOutputSet(1, 1);
   ets_gpio_intr_func(NULL);
@@ -1876,4 +1883,123 @@ TEST_F(InputsFixture, MonostableButtonTriggerOnPress) {
 
   EXPECT_TRUE(eagleStub.getGpioValue(2));
 
+}
+
+TEST_F(InputsFixture, MonostableCfgOnToggle) {
+  gpioConfigId = 12;
+
+  // GPIO 1 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  // GPIO 2 - relay
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_CALL(board, supla_system_restart()).Times(0);
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+  // +700 ms
+  for (int i = 0; i < 70; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+ 
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  // +700 ms
+  for (int i = 0; i < 700; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+ 
+  EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
+  // enter cfg mode - on hold is disabled, so it shouldn't enter cfg mode
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +6 s
+  for (int i = 0; i < 600; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +3200 ms
+  for (int i = 0; i < 320; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  for (int cycle = 0; cycle < 10; cycle++) {
+    EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
+    // simulate button press on gpio 1
+    eagleStub.gpioOutputSet(1, 1);
+    ets_gpio_intr_func(NULL);
+
+    // +0.5 s
+    for (int i = 0; i < 50; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+    // simulate button reelase on gpio 1
+    eagleStub.gpioOutputSet(1, 0);
+    ets_gpio_intr_func(NULL);
+
+    // +0.5 s
+    for (int i = 0; i < 50; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
+
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
 }
