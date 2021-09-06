@@ -144,20 +144,20 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
       if ( supla_esp_cfgmode_started() == 0 ) {
         if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg) || 
             (system_get_time() - input_cfg->last_active >= 2000000)) {
-          input_cfg->cfg_counter = 1;
+          input_cfg->click_counter = 1;
         } else {
-          input_cfg->cfg_counter++;
+          input_cfg->click_counter++;
         }
 
         if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
-            input_cfg->cfg_counter >= CFG_BTN_PRESS_COUNT) {
-          input_cfg->cfg_counter = 0;
+            input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
+          input_cfg->click_counter = 0;
           // CFG MODE
           supla_esp_input_start_cfg_mode();
           return;
         }
       } else {
-        input_cfg->cfg_counter = 1;
+        input_cfg->click_counter = 1;
         if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
             system_get_time() - supla_esp_cfgmode_entertime() > 3000000) {
           // If we are in CFG mode and there was button press 3s after entering 
@@ -188,7 +188,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
   } else if (new_state == INPUT_STATE_INACTIVE) {
     if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
       // Handling of CFG BTN functionality
-      if ( input_cfg->cfg_counter > 0 && supla_esp_cfgmode_started() == 1 && 
+      if ( input_cfg->click_counter > 0 && supla_esp_cfgmode_started() == 1 && 
           (system_get_time() - supla_esp_cfgmode_entertime() > 3000000)) {
         // If we are in CFG mode and there was button press 3s after entering 
         // CFG mode, then EXIT CFG MODE
@@ -207,15 +207,15 @@ void GPIO_ICACHE_FLASH
 supla_esp_input_legacy_timer_handling(supla_input_cfg_t *input_cfg, int state) {
   if (state == INPUT_STATE_ACTIVE) {
     if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
-      // if input is used for config and it is monostable, then cfg_counter is
+      // if input is used for config and it is monostable, then click_counter is
       // used to calculate how long button is active
-      input_cfg->cfg_counter++;
+      input_cfg->click_counter++;
 
-      if (input_cfg->cfg_counter * INPUT_CYCLE_TIME >=
+      if (input_cfg->click_counter * INPUT_CYCLE_TIME >=
           GET_CFG_PRESS_TIME(input_cfg)) {
 
         os_timer_disarm(&input_cfg->timer);
-        input_cfg->cfg_counter = 0;
+        input_cfg->click_counter = 0;
 
         // CFG MODE
         if (supla_esp_cfgmode_started() == 0) {

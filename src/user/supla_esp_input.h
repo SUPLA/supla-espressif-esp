@@ -34,9 +34,7 @@ typedef struct {
   uint8 step;     // used internally to determine which action should 
                   // be triggered
   uint8 debounce_step;
-  uint8 cycle_counter;  // used to determine how long input is active
-                        // or inactive
-  uint16 cfg_counter;   // -> click_counter
+  uint16 click_counter;   // -> click_counter
   uint8 relay_gpio_id;  // GPIO of relay which is controlled by this
                         // input. It can also controll RS
   uint8 channel;        // used for INPUT_TYPE_SENSOR and ACTION_TRIGGER
