@@ -162,6 +162,8 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect_with_delay(uint32 time_ms);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop_with_delay(void);
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_config_result(TSD_ChannelConfig *result);
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_system_restart(void) {
@@ -1311,6 +1313,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 #if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
       case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT:
+        supla_esp_channel_config_result(rd.data.sd_channel_config);
         supla_esp_board_on_channel_config(rd.data.sd_channel_config);
         break;
 #endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
@@ -1756,6 +1759,45 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 	if (supla_esp_devconn_is_registered() == 1) {
 		srpc_ds_async_device_calcfg_result(devconn->srpc, result);
 	}
+}
+
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_config_result(TSD_ChannelConfig *result) {
+  if (!result) {
+    return;
+  }
+
+  supla_log(LOG_DEBUG,
+      "Channel config received: ch %d, func %d, cfgtype %d, cfgsize %d",
+      result->ChannelNumber, result->Func, result->ConfigType,
+      result->ConfigSize);
+
+#ifdef BOARD_CHANNEL_CONFIG
+  // execute board specific channel config handling
+  supla_esp_board_channel_config(result);
+#endif /*BOARD_CHANNEL_CONFIG*/
+
+  if (result->ChannelNumber >= 0 && result->ChannelNumber < CFG_TIME2_COUNT) {
+    int staircaseTimeMs = 0;
+    if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
+      if (result->ConfigType == 0 &&
+          result->ConfigSize == sizeof(TSD_ChannelConfig_StaircaseTimer)) {
+        TSD_ChannelConfig_StaircaseTimer *staircaseCfg =
+          (TSD_ChannelConfig_StaircaseTimer *)(result->Config);
+        supla_log(LOG_DEBUG, "Staircase cfg time: %d ms", staircaseCfg->TimeMS);
+        staircaseTimeMs = staircaseCfg->TimeMS;
+      }
+    }
+    if (staircaseTimeMs != supla_esp_cfg.Time2[result->ChannelNumber]) {
+      supla_log(LOG_DEBUG, "Changing channel %d configuration Time2 to %d",
+          result->ChannelNumber, staircaseTimeMs);
+      supla_esp_cfg.Time2[result->ChannelNumber] = staircaseTimeMs;
+      supla_esp_cfg_save(&supla_esp_cfg);
+
+      supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0, 0);
+    }
+  }
+
 }
 
 void DEVCONN_ICACHE_FLASH
