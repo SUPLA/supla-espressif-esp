@@ -31,6 +31,7 @@
 #define MQTT_ACTION_SHUT_WITH_PERCENTAGE 5
 #define MQTT_ACTION_REVEAL 6
 #define MQTT_ACTION_STOP 7
+#define MQTT_ACTION_RECALIBRATE 8
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
@@ -100,6 +101,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
     const void *topic_name, uint16_t topic_name_size, const char *message,
     size_t message_size, uint8 *channel_number, uint8 *action,
     uint8 *percentage);
+
+void ICACHE_FLASH_ATTR
+supla_esp_mqtt_rs_recalibrate(unsigned char channelNumber);
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
 #ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
 

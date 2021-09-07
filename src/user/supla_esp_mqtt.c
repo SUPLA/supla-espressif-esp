@@ -19,9 +19,9 @@
 #include "supla_esp_mqtt.h"
 
 #include "supla_esp_cfgmode.h"
+#include "supla_esp_countdown_timer.h"
 #include "supla_esp_electricity_meter.h"
 #include "supla_update.h"
-#include "supla_esp_countdown_timer.h"
 
 #ifdef MQTT_SUPPORT_ENABLED
 
@@ -94,7 +94,7 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_on_countdown_timer_finish(
     char target_value[SUPLA_CHANNELVALUE_SIZE]);
 
 char ICACHE_FLASH_ATTR supla_esp_mqtt_channel_set_value(int port, char v,
-    int channel_number);
+                                                        int channel_number);
 #endif /*MQTT_HA_RELAY_SUPPORT*/
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_set_status(uint8 status) {
@@ -1382,7 +1382,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
     const char *stat_t, uint8 precision, int n, const char *val_tmpl,
-    const char *device_class, bool last_reset) {
+    const char *device_class, bool total_increasing) {
   if (!supla_esp_mqtt_prepare_ha_cfg_topic("sensor", topic_name_out,
                                            channel_number, n)) {
     return 0;
@@ -1397,7 +1397,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
       "(%s)\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\",\"qos\":0,"
       "\"unit_"
       "of_meas\":\"%s\",\"stat_t\":\"~/%s\",\"val_tpl\":\"{{ %s | "
-      "round(%i)}}\",\"state_class\":\"measurement\"%s%s}";
+      "round(%i)}}\",\"state_class\":\"%s\"%s}";
 
   char c = 0;
 
@@ -1428,11 +1428,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
                      mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
                      channel_number, n, unit, stat_t,
                      val_tmpl ? val_tmpl : "value", precision,
-                     _device_class ? _device_class : "",
-                     last_reset ? ",\"last_reset_topic\":\"~/state/support\", "
-                                  "\"last_reset_value_template\": "
-                                  "\"1970-01-01T00:00:00Z\""
-                                : "") +
+                     total_increasing ? "total_increasing" : "measurement",
+                     _device_class ? _device_class : "") +
         1;
 
     // ~/state/support in last_reset_topic was used only to keep the topic
@@ -1467,7 +1464,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     uint8 channel_number, const char *mfr, const char *name, const char *unit,
     const char *stat_t, uint8 precision, uint8 phase, int n,
-    const char *val_tmpl, const char *device_class, bool last_reset) {
+    const char *val_tmpl, const char *device_class, bool total_increasing) {
   size_t _stat_t_size = strlen(stat_t) + 20;
   char *_stat_t = malloc(_stat_t_size);
   if (!_stat_t) {
@@ -1487,7 +1484,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_phase_message(
 
   uint8 result = supla_esp_mqtt_ha_em__prepare_message(
       topic_name_out, message_out, message_size_out, channel_number, mfr, _name,
-      unit, _stat_t, precision, n, val_tmpl, device_class, last_reset);
+      unit, _stat_t, precision, n, val_tmpl, device_class, total_increasing);
 
   free(_stat_t);
   free(_name);
@@ -1794,10 +1791,38 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
                supla_esp_mqtt_lc_equal("stop", message, message_size)) {
       *action = MQTT_ACTION_STOP;
       return 1;
+    } else if (message_size == 11 &&
+               supla_esp_mqtt_lc_equal("recalibrate", message, message_size)) {
+      *action = MQTT_ACTION_RECALIBRATE;
+      return 1;
+    } else if (message_size == 9 &&
+               supla_esp_mqtt_lc_equal("calibrate", message, message_size)) {
+      *action = MQTT_ACTION_RECALIBRATE;
+      return 1;
     }
   }
 
   return 0;
+}
+
+void ICACHE_FLASH_ATTR
+supla_esp_mqtt_rs_recalibrate(unsigned char channelNumber) {
+  for (int i = 0; i < RS_MAX_COUNT; i++) {
+    if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
+        supla_rs_cfg[i].up->channel == channelNumber &&
+        supla_rs_cfg[i].up->channel_flags &
+            SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE) {
+      supla_rs_cfg[i].autoCal_step = 0;
+      *(supla_rs_cfg[i].auto_opening_time) = 0;
+      *(supla_rs_cfg[i].auto_closing_time) = 0;
+      *(supla_rs_cfg[i].position) = 0;  // not calibrated
+
+      supla_esp_gpio_rs_apply_new_times(i, supla_esp_cfg.Time2[i],
+                                        supla_esp_cfg.Time1[i]);
+      // trigger calibration by setting position to fully open
+      supla_esp_gpio_rs_add_task(i, 0);
+    }
+  }
 }
 
 #endif /*MQTT_HA_ROLLERSHUTTER_SUPPORT*/
@@ -1991,8 +2016,7 @@ supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
 
 #ifdef MQTT_HA_RELAY_SUPPORT
 char ICACHE_FLASH_ATTR supla_esp_mqtt_channel_set_value(int port, char v,
-    int channel_number) {
-
+                                                        int channel_number) {
   char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
   supla_esp_gpio_relay_hi(port, _v, 1);
