@@ -46,6 +46,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_timer_handling(
 void GPIO_ICACHE_FLASH supla_esp_input_start_cfg_mode(void);
 uint32 GPIO_ICACHE_FLASH
 supla_esp_input_get_cfg_press_time(supla_input_cfg_t *input_cfg);
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg);
 
 ///////////////////////////////////////////////////////////////////////////////
 // Method definitions
@@ -256,3 +258,17 @@ supla_esp_input_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
 	return CFG_BTN_PRESS_TIME;
 }
 
+void GPIO_ICACHE_FLASH supla_esp_input_set_active_actions(
+    supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_actions) {
+  if (input_cfg) {
+    input_cfg->active_actions = input_cfg->supported_actions & active_actions;
+  }
+}
+
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg) {
+  if (input_cfg) {
+    return input_cfg->active_actions != 0;
+  }
+  return false;
+}

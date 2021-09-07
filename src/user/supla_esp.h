@@ -55,10 +55,19 @@
 #ifndef CFG_BTN_PRESS_TIME
 #define CFG_BTN_PRESS_TIME 5000
 #endif /*CFG_BTN_PRESS_TIME*/
-
 #ifndef GET_CFG_PRESS_TIME
 #define GET_CFG_PRESS_TIME supla_esp_input_get_cfg_press_time
 #endif /*GET_CFG_PRESS_TIME*/
+
+// minimum button press time after which ON_HOLD action trigger is send
+#ifndef BTN_HOLD_TIME_MS
+#define BTN_HOLD_TIME_MS 700
+#endif /*BTN_HOLD_TIME_MS*/
+
+// maximum delay between button press time to count it as multiclick
+#ifndef BTN_MULTICLICK_TIME_MS
+#define BTN_MULTICLICK_TIME_MS 300
+#endif /*BTN_MULTICLICK_TIME_MS*/
 
 #ifndef INPUT_MAX_COUNT
 #define INPUT_MAX_COUNT 7

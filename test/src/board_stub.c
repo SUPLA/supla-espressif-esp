@@ -74,7 +74,7 @@ void supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request) {}
 
 int currentDeviceState = STATE_UNKNOWN;
 
-void supla_esp_board_on_state_changed(int supla_last_state) {
+void supla_esp_board_on_state_changed(char supla_last_state) {
   currentDeviceState = supla_last_state;
 }
 

@@ -106,6 +106,11 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_get_channel_int_params(unsigned char channel_number);
 #endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 
+#ifdef BOARD_CALCFG
+void ICACHE_FLASH_ATTR
+supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request);
+#endif /*BOARD_CALCFG*/
+
 // moved to public interface for testing purposes
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value);

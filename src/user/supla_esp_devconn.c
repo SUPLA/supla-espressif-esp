@@ -1777,27 +1777,47 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
   supla_esp_board_channel_config(result);
 #endif /*BOARD_CHANNEL_CONFIG*/
 
-  if (result->ChannelNumber >= 0 && result->ChannelNumber < CFG_TIME2_COUNT) {
-    int staircaseTimeMs = 0;
-    if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
-      if (result->ConfigType == 0 &&
-          result->ConfigSize == sizeof(TSD_ChannelConfig_StaircaseTimer)) {
-        TSD_ChannelConfig_StaircaseTimer *staircaseCfg =
-          (TSD_ChannelConfig_StaircaseTimer *)(result->Config);
-        supla_log(LOG_DEBUG, "Staircase cfg time: %d ms", staircaseCfg->TimeMS);
-        staircaseTimeMs = staircaseCfg->TimeMS;
+  if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER ||
+      result->Func == SUPLA_CHANNELFNC_POWERSWITCH ||
+      result->Func == SUPLA_CHANNELFNC_LIGHTSWITCH) {
+
+    if (result->ChannelNumber >= 0 && result->ChannelNumber < CFG_TIME2_COUNT) {
+      int staircaseTimeMs = 0;
+      if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
+        if (result->ConfigType == 0 &&
+            result->ConfigSize == sizeof(TSD_ChannelConfig_StaircaseTimer)) {
+          TSD_ChannelConfig_StaircaseTimer *staircaseCfg =
+            (TSD_ChannelConfig_StaircaseTimer *)(result->Config);
+          supla_log(LOG_DEBUG, "Staircase cfg time: %d ms",
+              staircaseCfg->TimeMS);
+          staircaseTimeMs = staircaseCfg->TimeMS;
+        }
+      }
+      if (staircaseTimeMs != supla_esp_cfg.Time2[result->ChannelNumber]) {
+        supla_log(LOG_DEBUG, "Changing channel %d configuration Time2 to %d",
+            result->ChannelNumber, staircaseTimeMs);
+        supla_esp_cfg.Time2[result->ChannelNumber] = staircaseTimeMs;
+        supla_esp_cfg_save(&supla_esp_cfg);
+
+        supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0, 0);
       }
     }
-    if (staircaseTimeMs != supla_esp_cfg.Time2[result->ChannelNumber]) {
-      supla_log(LOG_DEBUG, "Changing channel %d configuration Time2 to %d",
-          result->ChannelNumber, staircaseTimeMs);
-      supla_esp_cfg.Time2[result->ChannelNumber] = staircaseTimeMs;
-      supla_esp_cfg_save(&supla_esp_cfg);
-
-      supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0, 0);
+  } else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER) {
+    // TODO
+  } else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
+    if (result->ConfigType == 0 &&
+        result->ConfigSize == sizeof(TSD_ChannelConfig_ActionTrigger)) {
+      for (int i = 0; i < INPUT_MAX_COUNT; i++) {
+        if (supla_input_cfg[i].channel == result->ChannelNumber) {
+          TSD_ChannelConfig_ActionTrigger *actionTriggerCfg =
+            (TSD_ChannelConfig_ActionTrigger *)(result->Config);
+            supla_esp_input_set_active_actions(&(supla_input_cfg[i]),
+                actionTriggerCfg->ActiveActions);
+        }
+      }
     }
-  }
 
+  }
 }
 
 void DEVCONN_ICACHE_FLASH

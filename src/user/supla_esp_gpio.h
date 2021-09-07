@@ -167,5 +167,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
     int newValue, int durationMs, int senderID);
 #endif /* SUPLA_ESP_GPIO_H_ */
 
+#ifdef BOARD_ESP_ON_STATE_CHANGED
+void GPIO_ICACHE_FLASH supla_esp_board_on_state_changed(char supla_last_state);
+#endif
+
 // method used only in UT tests
 void GPIO_ICACHE_FLASH supla_esp_gpio_clear_vars(void);
