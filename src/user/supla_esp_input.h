@@ -42,7 +42,7 @@ typedef struct {
 
   ETSTimer debounce_timer;
   ETSTimer timer;
-  unsigned int last_active; // timestamp of last active state
+  unsigned int last_state_change; // timestamp of last state change
 
   unsigned _supla_int_t supported_actions; // defines device capability
   unsigned _supla_int_t active_actions;  // which actions are activated on server
@@ -66,5 +66,9 @@ supla_esp_input_start_debounce_timer(supla_input_cfg_t *input_cfg);
 // Sets active actions on a given input_cfg
 void GPIO_ICACHE_FLASH supla_esp_input_set_active_actions(
     supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_actions);
+
+// return true when multiclicks and other advanced actions are enabled on input
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg);
 
 #endif /*SUPLA_ESP_INPUT_H_*/

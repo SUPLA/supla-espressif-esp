@@ -1159,24 +1159,33 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	#endif
 
 
-	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
+  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
+    // TODO change RS button handling to toggle state and add handling of
+    // advanced mode
 
-		//supla_log(LOG_DEBUG, "RELAY HI");
-		#ifdef _ROLLERSHUTTER_SUPPORT
-			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-			if ( rs_cfg != NULL ) {
-				supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
-			}
-		#endif /*_ROLLERSHUTTER_SUPPORT*/
-
+    // supla_log(LOG_DEBUG, "RELAY HI");
+#ifdef _ROLLERSHUTTER_SUPPORT
+    supla_roller_shutter_cfg_t *rs_cfg =
+      supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+    if (rs_cfg != NULL) {
+      supla_esp_gpio_rs_set_relay(rs_cfg,
+          rs_cfg->up->gpio_id == input_cfg->relay_gpio_id
+          ? RS_RELAY_UP
+          : RS_RELAY_DOWN,
+          1, 1);
+    }
+#endif /*_ROLLERSHUTTER_SUPPORT*/
   }
   else if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
         (input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS)) ||
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      supla_esp_input_is_advanced_mode_enabled(input_cfg)
+      ) {
     supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
   }
   else if (input_cfg->type == INPUT_TYPE_SENSOR && input_cfg->channel != 255) {
 
+    // TODO: add MQTT support for sensor
     supla_esp_channel_value_changed(input_cfg->channel, 1);
   }
 
@@ -1204,6 +1213,7 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
   } else if (input_cfg->type == INPUT_TYPE_SENSOR &&
       input_cfg->channel != 255) {
 
+    // TODO: add MQTT support for sensor
     supla_esp_channel_value_changed(input_cfg->channel, 0);
   }
 }

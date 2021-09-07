@@ -162,8 +162,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_iterate(void *timer_arg);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect(void);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_reconnect_with_delay(uint32 time_ms);
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_stop_with_delay(void);
-void DEVCONN_ICACHE_FLASH
-supla_esp_channel_config_result(TSD_ChannelConfig *result);
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_before_system_restart(void) {
@@ -1314,7 +1312,6 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
       case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT:
         supla_esp_channel_config_result(rd.data.sd_channel_config);
-        supla_esp_board_on_channel_config(rd.data.sd_channel_config);
         break;
 #endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
     }

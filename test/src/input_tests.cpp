@@ -40,7 +40,7 @@ using ::testing::Invoke;
 using ::testing::DoAll;
 using ::testing::ElementsAreArray;
 
-int gpioConfigId = 0;
+static int gpioConfigId = 0;
 
 // method will be called by supla_esp_gpio_init method in order to initialize
 // gpio input/outputs board configuration (supla_esb_board_gpio_init)

@@ -115,5 +115,7 @@ supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request);
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value);
 void DEVCONN_ICACHE_FLASH supla_esp_srpc_init(void);
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_config_result(TSD_ChannelConfig *result);
 
 #endif /* SUPLA_ESP_CLIENT_H_ */

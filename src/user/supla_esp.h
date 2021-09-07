@@ -55,6 +55,7 @@
 #ifndef CFG_BTN_PRESS_TIME
 #define CFG_BTN_PRESS_TIME 5000
 #endif /*CFG_BTN_PRESS_TIME*/
+
 #ifndef GET_CFG_PRESS_TIME
 #define GET_CFG_PRESS_TIME supla_esp_input_get_cfg_press_time
 #endif /*GET_CFG_PRESS_TIME*/
