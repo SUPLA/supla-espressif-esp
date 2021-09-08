@@ -260,6 +260,7 @@ supla_esp_input_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
 void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
     supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_triggers) {
   if (input_cfg) {
+    unsigned _supla_int_t prev_triggers = input_cfg->active_triggers;
     input_cfg->active_triggers =
       input_cfg->action_trigger_cap & active_triggers;
 
@@ -290,6 +291,11 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
         
     if (input_cfg->max_clicks < max_clicks_from_actions) {
       input_cfg->max_clicks = max_clicks_from_actions;
+    }
+
+    if (prev_triggers != input_cfg->active_triggers) {
+        os_timer_disarm(&input_cfg->timer);
+        input_cfg->click_counter = 0;
     }
   }
 }

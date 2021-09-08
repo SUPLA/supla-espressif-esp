@@ -2883,6 +2883,588 @@ TEST_F(ATRegisteredFixture, BistableOnlyTurnOnOff) {
 
 }
 
+TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress) {
+  gpioConfigId = 1;
+
+  {                                               
+    InSequence seq;
+    // Expected channel 0 (relay) state changes ON
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
+
+    // Expected channel 1 (ActionTrigger) state changes
+    char value[SUPLA_CHANNELVALUE_SIZE] = {};
+    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+    memcpy(value, &action, sizeof(action));
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+
+    // Expected channel 0 (relay) state changes OFF
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
+
+  }
+
+  // GPIO 1 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
+
+  // Button is not yet configured from server
+  
+  // simulate active input on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+
+  // Receive configuration from server
+  TSD_ChannelConfig configResult = {};
+  configResult.ChannelNumber = 1; // AT channel number
+  configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
+  configResult.ConfigType = 0;
+  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+
+  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+    SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+  memcpy(configResult.Config, &atSettings,
+      sizeof(TSD_ChannelConfig_ActionTrigger));
+
+  supla_esp_channel_config_result(&configResult);
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers,
+      SUPLA_ACTION_CAP_SHORT_PRESS_x2 | SUPLA_ACTION_CAP_SHORT_PRESS_x3);
+
+  // simulate inactive input on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // 8x press
+  for (int i = 0; i < 8; i++) {
+    // simulate active input on gpio 1
+    eagleStub.gpioOutputSet(1, 1);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    // AT is enabled, so monostable button shouldn't change relay 
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+    // simulate inactive input on gpio 1
+    eagleStub.gpioOutputSet(1, 0);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button shouldn't change relay 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+
+  // 12x press 
+  for (int i = 0; i < 12; i++) {
+    // simulate active input on gpio 1
+    eagleStub.gpioOutputSet(1, 1);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    // AT is enabled, so monostable button shouldn't change relay 
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+    // simulate inactive input on gpio 1
+    eagleStub.gpioOutputSet(1, 0);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button shouldn't change relay 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // 1x press
+  for (int i = 0; i < 1; i++) {
+    // simulate active input on gpio 1
+    eagleStub.gpioOutputSet(1, 1);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    // AT is enabled, so monostable button shouldn't change relay 
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+    // simulate inactive input on gpio 1
+    eagleStub.gpioOutputSet(1, 0);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
+
+  // +500 ms
+  for (int i = 0; i < 500; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button change relay on press_1x
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+}
+
+TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress2) {
+  gpioConfigId = 1;
+
+  {                                               
+    InSequence seq;
+    // Expected channel 0 (relay) state changes ON
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
+
+    // Expected channel 1 (ActionTrigger) state changes
+    char value[SUPLA_CHANNELVALUE_SIZE] = {};
+    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+    memcpy(value, &action, sizeof(action));
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+
+
+    // Expected channel 0 (relay) state changes OFF
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
+
+  }
+
+  // GPIO 1 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
+
+  // Button is not yet configured from server
+  
+  // simulate active input on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // simulate inactive input on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+
+  // +20 ms
+  for (int i = 0; i < 2; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+
+  // Receive configuration from server
+  TSD_ChannelConfig configResult = {};
+  configResult.ChannelNumber = 1; // AT channel number
+  configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
+  configResult.ConfigType = 0;
+  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+
+  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+    SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+  memcpy(configResult.Config, &atSettings,
+      sizeof(TSD_ChannelConfig_ActionTrigger));
+
+  supla_esp_channel_config_result(&configResult);
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers,
+      SUPLA_ACTION_CAP_SHORT_PRESS_x2 | SUPLA_ACTION_CAP_SHORT_PRESS_x3);
+
+  // 8x press
+  for (int i = 0; i < 8; i++) {
+    // simulate active input on gpio 1
+    eagleStub.gpioOutputSet(1, 1);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    // AT is enabled, so monostable button shouldn't change relay 
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+    // simulate inactive input on gpio 1
+    eagleStub.gpioOutputSet(1, 0);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button shouldn't change relay 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+
+  // 2x press 
+  for (int i = 0; i < 2; i++) {
+    // simulate active input on gpio 1
+    eagleStub.gpioOutputSet(1, 1);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    // AT is enabled, so monostable button shouldn't change relay 
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+    // simulate inactive input on gpio 1
+    eagleStub.gpioOutputSet(1, 0);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
+
+  atSettings.ActiveActions = 0;
+  memcpy(configResult.Config, &atSettings,
+      sizeof(TSD_ChannelConfig_ActionTrigger));
+
+  supla_esp_channel_config_result(&configResult);
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button shouldn't change relay 
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // simulate active input on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button shouldn't change relay 
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // simulate inactive input on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // +500 ms
+  for (int i = 0; i < 500; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // AT is enabled, so monostable button change relay on press_1x
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+}
+
+TEST_F(ATRegisteredFixture, BistableMulticlickConfigChangeDuringPress) {
+  gpioConfigId = 7;
+
+  // GPIO 1 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  {                                               
+    InSequence seq;
+
+    // RELAY ON
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
+
+    // Expected channel 1 (ActionTrigger) state changes
+    char value[SUPLA_CHANNELVALUE_SIZE] = {};
+    int action = SUPLA_ACTION_CAP_TOGGLE_x5;
+    memcpy(value, &action, sizeof(action));
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+
+    // RELAY OFF
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
+
+    action = SUPLA_ACTION_CAP_TOGGLE_x2;
+    memcpy(value, &action, sizeof(action));
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+
+    // RELAY ON
+    EXPECT_CALL(srpc, 
+        valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
+  }
+
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
+
+  int inputState = 1;
+
+  // 1x toggle - should change relay state
+  // simulate active input on gpio 1
+  eagleStub.gpioOutputSet(1, inputState);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  TSD_ChannelConfig configResult = {};
+  configResult.ChannelNumber = 1; // AT channel number
+  configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
+  configResult.ConfigType = 0;
+  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+
+  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2 |
+    SUPLA_ACTION_CAP_TOGGLE_x5;
+  memcpy(configResult.Config, &atSettings,
+      sizeof(TSD_ChannelConfig_ActionTrigger));
+
+  supla_esp_channel_config_result(&configResult);
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers,
+      SUPLA_ACTION_CAP_TOGGLE_x2 | SUPLA_ACTION_CAP_TOGGLE_x5);
+
+
+  // 8x press - 5x should be send
+  for (int i = 0; i < 8; i++) {
+    inputState = !inputState;
+    eagleStub.gpioOutputSet(1, inputState);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+  }
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  // 12x press - 5x should be send
+  for (int i = 0; i < 12; i++) {
+    inputState = !inputState;
+    eagleStub.gpioOutputSet(1, inputState);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    EXPECT_TRUE(eagleStub.getGpioValue(2));
+  }
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // 1x press
+  inputState = !inputState;
+  eagleStub.gpioOutputSet(1, inputState);
+  ets_gpio_intr_func(NULL);
+
+  // +200 ms
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // +5000 ms
+  for (int i = 0; i < 500; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // 2x press
+  for (int i = 0; i < 2; i++) {
+    inputState = !inputState;
+    eagleStub.gpioOutputSet(1, inputState);
+    ets_gpio_intr_func(NULL);
+
+    // +200 ms
+    for (int i = 0; i < 20; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+    EXPECT_FALSE(eagleStub.getGpioValue(2));
+  }
+
+  // +5000 ms
+  for (int i = 0; i < 500; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  inputState = !inputState;
+  eagleStub.gpioOutputSet(1, inputState);
+  ets_gpio_intr_func(NULL);
+
+  // +1500 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+}
 // TODO add tests:
 // - what will happen if new channel config is received when we are in the
 //   middle of button handling procedure
