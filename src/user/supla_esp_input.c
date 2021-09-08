@@ -267,8 +267,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
 
 bool GPIO_ICACHE_FLASH
 supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg) {
-  // TODO: return false when we are in cfgmode
-  if (input_cfg) {
+  if ( supla_esp_cfgmode_started() == 0 && input_cfg) {
     return input_cfg->active_triggers != 0;
   }
   return false;
