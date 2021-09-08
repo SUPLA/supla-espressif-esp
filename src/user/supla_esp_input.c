@@ -310,6 +310,55 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
   os_timer_arm(&input_cfg->timer, INPUT_CYCLE_TIME, true);
 }
 
+// Timer used to determine how long button is active or inactive in advanced
+// mode
+void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
+  supla_input_cfg_t *input_cfg = (supla_input_cfg_t *)timer_arg;
+
+  unsigned int delta_time = system_get_time() - input_cfg->last_state_change;
+
+  // MONOSTABLE buttons
+  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
+      input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
+    if (input_cfg->last_state == INPUT_STATE_ACTIVE &&
+        input_cfg->click_counter != -1) {
+      // state ACTIVE
+      if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+        if (delta_time >= GET_CFG_PRESS_TIME(input_cfg) * 1000) {
+          os_timer_disarm(&input_cfg->timer);
+          input_cfg->click_counter = 0;
+          supla_esp_input_start_cfg_mode();
+        }
+      }
+      if (input_cfg->click_counter == 1 && 
+          (input_cfg->active_triggers & SUPLA_ACTION_CAP_HOLD) &&
+          delta_time >= BTN_HOLD_TIME_MS * 1000) {
+        supla_esp_input_send_action_trigger(input_cfg, SUPLA_ACTION_CAP_HOLD);
+        input_cfg->click_counter = 0;
+        if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+          os_timer_disarm(&input_cfg->timer);
+        }
+      }
+    } else if (input_cfg->last_state == INPUT_STATE_INACTIVE) {
+      // state INACTIVE
+      if (delta_time >= BTN_MULTICLICK_TIME_MS * 1000) {
+        os_timer_disarm(&input_cfg->timer);
+        supla_esp_input_send_action_trigger(input_cfg, 0);
+        input_cfg->click_counter = 0;
+      }
+    }
+
+  // BISTABLE buttons
+  } else if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
+      if (delta_time >= BTN_MULTICLICK_TIME_MS * 1000) {
+        os_timer_disarm(&input_cfg->timer);
+        supla_esp_input_send_action_trigger(input_cfg, 0);
+        input_cfg->click_counter = 0;
+      }
+  }
+}
+
 // Send action triger notification to server
 // If "action" parameter is != 0, then it sends it, otherwise it sends 
 // TOGGLE_x or PRESS_x depending on current click_counter
@@ -390,49 +439,3 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
 #endif
   }
 }
-
-// Timer used to determine how long button is active or inactive in advanced
-// mode
-void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
-  supla_input_cfg_t *input_cfg = (supla_input_cfg_t *)timer_arg;
-
-  unsigned int delta_time = system_get_time() - input_cfg->last_state_change;
-
-  // MONOSTABLE buttons
-  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-      input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
-    if (input_cfg->last_state == INPUT_STATE_ACTIVE &&
-        input_cfg->click_counter != -1) {
-      // state ACTIVE
-      if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
-        if (delta_time >= GET_CFG_PRESS_TIME(input_cfg) * 1000) {
-          os_timer_disarm(&input_cfg->timer);
-          input_cfg->click_counter = 0;
-          supla_esp_input_start_cfg_mode();
-        }
-      }
-      if (input_cfg->click_counter == 1 && 
-          (input_cfg->active_triggers & SUPLA_ACTION_CAP_HOLD) &&
-          delta_time >= BTN_HOLD_TIME_MS * 1000) {
-        supla_esp_input_send_action_trigger(input_cfg, SUPLA_ACTION_CAP_HOLD);
-        input_cfg->click_counter = 0;
-        if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
-          os_timer_disarm(&input_cfg->timer);
-        }
-      }
-    } else if (input_cfg->last_state == INPUT_STATE_INACTIVE) {
-      // state INACTIVE
-      if (delta_time >= BTN_MULTICLICK_TIME_MS * 1000) {
-        os_timer_disarm(&input_cfg->timer);
-        supla_esp_input_send_action_trigger(input_cfg, 0);
-        input_cfg->click_counter = 0;
-      }
-    }
-
-  // BISTABLE buttons
-  } else if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
-     // TODO
-  }
-}
-
