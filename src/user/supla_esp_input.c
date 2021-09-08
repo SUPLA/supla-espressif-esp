@@ -262,6 +262,35 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
   if (input_cfg) {
     input_cfg->active_triggers =
       input_cfg->action_trigger_cap & active_triggers;
+
+    input_cfg->max_clicks = 0;
+
+    if ((input_cfg->flags & INPUT_FLAG_CFG_BTN) &&
+        !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+      input_cfg->max_clicks = CFG_BTN_PRESS_COUNT;
+    }
+
+    int max_clicks_from_actions = 0;
+    if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x5) ||
+        (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x5) ) {
+      max_clicks_from_actions = 5;
+    } else if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x4) ||
+        (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x4) ) {
+      max_clicks_from_actions = 4;
+    } else if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x3) ||
+        (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x3) ) {
+      max_clicks_from_actions = 3;
+    } else if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x2) ||
+        (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x2) ) {
+      max_clicks_from_actions = 2;
+    } else if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x1) ||
+        (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x1) ) {
+      max_clicks_from_actions = 1;
+    }
+        
+    if (input_cfg->max_clicks < max_clicks_from_actions) {
+      input_cfg->max_clicks = max_clicks_from_actions;
+    }
   }
 }
 
@@ -309,12 +338,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
           // CFG MODE
           supla_esp_input_start_cfg_mode();
         }
-      } else if (input_cfg->click_counter >= 5) { // TODO add max click here
-        supla_esp_input_send_action_trigger(input_cfg, 0);
-        input_cfg->click_counter = -1;
-        input_cfg->last_state_change = system_get_time();
-        return;  // don't arm timer
-      }
+      } 
     }
   }
 
@@ -351,22 +375,34 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
           os_timer_disarm(&input_cfg->timer);
         }
       }
-    } else if (input_cfg->last_state == INPUT_STATE_INACTIVE) {
-      // state INACTIVE
-      if (delta_time >= BTN_MULTICLICK_TIME_MS * 1000) {
-        os_timer_disarm(&input_cfg->timer);
-        supla_esp_input_send_action_trigger(input_cfg, 0);
-        input_cfg->click_counter = 0;
-      }
-    }
+    } 
+  }
 
-  // BISTABLE buttons
-  } else if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+  // BISTABLE buttons and inactive state for monostable
+  if (input_cfg->last_state == INPUT_STATE_INACTIVE || 
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
       input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
+    // if below condition is true, it means that button was
+    // released for more time then multiclick detection.
+    // As a result we send detected click_counter as an action trigger
+    // and we reset the counter so it will be ready for next detection.
       if (delta_time >= BTN_MULTICLICK_TIME_MS * 1000) {
         os_timer_disarm(&input_cfg->timer);
         supla_esp_input_send_action_trigger(input_cfg, 0);
         input_cfg->click_counter = 0;
+    // If below condition is met, then user clicked more times than max
+    // active and detectable click count. It will send detected action
+    // (max configured click count).
+      } else if (input_cfg->click_counter >= input_cfg->max_clicks) {
+        supla_esp_input_send_action_trigger(input_cfg, 0);
+        input_cfg->click_counter = -1;
+    // Special handling of situation where max configured click count is
+    // 0 or 1. In such case we don't have to wait BTN_MULTICLICK_TIME_MS 
+    // for next button detection
+        if (input_cfg->max_clicks <= 1) {
+          os_timer_disarm(&input_cfg->timer);
+          input_cfg->click_counter = 0;
+        }
       }
   }
 }

@@ -31,10 +31,9 @@ typedef struct {
   uint8 flags;    // configuration flags INPUT_FLAG_
   uint8 type;     // input type INPUT_TYPE_
   uint8 last_state;
-  uint8 step;     // used internally to determine which action should 
-                  // be triggered
   uint8 debounce_step;
   int8 click_counter;   // -> click_counter
+  uint8 max_clicks; 
   uint8 relay_gpio_id;  // GPIO of relay which is controlled by this
                         // input. It can also controll RS
   uint8 channel;        // used for INPUT_TYPE_SENSOR and ACTION_TRIGGER
