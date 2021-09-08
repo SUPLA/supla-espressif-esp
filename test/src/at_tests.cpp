@@ -131,17 +131,6 @@ void gpioCallbackAt() {
       SUPLA_ACTION_CAP_TURN_ON |
       SUPLA_ACTION_CAP_TURN_OFF;
     supla_input_cfg[0].relay_gpio_id = 255;
-  } else if (gpioConfigId == 10) {
-    supla_input_cfg[0].flags = INPUT_FLAG_CFG_BTN | INPUT_FLAG_FACTORY_RESET;
-    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
-  } else if (gpioConfigId == 11) {
-    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS;
-    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
-  } else if (gpioConfigId == 12) {
-    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS | 
-                               INPUT_FLAG_CFG_BTN | 
-                               INPUT_FLAG_CFG_ON_TOGGLE;
-    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   } else {
     assert(false);
   }
@@ -3465,7 +3454,3 @@ TEST_F(ATRegisteredFixture, BistableMulticlickConfigChangeDuringPress) {
   EXPECT_TRUE(eagleStub.getGpioValue(2));
 
 }
-// TODO add tests:
-// - what will happen if new channel config is received when we are in the
-//   middle of button handling procedure
-// - RS inputs for mono and bistable with and without AT
