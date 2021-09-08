@@ -1808,7 +1808,7 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
         if (supla_input_cfg[i].channel == result->ChannelNumber) {
           TSD_ChannelConfig_ActionTrigger *actionTriggerCfg =
             (TSD_ChannelConfig_ActionTrigger *)(result->Config);
-            supla_esp_input_set_active_actions(&(supla_input_cfg[i]),
+            supla_esp_input_set_active_triggers(&(supla_input_cfg[i]),
                 actionTriggerCfg->ActiveActions);
         }
       }

@@ -34,7 +34,7 @@ typedef struct {
   uint8 step;     // used internally to determine which action should 
                   // be triggered
   uint8 debounce_step;
-  uint16 click_counter;   // -> click_counter
+  int8 click_counter;   // -> click_counter
   uint8 relay_gpio_id;  // GPIO of relay which is controlled by this
                         // input. It can also controll RS
   uint8 channel;        // used for INPUT_TYPE_SENSOR and ACTION_TRIGGER
@@ -44,8 +44,8 @@ typedef struct {
   ETSTimer timer;
   unsigned int last_state_change; // timestamp of last state change
 
-  unsigned _supla_int_t supported_actions; // defines device capability
-  unsigned _supla_int_t active_actions;  // which actions are activated on server
+  unsigned _supla_int_t action_trigger_cap; // defines device capability
+  unsigned _supla_int_t active_triggers;  // which actions are activated on server
 
 } supla_input_cfg_t;
 
@@ -64,8 +64,8 @@ void GPIO_ICACHE_FLASH
 supla_esp_input_start_debounce_timer(supla_input_cfg_t *input_cfg);
 
 // Sets active actions on a given input_cfg
-void GPIO_ICACHE_FLASH supla_esp_input_set_active_actions(
-    supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_actions);
+void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
+    supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_triggers);
 
 // return true when multiclicks and other advanced actions are enabled on input
 bool GPIO_ICACHE_FLASH

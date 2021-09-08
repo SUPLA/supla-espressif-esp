@@ -57,18 +57,18 @@ void gpioCallbackAt() {
     SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED;
   if (gpioConfigId == 0) {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
-    supla_input_cfg[0].supported_actions = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
+    supla_input_cfg[0].action_trigger_cap = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
     supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS;
   } else if (gpioConfigId == 1) {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
-    supla_input_cfg[0].supported_actions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+    supla_input_cfg[0].action_trigger_cap = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
       SUPLA_ACTION_CAP_SHORT_PRESS_x3 |
       SUPLA_ACTION_CAP_SHORT_PRESS_x4 | 
       SUPLA_ACTION_CAP_SHORT_PRESS_x5;
     supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS;
   } else if (gpioConfigId == 2) {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
-    supla_input_cfg[0].supported_actions = SUPLA_ACTION_CAP_HOLD |
+    supla_input_cfg[0].action_trigger_cap = SUPLA_ACTION_CAP_HOLD |
       SUPLA_ACTION_CAP_SHORT_PRESS_x3 |
       SUPLA_ACTION_CAP_SHORT_PRESS_x4 | 
       SUPLA_ACTION_CAP_SHORT_PRESS_x5;
@@ -273,7 +273,7 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
     executeTimers();
   }
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions, 0);
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
 
   TSD_ChannelConfig configResult = {};
   configResult.ChannelNumber = 1; // AT channel number
@@ -288,7 +288,7 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
 
   supla_esp_channel_config_result(&configResult);
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions, SUPLA_ACTION_CAP_SHORT_PRESS_x2);
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, SUPLA_ACTION_CAP_SHORT_PRESS_x2);
 
   for (int i = 0; i < 2; i++) {
     // simulate active input on gpio 1
@@ -400,7 +400,7 @@ TEST_F(ATRegisteredFixture, MonostablePressMultipleWithout3x) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_FALSE(eagleStub.getGpioValue(2));
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions, 0);
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
 
   TSD_ChannelConfig configResult = {};
   configResult.ChannelNumber = 1; // AT channel number
@@ -417,7 +417,7 @@ TEST_F(ATRegisteredFixture, MonostablePressMultipleWithout3x) {
 
   supla_esp_channel_config_result(&configResult);
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions,
+  EXPECT_EQ(supla_input_cfg[0].active_triggers,
       SUPLA_ACTION_CAP_SHORT_PRESS_x2 | SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
       SUPLA_ACTION_CAP_SHORT_PRESS_x5);
 
@@ -638,7 +638,7 @@ TEST_F(ATRegisteredFixture, MonostableMultipleAndHold) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_FALSE(eagleStub.getGpioValue(2));
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions, 0);
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
 
   TSD_ChannelConfig configResult = {};
   configResult.ChannelNumber = 1; // AT channel number
@@ -655,7 +655,7 @@ TEST_F(ATRegisteredFixture, MonostableMultipleAndHold) {
 
   supla_esp_channel_config_result(&configResult);
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions,
+  EXPECT_EQ(supla_input_cfg[0].active_triggers,
       SUPLA_ACTION_CAP_SHORT_PRESS_x3 | SUPLA_ACTION_CAP_HOLD);
 
   // 2x press - not activated
@@ -860,7 +860,7 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5x) {
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_FALSE(eagleStub.getGpioValue(2));
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions, 0);
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
 
   TSD_ChannelConfig configResult = {};
   configResult.ChannelNumber = 1; // AT channel number
@@ -877,12 +877,12 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5x) {
 
   supla_esp_channel_config_result(&configResult);
 
-  EXPECT_EQ(supla_input_cfg[0].active_actions,
+  EXPECT_EQ(supla_input_cfg[0].active_triggers,
       SUPLA_ACTION_CAP_SHORT_PRESS_x2 | SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
       SUPLA_ACTION_CAP_SHORT_PRESS_x5);
 
   // 8x press
-  for (int i = 0; i < 2; i++) {
+  for (int i = 0; i < 8; i++) {
     // simulate active input on gpio 1
     eagleStub.gpioOutputSet(1, 1);
     ets_gpio_intr_func(NULL);

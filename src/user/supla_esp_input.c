@@ -218,12 +218,9 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_timer_cb(void *timer_arg) {
 
   if (input_cfg->last_state == INPUT_STATE_ACTIVE) {
     if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
-      // if input is used for config and it is monostable, then click_counter is
-      // used to calculate how long button is active
-      input_cfg->click_counter++;
 
-      if (input_cfg->click_counter * INPUT_CYCLE_TIME >=
-          GET_CFG_PRESS_TIME(input_cfg)) {
+      if (system_get_time() - input_cfg->last_state_change >=
+          GET_CFG_PRESS_TIME(input_cfg)*1000) {
 
         os_timer_disarm(&input_cfg->timer);
         input_cfg->click_counter = 0;
@@ -260,10 +257,11 @@ supla_esp_input_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
 	return CFG_BTN_PRESS_TIME;
 }
 
-void GPIO_ICACHE_FLASH supla_esp_input_set_active_actions(
-    supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_actions) {
+void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
+    supla_input_cfg_t *input_cfg, unsigned _supla_int_t active_triggers) {
   if (input_cfg) {
-    input_cfg->active_actions = input_cfg->supported_actions & active_actions;
+    input_cfg->active_triggers =
+      input_cfg->action_trigger_cap & active_triggers;
   }
 }
 
@@ -271,7 +269,7 @@ bool GPIO_ICACHE_FLASH
 supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg) {
   // TODO: return false when we are in cfgmode
   if (input_cfg) {
-    return input_cfg->active_actions != 0;
+    return input_cfg->active_triggers != 0;
   }
   return false;
 }
@@ -284,28 +282,30 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
 
   os_timer_disarm(&input_cfg->timer);
 
-  // Monostable buttons counts "click" when state change to "active"
-  // Bistable buttons counts "click" on each state change
-  if (new_state == INPUT_STATE_ACTIVE || (
-        (input_cfg->type & INPUT_TYPE_BTN_BISTABLE) ||
-        (input_cfg->type & INPUT_TYPE_BTN_BISTABLE_RS))) {
+  if (input_cfg->click_counter != -1) {
+    // Monostable buttons counts "click" when state change to "active"
+    // Bistable buttons counts "click" on each state change
+    if (new_state == INPUT_STATE_ACTIVE ||
+        ((input_cfg->type & INPUT_TYPE_BTN_BISTABLE) ||
+         (input_cfg->type & INPUT_TYPE_BTN_BISTABLE_RS))) {
 
-    input_cfg->click_counter++;
-    if (input_cfg->flags & INPUT_FLAG_CFG_BTN &&
-        !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
-      // Handling of CFG BTN functionality
-      if (input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
-        input_cfg->click_counter = 0;
-        // CFG MODE
-        supla_esp_input_start_cfg_mode();
+      input_cfg->click_counter++;
+      if (input_cfg->flags & INPUT_FLAG_CFG_BTN &&
+          !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+        // Handling of CFG BTN functionality
+        if (input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
+          input_cfg->click_counter = 0;
+          // CFG MODE
+          supla_esp_input_start_cfg_mode();
+        }
+      } else if (input_cfg->click_counter >= 5) { // TODO add max click here
+        supla_esp_input_send_action_trigger(input_cfg, 0);
+        input_cfg->click_counter = -1;
+        input_cfg->last_state_change = system_get_time();
+        return;  // don't arm timer
       }
-    } else if (input_cfg->click_counter >= 5) { // input_cfg->max_possible_clicks) {
-      supla_esp_input_send_action_trigger(input_cfg, 0);
-      input_cfg->click_counter = 0;
-      input_cfg->last_state_change = system_get_time();
-      return; // don't arm timer
     }
-  } 
+  }
 
   input_cfg->last_state_change = system_get_time();
   os_timer_arm(&input_cfg->timer, INPUT_CYCLE_TIME, true);
@@ -317,6 +317,9 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
 void GPIO_ICACHE_FLASH
 supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
   if (action == 0) {
+    if (input_cfg->click_counter == -1) {
+      return;
+    }
     // if there is related relay gpio id, then single click/press is used for
     // device's local action
     if (input_cfg->click_counter == 1 && input_cfg->relay_gpio_id != 255) {
@@ -366,7 +369,7 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
 
   }
 
-  if (!(action & input_cfg->active_actions)) {
+  if (!(action & input_cfg->active_triggers)) {
     supla_log(LOG_DEBUG, "Input: action %d is not activated", action);
     return;
   }
@@ -399,7 +402,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
   // MONOSTABLE buttons
   if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
       input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
-    if (input_cfg->last_state == INPUT_STATE_ACTIVE) {
+    if (input_cfg->last_state == INPUT_STATE_ACTIVE &&
+        input_cfg->click_counter != -1) {
       // state ACTIVE
       if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
         if (delta_time >= GET_CFG_PRESS_TIME(input_cfg) * 1000) {
@@ -409,7 +413,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
         }
       }
       if (input_cfg->click_counter == 1 && 
-          (input_cfg->active_actions & SUPLA_ACTION_CAP_HOLD) &&
+          (input_cfg->active_triggers & SUPLA_ACTION_CAP_HOLD) &&
           delta_time >= BTN_HOLD_TIME_MS * 1000) {
         supla_esp_input_send_action_trigger(input_cfg, SUPLA_ACTION_CAP_HOLD);
         input_cfg->click_counter = 0;
