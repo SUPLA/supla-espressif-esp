@@ -289,6 +289,18 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
          (input_cfg->type & INPUT_TYPE_BTN_BISTABLE_RS))) {
 
       input_cfg->click_counter++;
+
+      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+          input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
+        if (new_state == INPUT_STATE_ACTIVE) {
+          supla_esp_input_send_action_trigger(input_cfg, 
+              SUPLA_ACTION_CAP_TURN_ON);
+        } else {
+          supla_esp_input_send_action_trigger(input_cfg, 
+              SUPLA_ACTION_CAP_TURN_OFF);
+        }
+      }
+
       if (input_cfg->flags & INPUT_FLAG_CFG_BTN &&
           !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
         // Handling of CFG BTN functionality
