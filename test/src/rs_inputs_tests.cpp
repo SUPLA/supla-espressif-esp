@@ -602,6 +602,11 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
+    // Expected channel 1 (ActionTrigger) state changes
+    char value[SUPLA_CHANNELVALUE_SIZE] = {};
+    int action = SUPLA_ACTION_CAP_HOLD;
+    memcpy(value, &action, sizeof(action));
+    EXPECT_CALL(srpc, valueChanged(_, 2, ElementsAreArray(value)));
   }
 
   // +1000 ms
@@ -710,6 +715,23 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
  
   // +500 ms
   for (int i = 0; i < 250; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_TRUE(eagleStub.getGpioValue(4));
+
+  // check if HOLD will be send
+  eagleStub.gpioOutputSet(2, 1);
+  ets_gpio_intr_func(NULL);
+  for (int i = 0; i < 120; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  eagleStub.gpioOutputSet(2, 0);
+  ets_gpio_intr_func(NULL);
+  for (int i = 0; i < 80; i++) {
     curTime += 10000; // +10ms
     executeTimers();
   }
@@ -847,6 +869,11 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
+    // Expected channel 1 (ActionTrigger) state changes
+    char value[SUPLA_CHANNELVALUE_SIZE] = {};
+    int action = SUPLA_ACTION_CAP_TOGGLE_x2;
+    memcpy(value, &action, sizeof(action));
+    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
   }
 
   // +1000 ms
@@ -984,6 +1011,22 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
 
   EXPECT_FALSE(eagleStub.getGpioValue(3));
   EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // check if TOGGLE_2x will be send
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  for (int i = 0; i < 20; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+  for (int i = 0; i < 80; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+
 
 
   EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
