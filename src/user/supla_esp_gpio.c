@@ -1175,7 +1175,11 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
       // in advanced mode, only input_active method is being called
       // so it has to handle RS_RELAY UP/DOWN/OFF for all button types
       if (advanced_mode) {
-// TODO
+        if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+        } else {
+          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+        }
 
       } else { // legacy mode uses active/inactive method, so here for 
                // bistable button we handle only button "active" trigger
