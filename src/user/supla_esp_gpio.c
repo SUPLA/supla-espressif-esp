@@ -693,7 +693,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
 	}
 
-    supla_esp_gpio_rs_check_if_autocal_is_needed(rs_cfg);
+  supla_esp_gpio_rs_check_if_autocal_is_needed(rs_cfg);
 	supla_esp_gpio_rs_task_processing(rs_cfg, isRsInMove);
 
 	if ( rs_cfg->last_time-rs_cfg->last_comm_time >= 500000 ) { // 500 ms.

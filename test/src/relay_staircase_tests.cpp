@@ -143,6 +143,7 @@ public:
     cleanupTimers();
     set_reset_reason(0);
 
+    supla_esp_gpio_clear_vars();
     gpioInitCb = nullptr;
   }
 };

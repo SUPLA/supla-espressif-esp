@@ -115,6 +115,8 @@ class RsInputsFixture : public ::testing::Test {
     SrpcMock srpc;
 
     void SetUp() override {
+      cleanupTimers();
+      supla_esp_gpio_clear_vars();
       curTime = 10000; 
       currentDeviceState = STATE_UNKNOWN;
       EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
@@ -155,12 +157,12 @@ class RsInputsFixture : public ::testing::Test {
       supla_esp_gpio_init_time = 0;
       gpioConfigId = 0;
       supla_esp_cfgmode_clear_vars();
-      supla_esp_gpio_clear_vars();
       supla_esp_restart_on_cfg_press = 0;
       ets_clear_isr();
       cleanupTimers();
       gpioInitCb = nullptr;
       supla_esp_devconn_release();
+      supla_esp_gpio_clear_vars();
     }
 };
 

@@ -19,6 +19,10 @@
 #ifndef SUPLA_ESP_INPUT_H_
 #define SUPLA_ESP_INPUT_H_
 
+// TODO remove after proto update
+#define SUPLA_ACTION_CAP_TOGGLE_x5 (1 << 6)
+#define SUPLA_ACTION_CAP_SHORT_PRESS_x5 (1 << 15)
+
 #include "supla_esp.h"
 
 #define INPUT_STATE_ACTIVE 1

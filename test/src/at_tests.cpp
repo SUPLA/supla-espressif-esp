@@ -145,6 +145,7 @@ public:
   int curTime;
 
   void SetUp() override {
+    cleanupTimers();
     curTime = 10000; 
     currentDeviceState = STATE_UNKNOWN;
     EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
