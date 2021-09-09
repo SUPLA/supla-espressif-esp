@@ -1157,25 +1157,42 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	BOARD_ON_INPUT_ACTIVE;
 	#endif
 
-  if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE) &&
+  bool advanced_mode = supla_esp_input_is_advanced_mode_enabled(input_cfg);
+
+  if (((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
+        input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS) ||
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      advanced_mode) &&
       input_cfg->relay_gpio_id != 255) {
     supla_roller_shutter_cfg_t *rs_cfg =
       supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
     if (rs_cfg != NULL) {
 #ifdef _ROLLERSHUTTER_SUPPORT
-      supla_esp_gpio_rs_set_relay(rs_cfg,
-          rs_cfg->up->gpio_id == input_cfg->relay_gpio_id
+      int direction = (rs_cfg->up->gpio_id == input_cfg->relay_gpio_id)
           ? RS_RELAY_UP
-          : RS_RELAY_DOWN,
-          1, 1);
+          : RS_RELAY_DOWN;
+
+      // in advanced mode, only input_active method is being called
+      // so it has to handle RS_RELAY UP/DOWN/OFF for all button types
+      if (advanced_mode) {
+// TODO
+
+      } else { // legacy mode uses active/inactive method, so here for 
+               // bistable button we handle only button "active" trigger
+        if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+        } else { // monostable
+          if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
+            supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+          } else {
+            supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+          }
+        }
+            
+      }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
     } else {
-      if (input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS ||
-          input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
-          supla_esp_input_is_advanced_mode_enabled(input_cfg)) {
-        supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
-      }
+      supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
     }
   } else if (input_cfg->type == INPUT_TYPE_SENSOR && input_cfg->channel != 255) {
 
@@ -1193,17 +1210,28 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
   BOARD_ON_INPUT_INACTIVE;
 #endif
 
-  if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
+  if (((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
+        !(input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS)) ||
       input_cfg->type == INPUT_TYPE_BTN_BISTABLE) &&
       input_cfg->relay_gpio_id != 255) {
     supla_roller_shutter_cfg_t *rs_cfg =
       supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
     if (rs_cfg != NULL) {
 #ifdef _ROLLERSHUTTER_SUPPORT
-      supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+      int direction = (rs_cfg->up->gpio_id == input_cfg->relay_gpio_id)
+          ? RS_RELAY_UP
+          : RS_RELAY_DOWN;
+      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+      } else { // monostable
+        if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+        } else {
+          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+        }
+      }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
-    } else if (!(input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS) ||
-        input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+    } else {
       supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
     }
   } else if (input_cfg->type == INPUT_TYPE_SENSOR &&
