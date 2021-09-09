@@ -301,6 +301,27 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
 bool GPIO_ICACHE_FLASH
 supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg) {
   if ( supla_esp_cfgmode_started() == 0 && input_cfg) {
+    // if input is used for roller shutter, we have to check if input for
+    // another direction is in advanced mode. If yes, then we switch both
+    // inputs to advanced mode in order to get the same default behabior
+    // for both inputs
+    supla_roller_shutter_cfg_t *rs_cfg =
+      supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+    if (rs_cfg) {
+      int another_gpio_id = (input_cfg->relay_gpio_id == rs_cfg->up->gpio_id) ?
+        rs_cfg->down->gpio_id : rs_cfg->up->gpio_id;
+      int i = 0;
+      for (; i < INPUT_MAX_COUNT; i++) {
+        if (supla_input_cfg[i].relay_gpio_id == another_gpio_id) {
+          break;
+        }
+      }
+      if (i < INPUT_MAX_COUNT) {
+        return input_cfg->active_triggers != 0 ||
+          supla_input_cfg[i].active_triggers != 0;
+      }
+    }
+
     return input_cfg->active_triggers != 0;
   }
   return false;
