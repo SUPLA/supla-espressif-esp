@@ -77,8 +77,8 @@ void gpioCallbackRsInputs() {
   supla_rs_cfg[0].delayed_trigger.value = 0;
 
   if (gpioConfigId == 0) {
-    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE_RS;
-    supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE_RS;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
 
   } else if (gpioConfigId == 1) {
   } else if (gpioConfigId == 2) {
@@ -167,7 +167,7 @@ class RsInputsFixture : public ::testing::Test {
 };
 
 
-// MONOSTABLE_RS buttons works in a following way:
+// MONOSTABLE RS buttons works in a following way:
 // when button is pressed, it starts RS movement
 // button release, stops RS movement
 TEST_F(RsInputsFixture, MonostableRsCfgButton) {

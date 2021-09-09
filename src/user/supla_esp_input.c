@@ -130,8 +130,7 @@ supla_esp_input_is_cfg_on_hold_enabled(supla_input_cfg_t *input_cfg) {
   if (!(input_cfg->flags & INPUT_FLAG_CFG_BTN)) {
     return false;
   }
-  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE || 
-      input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
+  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
     if (!(input_cfg->flags & INPUT_FLAG_CFG_ON_TOGGLE)) {
       return true;
     }
@@ -179,8 +178,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
 
     if (supla_esp_restart_on_cfg_press == 1 &&
         input_cfg->flags & INPUT_FLAG_CFG_BTN &&
-        (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-         input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS)) {
+        input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
       supla_system_restart();
       return;
     }
@@ -320,13 +318,11 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
     // Monostable buttons counts "click" when state change to "active"
     // Bistable buttons counts "click" on each state change
     if (new_state == INPUT_STATE_ACTIVE ||
-        ((input_cfg->type & INPUT_TYPE_BTN_BISTABLE) ||
-         (input_cfg->type & INPUT_TYPE_BTN_BISTABLE_RS))) {
+        (input_cfg->type & INPUT_TYPE_BTN_BISTABLE)) {
 
       input_cfg->click_counter++;
 
-      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
-          input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
+      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
         if (new_state == INPUT_STATE_ACTIVE) {
           supla_esp_input_send_action_trigger(input_cfg, 
               SUPLA_ACTION_CAP_TURN_ON);
@@ -360,8 +356,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
   unsigned int delta_time = system_get_time() - input_cfg->last_state_change;
 
   // MONOSTABLE buttons
-  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-      input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
+  if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
     if (input_cfg->last_state == INPUT_STATE_ACTIVE &&
         input_cfg->click_counter != -1) {
       // state ACTIVE
@@ -386,8 +381,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
 
   // BISTABLE buttons and inactive state for monostable
   if (input_cfg->last_state == INPUT_STATE_INACTIVE || 
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
     // if below condition is true, it means that button was
     // released for more time then multiclick detection.
     // As a result we send detected click_counter as an action trigger
@@ -429,8 +423,7 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
       return;
     }
     // map click_counter to proper action
-    if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE || 
-        input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) {
+    if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
      switch (input_cfg->click_counter) {
        case 1:
          action = SUPLA_ACTION_CAP_SHORT_PRESS_x1;
@@ -448,8 +441,7 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
          action = SUPLA_ACTION_CAP_SHORT_PRESS_x5;
          break;
      };
-    } else if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
-        input_cfg->type == INPUT_TYPE_BTN_BISTABLE_RS) {
+    } else if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
      switch (input_cfg->click_counter) {
        case 1:
          action = SUPLA_ACTION_CAP_TOGGLE_x1;
