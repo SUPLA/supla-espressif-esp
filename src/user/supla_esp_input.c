@@ -497,6 +497,12 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
   }
 
   if (input_cfg->channel != 255) {
+    int i = 1;
+    for (;i < 32; i++) {
+      if (action >> i == 0) break;
+    }
+    supla_log(LOG_DEBUG, "Input[ch: %d] sending action trigger (1 << %d)",
+        input_cfg->channel, i-1);
     char value[SUPLA_CHANNELVALUE_SIZE] = {};
     memcpy(value, &action, sizeof(action));
     supla_esp_channel_value__changed(input_cfg->channel, value);

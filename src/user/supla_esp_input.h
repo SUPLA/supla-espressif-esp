@@ -31,23 +31,25 @@
 #define CFG_BTN_PRESS_COUNT     10
 
 typedef struct {
+  // below parameters are for user's configuration
   uint8 gpio_id;  // input GPIO
   uint8 flags;    // configuration flags INPUT_FLAG_
   uint8 type;     // input type INPUT_TYPE_
+  uint8 relay_gpio_id;  // GPIO of relay which is controlled by this
+                        // input. It can also controll RS
+  uint8 channel;        // used for INPUT_TYPE_SENSOR and ACTION_TRIGGER
+  unsigned _supla_int_t action_trigger_cap; // defines device capability
+
+  // don't configure below parameters manually. Those are managed by the code
   uint8 last_state;
   uint8 debounce_step;
   int8 click_counter;   // -> click_counter
   uint8 max_clicks; 
-  uint8 relay_gpio_id;  // GPIO of relay which is controlled by this
-                        // input. It can also controll RS
-  uint8 channel;        // used for INPUT_TYPE_SENSOR and ACTION_TRIGGER
   uint8 debounce_value;
 
   ETSTimer debounce_timer;
   ETSTimer timer;
   unsigned int last_state_change; // timestamp of last state change
-
-  unsigned _supla_int_t action_trigger_cap; // defines device capability
   unsigned _supla_int_t active_triggers;  // which actions are activated on server
 
 } supla_input_cfg_t;
