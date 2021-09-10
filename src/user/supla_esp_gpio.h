@@ -157,11 +157,11 @@ void GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg);
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent);
 
-supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 sint8 supla_esp_gpio_rs_get_current_position(
     supla_roller_shutter_cfg_t *rs_cfg);
 void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
+supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
     int newValue, int durationMs, int senderID);

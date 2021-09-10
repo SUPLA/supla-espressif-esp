@@ -40,6 +40,7 @@
 #include "supla_esp_dns_client.h"
 #include "supla_esp_wifi.h"
 #include "supla_esp_state.h"
+#include "supla_esp_input.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
