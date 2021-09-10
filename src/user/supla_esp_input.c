@@ -502,7 +502,7 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     supla_esp_channel_value__changed(input_cfg->channel, value);
 #ifdef MQTT_SUPPORT_ENABLED
     // TODO send to MQTT
-    supla_esp_mqtt_send_action_trigger(channel, action);
+//    supla_esp_mqtt_send_action_trigger(channel, action);
 #endif
   }
 }
