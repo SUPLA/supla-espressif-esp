@@ -50,7 +50,8 @@ typedef struct {
   ETSTimer debounce_timer;
   ETSTimer timer;
   unsigned int last_state_change; // timestamp of last state change
-  unsigned _supla_int_t active_triggers;  // which actions are activated on server
+  unsigned _supla_int_t active_triggers;  // which actions are activated on 
+                                          // server
 
 } supla_input_cfg_t;
 

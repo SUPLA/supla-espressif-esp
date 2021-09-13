@@ -24,11 +24,19 @@
 #include "supla-dev/proto.h"
 #include "supla_esp.h"
 
+// used for Button1Type, Button2Type, BtnType[x]
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
 
 #define STAIRCASE_BTN_TYPE_RESET  0
 #define STAIRCASE_BTN_TYPE_TOGGLE 1
+
+// Defines in which mode button is used.
+// USE_INTERNALLY will not publish ActionTrigger. Button may be used for
+// device's internal functionality (like relay toggle) or may be disabled
+#define BTN_MODE_USE_INTERNALLY 0
+// PUBLISH_AT mode will publish ActionTrigger depending on button input. 
+#define BTN_MODE_PUBLISH_AT     1
 
 typedef struct {
   char TAG[6];
@@ -85,6 +93,14 @@ typedef struct {
   unsigned int AutoCalCloseTime[RS_MAX_COUNT];
 
   char StaircaseButtonType;
+
+  // Button options are not applied to input configuration automatically.
+  // Please implement it in board code depending on needs.
+  // ButtonType defines type of button: monostable, bistable
+  char ButtonType[BTN_MAX_COUNT];
+  // ButtonMode defines if button is used only internally by device (or is 
+  // disalbed), or if ActionTrigger should be published
+  char ButtonMode[BTN_MAX_COUNT];
 
   char zero[200];
 

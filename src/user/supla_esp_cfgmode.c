@@ -75,8 +75,6 @@
 #define VAR_TH1 35  // Overcurrent threshold 1
 #define VAR_TH2 36  // Overcurrent threshold 2
 
-#define VAR_SBT 37  // Staircase Button Type
-
 #ifdef CFG_TIME_VARIABLES
 #define VAR_T10 37
 #define VAR_T11 38
@@ -85,6 +83,18 @@
 #define VAR_T21 41
 #define VAR_T22 42
 #endif /*CFG_TIME_VARIABLES*/
+
+#define VAR_SBT 43  // Staircase Button Type
+
+#define VAR_BP0 44 // ButtonType[0]
+#define VAR_BP1 45 // ButtonType[1]
+#define VAR_BP2 46 // ButtonType[2]
+#define VAR_BP3 47 // ButtonType[3]
+
+#define VAR_BM0 48 // ButtonMode[0]
+#define VAR_BM1 49 // ButtonMode[1]
+#define VAR_BM2 50 // ButtonMode[2]
+#define VAR_BM3 51 // ButtonMode[3]
 
 typedef struct {
   char step;
@@ -342,6 +352,16 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char t22[3] = {'t', '2', '2'};
 #endif /*CFG_TIME_VARIABLES*/
 
+      char bp0[3] = {'b', 'p', '0'};
+      char bp1[3] = {'b', 'p', '1'};
+      char bp2[3] = {'b', 'p', '2'};
+      char bp3[3] = {'b', 'p', '3'};
+
+      char bm0[3] = {'b', 'm', '0'};
+      char bm1[3] = {'b', 'm', '1'};
+      char bm2[3] = {'b', 'm', '2'};
+      char bm3[3] = {'b', 'm', '3'};
+
       if (len - a >= 4 && pdata[a + 3] == '=') {
         if (memcmp(sid, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_SID;
@@ -498,6 +518,47 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->current_var = VAR_TH2;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bp0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BP0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bp1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BP1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bp2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BP2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bp3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BP3;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bm0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BM0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bm1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BM1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bm2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BM2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bm3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BM3;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
         }
 #ifdef CFG_TIME_VARIABLES
         else if (memcmp(t10, &pdata[a], 3) == 0) {
@@ -638,6 +699,25 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
         } else if (pVars->current_var == VAR_TH2) {
           cfg->OvercurrentThreshold2 = cfg_str2centInt(pVars->intval, 2);
           supla_log(LOG_DEBUG, "Found TH2 = %d", cfg->OvercurrentThreshold2);
+
+        } else if (pVars->current_var == VAR_BP0) {
+          cfg->ButtonType[0] = pVars->intval[0] - '0';
+        } else if (pVars->current_var == VAR_BP1) {
+          cfg->ButtonType[1] = pVars->intval[0] - '0';
+        } else if (pVars->current_var == VAR_BP2) {
+          cfg->ButtonType[2] = pVars->intval[0] - '0';
+        } else if (pVars->current_var == VAR_BP3) {
+          cfg->ButtonType[3] = pVars->intval[0] - '0';
+
+        } else if (pVars->current_var == VAR_BM0) {
+          cfg->ButtonMode[0] = pVars->intval[0] - '0';
+        } else if (pVars->current_var == VAR_BM1) {
+          cfg->ButtonMode[1] = pVars->intval[0] - '0';
+        } else if (pVars->current_var == VAR_BM2) {
+          cfg->ButtonMode[2] = pVars->intval[0] - '0';
+        } else if (pVars->current_var == VAR_BM3) {
+          cfg->ButtonMode[3] = pVars->intval[0] - '0';
+
         }
 #ifdef CFG_TIME_VARIABLES
         else if (pVars->current_var == VAR_T10) {

@@ -118,4 +118,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_srpc_init(void);
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_config_result(TSD_ChannelConfig *result);
 
+#ifdef BOARD_CHANNEL_CONFIG
+void ICACHE_FLASH_ATTR
+supla_esp_board_channel_config(TSD_ChannelConfig *config);
+#endif /*BOARD_CHANNEL_CONFIG*/
+
 #endif /* SUPLA_ESP_CLIENT_H_ */

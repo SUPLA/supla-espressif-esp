@@ -187,6 +187,10 @@
 #define BTN2_DEFAULT BTN_TYPE_BISTABLE
 #endif
 
+#ifndef BTN_MAX_COUNT
+#define BTN_MAX_COUNT 4
+#endif
+
 #ifndef MANUFACTURER_ID
 #define MANUFACTURER_ID 0
 #endif
