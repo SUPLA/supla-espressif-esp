@@ -77,4 +77,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
 bool GPIO_ICACHE_FLASH
 supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg);
 
+void GPIO_ICACHE_FLASH supla_esp_input_set_hold_time_ms(int time_ms);
+void GPIO_ICACHE_FLASH supla_esp_input_set_multiclick_time_ms(int time_ms);
+
 #endif /*SUPLA_ESP_INPUT_H_*/

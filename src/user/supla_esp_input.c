@@ -32,6 +32,8 @@
 ///////////////////////////////////////////////////////////////////////////////
 
 supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
+static int btn_hold_time_ms = BTN_HOLD_TIME_MS;
+static int btn_multiclick_time_ms = BTN_MULTICLICK_TIME_MS;
 
 ///////////////////////////////////////////////////////////////////////////////
 // Forward declarations of local .c methods
@@ -390,7 +392,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
       }
       if (input_cfg->click_counter == 1 && 
           (input_cfg->active_triggers & SUPLA_ACTION_CAP_HOLD) &&
-          delta_time >= BTN_HOLD_TIME_MS * 1000) {
+          delta_time >= btn_hold_time_ms * 1000) {
         supla_esp_input_send_action_trigger(input_cfg, SUPLA_ACTION_CAP_HOLD);
         input_cfg->click_counter = 0;
         if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
@@ -407,7 +409,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
     // released for more time then multiclick detection.
     // As a result we send detected click_counter as an action trigger
     // and we reset the counter so it will be ready for next detection.
-      if (delta_time >= BTN_MULTICLICK_TIME_MS * 1000) {
+      if (delta_time >= btn_multiclick_time_ms * 1000) {
         os_timer_disarm(&input_cfg->timer);
         supla_esp_input_send_action_trigger(input_cfg, 0);
         input_cfg->click_counter = 0;
@@ -418,7 +420,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
         supla_esp_input_send_action_trigger(input_cfg, 0);
         input_cfg->click_counter = -1;
     // Special handling of situation where max configured click count is
-    // 0 or 1. In such case we don't have to wait BTN_MULTICLICK_TIME_MS 
+    // 0 or 1. In such case we don't have to wait btn_multiclick_time_ms 
     // for next button detection
         if (input_cfg->max_clicks <= 1) {
           os_timer_disarm(&input_cfg->timer);
@@ -513,3 +515,18 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
 #endif /*MQTT_SUPPORT_ENABLED*/
   }
 }
+
+void GPIO_ICACHE_FLASH supla_esp_input_set_hold_time_ms(int time_ms) {
+  btn_hold_time_ms = time_ms;
+  if (btn_hold_time_ms <= 0) {
+    btn_hold_time_ms = BTN_HOLD_TIME_MS;
+  }
+}
+
+void GPIO_ICACHE_FLASH supla_esp_input_set_multiclick_time_ms(int time_ms) {
+  btn_multiclick_time_ms = time_ms;
+  if (btn_multiclick_time_ms <= 0) {
+    btn_multiclick_time_ms = BTN_MULTICLICK_TIME_MS;
+  }
+}
+
