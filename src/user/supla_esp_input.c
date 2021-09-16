@@ -105,6 +105,18 @@ LOCAL void supla_esp_input_debounce_timer_cb(void *timer_arg) {
 // about input state change.
 void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
     supla_input_cfg_t *input_cfg, int new_state) {
+
+  // Silent period disables inputs for first 400 ms after startup in order to
+  // init current input state.
+  static bool silent_period = true;
+  if (silent_period) {
+    if (system_get_time() - supla_esp_gpio_init_time < 400000) {
+      input_cfg->last_state = new_state;
+      return;
+    }  else {
+      silent_period = false;
+    }
+  }
   if (input_cfg->last_state == new_state) {
     return;
   }

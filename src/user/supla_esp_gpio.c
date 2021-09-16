@@ -1310,7 +1310,7 @@ supla_esp_gpio_init(void) {
 		supla_input_cfg[a].gpio_id = 255;
 		supla_input_cfg[a].relay_gpio_id = 255;
 		supla_input_cfg[a].channel = 255;
-		supla_input_cfg[a].last_state = 255;
+		supla_input_cfg[a].last_state = INPUT_STATE_INACTIVE;
 	}
 
 	for (a=0; a<RELAY_MAX_COUNT; a++) {
