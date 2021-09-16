@@ -1332,14 +1332,29 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_relay_prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/state/"
-      "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
-      "\"false\"},\"~\":\"%s/channels/"
-      "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
-      "s\"},\"name\":\"#%i "
-      "%s\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\",\"qos\":0,"
-      "\"ret\":false,\"opt\":false,\"stat_t\":\"~/state/on\",\"cmd_t\":\"~/set/"
-      "on\",\"pl_on\":\"true\",\"pl_off\":\"false\"}";
+      "{"
+      "\"avty\":{"
+        "\"topic\":\"%s/state/connected\","
+        "\"payload_available\":\"true\","
+        "\"payload_not_available\":\"false\""
+      "},"
+      "\"~\":\"%s/channels/%i\","
+      "\"device\":{"
+        "\"ids\":\"%s\","
+        "\"mf\":\"%s\","
+        "\"name\":\"%s\","
+        "\"sw\":\"%s\""
+      "},"
+      "\"name\":\"#%i %s\","
+      "\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\","
+      "\"qos\":0,"
+      "\"ret\":false,"
+      "\"opt\":false,"
+      "\"stat_t\":\"~/state/on\","
+      "\"cmd_t\":\"~/set/on\","
+      "\"pl_on\":\"true\","
+      "\"pl_off\":\"false\""
+      "}";
   char c = 0;
 
   char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
@@ -1389,15 +1404,28 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_em__prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/state/"
-      "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
-      "\"false\"},\"~\":\"%s/channels/"
-      "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
-      "s\"},\"name\":\"#%i Electricity Meter "
-      "(%s)\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\",\"qos\":0,"
-      "\"unit_"
-      "of_meas\":\"%s\",\"stat_t\":\"~/%s\",\"val_tpl\":\"{{ %s | "
-      "round(%i)}}\",\"state_class\":\"%s\"%s}";
+      "{"
+      "\"avty\":{"
+        "\"topic\":\"%s/state/connected\","
+        "\"payload_available\":\"true\","
+        "\"payload_not_available\":\"false\""
+      "},"
+      "\"~\":\"%s/channels/%i\","
+      "\"device\":{"
+        "\"ids\":\"%s\","
+        "\"mf\":\"%s\","
+        "\"name\":\"%s\","
+        "\"sw\":\"%s\""
+      "},"
+      "\"name\":\"#%i Electricity Meter (%s)\","
+      "\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\","
+      "\"qos\":0,"
+      "\"unit_of_meas\":\"%s\","
+      "\"stat_t\":\"~/%s\","
+      "\"val_tpl\":\"{{ %s | round(%i)}}\","
+      "\"state_class\":\"%s\""
+      "%s"
+      "}";
 
   char c = 0;
 
@@ -1689,19 +1717,42 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
   }
 
   const char cfg[] =
-      "{\"~\":\"%s/channels/"
-      "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
-      "s\"},\"name\":\"#%i Roof window "
-      "operation\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\","
-      "\"qos\":0,\"ret\":false,\"opt\":false,\"cmd_t\":\"~/"
-      "execute_action\",\"dev_cla\":\"shutter\",\"pl_open\":\"REVEAL\",\"pl_"
-      "cls\":\"SHUT\",\"pl_stop\":\"STOP\",\"set_pos_t\":\"~/set/"
-      "closing_percentage\",\"pos_t\":\"~/state/"
-      "shut\",\"pos_open\":0,\"pos_clsd\":100,\"avty_t\":\"%s/state/"
-      "connected\",\"pl_avail\":\"true\",\"pl_not_avail\":\"false\",\"pos_"
-      "tpl\":\"{%% if value is defined %%}{%% if value | int < 0 %%}0{%% elif "
-      "value | int > 100 %%}100{%% else %%}{{value | int}}{%% endif %%}{%% "
-      "else %%}0{%% endif %%}\"}";
+      "{"
+      "\"~\":\"%s/channels/%i\","
+      "\"device\":{"
+        "\"ids\":\"%s\","
+        "\"mf\":\"%s\","
+        "\"name\":\"%s\","
+        "\"sw\":\"%s\"},"
+        "\"name\":\"#%i Roof window operation\","
+        "\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\","
+        "\"qos\":0,"
+        "\"ret\":false,"
+        "\"opt\":false,"
+        "\"cmd_t\":\"~/execute_action\","
+        "\"dev_cla\":\"shutter\","
+        "\"pl_open\":\"REVEAL\","
+        "\"pl_cls\":\"SHUT\","
+        "\"pl_stop\":\"STOP\","
+        "\"set_pos_t\":\"~/set/closing_percentage\","
+        "\"pos_t\":\"~/state/shut\","
+        "\"pos_open\":0,"
+        "\"pos_clsd\":100,"
+        "\"avty_t\":\"%s/state/connected\","
+        "\"pl_avail\":\"true\","
+        "\"pl_not_avail\":\"false\","
+        "\"pos_tpl\":\""
+          "{%% if value is defined %%}"
+            "{%% if value | int < 0 %%}"
+              "0"
+            "{%% elif value | int > 100 %%}"
+              "100"
+            "{%% else %%}"
+              "{{value | int}}"
+            "{%% endif %%}"
+          "{%% else %%}"
+            "0"
+          "{%% endif %%}\"}";
 
   char c = 0;
 
@@ -1837,20 +1888,39 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_dimmer_prepare_message(
   }
 
   const char cfg[] =
-      "{\"avty\":{\"topic\":\"%s/state/"
-      "connected\",\"payload_available\":\"true\",\"payload_not_available\":"
-      "\"false\"},\"~\":\"%s/channels/"
-      "%i\",\"device\":{\"ids\":\"%s\",\"mf\":\"%s\",\"name\":\"%s\",\"sw\":\"%"
-      "s\"},\"name\":\"#%i Light switch"
-      "\",\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\",\"qos\":0,"
-      "\"ret\":false,\"cmd_t\":\"~/"
-      "execute_action\",\"pl_on\":\"TURN_ON\",\"pl_off\":\"TURN_OFF\",\"stat_"
-      "t\":\"~/state/on\",\"stat_val_tpl\":\"{%% if value == \\\"true\\\" "
-      "%%}TURN_ON{%% else %%}TURN_OFF{%% endif "
-      "%%}\",\"on_cmd_type\":\"first\",\"bri_cmd_t\":\"~/set/"
-      "brightness\",\"bri_scl\":100,\"bri_stat_t\":\"~/state/brightness\"}";
+      "{"
+      "\"avty\":{"
+        "\"topic\":\"%s/state/connected\","
+        "\"payload_available\":\"true\","
+        "\"payload_not_available\":\"false\""
+      "},"
+      "\"~\":\"%s/channels/%i\","
+      "\"device\":{"
+        "\"ids\":\"%s\","
+        "\"mf\":\"%s\","
+        "\"name\":\"%s\","
+        "\"sw\":\"%s\""
+      "},"
+      "\"name\":\"#%i Light switch\","
+      "\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\","
+      "\"qos\":0,"
+      "\"ret\":false,"
+      "\"cmd_t\":\"~/execute_action\","
+      "\"pl_on\":\"TURN_ON\","
+      "\"pl_off\":\"TURN_OFF\","
+      "\"stat_t\":\"~/state/on\","
+      "\"stat_val_tpl\":\"{"
+        "%% if value == \\\"true\\\" %%}"
+          "TURN_ON"
+        "{%% else %%}"
+          "TURN_OFF"
+        "{%% endif %%}\","
+      "\"on_cmd_type\":\"first\","
+      "\"bri_cmd_t\":\"~/set/brightness\","
+      "\"bri_scl\":100,"
+      "\"bri_stat_t\":\"~/state/brightness\""
+      "}";
   char c = 0;
-
   char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
   supla_esp_board_set_device_name(device_name, SUPLA_DEVICE_NAME_MAXSIZE);
 
@@ -1926,6 +1996,205 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_brightness(
 }
 
 #endif /*MQTT_DIMMER_SUPPORT*/
+
+#ifdef MQTT_HA_ACTION_TRIGGER_SUPPORT
+
+const char *supla_esp_mqtt_ha_action_trigger_get_action_str(uint8 action_idx) {
+  static const char long_press[] = "button_long_press";
+  static const char button_short_press[] = "button_short_press";
+  static const char button_double_press[] = "button_double_press";
+  static const char button_triple_press[] = "button_triple_press";
+  static const char button_quadruple_press[] = "button_quadruple_press";
+  static const char button_quintuple_press[] = "button_quintuple_press";
+  static const char button_turn_on[] = "button_turn_on";
+  static const char button_turn_off[] = "button_turn_off";
+
+  const char *selected_action = NULL;
+  switch (action_idx) {
+    case 0:
+      selected_action = long_press;
+      break;
+    case 1:
+      selected_action = button_short_press;
+      break;
+    case 2:
+      selected_action = button_double_press;
+      break;
+    case 3:
+      selected_action = button_triple_press;
+      break;
+    case 4:
+      selected_action = button_quadruple_press;
+      break;
+    case 5:
+      selected_action = button_quintuple_press;
+      break;
+    case 6:
+      selected_action = button_turn_on;
+      break;
+    case 7:
+      selected_action = button_turn_off;
+      break;
+  };
+
+  return selected_action;
+}
+
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *mfr, uint8 channel_number, uint8 action_idx,
+    uint8 button_number, uint8 input_type) {
+  if (!supla_esp_mqtt_prepare_ha_cfg_topic("device_automation", topic_name_out,
+        channel_number, action_idx)) {
+    return 0;
+  }
+
+  const char *selected_action =
+    supla_esp_mqtt_ha_action_trigger_get_action_str(action_idx);
+
+  if (!selected_action) {
+    return 0;
+  }
+
+  bool disabled_trigger = false;
+
+  // exclude ON_HOLD for bistable button
+  if (action_idx == 0 && input_type == INPUT_TYPE_BTN_BISTABLE) {
+    disabled_trigger = true;
+  }
+
+  // exclude TURN_ON and TURN_OFF for monostable buttons
+  if (action_idx > 5 && input_type == INPUT_TYPE_BTN_MONOSTABLE) {
+    disabled_trigger = true;
+  }
+
+
+  const char cfg[] =
+      "{"
+      "\"device\":{"
+        "\"ids\":\"%s\","
+        "\"mf\":\"%s\","
+        "\"name\":\"%s\","
+        "\"sw\":\"%s\""
+      "},"
+      "\"automation_type\":\"trigger\","
+      "\"topic\":\"%s/channels/%i/%s\","  // prefix + channel + type
+      "\"type\":\"%s\","      // type (button_short_press, etc)
+      "\"subtype\":\"button_%i\"," // subtype (button_1, etc.)
+      "\"payload\":\"%s\"," // type
+      "\"qos\":0"
+      "}";
+  char c = 0;
+
+  char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
+  supla_esp_board_set_device_name(device_name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+  unsigned char mac[6] = {};
+  wifi_get_macaddr(STATION_IF, mac);
+
+  size_t buffer_size = 0;
+
+  for (uint8 a = 0; a < 2; a++) {
+    buffer_size =
+        ets_snprintf(a ? *message_out : &c, a ? buffer_size : 1, cfg,
+                     supla_esp_mqtt_vars->device_id,
+                     mfr,
+                     device_name,
+                     SUPLA_ESP_SOFTVER,
+                     supla_esp_mqtt_vars->prefix, channel_number, selected_action,
+                     selected_action,
+                     button_number,
+                     selected_action
+                     ) +
+        1;
+
+    if (!a) {
+      *message_out = malloc(buffer_size);
+      if (*message_out == NULL) {
+        if (*topic_name_out) {
+          free(*topic_name_out);
+          *topic_name_out = NULL;
+        }
+        return 0;
+      }
+    }
+  }
+  if (disabled_trigger) {
+    // if trigger is disabled, send empty payload
+    *(char *)(*message_out) = '\0';
+  }
+
+  *message_size_out = strnlen(*message_out, buffer_size);
+  return 1;
+}
+
+void ICACHE_FLASH_ATTR supla_esp_mqtt_send_action_trigger(uint8 channel, 
+    int action) {
+  int offset = MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET;
+
+  int actionIdx = -1;
+  switch (action) {
+    case SUPLA_ACTION_CAP_HOLD:
+      actionIdx = 0;
+      break;
+    case SUPLA_ACTION_CAP_TOGGLE_x1:
+    case SUPLA_ACTION_CAP_SHORT_PRESS_x1:
+      actionIdx = 1;
+      break;
+    case SUPLA_ACTION_CAP_TOGGLE_x2:
+    case SUPLA_ACTION_CAP_SHORT_PRESS_x2:
+      actionIdx = 2;
+      break;
+    case SUPLA_ACTION_CAP_TOGGLE_x3:
+    case SUPLA_ACTION_CAP_SHORT_PRESS_x3:
+      actionIdx = 3;
+      break;
+    case SUPLA_ACTION_CAP_TOGGLE_x4:
+    case SUPLA_ACTION_CAP_SHORT_PRESS_x4:
+      actionIdx = 4;
+      break;
+    case SUPLA_ACTION_CAP_TOGGLE_x5:
+    case SUPLA_ACTION_CAP_SHORT_PRESS_x5:
+      actionIdx = 5;
+      break;
+    case SUPLA_ACTION_CAP_TURN_ON:
+      actionIdx = 6;
+      break;
+    case SUPLA_ACTION_CAP_TURN_OFF:
+      actionIdx = 7;
+      break;
+  };
+
+  if (actionIdx >= 0) {
+    int idx = offset + (channel * MQTT_ACTION_TRIGGER_MAX_COUNT) + actionIdx;
+    supla_esp_mqtt_wants_publish(idx, idx);
+  }
+}
+
+uint8 ICACHE_FLASH_ATTR
+supla_esp_mqtt_get_action_trigger_message_for_publication(char **topic_name,
+    void **message,
+    size_t *message_size,
+    uint8 index) {
+  int offset = MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET;
+
+  int channel = (index - offset) / MQTT_ACTION_TRIGGER_MAX_COUNT;
+  int action_idx = (index - offset) % MQTT_ACTION_TRIGGER_MAX_COUNT;
+
+  const char *selected_action =
+    supla_esp_mqtt_ha_action_trigger_get_action_str(action_idx);
+
+  if (!selected_action) {
+    return 0;
+  }
+
+  return supla_esp_mqtt_prepare_message(
+      topic_name, message, message_size, "channels/%i/%s",
+        selected_action,
+        channel, selected_action);
+
+}
+#endif /*MQTT_HA_ACTION_TRIGGER_SUPPORT*/
 
 #ifndef MQTT_DEVICE_STATE_SUPPORT_DISABLED
 uint8 ICACHE_FLASH_ATTR

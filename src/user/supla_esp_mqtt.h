@@ -33,6 +33,8 @@
 #define MQTT_ACTION_STOP 7
 #define MQTT_ACTION_RECALIBRATE 8
 
+#define MQTT_ACTION_TRIGGER_MAX_COUNT 8
+
 void ICACHE_FLASH_ATTR supla_esp_mqtt_init(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_before_system_restart(void);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_client_start(void);
@@ -116,6 +118,20 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_brightness(
     const void *topic_name, uint16_t topic_name_size, const char *message,
     size_t message_size, uint8 *channel_number, uint8 *brightness);
 #endif /*MQTT_DIMMER_SUPPORT*/
+
+#ifdef MQTT_HA_ACTION_TRIGGER_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    const char *mfr, uint8 channel_number, uint8 action_idx,
+    uint8 button_number, uint8 input_type);
+void ICACHE_FLASH_ATTR supla_esp_mqtt_send_action_trigger(uint8 channel, 
+    int action);
+uint8 ICACHE_FLASH_ATTR
+supla_esp_mqtt_get_action_trigger_message_for_publication(char **topic_name,
+    void **message,
+    size_t *message_size,
+    uint8 index);
+#endif /*MQTT_HA_ACTION_TRIGGER_SUPPORT*/
 
 uint8 ICACHE_FLASH_ATTR
 supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
