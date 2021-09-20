@@ -615,20 +615,12 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_SetNewPosition) {
     .Times(2)
     .WillRepeatedly(Return(0));
 
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({3, 0, 0, 0, 0, 0, 0, 0})))
-    .WillOnce(Return(0));
-
   EXPECT_CALL(srpc,
       valueChanged(_, 0, ElementsAreArray({20, 0, 0, 0, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   EXPECT_CALL(srpc,
-      valueChanged(_, 0, ElementsAreArray({26, 0, 0, 0, 0, 0, 0, 0})))
-    .WillOnce(Return(0));
-
-  EXPECT_CALL(srpc,
-      valueChanged(_, 0, ElementsAreArray({77, 0, 0, 0, 0, 0, 0, 0})))
+      valueChanged(_, 0, ElementsAreArray({68, 0, 0, 0, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   EXPECT_CALL(srpc,
@@ -814,15 +806,15 @@ TEST_F(RollerShutterAutoCalWithSrpc,
     .WillOnce(Return(0));
 
 
-  // after calibration we set position 80 (intermediate step 6)
+  // after calibration we set position 80 (intermediate step 4)
   char expectedValue5[8] = {};
-  expectedValue5[0] = static_cast<char>(0x06);
+  expectedValue5[0] = static_cast<char>(0x04);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue5)))
     .WillOnce(Return(0));
 
-  // after calibration we set position 80 (intermediate step 53)
+  // after calibration we set position 80 (intermediate step 50)
   char expectedValue6[8] = {};
-  expectedValue6[0] = static_cast<char>(53);
+  expectedValue6[0] = static_cast<char>(50);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue6)))
     .WillOnce(Return(0));
 
@@ -2678,12 +2670,12 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLost) {
     .WillRepeatedly(Return(0));
 
   char expectedValue2[8] = {};
-  expectedValue2[0] = static_cast<char>(3);
+  expectedValue2[0] = static_cast<char>(49);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
     .WillOnce(Return(0));
 
   char expectedValue3[8] = {};
-  expectedValue3[0] = static_cast<char>(54);
+  expectedValue3[0] = static_cast<char>(99);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue3)))
     .WillOnce(Return(0));
 
@@ -2929,11 +2921,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveDown) {
     .WillRepeatedly(Return(0));
 
   EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({4, 0, 0, 0, 0, 0, 0, 0})))
-    .WillRepeatedly(Return(0));
-
-  EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({55, 0, 0, 0, 0, 0, 0, 0})))
+      valueChanged(_, 0, ElementsAreArray({50, 0, 0, 0, 0, 0, 0, 0})))
     .WillRepeatedly(Return(0));
 
   EXPECT_CALL(srpc, 

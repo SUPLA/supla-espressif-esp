@@ -322,7 +322,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
   EXPECT_EQ(rsCfg->last_time, 602300000);
   EXPECT_EQ(rsCfg->last_comm_time, 602300000);
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 600300);
+  EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -471,7 +471,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
 
   EXPECT_EQ(rsCfg->last_time, 602300000);
   EXPECT_EQ(rsCfg->last_comm_time, 602300000);
-  EXPECT_EQ(rsCfg->up_time, 600300);
+  EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
