@@ -2130,6 +2130,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
 
 void ICACHE_FLASH_ATTR supla_esp_mqtt_send_action_trigger(uint8 channel, 
     int action) {
+  if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED)) {
+    return;
+  }
+
   int offset = MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET;
 
   int actionIdx = -1;
