@@ -3179,3 +3179,134 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationWithLongStartupTime) {
 
 }
 
+TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
+  uint32_t curTime = 100;
+  EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
+
+  supla_esp_gpio_init();
+
+  supla_roller_shutter_cfg_t *rsCfg = supla_esp_gpio_get_rs__cfg(1);
+  ASSERT_NE(rsCfg, nullptr);
+
+
+  *rsCfg->full_opening_time = 0; // 10 s
+  *rsCfg->full_closing_time = 0;
+  *rsCfg->position = 100; // actual position: (x - 100)/100 = 0%
+  supla_esp_cfg.AutoCalOpenTime[0] = 10000;
+  supla_esp_cfg.AutoCalCloseTime[0] = 10000;
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms
+  for (int i = 0; i < 200; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Move RS down.
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  supla_esp_gpio_rs_add_task(0, 100);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +10.1 s 
+  for (int i = 0; i < 1010; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_LE(rsCfg->down_time, 110);
+  EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +300 ms 
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_LE(rsCfg->down_time, 500);
+  EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +300 ms 
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+ 
+  // +1300 ms 
+  for (int i = 0; i < 130; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+ 
+  // Move RS up.
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+  supla_esp_gpio_rs_add_task(0, 0);
+  EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
+
+  // +10.1 s 
+  for (int i = 0; i < 1010; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_LE(rsCfg->up_time, 110);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +300 ms 
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_LE(rsCfg->up_time, 500);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +300 ms 
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+ 
+}
