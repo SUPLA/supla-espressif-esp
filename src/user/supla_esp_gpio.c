@@ -737,8 +737,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 		//supla_log(LOG_DEBUG, "UT: %i, DT: %i, FOT: %i, FCT: %i, pos: %i", rs_cfg->up_time, rs_cfg->down_time, *rs_cfg->full_opening_time, *rs_cfg->full_closing_time, *rs_cfg->position);
 		rs_cfg->last_comm_time = t;
 	}
-//  unsigned int missingTime = (t - rs_cfg->last_time) % 1000; 
-  rs_cfg->last_time = t;// - missingTime;
+  rs_cfg->last_time = t;
 }
 
 void GPIO_ICACHE_FLASH
