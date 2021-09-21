@@ -226,11 +226,7 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
-    // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x2));
 
     // RELAY OFF
     EXPECT_CALL(srpc, 
@@ -367,19 +363,13 @@ TEST_F(ATRegisteredFixture, MonostablePressMultipleWithout3x) {
 
   {
     InSequence seq;
+
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x2));
 
-    action = SUPLA_ACTION_CAP_SHORT_PRESS_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
 
-    action = SUPLA_ACTION_CAP_SHORT_PRESS_x4;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x4));
 
     // Expected channel 0 (relay) state changes ON
     EXPECT_CALL(srpc, 
@@ -610,18 +600,11 @@ TEST_F(ATRegisteredFixture, MonostableMultipleAndHold) {
   {
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
 
-    action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_HOLD));
 
-    action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
 
     // Expected channel 0 (relay) state changes ON
     EXPECT_CALL(srpc, 
@@ -838,12 +821,8 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5x) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
 
     // Expected channel 0 (relay) state changes ON
     EXPECT_CALL(srpc, 
@@ -1169,12 +1148,8 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtnOnHold) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
 
     // Expected channel 0 (relay) state changes ON
     EXPECT_CALL(srpc, 
@@ -1380,19 +1355,14 @@ TEST_F(ATRegisteredFixture, MonostableCfgBtnOnHoldAndOnHoldAction) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
 
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
     // Expected channel 0 (relay) state changes ON
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
-    action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_HOLD));
   }
 
 
@@ -1595,20 +1565,12 @@ TEST_F(ATRegisteredFixture, MonostableWithoutRelay) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
 
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x1));
 
-    action = SUPLA_ACTION_CAP_SHORT_PRESS_x1;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_HOLD));
   }
 
 
@@ -1796,20 +1758,14 @@ TEST_F(ATRegisteredFixture, BistableMulticlick) {
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TOGGLE_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x5));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x5));
 
     // RELAY OFF
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
 
-    action = SUPLA_ACTION_CAP_TOGGLE_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
 
     // RELAY ON
     EXPECT_CALL(srpc, 
@@ -1993,25 +1949,12 @@ TEST_F(ATRegisteredFixture, BistableMulticlickWithCfg) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
-    // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TOGGLE_x5;
-    memcpy(value, &action, sizeof(action));
-//    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-  //  EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
     // RELAY OFF
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
 
-    action = SUPLA_ACTION_CAP_TOGGLE_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
 
-    // RELAY ON
-   // EXPECT_CALL(srpc, 
-    //    valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
   }
 
 
@@ -2197,18 +2140,11 @@ TEST_F(ATRegisteredFixture, BistableTurnOnOffAndToggle) {
     InSequence seq;
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TURN_ON;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_ON));
 
-    action = SUPLA_ACTION_CAP_TURN_OFF;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_OFF));
 
-    action = SUPLA_ACTION_CAP_TOGGLE_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
 
   }
 
@@ -2281,12 +2217,8 @@ TEST_F(ATRegisteredFixture, MonostableLimitMaxClickDetection) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
 
     // Expected channel 0 (relay) state changes ON
     EXPECT_CALL(srpc, 
@@ -2446,14 +2378,11 @@ TEST_F(ATRegisteredFixture, MonostableWithoutRelayOnly1xAndHold) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x1;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value))).Times(8);
+    EXPECT_CALL(srpc,
+        srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x1))
+      .Times(8);
 
-    action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_HOLD));
   }
 
 
@@ -2561,10 +2490,7 @@ TEST_F(ATRegisteredFixture, MonostableWithoutRelayOnlyHold) {
   {                                               
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_HOLD));
   }
 
 
@@ -2701,22 +2627,13 @@ TEST_F(ATRegisteredFixture, BistableTurnOnOffAndTogglex1) {
     InSequence seq;
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TURN_ON;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_ON));
 
-    action = SUPLA_ACTION_CAP_TOGGLE_x1;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x1));
 
-    action = SUPLA_ACTION_CAP_TURN_OFF;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_OFF));
 
-    action = SUPLA_ACTION_CAP_TOGGLE_x1;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x1));
 
   }
 
@@ -2792,22 +2709,13 @@ TEST_F(ATRegisteredFixture, BistableOnlyTurnOnOff) {
     InSequence seq;
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TURN_ON;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_ON));
 
-    action = SUPLA_ACTION_CAP_TURN_OFF;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_OFF));
 
-    action = SUPLA_ACTION_CAP_TURN_ON;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_ON));
 
-    action = SUPLA_ACTION_CAP_TURN_OFF;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TURN_OFF));
   }
 
 
@@ -2883,12 +2791,8 @@ TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress) {
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
 
     // Expected channel 0 (relay) state changes OFF
     EXPECT_CALL(srpc, 
@@ -3073,10 +2977,7 @@ TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress2) {
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_SHORT_PRESS_x3;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x3));
 
 
     // Expected channel 0 (relay) state changes OFF
@@ -3272,20 +3173,14 @@ TEST_F(ATRegisteredFixture, BistableMulticlickConfigChangeDuringPress) {
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
     // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TOGGLE_x5;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
-
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x5));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x5));
 
     // RELAY OFF
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
 
-    action = SUPLA_ACTION_CAP_TOGGLE_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
 
     // RELAY ON
     EXPECT_CALL(srpc, 

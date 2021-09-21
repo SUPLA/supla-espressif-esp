@@ -71,6 +71,9 @@ public:
   virtual _supla_int_t srpc_ds_async_channel_extendedvalue_changed(
       void *_srpc, unsigned char channel_number,
       TSuplaChannelExtendedValue *value) = 0;
+  virtual _supla_int_t
+    srpc_ds_async_action_trigger(unsigned char channel_number, 
+        _supla_int_t action_trigger) = 0;
 
   static SrpcInterface *instance;
   _func_srpc_event_OnRemoteCallReceived on_remote_call_received;
@@ -118,6 +121,8 @@ public:
       (void *_srpc, unsigned char channel_number,
        TSuplaChannelExtendedValue *value),
       (override));
+  MOCK_METHOD(_supla_int_t, srpc_ds_async_action_trigger, 
+      (unsigned char channel_number, _supla_int_t action_trigger), (override));
 
 };
 

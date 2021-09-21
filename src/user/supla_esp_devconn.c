@@ -1887,3 +1887,14 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_release(void) {
   free(devconn);
   devconn = NULL;
 }
+
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_action_trigger(
+    unsigned char channel_number, _supla_int_t action_trigger) {
+  if (supla_esp_devconn_is_registered()) {
+    TDS_ActionTrigger at = {};
+    at.ChannelNumber = channel_number;
+    at.ActionTrigger = action_trigger;
+    srpc_ds_async_action_trigger(devconn->srpc, &at);
+  }
+}
+

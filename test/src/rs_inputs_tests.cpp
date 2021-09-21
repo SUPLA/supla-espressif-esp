@@ -602,11 +602,7 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
-    // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 2, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(2, SUPLA_ACTION_CAP_HOLD));
   }
 
   // +1000 ms
@@ -869,11 +865,7 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
-    // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TOGGLE_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
   }
 
   // +1000 ms
@@ -1111,11 +1103,7 @@ TEST_F(RsInputsFixture, MonostableRsWithATOnSingleButton) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
-    // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_HOLD;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 2, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(2, SUPLA_ACTION_CAP_HOLD));
   }
 
   // +1000 ms
@@ -1372,11 +1360,7 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
     EXPECT_CALL(srpc, 
         valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
-    // Expected channel 1 (ActionTrigger) state changes
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    int action = SUPLA_ACTION_CAP_TOGGLE_x2;
-    memcpy(value, &action, sizeof(action));
-    EXPECT_CALL(srpc, valueChanged(_, 1, ElementsAreArray(value)));
+    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
   }
 
   // +1000 ms

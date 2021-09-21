@@ -517,9 +517,9 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     }
     supla_log(LOG_DEBUG, "Input[ch: %d] sending action trigger (1 << %d)",
         input_cfg->channel, i-1);
-    char value[SUPLA_CHANNELVALUE_SIZE] = {};
-    memcpy(value, &action, sizeof(action));
-    supla_esp_channel_value__changed(input_cfg->channel, value);
+
+    supla_esp_devconn_send_action_trigger(input_cfg->channel, action);
+
 #ifdef MQTT_SUPPORT_ENABLED
 #ifdef MQTT_HA_ACTION_TRIGGER_SUPPORT
     supla_esp_mqtt_send_action_trigger(input_cfg->channel, action);

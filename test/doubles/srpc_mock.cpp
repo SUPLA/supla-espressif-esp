@@ -163,6 +163,14 @@ srpc_sd_async_get_firmware_update_url(void *_srpc,
                                                                         params);
 }
 
+_supla_int_t 
+srpc_ds_async_action_trigger(void *_srpc, TDS_ActionTrigger *action_trigger) {
+  assert(action_trigger);
+  assert(SrpcInterface::instance);
+  return SrpcInterface::instance->srpc_ds_async_action_trigger(
+      action_trigger->ChannelNumber, action_trigger->ActionTrigger);
+}
+
 SrpcInterface::SrpcInterface() {
   instance = this;
   on_remote_call_received = nullptr;
