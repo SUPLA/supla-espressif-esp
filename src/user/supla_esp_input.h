@@ -19,10 +19,6 @@
 #ifndef SUPLA_ESP_INPUT_H_
 #define SUPLA_ESP_INPUT_H_
 
-// TODO remove after proto update
-#define SUPLA_ACTION_CAP_TOGGLE_x5 (1 << 6)
-#define SUPLA_ACTION_CAP_SHORT_PRESS_x5 (1 << 15)
-
 #include "supla_esp.h"
 
 #define INPUT_STATE_ACTIVE 1
@@ -79,5 +75,8 @@ supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg);
 
 void GPIO_ICACHE_FLASH supla_esp_input_set_hold_time_ms(int time_ms);
 void GPIO_ICACHE_FLASH supla_esp_input_set_multiclick_time_ms(int time_ms);
+
+void GPIO_ICACHE_FLASH supla_esp_input_validate_advanced_time_settings(
+    unsigned int *hold_time_ms, unsigned int *multiclick_time_ms);
 
 #endif /*SUPLA_ESP_INPUT_H_*/

@@ -123,7 +123,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_brightness(
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     const char *mfr, uint8 channel_number, uint8 action_idx,
-    uint8 button_number, uint8 input_type);
+    uint8 button_number, _supla_int_t active_action_trigger_caps);
 void ICACHE_FLASH_ATTR supla_esp_mqtt_send_action_trigger(uint8 channel, 
     int action);
 uint8 ICACHE_FLASH_ATTR

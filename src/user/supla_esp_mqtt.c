@@ -2040,10 +2040,55 @@ const char *supla_esp_mqtt_ha_action_trigger_get_action_str(uint8 action_idx) {
   return selected_action;
 }
 
+#define ACTION_CHECK(ACT_CAP) ((active_action_trigger_caps & (ACT_CAP)) != 0) 
+
+bool ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_is_enabled(
+    uint8 action_idx, _supla_int_t active_action_trigger_caps) {
+  switch (action_idx) {
+    case 0:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_HOLD);
+      break;
+
+    case 1:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TOGGLE_x1) ||
+        ACTION_CHECK(SUPLA_ACTION_CAP_SHORT_PRESS_x1);
+      break;
+
+    case 2:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TOGGLE_x2) ||
+        ACTION_CHECK(SUPLA_ACTION_CAP_SHORT_PRESS_x2);
+      break;
+
+    case 3:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TOGGLE_x3) ||
+        ACTION_CHECK(SUPLA_ACTION_CAP_SHORT_PRESS_x3);
+      break;
+
+    case 4:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TOGGLE_x4) ||
+        ACTION_CHECK(SUPLA_ACTION_CAP_SHORT_PRESS_x4);
+      break;
+
+    case 5:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TOGGLE_x5) ||
+        ACTION_CHECK(SUPLA_ACTION_CAP_SHORT_PRESS_x5);
+      break;
+
+    case 6:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TURN_ON);
+      break;
+
+    case 7:
+      return ACTION_CHECK(SUPLA_ACTION_CAP_TURN_OFF);
+      break;
+  };
+  return false;
+}
+
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     const char *mfr, uint8 channel_number, uint8 action_idx,
-    uint8 button_number, uint8 input_type) {
+    uint8 button_number, _supla_int_t active_action_trigger_caps) {
   if (!supla_esp_mqtt_prepare_ha_cfg_topic("device_automation", topic_name_out,
         channel_number, action_idx)) {
     return 0;
@@ -2056,18 +2101,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
     return 0;
   }
 
-  bool disabled_trigger = false;
+  bool enabled_trigger = supla_esp_mqtt_ha_action_trigger_is_enabled(
+      action_idx, active_action_trigger_caps);
 
-  // exclude ON_HOLD for bistable button
-  if (action_idx == 0 && input_type == INPUT_TYPE_BTN_BISTABLE) {
-    disabled_trigger = true;
-  }
-
-  // exclude TURN_ON and TURN_OFF for monostable buttons
-  if (action_idx > 5 && input_type == INPUT_TYPE_BTN_MONOSTABLE) {
-    disabled_trigger = true;
-  }
-
+  //supla_log(LOG_DEBUG, "mqtt is enabled check %d, action %d, active %d", enabled_trigger, action_idx, active_action_trigger_caps);
 
   const char cfg[] =
       "{"
@@ -2119,7 +2156,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_action_trigger_prepare_message(
       }
     }
   }
-  if (disabled_trigger) {
+  if (!enabled_trigger) {
     // if trigger is disabled, send empty payload
     *(char *)(*message_out) = '\0';
   }
@@ -2170,7 +2207,10 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_send_action_trigger(uint8 channel,
   };
 
   if (actionIdx >= 0) {
-    int idx = offset + (channel * MQTT_ACTION_TRIGGER_MAX_COUNT) + actionIdx;
+    int idx = offset +
+      ((channel - MQTT_BOARD_ACTION_TRIGGER_FIRST_CHANNEL_ID) *
+       MQTT_ACTION_TRIGGER_MAX_COUNT) +
+      actionIdx;
     supla_esp_mqtt_wants_publish(idx, idx);
   }
 }
@@ -2182,7 +2222,8 @@ supla_esp_mqtt_get_action_trigger_message_for_publication(char **topic_name,
     uint8 index) {
   int offset = MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET;
 
-  int channel = (index - offset) / MQTT_ACTION_TRIGGER_MAX_COUNT;
+  int channel = (index - offset) / MQTT_ACTION_TRIGGER_MAX_COUNT +
+    MQTT_BOARD_ACTION_TRIGGER_FIRST_CHANNEL_ID;
   int action_idx = (index - offset) % MQTT_ACTION_TRIGGER_MAX_COUNT;
 
   const char *selected_action =
