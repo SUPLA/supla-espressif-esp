@@ -817,7 +817,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
 
   // after calibration we set position 80 (intermediate step 50)
   char expectedValue6[8] = {};
-  expectedValue6[0] = static_cast<char>(50);
+  expectedValue6[0] = static_cast<char>(46);
   EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue6)))
     .WillOnce(Return(0));
 
@@ -871,7 +871,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
 
   // 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 15000);
+  EXPECT_EQ(rsCfg->down_time, 15000000);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 0);
   EXPECT_EQ(*rsCfg->full_closing_time, 0);
@@ -886,7 +886,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
     executeTimers();
   }
   
-  EXPECT_EQ(rsCfg->up_time, 990);
+  EXPECT_EQ(rsCfg->up_time, 990000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 0);
 
@@ -3031,6 +3031,10 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationWithLongStartupTime) {
     .WillOnce(Return(0));
 
   EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({20, 0, 0, 0, 0, 0, 0, 0})))
+    .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc, 
       valueChanged(_, 0, ElementsAreArray({21, 0, 0, 0, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
@@ -3039,7 +3043,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationWithLongStartupTime) {
     .WillOnce(Return(0));
 
   EXPECT_CALL(srpc, 
-      valueChanged(_, 0, ElementsAreArray({23, 0, 0, 0, 0, 0, 0, 0})))
+      valueChanged(_, 0, ElementsAreArray({24, 0, 0, 0, 0, 0, 0, 0})))
     .WillOnce(Return(0));
 
   supla_esp_gpio_init();
@@ -3231,7 +3235,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
   }
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_LE(rsCfg->down_time, 110);
+  EXPECT_LE(rsCfg->down_time, 110000);
   EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -3243,7 +3247,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
   }
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_LE(rsCfg->down_time, 500);
+  EXPECT_LE(rsCfg->down_time, 500000);
   EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -3277,7 +3281,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
     executeTimers();
   }
 
-  EXPECT_LE(rsCfg->up_time, 110);
+  EXPECT_LE(rsCfg->up_time, 110000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -3289,7 +3293,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
     executeTimers();
   }
 
-  EXPECT_LE(rsCfg->up_time, 500);
+  EXPECT_LE(rsCfg->up_time, 500000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));

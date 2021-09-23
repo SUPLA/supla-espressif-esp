@@ -276,7 +276,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
 
   EXPECT_EQ(rsCfg->last_time, 2100000);
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 100);
+  EXPECT_EQ(rsCfg->down_time, 100000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -287,7 +287,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
 
   EXPECT_EQ(rsCfg->last_time, 2200000);
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 200);
+  EXPECT_EQ(rsCfg->down_time, 200000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -298,7 +298,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
 
   EXPECT_EQ(rsCfg->last_time, 61300000);
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 59300);
+  EXPECT_EQ(rsCfg->down_time, 59300000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -310,7 +310,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
   EXPECT_EQ(rsCfg->last_time, 601300000);
   EXPECT_EQ(rsCfg->last_comm_time, 601300000);
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 599300);
+  EXPECT_EQ(rsCfg->down_time, 599300000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -355,7 +355,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 100);
+  EXPECT_EQ(rsCfg->down_time, 100000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -365,7 +365,7 @@ TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 1100);
+  EXPECT_EQ(rsCfg->down_time, 1100000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -425,7 +425,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->last_time, 2100000);
-  EXPECT_EQ(rsCfg->up_time, 100);
+  EXPECT_EQ(rsCfg->up_time, 100000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -436,7 +436,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->last_time, 2200000);
-  EXPECT_EQ(rsCfg->up_time, 200);
+  EXPECT_EQ(rsCfg->up_time, 200000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -447,7 +447,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->last_time, 61300000);
-  EXPECT_EQ(rsCfg->up_time, 59300);
+  EXPECT_EQ(rsCfg->up_time, 59300000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -459,7 +459,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
 
   EXPECT_EQ(rsCfg->last_time, 601300000);
   EXPECT_EQ(rsCfg->last_comm_time, 601300000);
-  EXPECT_EQ(rsCfg->up_time, 599300);
+  EXPECT_EQ(rsCfg->up_time, 599300000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -504,7 +504,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
   curTime += 100000;
   rsTimerCb(rsCfg);
 
-  EXPECT_EQ(rsCfg->up_time, 100);
+  EXPECT_EQ(rsCfg->up_time, 100000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -514,7 +514,7 @@ TEST_F(RollerShutterTestsF, MoveUpNotCalibrated) {
   curTime += 1000000;
   rsTimerCb(rsCfg);
 
-  EXPECT_EQ(rsCfg->up_time, 1100);
+  EXPECT_EQ(rsCfg->up_time, 1100000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -575,7 +575,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->last_time, 2100000);
-  EXPECT_EQ(rsCfg->up_time, 100);
+  EXPECT_EQ(rsCfg->up_time, 100000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -585,7 +585,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   curTime += 100000;
   rsTimerCb(rsCfg);
 
-  EXPECT_EQ(rsCfg->up_time, 200);
+  EXPECT_EQ(rsCfg->up_time, 200000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -595,7 +595,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   curTime += 59100000;
   rsTimerCb(rsCfg);
 
-  EXPECT_EQ(rsCfg->up_time, 59300);
+  EXPECT_EQ(rsCfg->up_time, 59300000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -622,7 +622,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 1000);
+  EXPECT_EQ(rsCfg->down_time, 1000000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -633,7 +633,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 2000);
+  EXPECT_EQ(rsCfg->down_time, 2000000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -645,7 +645,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 3000);
+  EXPECT_EQ(rsCfg->down_time, 3000000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -655,7 +655,7 @@ TEST_F(RollerShutterTestsF, MoveUpAndDownNotCalibrated) {
   rsTimerCb(rsCfg);
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 4000);
+  EXPECT_EQ(rsCfg->down_time, 4000000);
   EXPECT_EQ(rsCfg->delayed_trigger.value, RS_RELAY_DOWN); // TODO: fix
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -732,7 +732,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayDown) {
 
   // after 2 s we are in the middle of calibration, so no change in position
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 2000);
+  EXPECT_EQ(rsCfg->down_time, 2000000);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 3000);
   EXPECT_EQ(*rsCfg->full_closing_time, 3000);
@@ -747,7 +747,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayDown) {
 
   // Calibration done
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 3300); // TODO fix
+  EXPECT_EQ(rsCfg->down_time, 3300000); // TODO fix
   EXPECT_EQ(*rsCfg->position, 10100);
   EXPECT_EQ(*rsCfg->full_opening_time, 3000);
   EXPECT_EQ(*rsCfg->full_closing_time, 3000);
@@ -815,7 +815,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayUp) {
   }
 
   // after 2 s we are in the middle of calibration, so no change in position
-  EXPECT_EQ(rsCfg->up_time, 1500);
+  EXPECT_EQ(rsCfg->up_time, 1500000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -830,7 +830,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayUp) {
   }
 
   // Calibration done
-  EXPECT_EQ(rsCfg->up_time, 2200); // TODO fix
+  EXPECT_EQ(rsCfg->up_time, 2200000); // TODO fix
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 100);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -901,7 +901,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithTargetPosition) {
   }
 
   // after 2 s we are in the middle of calibration, so no change in position
-  EXPECT_EQ(rsCfg->up_time, 1500);
+  EXPECT_EQ(rsCfg->up_time, 1500000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -916,7 +916,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithTargetPosition) {
   }
 
   // Calibration done
-  EXPECT_EQ(rsCfg->up_time, 2200); // TODO fix
+  EXPECT_EQ(rsCfg->up_time, 2200000); // TODO fix
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 100);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -1505,7 +1505,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayDownFromServer) {
 
   // after 2 s we are in the middle of calibration, so no change in position
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 2000);
+  EXPECT_EQ(rsCfg->down_time, 2000000);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 3000);
   EXPECT_EQ(*rsCfg->full_closing_time, 3000);
@@ -1520,7 +1520,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayDownFromServer) {
 
   // Calibration done
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 3300); // TODO fix
+  EXPECT_EQ(rsCfg->down_time, 3300000); // TODO fix
   EXPECT_EQ(*rsCfg->position, 10100);
   EXPECT_EQ(*rsCfg->full_opening_time, 3000);
   EXPECT_EQ(*rsCfg->full_closing_time, 3000);
@@ -1593,7 +1593,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayUpFromServer) {
   }
 
   // after 2 s we are in the middle of calibration, so no change in position
-  EXPECT_EQ(rsCfg->up_time, 1500);
+  EXPECT_EQ(rsCfg->up_time, 1500000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -1608,7 +1608,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithRelayUpFromServer) {
   }
 
   // Calibration done
-  EXPECT_EQ(rsCfg->up_time, 2200); // TODO fix
+  EXPECT_EQ(rsCfg->up_time, 2200000); // TODO fix
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 100);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -1684,7 +1684,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithTargetPositionFromServer) {
   }
 
   // after 2 s we are in the middle of calibration, so no change in position
-  EXPECT_EQ(rsCfg->up_time, 1500);
+  EXPECT_EQ(rsCfg->up_time, 1500000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -1699,7 +1699,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithTargetPositionFromServer) {
   }
 
   // Calibration done
-  EXPECT_EQ(rsCfg->up_time, 2200); // TODO fix
+  EXPECT_EQ(rsCfg->up_time, 2200000); // TODO fix
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 100);
   EXPECT_EQ(*rsCfg->full_opening_time, 2000);
@@ -1818,7 +1818,7 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithRelayDownFromServer) {
 
   // after 2 s we are in the middle of movement
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_EQ(rsCfg->down_time, 2000);
+  EXPECT_EQ(rsCfg->down_time, 2000000);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 0);
   EXPECT_EQ(*rsCfg->full_closing_time, 0);
@@ -1905,7 +1905,7 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithRelayUpFromServer) {
     rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
   }
 
-  EXPECT_EQ(rsCfg->up_time, 2000);
+  EXPECT_EQ(rsCfg->up_time, 2000000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 0);
@@ -2090,7 +2090,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithTimeMarginCheck) {
   }
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_LE(rsCfg->down_time, 50);
+  EXPECT_LE(rsCfg->down_time, 50000);
   EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -2102,7 +2102,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithTimeMarginCheck) {
   }
 
   EXPECT_EQ(rsCfg->up_time, 0);
-  EXPECT_LE(rsCfg->down_time, 500);
+  EXPECT_LE(rsCfg->down_time, 500000);
   EXPECT_EQ(*rsCfg->position, (100 + (100 * 100)));
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
@@ -2136,7 +2136,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithTimeMarginCheck) {
     rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
   }
 
-  EXPECT_LE(rsCfg->up_time, 110);
+  EXPECT_LE(rsCfg->up_time, 110000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
@@ -2148,7 +2148,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithTimeMarginCheck) {
     rsTimerCb(rsCfg); // rs timer cb is called every 10 ms
   }
 
-  EXPECT_LE(rsCfg->up_time, 500);
+  EXPECT_LE(rsCfg->up_time, 500000);
   EXPECT_EQ(rsCfg->down_time, 0);
   EXPECT_EQ(*rsCfg->position, (100 + (0 * 100)));
   EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
