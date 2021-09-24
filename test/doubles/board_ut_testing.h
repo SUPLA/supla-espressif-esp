@@ -16,30 +16,11 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
-#ifndef _SUPLA_TEST_EAGLE_SOC_INTF_H
-#define _SUPLA_TEST_EAGLE_SOC_INTF_H
+// this file is included as a "board" configuration file in UT tests
 
-#include <c_types.h>
-#include <gmock/gmock.h>
+#ifndef _TEST_SUPLA_BOARD_UT_TESTING_H
+#define _TEST_SUPLA_BOARD_UT_TESTING_H
 
-extern "C" {
-#include "eagle_soc.h"
+#define BOARD_ESP_FACTORY_DEFAULTS factory_reset_mock();
 
- 
-uint32 GPIO_REG_READ(uint32 reg);
-void GPIO_REG_WRITE(uint32 reg, uint32 val);
-
-}
-
-class EagleSocInterface {
-public:
-  EagleSocInterface();
-  virtual ~EagleSocInterface();
-
-  virtual uint32 gpioRegRead(uint32 reg) = 0;
-  virtual void gpioRegWrite(uint32 reg, uint32 value) = 0;
-  virtual void gpioOutputSet(uint32 port, uint8 value) = 0;
-  static EagleSocInterface *instance;
-};
-
-#endif /*_SUPLA_TEST_EAGLE_SOC_INTF_H*/
+#endif /*_TEST_SUPLA_BOARD_UT_TESTING_H*/

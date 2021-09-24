@@ -43,13 +43,10 @@
 #define LED_GREEN  0x2
 #define LED_BLUE   0x4
 
-#define CFG_BTN_PRESS_COUNT     10
-
 #define RS_STATE_STOP           0
 #define RS_STATE_DOWN           1
 #define RS_STATE_UP             2
 
-supla_input_cfg_t supla_input_cfg[INPUT_MAX_COUNT];
 supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
 supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
@@ -908,25 +905,6 @@ gpio__input_get(uint8 port)
 	return GPIO_INPUT_GET(GPIO_ID_PIN(port));
 }
 
-void GPIO_ICACHE_FLASH supla_esg_gpio_start_cfg_mode(void) {
-
-	if ( supla_esp_cfgmode_started() == 0 ) {
-
-		#ifdef BEFORE_CFG_ENTER
-			BEFORE_CFG_ENTER
-		#endif
-
-        #ifdef MQTT_SUPPORT_ENABLED
-        supla_esp_mqtt_client_stop();
-        #endif /*MQTT_SUPPORT_ENABLED*/
-
-		supla_esp_devconn_stop();
-		supla_esp_cfgmode_start();
-
-	};
-
-}
-
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_enable_input_port(char port) {
 
@@ -957,7 +935,6 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
 		if ( input_cfg->gpio_id != 255
 				&& input_cfg->gpio_id < 16
 				&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-					 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
 					 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) ) {
 
 			gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), lock == 1 ? GPIO_PIN_INTR_DISABLE : GPIO_PIN_INTR_ANYEDGE);
@@ -1143,7 +1120,18 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
     }
     
 #ifndef COUNTDOWN_TIMER_DISABLED
+    // If Time2 > 0 then it is configured as staircase timer. In such case 
+    // button behavior depends on cfg parameter
+    if (hi != 0 && supla_esp_cfg.Time2[channel] > 0 &&
+        supla_esp_cfg.StaircaseButtonType == STAIRCASE_BTN_TYPE_RESET) {
+      hi = HI_VALUE;
+    } 
+    if ( hi == 255 ) {
+      hi = supla_esp_gpio_relay_is_hi(port) == 1 ? LO_VALUE : HI_VALUE;
+    }
+
     if (channel >= 0) {
+      supla_esp_state.Time2Left[channel] = 0;
       supla_esp_gpio_relay_set_duration_timer(channel, hi, 0, 0);
     }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
@@ -1151,8 +1139,17 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
 		supla_esp_gpio_relay_hi(port, hi, 0);
 
     if (channel >= 0) {
+#ifdef BOARD_CHANNEL_VALUE_CHANGED
+      BOARD_CHANNEL_VALUE_CHANGED
+#else
         supla_esp_channel_value_changed(channel, 
             supla_esp_gpio_relay_is_hi(port));
+#endif
+#ifdef MQTT_SUPPORT_ENABLED
+#ifdef MQTT_HA_RELAY_SUPPORT
+      supla_esp_board_mqtt_on_relay_state_changed(channel);
+#endif
+#endif
     }
 	}
 }
@@ -1166,295 +1163,140 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
 	BOARD_ON_INPUT_ACTIVE;
 	#endif
 
-	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
+  bool advanced_mode = supla_esp_input_is_advanced_mode_enabled(input_cfg);
 
-		//supla_log(LOG_DEBUG, "RELAY HI");
-		#ifdef _ROLLERSHUTTER_SUPPORT
-			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-			if ( rs_cfg != NULL ) {
-				supla_esp_gpio_rs_set_relay(rs_cfg, rs_cfg->up->gpio_id == input_cfg->relay_gpio_id ? RS_RELAY_UP : RS_RELAY_DOWN, 1, 1);
-			}
-		#endif /*_ROLLERSHUTTER_SUPPORT*/
+  if (((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
+        input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS) ||
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      advanced_mode) &&
+      input_cfg->relay_gpio_id != 255) {
+    supla_roller_shutter_cfg_t *rs_cfg =
+      supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+    if (rs_cfg != NULL) {
+#ifdef _ROLLERSHUTTER_SUPPORT
+      int direction = (rs_cfg->up->gpio_id == input_cfg->relay_gpio_id)
+          ? RS_RELAY_UP
+          : RS_RELAY_DOWN;
 
-	} else if ( input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-		supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
+      // in advanced mode, only input_active method is being called
+      // so it has to handle RS_RELAY UP/DOWN/OFF for all button types
+      if (advanced_mode) {
+        if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+        } else {
+          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+        }
 
-	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
-				&&  input_cfg->channel != 255 ) {
+      } else { // legacy mode uses active/inactive method, so here for 
+               // bistable button we handle only button "active" trigger
+        if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+        } else { // monostable
+          if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
+            supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+          } else {
+            supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+          }
+        }
+            
+      }
+#endif /*_ROLLERSHUTTER_SUPPORT*/
+    } else {
+      supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
+    }
+  } else if (input_cfg->type == INPUT_TYPE_SENSOR && input_cfg->channel != 255) {
 
-		supla_esp_channel_value_changed(input_cfg->channel, 1);
-	}
+    // TODO: add MQTT support for sensor
+    supla_esp_channel_value_changed(input_cfg->channel, 1);
+  }
 
-	input_cfg->last_state = 1;
 }
 
 void GPIO_ICACHE_FLASH
 supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
-
-	//supla_log(LOG_DEBUG, "inactive");
-
-	#ifdef BOARD_ON_INPUT_INACTIVE
-	BOARD_ON_INPUT_INACTIVE;
-	#endif
-
-	if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS ) {
-
-		//supla_log(LOG_DEBUG, "RELAY LO");
-		#ifdef _ROLLERSHUTTER_SUPPORT
-			supla_roller_shutter_cfg_t *rs_cfg = supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-			if ( rs_cfg != NULL ) {
-				supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
-			}
-		#endif /*_ROLLERSHUTTER_SUPPORT*/
-	} else if ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-		 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-		supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
-	} else if ( input_cfg->type == INPUT_TYPE_SENSOR
-			    &&  input_cfg->channel != 255 ) {
-
-		supla_esp_channel_value_changed(input_cfg->channel, 0);
-	}
-
-	input_cfg->last_state = 0;
-}
-
-uint32 GPIO_ICACHE_FLASH supla_esp_gpio_get_cfg_press_time(supla_input_cfg_t *input_cfg) {
-	return CFG_BTN_PRESS_TIME;
-}
-
-LOCAL void
-supla_esp_gpio_input_timer_cb(void *timer_arg) {
-
-	supla_input_cfg_t *input_cfg = (supla_input_cfg_t *)timer_arg;
-	uint8 v = gpio__input_get(input_cfg->gpio_id);
-	uint8 active = (input_cfg->flags & INPUT_FLAG_PULLUP) ? 0 : 1;
-
-	if ( input_cfg->step == 1 ) {
-
-		if ( v == active ) {
-
-			input_cfg->cycle_counter = 1;
-
-			if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-				 && ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-					  || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS
-				      || (system_get_time() - input_cfg->last_active) >= 2000000 ) ) {
-
-				input_cfg->cfg_counter = 0;
-				//supla_log(LOG_DEBUG, "RESET cfg_counter = 0");
-			}
-
-			input_cfg->step = 2;
-			return;
-
-		} else {
-
-			if ( input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
-
-				supla_esp_gpio_on_input_inactive(input_cfg);
-
-			} else if ( input_cfg->cycle_counter < 255 ) {
-
-				input_cfg->cycle_counter++;
-				return;
-			}
-		}
-
-	} else if ( input_cfg->step > 1 ) {
-
-		if ( input_cfg->cycle_counter < 255 )
-			input_cfg->cycle_counter++;
-
-		if ( v == active ) {
-
-			if ( input_cfg->step == 3
-					&& input_cfg->flags & INPUT_FLAG_CFG_BTN
-					&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-						 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS) ) {
-
-				if ( input_cfg->cfg_counter < 2048 )
-					input_cfg->cfg_counter++;
-
-				if ( supla_esp_restart_on_cfg_press == 1 ) {
-					supla_system_restart();
-					return;
-				}
-
-				if ( (input_cfg->cfg_counter * INPUT_CYCLE_TIME) >= GET_CFG_PRESS_TIME(input_cfg) ) {
-
-					// CFG MODE
-					if ( supla_esp_cfgmode_started() == 0 ) {
-
-						supla_esg_gpio_start_cfg_mode();
-
-					} else if ( input_cfg->flags & INPUT_FLAG_FACTORY_RESET ) {
-
-						factory_defaults(1);
-						supla_log(LOG_DEBUG, "Factory defaults");
-						os_delay_us(500000);
-						supla_system_restart();
-					}
-
-
-					input_cfg->step = 0;
-					os_timer_disarm(&input_cfg->timer);
-					return;
-				}
-
-			}
-
-
-			if ( input_cfg->step == 2
-				 && input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
-
-
-				supla_esp_gpio_on_input_active(input_cfg);
-
-
-				if ( (input_cfg->flags & INPUT_FLAG_CFG_BTN) == 0
-						|| input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-					os_timer_disarm(&input_cfg->timer);
-
-				}
-
-
-				input_cfg->cycle_counter = 1;
-				input_cfg->last_active = system_get_time();
-				input_cfg->step = 3;
-
-			}
-
-
-			return;
-		}
-
-
-		if ( input_cfg->step == 3 ) {
-
-			if ( input_cfg->cycle_counter >= INPUT_MIN_CYCLE_COUNT ) {
-
-				if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-						&& input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) {
-
-					input_cfg->cfg_counter++;
-
-					//supla_log(LOG_DEBUG, "cfg_counter = %i", input_cfg->cfg_counter);
-
-					if ( supla_esp_cfgmode_started() == 0 ) {
-
-						if ( input_cfg->cfg_counter >= CFG_BTN_PRESS_COUNT ) {
-							input_cfg->cfg_counter = 0;
-
-							// CFG MODE
-							supla_esg_gpio_start_cfg_mode();
-						}
-
-					} else if ( (system_get_time() - supla_esp_cfgmode_entertime()) > 3000000 ) {
-
-						//  EXIT CFG MODE
-						supla_system_restart();
-
-					}
-
-
-
-				}
-
-				if ( input_cfg->flags & INPUT_FLAG_CFG_BTN
-						&& supla_esp_cfgmode_started() == 1
-						&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-							 || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE_RS )
-						&& (system_get_time() - supla_esp_cfgmode_entertime()) > 3000000 ) {
-
-					// EXIT CFG MODE
-					supla_system_restart();
-
-				} else {
-
-					supla_esp_gpio_on_input_inactive(input_cfg);
-
-				}
-
-
-			} else {
-				return;
-			}
-
-		}
-
-	}
-
-
-    input_cfg->step = 0;
-    os_timer_disarm(&input_cfg->timer);
-
-}
-
-void
-supla_esp_gpio_start_input_timer(supla_input_cfg_t *input_cfg) {
-    if ( input_cfg->type != INPUT_TYPE_CUSTOM &&
-    		( input_cfg->step == 0
-    		  || input_cfg->step == 3 ) ) {
-
-    	if ( input_cfg->step == 0 )
-        	input_cfg->step = 1;
-
-    	os_timer_disarm(&input_cfg->timer);
-    	os_timer_setfn(&input_cfg->timer, supla_esp_gpio_input_timer_cb, input_cfg);
-    	os_timer_arm (&input_cfg->timer, INPUT_CYCLE_TIME, true);
+  // supla_log(LOG_DEBUG, "inactive");
+
+#ifdef BOARD_ON_INPUT_INACTIVE
+  BOARD_ON_INPUT_INACTIVE;
+#endif
+
+  if (((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
+        !(input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS)) ||
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE) &&
+      input_cfg->relay_gpio_id != 255) {
+    supla_roller_shutter_cfg_t *rs_cfg =
+      supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+    if (rs_cfg != NULL) {
+#ifdef _ROLLERSHUTTER_SUPPORT
+      int direction = (rs_cfg->up->gpio_id == input_cfg->relay_gpio_id)
+          ? RS_RELAY_UP
+          : RS_RELAY_DOWN;
+      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+      } else { // monostable
+        if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+        } else {
+          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+        }
+      }
+#endif /*_ROLLERSHUTTER_SUPPORT*/
+    } else {
+      supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
     }
+  } else if (input_cfg->type == INPUT_TYPE_SENSOR &&
+      input_cfg->channel != 255) {
+
+    // TODO: add MQTT support for sensor
+    supla_esp_channel_value_changed(input_cfg->channel, 0);
+  }
 }
 
-LOCAL void
-supla_esp_gpio_intr_handler(void *params) {
+LOCAL void supla_esp_gpio_intr_handler(void *params) {
+  int a;
+  uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
+  supla_input_cfg_t *input_cfg;
 
+#ifdef BOARD_INTR_HANDLER
+  BOARD_INTR_HANDLER;
+#endif
 
-	int a;
-	uint32 gpio_status = GPIO_REG_READ(GPIO_STATUS_ADDRESS);
-	supla_input_cfg_t *input_cfg;
+  // supla_log(LOG_DEBUG, "INTR");
 
-	#ifdef BOARD_INTR_HANDLER
-	BOARD_INTR_HANDLER;
-	#endif
+  for (a = 0; a < INPUT_MAX_COUNT; a++) {
+    input_cfg = &supla_input_cfg[a];
+    if (input_cfg->gpio_id != 255 && input_cfg->gpio_id < 16 &&
+        gpio_status & BIT(input_cfg->gpio_id)) {
+      ETS_GPIO_INTR_DISABLE();
 
-	//supla_log(LOG_DEBUG, "INTR");
+      gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
+          GPIO_PIN_INTR_DISABLE);
+      GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS,
+          gpio_status &
+          BIT(input_cfg->gpio_id));  // //clear interrupt status
 
-	for(a=0;a<INPUT_MAX_COUNT;a++) {
+      supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
+      supla_esp_input_start_debounce_timer(input_cfg);
 
-		input_cfg = &supla_input_cfg[a];
+      gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
+          GPIO_PIN_INTR_ANYEDGE);
+      gpio_status = gpio_status ^ BIT(input_cfg->gpio_id);
 
-		if ( input_cfg->gpio_id != 255
-			 && input_cfg->gpio_id < 16
-			 && gpio_status & BIT(input_cfg->gpio_id) ) {
+      ETS_GPIO_INTR_ENABLE();
+    }
+  }
 
-			ETS_GPIO_INTR_DISABLE();
-
-            gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), GPIO_PIN_INTR_DISABLE);
-            GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(input_cfg->gpio_id)); // //clear interrupt status
-
-            supla_esp_gpio_start_input_timer(input_cfg);
-
-            gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), GPIO_PIN_INTR_ANYEDGE);
-            gpio_status = gpio_status ^ BIT(input_cfg->gpio_id);
-
-            ETS_GPIO_INTR_ENABLE();
-		}
-	}
-
-
-	// Disable uncaught interrupts
-	if (gpio_status != 0) {
-		for(a=0;a<16;a++) {
-			if ( gpio_status & BIT(a) && INTR_CLEAR_MASK & BIT(a) ) {
-				ETS_GPIO_INTR_DISABLE();
-				gpio_pin_intr_state_set(GPIO_ID_PIN(a), GPIO_PIN_INTR_DISABLE);
-				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(a));
-				ETS_GPIO_INTR_ENABLE();
-			}
-		}
-	}
-
+  // Disable uncaught interrupts
+  if (gpio_status != 0) {
+    for (a = 0; a < 16; a++) {
+      if (gpio_status & BIT(a) && INTR_CLEAR_MASK & BIT(a)) {
+        ETS_GPIO_INTR_DISABLE();
+        gpio_pin_intr_state_set(GPIO_ID_PIN(a), GPIO_PIN_INTR_DISABLE);
+        GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, gpio_status & BIT(a));
+        ETS_GPIO_INTR_ENABLE();
+      }
+    }
+  }
 }
 
 void GPIO_ICACHE_FLASH
@@ -1474,7 +1316,7 @@ supla_esp_gpio_init(void) {
 		supla_input_cfg[a].gpio_id = 255;
 		supla_input_cfg[a].relay_gpio_id = 255;
 		supla_input_cfg[a].channel = 255;
-		supla_input_cfg[a].last_state = 255;
+		supla_input_cfg[a].last_state = INPUT_STATE_INACTIVE;
 	}
 
 	for (a=0; a<RELAY_MAX_COUNT; a++) {
@@ -1972,4 +1814,10 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
     }
   }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_clear_vars(void) {
+  supla_last_state = STATE_UNKNOWN;
+  supla_esp_gpio_init_time = 0;
+  supla_esp_restart_on_cfg_press = 0;
 }

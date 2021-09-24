@@ -57,8 +57,18 @@
 #endif /*CFG_BTN_PRESS_TIME*/
 
 #ifndef GET_CFG_PRESS_TIME
-#define GET_CFG_PRESS_TIME supla_esp_gpio_get_cfg_press_time
+#define GET_CFG_PRESS_TIME supla_esp_input_get_cfg_press_time
 #endif /*GET_CFG_PRESS_TIME*/
+
+// minimum button press time after which ON_HOLD action trigger is send
+#ifndef BTN_HOLD_TIME_MS
+#define BTN_HOLD_TIME_MS 700
+#endif /*BTN_HOLD_TIME_MS*/
+
+// maximum delay between button press time to count it as multiclick
+#ifndef BTN_MULTICLICK_TIME_MS
+#define BTN_MULTICLICK_TIME_MS 300
+#endif /*BTN_MULTICLICK_TIME_MS*/
 
 #ifndef INPUT_MAX_COUNT
 #define INPUT_MAX_COUNT 7
@@ -110,12 +120,12 @@
 #define INPUT_FLAG_CFG_BTN 0x02
 #define INPUT_FLAG_FACTORY_RESET 0x04
 #define INPUT_FLAG_DISABLE_INTR 0x08
+#define INPUT_FLAG_TRIGGER_ON_PRESS 0x10 // used for monostable inputs
+#define INPUT_FLAG_CFG_ON_TOGGLE 0x20 // used for monostable inputs
 
 #define INPUT_TYPE_SENSOR 1
 #define INPUT_TYPE_BTN_MONOSTABLE 2
-#define INPUT_TYPE_BTN_MONOSTABLE_RS 3
 #define INPUT_TYPE_BTN_BISTABLE 4
-#define INPUT_TYPE_BTN_BISTABLE_RS 5
 #define INPUT_TYPE_CUSTOM 200
 
 #ifndef INPUT_MIN_CYCLE_COUNT
@@ -177,6 +187,10 @@
 #define BTN2_DEFAULT BTN_TYPE_BISTABLE
 #endif
 
+#ifndef BTN_MAX_COUNT
+#define BTN_MAX_COUNT 4
+#endif
+
 #ifndef MANUFACTURER_ID
 #define MANUFACTURER_ID 0
 #endif
@@ -208,6 +222,14 @@
 #ifndef MQTT_POOL_PUBLICATION_MAX_DELAY
 #define MQTT_POOL_PUBLICATION_MAX_DELAY 3600
 #endif /*MQTT_POOL_PUBLICATION_MAX_DELAY*/
+
+#ifndef MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET
+#define MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET 0
+#endif /*MQTT_BOARD_ACTION_TRIGGER_IDX_OFFSET*/
+
+#ifndef MQTT_BOARD_ACTION_TRIGGER_FIRST_CHANNEL_ID
+#define MQTT_BOARD_ACTION_TRIGGER_FIRST_CHANNEL_ID 0
+#endif /*MQTT_BOARD_ACTION_TRIGGER_FIRST_CHANNEL_ID*/
 
 #define CFG_FLAG_MQTT_ENABLED 0x01
 #define CFG_FLAG_MQTT_NO_RETAIN 0x02

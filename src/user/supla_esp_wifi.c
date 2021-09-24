@@ -27,6 +27,7 @@
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_gpio.h"
 #include "supla_esp_state.h"
+#include "supla_esp_input.h"
 
 #define WIFI_CHECK_STATUS_INTERVAL_MS 200
 

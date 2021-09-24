@@ -78,6 +78,7 @@ public:
     *supla_rs_cfg[0].full_closing_time = 0;
     *supla_rs_cfg[0].full_opening_time = 0;
     gpioInitCb = nullptr;
+    supla_esp_gpio_clear_vars();
   }
 };
 

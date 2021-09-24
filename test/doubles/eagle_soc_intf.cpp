@@ -19,7 +19,7 @@
 #include "eagle_soc_intf.h"
 
 extern "C" {
-uint32 GPIO_REG_READ(uint8 reg) {
+uint32 GPIO_REG_READ(uint32 reg) {
   assert(EagleSocInterface::instance);
   return EagleSocInterface::instance->gpioRegRead(reg);
 }
@@ -31,7 +31,14 @@ void GPIO_OUTPUT_SET(uint32 port, uint8 value) {
   return EagleSocInterface::instance->gpioOutputSet(port, value);
 }
 
-void GPIO_REG_WRITE(uint8 reg, uint8 val){};
+uint32 gpio_input_get(void) { 
+  return GPIO_REG_READ(GPIO_OUT_ADDRESS);
+}
+
+void GPIO_REG_WRITE(uint32 reg, uint32 val) {
+  assert(EagleSocInterface::instance);
+  return EagleSocInterface::instance->gpioRegWrite(reg, val);
+}
 }
 
 EagleSocInterface *EagleSocInterface::instance = nullptr;

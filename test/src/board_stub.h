@@ -29,4 +29,6 @@ extern int startupTimeDelay;
 extern int upTime;
 extern int downTime;
 
+extern int currentDeviceState;
+
 #endif /*_SUPLA_TEST_BOARD_INIT_H_*/

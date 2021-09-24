@@ -20,8 +20,6 @@
 
 #include "gpio.h"
 
-uint32 gpio_input_get(void) { return 0; }
-
 void gpio_output_set(uint32 set_mask, uint32 clear_mask, uint32 enable_mask,
                      uint32 disable_mask) {
   return;

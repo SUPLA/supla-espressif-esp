@@ -18,13 +18,26 @@
 
 #include "eagle_soc_stub.h"
 
-EagleSocStub::EagleSocStub() : currentGpioState(0) {}
+EagleSocStub::EagleSocStub() : currentGpioState(0), intrStatus(0) {}
 
-uint32 EagleSocStub::gpioRegRead(uint8 reg) {
-  return currentGpioState;
+uint32 EagleSocStub::gpioRegRead(uint32 reg) {
+  if (reg == GPIO_OUT_ADDRESS) {
+    return currentGpioState;
+  } else if (reg == GPIO_STATUS_ADDRESS) {
+    return intrStatus;
+  }
+  assert(false);
+  return 0;
+}
+
+void EagleSocStub::gpioRegWrite(uint32 reg, uint32 value) {
+  if (reg == GPIO_STATUS_W1TC_ADDRESS) {
+    intrStatus &= ~value;
+  }
 }
 
 void EagleSocStub::gpioOutputSet(uint32 port, uint8 value) {
+  intrStatus |= (1 << port); // for any_edge interrupt
   if (value) {
     currentGpioState |= (1 << port);
   } else {

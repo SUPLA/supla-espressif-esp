@@ -17,6 +17,7 @@
  */
 
 #include "espconn.h"
+#include <stdlib.h>
 
 sint8 espconn_sent(struct espconn *espconn, uint8 *psent, uint16 length) {
   return 0;
@@ -44,7 +45,15 @@ sint8 espconn_regist_connectcb(struct espconn *espconn,
   return 0;
 }
 
-sint8 espconn_accept(struct espconn *espconn) { return 0; }
+sint8 espconn_accept(struct espconn *espconn) { 
+// release espconn structure here to avoid memleak detection in UT
+// In case espconn connection will be covered by UT, this has to be removed
+// and cleanup has to be done in more proper way
+  free(espconn->proto.tcp);
+  free(espconn);
+  
+  return 0; 
+}
 
 sint8 espconn_secure_sent(struct espconn *espconn, uint8 *psent,
                           uint16 length) {

@@ -48,6 +48,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_before_update_start(void);
 
 void ICACHE_FLASH_ATTR supla_esp_board_send_channel_values_with_delay(void *srpc);
 
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_action_trigger(
+    unsigned char channel_number,  _supla_int_t action_trigger);
+
 #ifdef ELECTRICITY_METER_COUNT
 void DEVCONN_ICACHE_FLASH supla_esp_channel_em_value_changed(unsigned char channel_number, TElectricityMeter_ExtendedValue_V2 *em_ev);
 #endif /*ELECTRICITY_METER_COUNT*/
@@ -106,9 +109,21 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_devconn_get_channel_int_params(unsigned char channel_number);
 #endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 
+#ifdef BOARD_CALCFG
+void ICACHE_FLASH_ATTR
+supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request);
+#endif /*BOARD_CALCFG*/
+
 // moved to public interface for testing purposes
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value);
 void DEVCONN_ICACHE_FLASH supla_esp_srpc_init(void);
+void DEVCONN_ICACHE_FLASH
+supla_esp_channel_config_result(TSD_ChannelConfig *result);
+
+#ifdef BOARD_CHANNEL_CONFIG
+void ICACHE_FLASH_ATTR
+supla_esp_board_channel_config(TSD_ChannelConfig *config);
+#endif /*BOARD_CHANNEL_CONFIG*/
 
 #endif /* SUPLA_ESP_CLIENT_H_ */

@@ -88,6 +88,9 @@
     defined(__BOARD_inCanRS_DHT11) || defined(__BOARD_inCanRS_DHT22)
 
 #include "board/inCan.h"
+#elif defined(__BOARD_ut_testing)
+#include "board_ut_testing.h"
+
 
 #endif
 

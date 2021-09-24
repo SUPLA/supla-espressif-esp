@@ -26,12 +26,14 @@ class EagleSocStub : public EagleSocInterface {
 public:
   EagleSocStub();
 
-  uint32 gpioRegRead(uint8 reg) override;
+  uint32 gpioRegRead(uint32 reg) override;
+  void gpioRegWrite(uint32 reg, uint32 value) override;
   void gpioOutputSet(uint32 port, uint8 value) override;
 
   bool getGpioValue(uint8_t port);
 
   uint32 currentGpioState;
+  uint32 intrStatus;
 };
 
 #endif /*SUPLA_EAGLE_SOC_STUB_H_*/

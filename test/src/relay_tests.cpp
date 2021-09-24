@@ -129,6 +129,7 @@ public:
     supla_esp_gpio_init_time = 0;
     cleanupTimers();
     set_reset_reason(0);
+    supla_esp_gpio_clear_vars();
 
     gpioInitCb = nullptr;
   }

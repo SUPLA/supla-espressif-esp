@@ -100,6 +100,7 @@ public:
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     supla_esp_gpio_init_time = 0;
     cleanupTimers();
+    supla_esp_gpio_clear_vars();
 
     gpioInitCb = nullptr;
   }
@@ -156,6 +157,7 @@ public:
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     supla_esp_gpio_init_time = 0;
     cleanupTimers();
+    supla_esp_gpio_clear_vars();
 
     gpioInitCb = nullptr;
   }
@@ -252,6 +254,7 @@ public:
     supla_esp_gpio_init_time = 0;
     cleanupTimers();
 
+    supla_esp_gpio_clear_vars();
     gpioInitCb = nullptr;
   }
 };
@@ -2526,6 +2529,9 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooLongTime) {
   os_timer_func_t *rsTimerCb = lastTimerCb;
   ASSERT_NE(rsTimerCb, nullptr);
 
+  // this is called to disable devconn watchdog timer
+  supla_esp_devconn_before_update_start();
+
   // +2000 ms
   for (int i = 0; i < 200; i++) {
     curTime += 10000; // +10ms
@@ -2561,6 +2567,7 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooLongTime) {
   for (int i = 0; i < 7005; i++) {
     curTime += 100000; // +100ms
     executeTimers();
+    
   }
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -2638,6 +2645,9 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationFailedTooLongDownTime) {
   EXPECT_EQ(*rsCfg->position, 0);
   EXPECT_EQ(*rsCfg->full_opening_time, 0);
   EXPECT_EQ(*rsCfg->full_closing_time, 0);
+
+  // this is called to disable devconn watchdog timer
+  supla_esp_devconn_before_update_start();
 
   // Calibration 
   for (int i = 0; i < 7005; i++) {

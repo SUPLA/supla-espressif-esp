@@ -125,6 +125,7 @@ public:
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     supla_esp_gpio_init_time = 0;
     cleanupTimers();
+    supla_esp_gpio_clear_vars();
 
     gpioInitCb = nullptr;
   }

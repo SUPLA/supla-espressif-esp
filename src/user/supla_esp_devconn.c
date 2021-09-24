@@ -40,6 +40,7 @@
 #include "supla_esp_dns_client.h"
 #include "supla_esp_wifi.h"
 #include "supla_esp_state.h"
+#include "supla_esp_input.h"
 
 #ifdef ELECTRICITY_METER_COUNT
 #include "supla_esp_electricity_meter.h"
@@ -1311,7 +1312,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 #if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
       case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT:
-        supla_esp_board_on_channel_config(rd.data.sd_channel_config);
+        supla_esp_channel_config_result(rd.data.sd_channel_config);
         break;
 #endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
     }
@@ -1759,6 +1760,65 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 }
 
 void DEVCONN_ICACHE_FLASH
+supla_esp_channel_config_result(TSD_ChannelConfig *result) {
+  if (!result) {
+    return;
+  }
+
+  supla_log(LOG_DEBUG,
+      "Channel config received: ch %d, func %d, cfgtype %d, cfgsize %d",
+      result->ChannelNumber, result->Func, result->ConfigType,
+      result->ConfigSize);
+
+#ifdef BOARD_CHANNEL_CONFIG
+  // execute board specific channel config handling
+  supla_esp_board_channel_config(result);
+#endif /*BOARD_CHANNEL_CONFIG*/
+
+  if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER ||
+      result->Func == SUPLA_CHANNELFNC_POWERSWITCH ||
+      result->Func == SUPLA_CHANNELFNC_LIGHTSWITCH) {
+
+    if (result->ChannelNumber >= 0 && result->ChannelNumber < CFG_TIME2_COUNT) {
+      int staircaseTimeMs = 0;
+      if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
+        if (result->ConfigType == 0 &&
+            result->ConfigSize == sizeof(TSD_ChannelConfig_StaircaseTimer)) {
+          TSD_ChannelConfig_StaircaseTimer *staircaseCfg =
+            (TSD_ChannelConfig_StaircaseTimer *)(result->Config);
+          supla_log(LOG_DEBUG, "Staircase cfg time: %d ms",
+              staircaseCfg->TimeMS);
+          staircaseTimeMs = staircaseCfg->TimeMS;
+        }
+      }
+      if (staircaseTimeMs != supla_esp_cfg.Time2[result->ChannelNumber]) {
+        supla_log(LOG_DEBUG, "Changing channel %d configuration Time2 to %d",
+            result->ChannelNumber, staircaseTimeMs);
+        supla_esp_cfg.Time2[result->ChannelNumber] = staircaseTimeMs;
+        supla_esp_cfg_save(&supla_esp_cfg);
+
+        supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0, 0);
+      }
+    }
+  } else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER) {
+    // TODO
+  } else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
+    if (result->ConfigType == 0 &&
+        result->ConfigSize == sizeof(TSD_ChannelConfig_ActionTrigger)) {
+      for (int i = 0; i < INPUT_MAX_COUNT; i++) {
+        if (supla_input_cfg[i].channel == result->ChannelNumber) {
+          TSD_ChannelConfig_ActionTrigger *actionTriggerCfg =
+            (TSD_ChannelConfig_ActionTrigger *)(result->Config);
+            supla_esp_input_set_active_triggers(&(supla_input_cfg[i]),
+                actionTriggerCfg->ActiveActions);
+        }
+      }
+    }
+
+  }
+}
+
+void DEVCONN_ICACHE_FLASH
 supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
   if (!request) {
     return;
@@ -1827,3 +1887,14 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_release(void) {
   free(devconn);
   devconn = NULL;
 }
+
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_action_trigger(
+    unsigned char channel_number, _supla_int_t action_trigger) {
+  if (supla_esp_devconn_is_registered()) {
+    TDS_ActionTrigger at = {};
+    at.ChannelNumber = channel_number;
+    at.ActionTrigger = action_trigger;
+    srpc_ds_async_action_trigger(devconn->srpc, &at);
+  }
+}
+

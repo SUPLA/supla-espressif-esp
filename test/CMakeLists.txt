@@ -49,6 +49,7 @@ file(GLOB COMMON_DOUBLE_SRC
 project(supla_common_test)
 file(GLOB SRC
   ../src/user/supla_esp_gpio.c
+  ../src/user/supla_esp_input.c
   ../src/user/supla_esp_cfg.c
   ../src/user/supla_esp_cfgmode.c
   ../src/user/supla_esp_devconn.c
@@ -72,6 +73,8 @@ target_compile_definitions(supla_common_test PUBLIC GPIO_PORT_INIT)
 target_compile_definitions(supla_common_test PUBLIC RS_AUTOCALIBRATION_SUPPORTED)
 target_compile_definitions(supla_common_test PUBLIC RELAY_MAX_COUNT=8)
 target_compile_definitions(supla_common_test PUBLIC BOARD_CALCFG)
+target_compile_definitions(supla_common_test PUBLIC BOARD_ESP_ON_STATE_CHANGED)
+target_compile_definitions(supla_common_test PUBLIC __BOARD_ut_testing)
 
 target_link_libraries(supla_common_test
   gmock
@@ -80,4 +83,4 @@ target_link_libraries(supla_common_test
   )
 
 add_test(NAME supla_common
-  COMMAND supla_common)
+  COMMAND supla_common_test)

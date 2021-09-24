@@ -93,6 +93,7 @@ public:
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
     supla_esp_gpio_init_time = 0;
+    supla_esp_gpio_clear_vars();
 
     gpioInitCb = nullptr;
   }
