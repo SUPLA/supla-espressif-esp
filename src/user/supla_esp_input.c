@@ -544,14 +544,14 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_multiclick_time_ms(int time_ms) {
 
 // Validate and fix hold and multiclick time settings.
 // Times have to meet those conditions:
-// multiclick_time_ms >= 300 ms
-// hold_time_ms >= multiclick_time_ms + 100 ms
+// multiclick_time_ms >= 300 ms, with 400 ms default
+// hold_time_ms >= 300 ms, with 800 ms default
 void GPIO_ICACHE_FLASH supla_esp_input_validate_advanced_time_settings(
     unsigned int *hold_time_ms, unsigned int *multiclick_time_ms) { 
   if (*multiclick_time_ms < 300) {
-    *multiclick_time_ms = 300;
+    *multiclick_time_ms = 400;
   }
-  if (*hold_time_ms - 100 < *multiclick_time_ms) {
-    *hold_time_ms = *multiclick_time_ms + 100;
+  if (*hold_time_ms < 300) {
+    *hold_time_ms = 800;
   }
 }
