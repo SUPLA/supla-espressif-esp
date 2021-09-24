@@ -71,7 +71,8 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_wants_subscribe(void);
 uint8 ICACHE_FLASH_ATTR
 supla_esp_board_mqtt_get_subscription_topic(char **topic_name, uint8 index);
 uint8 ICACHE_FLASH_ATTR supla_esp_board_mqtt_get_message_for_publication(
-    char **topic_name, void **message, size_t *message_size, uint8 index);
+    char **topic_name, void **message, size_t *message_size, uint8 index,
+    bool *retain);
 
 void ICACHE_FLASH_ATTR supla_esp_board_mqtt_on_message_received(
     uint8_t dup_flag, uint8_t qos_level, uint8_t retain_flag,

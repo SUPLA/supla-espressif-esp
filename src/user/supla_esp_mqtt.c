@@ -279,10 +279,11 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
     char *topic_name = NULL;
     void *message = NULL;
     size_t message_size = 0;
+    bool retain = !(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN);
 
     if ((idx <= BOARD_MAX_IDX &&
          !supla_esp_board_mqtt_get_message_for_publication(
-             &topic_name, &message, &message_size, idx)) ||
+             &topic_name, &message, &message_size, idx, &retain)) ||
         (idx > BOARD_MAX_IDX &&
          !supla_esp_mqtt_get_message_for_publication(&topic_name, &message,
                                                      &message_size, idx)) ||
@@ -303,7 +304,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_publish(void) {
           break;
       }
 
-      if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_RETAIN)) {
+      if (retain) {
         publish_flags |= MQTT_PUBLISH_RETAIN;
       }
 
