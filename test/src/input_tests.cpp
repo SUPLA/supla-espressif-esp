@@ -1042,7 +1042,7 @@ TEST_F(InputsFixture, BistableCfgButtonWithRelay) {
 
   EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
   // enter cfg mode
-  for (int cycle = 0; cycle < 10; cycle++) {
+  for (int cycle = 0; cycle < 5; cycle++) {
     EXPECT_EQ(currentDeviceState, STATE_UNKNOWN);
     // simulate button press on gpio 1
     eagleStub.gpioOutputSet(1, 1);
