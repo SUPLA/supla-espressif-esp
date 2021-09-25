@@ -178,8 +178,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
         supla_esp_input_start_cfg_mode();
         return;
       }
-    } else if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
-        new_state == INPUT_STATE_ACTIVE ||
+    } else if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
+        new_state == INPUT_STATE_ACTIVE) ||
         input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
       // Leave CFG MODE
       input_cfg->click_counter = 1;
