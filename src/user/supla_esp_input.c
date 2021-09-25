@@ -159,44 +159,47 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
 
   os_timer_disarm(&input_cfg->timer);
 
-  if (new_state == INPUT_STATE_ACTIVE) {
-    // Handling of input state change to ACTIVE
-    if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
-      // Handling of CFG BTN functionality
-      if ( supla_esp_cfgmode_started() == 0 ) {
-        if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg) || 
-            (system_get_time() - input_cfg->last_state_change >= 2000*1000)) {
-          input_cfg->click_counter = 1;
-        } else {
+  if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
+    if ( supla_esp_cfgmode_started() == 0 ) {
+      if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg) || 
+          (system_get_time() - input_cfg->last_state_change >= 2000*1000)) {
+        input_cfg->click_counter = 1;
+      } else {
+        if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE && new_state == INPUT_STATE_ACTIVE ||
+            input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
           input_cfg->click_counter++;
         }
-
-        if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
-            input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
-          input_cfg->click_counter = 0;
-          // CFG MODE
-          supla_esp_input_start_cfg_mode();
-          return;
-        }
-      } else {
-        input_cfg->click_counter = 1;
-        if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
-            system_get_time() - supla_esp_cfgmode_entertime() > 3000*1000) {
-          // If we are in CFG mode and there was button press 3s after entering 
-          // CFG mode, then EXIT CFG MODE
-          supla_system_restart();
-          return;
-        }
+      }
+      if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
+          input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
+        input_cfg->click_counter = 0;
+        // CFG MODE
+        supla_esp_input_start_cfg_mode();
+        return;
+      }
+    } else if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE && new_state == INPUT_STATE_ACTIVE ||
+            input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+      // Leave CFG MODE
+      input_cfg->click_counter = 1;
+      if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
+          system_get_time() - supla_esp_cfgmode_entertime() > 3000*1000) {
+        // If we are in CFG mode and there was button press 3s after entering 
+        // CFG mode, then EXIT CFG MODE
+        supla_system_restart();
+        return;
       }
     }
+  }
 
+
+  if (new_state == INPUT_STATE_ACTIVE) {
+    // Handling of input state change to ACTIVE
     if (supla_esp_restart_on_cfg_press == 1 &&
         input_cfg->flags & INPUT_FLAG_CFG_BTN &&
         input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
       supla_system_restart();
       return;
     }
-
    
     if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
       os_timer_arm(&input_cfg->timer, INPUT_CYCLE_TIME, true);

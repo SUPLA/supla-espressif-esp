@@ -523,17 +523,17 @@ TEST_F(RsInputsFixture, BistableButton) {
   EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
   // enter cfg mode
   
-  for (int click = 0; click < 10; click++) {
+  for (int click = 0; click < 5; click++) {
     // simulate button press on gpio 1
     eagleStub.gpioOutputSet(1, 1);
     ets_gpio_intr_func(NULL);
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 50; i++) {
       curTime += 10000; // +10ms
       executeTimers();
     }
     eagleStub.gpioOutputSet(1, 0);
     ets_gpio_intr_func(NULL);
-    for (int i = 0; i < 30; i++) {
+    for (int i = 0; i < 50; i++) {
       curTime += 10000; // +10ms
       executeTimers();
     }
@@ -544,6 +544,8 @@ TEST_F(RsInputsFixture, BistableButton) {
     executeTimers();
   }
 
+  EXPECT_TRUE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
   EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
 
   // Button click >3s after enter cfg mode should trigger cfgmode exit
@@ -563,7 +565,7 @@ TEST_F(RsInputsFixture, BistableButton) {
     executeTimers();
   }
 
-  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_TRUE(eagleStub.getGpioValue(3));
   EXPECT_FALSE(eagleStub.getGpioValue(4));
  
   EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
@@ -585,7 +587,7 @@ TEST_F(RsInputsFixture, BistableButton) {
     curTime += 10000; // +10ms
     executeTimers();
   }
-  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_TRUE(eagleStub.getGpioValue(3));
   EXPECT_FALSE(eagleStub.getGpioValue(4));
 
 }
