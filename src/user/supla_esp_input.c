@@ -125,6 +125,10 @@ void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
 
   input_cfg->last_state = new_state;
 
+#ifdef BOARD_INPUT_STATE_CHANGE_NOTIF
+  supla_esp_board_input_state_change(input_cfg);
+#endif
+
   if (supla_esp_input_is_advanced_mode_enabled(input_cfg)) {
     os_timer_setfn(&input_cfg->timer, supla_esp_input_advanced_timer_cb,
         input_cfg);
@@ -287,6 +291,10 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
         !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
       input_cfg->max_clicks = CFG_BTN_PRESS_COUNT;
     }
+
+    supla_log(LOG_DEBUG, "input %d, flags %d, max clicks %d, active %d", 
+        input_cfg->gpio_id, input_cfg->flags, input_cfg->max_clicks,
+        input_cfg->active_triggers);
 
     int max_clicks_from_actions = 0;
     if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x5) ||

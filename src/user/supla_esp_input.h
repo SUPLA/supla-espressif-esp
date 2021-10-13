@@ -89,4 +89,8 @@ supla_esp_input_enable_relay_connection(supla_input_cfg_t *input_cfg);
 bool GPIO_ICACHE_FLASH
 supla_esp_input_is_relay_connection_enabled(supla_input_cfg_t *input_cfg);
 
+#ifdef BOARD_INPUT_STATE_CHANGE_NOTIF
+void GPIO_ICACHE_FLASH supla_esp_board_input_state_change(void *_input_cfg);
+#endif /*BOARD_INPUT_STATE_CHANGE_NOTIF*/
+
 #endif /*SUPLA_ESP_INPUT_H_*/

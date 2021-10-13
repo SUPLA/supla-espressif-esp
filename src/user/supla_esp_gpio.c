@@ -1267,7 +1267,7 @@ LOCAL void supla_esp_gpio_intr_handler(void *params) {
           gpio_status &
           BIT(input_cfg->gpio_id));  // //clear interrupt status
 
-      supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
+//      supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
       supla_esp_input_start_debounce_timer(input_cfg);
 
       gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
