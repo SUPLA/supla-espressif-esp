@@ -559,7 +559,6 @@ supla_esp_channel_rgbw_to_value(char value[SUPLA_CHANNELVALUE_SIZE], int color, 
 	value[2] = (char)((color & 0x000000FF));       // BLUE
 	value[3] = (char)((color & 0x0000FF00) >> 8);  // GREEN
 	value[4] = (char)((color & 0x00FF0000) >> 16); // RED
-
 }
 
 
@@ -958,6 +957,20 @@ void DEVCONN_ICACHE_FLASH
 
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
+#ifdef SUPLA_DEBUG
+  supla_log(LOG_DEBUG,
+      "supla_esp_channel_set_value: sender %d, channel %d, duration %d"
+      ", value[7-0] %2X %2X %2X %2X %2X %2X %2X %2X",
+      new_value->SenderID, new_value->ChannelNumber, new_value->DurationMS,
+      new_value->value[7],
+      new_value->value[6],
+      new_value->value[5],
+      new_value->value[4],
+      new_value->value[3],
+      new_value->value[2],
+      new_value->value[1],
+      new_value->value[0]);
+#endif /*SUPLA_DEBUG*/
 
 #ifdef BOARD_ON_CHANNEL_VALUE_SET
 	 BOARD_ON_CHANNEL_VALUE_SET
@@ -1002,12 +1015,9 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 		Brightness = new_value->value[0];
 		ColorBrightness = new_value->value[1];
 
-		Color = ((int)new_value->value[4] << 16) & 0x00FF0000; // BLUE
-		Color |= ((int)new_value->value[3] << 8) & 0x0000FF00; // GREEN
-		Color |= (int)new_value->value[2] & 0x00000FF;         // RED
-
-//   supla_log(LOG_DEBUG, "execute: bright %d, cb %d, rgb %X, onOff %d", Brightness,
-//       ColorBrightness, Color, TurnOnOff);
+		Color  = ((int)new_value->value[4] << 16) & 0x00FF0000; // RED
+		Color |= ((int)new_value->value[3] << 8)  & 0x0000FF00; // GREEN
+		Color |= ((int)new_value->value[2] )      & 0x000000FF; // BLUE
 
 		if ( Brightness > 100 )
 			Brightness = 0;
