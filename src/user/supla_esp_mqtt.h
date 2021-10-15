@@ -138,6 +138,22 @@ uint8 ICACHE_FLASH_ATTR
 supla_esp_mqtt_device_state_message(char **topic_name_out, void **message_out,
                                     size_t *message_size_out, uint8 index);
 #endif /*MQTT_DEVICE_STATE_SUPPORT_DISABLED*/
+
+#ifdef MQTT_RGB_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rgb_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_color_brightness(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel_number, uint8 *brightness);
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_color(
+    const void *topic_name, uint16_t topic_name_size, const char *message,
+    size_t message_size, uint8 *channel_number, uint8 *red, uint8 *green,
+    uint8 *blue);
+int ICACHE_FLASH_ATTR supla_esp_mqtt_str2rgb(const char *str, int len,
+    uint8 *red, uint8 *green, uint8 *blue);
+#endif /*MQTT_RGB_SUPPORT*/
+
 #endif /*MQTT_SUPPORT_ENABLED*/
 
 #endif
