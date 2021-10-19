@@ -922,35 +922,27 @@ supla_esp_gpio_enable_input_port(char port) {
 }
 
 void supla_esp_gpio_btn_irq_lock(uint8 lock) {
+  supla_input_cfg_t *input_cfg;
 
-	supla_input_cfg_t *input_cfg;
-	int a;
+  ETS_GPIO_INTR_DISABLE();
 
-	ETS_GPIO_INTR_DISABLE();
+  for (int a = 0; a < INPUT_MAX_COUNT; a++) {
+    input_cfg = &supla_input_cfg[a];
 
-	for(a=0;a<INPUT_MAX_COUNT;a++) {
+    if (input_cfg->gpio_id != 255 && input_cfg->gpio_id < 16 &&
+        !(input_cfg->flags & INPUT_FLAG_DISABLE_INTR) &&
+        (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
+         input_cfg->type == INPUT_TYPE_BTN_BISTABLE)) {
+      gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
+          lock == 1 ? GPIO_PIN_INTR_DISABLE
+          : GPIO_PIN_INTR_ANYEDGE);
 
-		input_cfg = &supla_input_cfg[a];
+      if (lock == 1)
+        GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(input_cfg->gpio_id));
+    }
+  }
 
-		if ( input_cfg->gpio_id != 255
-				&& input_cfg->gpio_id < 16
-				&& ( input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE
-					 || input_cfg->type == INPUT_TYPE_BTN_BISTABLE ) ) {
-
-			gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id), lock == 1 ? GPIO_PIN_INTR_DISABLE : GPIO_PIN_INTR_ANYEDGE);
-
-			if ( lock == 1 )
-				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(input_cfg->gpio_id));
-
-		}
-
-
-
-	}
-
-	ETS_GPIO_INTR_ENABLE();
-
-
+  ETS_GPIO_INTR_ENABLE();
 }
 
 supla_roller_shutter_cfg_t* GPIO_ICACHE_FLASH
@@ -1275,7 +1267,7 @@ LOCAL void supla_esp_gpio_intr_handler(void *params) {
           gpio_status &
           BIT(input_cfg->gpio_id));  // //clear interrupt status
 
-      supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
+//      supla_log(LOG_DEBUG, "INTR start timer %d", input_cfg->gpio_id);
       supla_esp_input_start_debounce_timer(input_cfg);
 
       gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
@@ -1315,6 +1307,7 @@ supla_esp_gpio_init(void) {
 	for (a=0; a<INPUT_MAX_COUNT; a++) {
 		supla_input_cfg[a].gpio_id = 255;
 		supla_input_cfg[a].relay_gpio_id = 255;
+		supla_input_cfg[a].disabled_relay_gpio_id = 255;
 		supla_input_cfg[a].channel = 255;
 		supla_input_cfg[a].last_state = INPUT_STATE_INACTIVE;
 	}
@@ -1430,7 +1423,7 @@ supla_esp_gpio_init(void) {
     	    && supla_input_cfg[a].gpio_id < 16
     		&& supla_input_cfg[a].type != 0 ) {
 
-    	//supla_log(LOG_DEBUG, "input init %i", supla_input_cfg[a].gpio_id);
+    	  //supla_log(LOG_DEBUG, "input init %i", supla_input_cfg[a].gpio_id);
 
         gpio_output_set(0, 0, 0, BIT(supla_input_cfg[a].gpio_id));
 
@@ -1441,6 +1434,7 @@ supla_esp_gpio_init(void) {
         GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_input_cfg[a].gpio_id));
 
         if ( !(supla_input_cfg[a].flags & INPUT_FLAG_DISABLE_INTR) ) {
+          //supla_log(LOG_DEBUG, "Input %d - enabling intr anyedge", supla_input_cfg[a].gpio_id);
         	gpio_pin_intr_state_set(GPIO_ID_PIN(supla_input_cfg[a].gpio_id), GPIO_PIN_INTR_ANYEDGE);
         }
 

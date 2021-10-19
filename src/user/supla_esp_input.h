@@ -33,6 +33,7 @@ typedef struct {
   uint8 type;     // input type INPUT_TYPE_
   uint8 relay_gpio_id;  // GPIO of relay which is controlled by this
                         // input. It can also controll RS
+  uint8 disabled_relay_gpio_id;
   uint8 channel;        // used for INPUT_TYPE_SENSOR and ACTION_TRIGGER
   unsigned _supla_int_t action_trigger_cap; // defines device capability
 
@@ -78,5 +79,18 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_multiclick_time_ms(int time_ms);
 
 void GPIO_ICACHE_FLASH supla_esp_input_validate_advanced_time_settings(
     unsigned int *hold_time_ms, unsigned int *multiclick_time_ms);
+
+void GPIO_ICACHE_FLASH
+supla_esp_input_disable_relay_connection(supla_input_cfg_t *input_cfg);
+
+void GPIO_ICACHE_FLASH
+supla_esp_input_enable_relay_connection(supla_input_cfg_t *input_cfg);
+
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_relay_connection_enabled(supla_input_cfg_t *input_cfg);
+
+#ifdef BOARD_INPUT_STATE_CHANGE_NOTIF
+void GPIO_ICACHE_FLASH supla_esp_board_input_state_change(void *_input_cfg);
+#endif /*BOARD_INPUT_STATE_CHANGE_NOTIF*/
 
 #endif /*SUPLA_ESP_INPUT_H_*/

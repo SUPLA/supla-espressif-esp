@@ -94,6 +94,54 @@ void gpioCallbackRsInputs() {
     supla_input_cfg[1].action_trigger_cap = 
       SUPLA_ACTION_CAP_TOGGLE_x2 |
       SUPLA_ACTION_CAP_TOGGLE_x3;
+  } else if (gpioConfigId == 2) {
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[2].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[3].type = INPUT_TYPE_BTN_MONOSTABLE;
+
+    supla_input_cfg[0].channel = 2;
+    supla_input_cfg[1].channel = 3;
+    supla_input_cfg[2].channel = 4;
+    supla_input_cfg[3].channel = 5;
+
+    supla_relay_cfg[0].channel = 0;
+    supla_relay_cfg[1].channel = 0;
+    supla_relay_cfg[2].channel = 1;
+    supla_relay_cfg[3].channel = 1;
+
+    supla_input_cfg[0].relay_gpio_id = 5;
+    supla_input_cfg[1].relay_gpio_id = 6;
+
+    supla_input_cfg[2].flags = 0;
+    supla_input_cfg[2].gpio_id = 3;
+    supla_input_cfg[2].channel = 1;
+    supla_input_cfg[2].relay_gpio_id = 7;
+
+    supla_input_cfg[3].gpio_id = 4;
+    supla_input_cfg[3].flags = 0; //INPUT_FLAG_CFG_BTN;
+    supla_input_cfg[3].channel = 2;
+    supla_input_cfg[3].relay_gpio_id = 8;
+
+    supla_relay_cfg[0].gpio_id = 5;
+    supla_relay_cfg[1].gpio_id = 6;
+    supla_relay_cfg[2].gpio_id = 7;
+    supla_relay_cfg[3].gpio_id = 8;
+
+    // up
+    supla_relay_cfg[2].flags = 0;
+    supla_relay_cfg[2].channel_flags = 0;
+
+    // down
+    supla_relay_cfg[3].flags = 0;
+    supla_relay_cfg[3].channel_flags = 0;
+
+    supla_rs_cfg[1].up = &supla_relay_cfg[2];
+    supla_rs_cfg[1].down = &supla_relay_cfg[3];
+    *supla_rs_cfg[1].position = 0;
+    *supla_rs_cfg[1].full_closing_time = 0;
+    *supla_rs_cfg[1].full_opening_time = 0;
+    supla_rs_cfg[1].delayed_trigger.value = 0;
   } else {
     assert(false);
   }
@@ -130,7 +178,7 @@ class RsInputsFixture : public ::testing::Test {
       supla_esp_gpio_init_time = 0;
       EXPECT_CALL(srpc, srpc_params_init(_));
       EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
-      EXPECT_CALL(srpc, srpc_set_proto_version(_, 16));
+      EXPECT_CALL(srpc, srpc_set_proto_version(_, 17));
 
       regRsInputs.result_code = SUPLA_RESULTCODE_TRUE;
 
@@ -1584,3 +1632,199 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
 
 }
 
+
+TEST_F(RsInputsFixture, TwoRs) {
+  gpioConfigId = 2;
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+
+  EXPECT_CALL(srpc, 
+      valueChanged(_, 1, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+ 
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+
+  // simulate button press on gpio 4
+  eagleStub.gpioOutputSet(4, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(4, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_TRUE(eagleStub.getGpioValue(8));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 250; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_TRUE(eagleStub.getGpioValue(8));
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_TRUE(eagleStub.getGpioValue(8));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_TRUE(eagleStub.getGpioValue(8));
+
+  // simulate button press on gpio 3
+  eagleStub.gpioOutputSet(3, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // simulate button release on gpio 3
+  eagleStub.gpioOutputSet(3, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+ 
+
+  EXPECT_TRUE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_FALSE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+
+  // simulate button press on gpio 3
+  eagleStub.gpioOutputSet(3, 1);
+  ets_gpio_intr_func(NULL);
+  
+  // +300 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  // simulate button release on gpio 3
+  eagleStub.gpioOutputSet(3, 0);
+  ets_gpio_intr_func(NULL);
+ 
+  // +500 ms
+  for (int i = 0; i < 150; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+
+  EXPECT_TRUE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  EXPECT_TRUE(eagleStub.getGpioValue(7));
+  EXPECT_FALSE(eagleStub.getGpioValue(8));
+
+
+}

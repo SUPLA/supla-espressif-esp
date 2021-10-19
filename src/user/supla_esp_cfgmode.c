@@ -79,22 +79,24 @@
 #define VAR_T10 37
 #define VAR_T11 38
 #define VAR_T12 39
-#define VAR_T20 40
-#define VAR_T21 41
-#define VAR_T22 42
+#define VAR_T13 40
+#define VAR_T20 41
+#define VAR_T21 42
+#define VAR_T22 43
+#define VAR_T23 44
 #endif /*CFG_TIME_VARIABLES*/
 
-#define VAR_SBT 43  // Staircase Button Type
+#define VAR_SBT 45  // Staircase Button Type
 
-#define VAR_BP0 44 // ButtonType[0]
-#define VAR_BP1 45 // ButtonType[1]
-#define VAR_BP2 46 // ButtonType[2]
-#define VAR_BP3 47 // ButtonType[3]
+#define VAR_BP0 46 // ButtonType[0]
+#define VAR_BP1 47 // ButtonType[1]
+#define VAR_BP2 48 // ButtonType[2]
+#define VAR_BP3 49 // ButtonType[3]
 
-#define VAR_BM0 48 // ButtonMode[0]
-#define VAR_BM1 49 // ButtonMode[1]
-#define VAR_BM2 50 // ButtonMode[2]
-#define VAR_BM3 51 // ButtonMode[3]
+#define VAR_BM0 50 // ButtonMode[0]
+#define VAR_BM1 51 // ButtonMode[1]
+#define VAR_BM2 52 // ButtonMode[2]
+#define VAR_BM3 53 // ButtonMode[3]
 
 typedef struct {
   char step;
@@ -347,9 +349,11 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char t10[3] = {'t', '1', '0'};
       char t11[3] = {'t', '1', '1'};
       char t12[3] = {'t', '1', '2'};
+      char t13[3] = {'t', '1', '3'};
       char t20[3] = {'t', '2', '0'};
       char t21[3] = {'t', '2', '1'};
       char t22[3] = {'t', '2', '2'};
+      char t23[3] = {'t', '2', '3'};
 #endif /*CFG_TIME_VARIABLES*/
 
       char bp0[3] = {'b', 'p', '0'};
@@ -576,6 +580,11 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
+        } else if (memcmp(t13, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T13;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
         } else if (memcmp(t20, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_T20;
           pVars->buff_size = 12;
@@ -585,10 +594,17 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->current_var = VAR_T21;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
+
         } else if (memcmp(t22, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_T22;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t23, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T23;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
         }
 #endif /*CFG_TIME_VARIABLES*/
         a += 4;
@@ -735,19 +751,29 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
             cfg->Time1[2] =
                 cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
           }
+        } else if (pVars->current_var == VAR_T13) {
+          if (CFG_TIME1_COUNT > 3) {
+            cfg->Time1[3] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
         } else if (pVars->current_var == VAR_T20) {
-          if (CFG_TIME1_COUNT > 0) {
+          if (CFG_TIME2_COUNT > 0) {
             cfg->Time2[0] =
                 cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
           }
         } else if (pVars->current_var == VAR_T21) {
-          if (CFG_TIME1_COUNT > 1) {
+          if (CFG_TIME2_COUNT > 1) {
             cfg->Time2[1] =
                 cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
           }
         } else if (pVars->current_var == VAR_T22) {
-          if (CFG_TIME1_COUNT > 2) {
+          if (CFG_TIME2_COUNT > 2) {
             cfg->Time2[2] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T23) {
+          if (CFG_TIME2_COUNT > 3) {
+            cfg->Time2[3] =
                 cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
           }
         }

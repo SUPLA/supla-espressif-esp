@@ -39,6 +39,10 @@ void GPIO_REG_WRITE(uint32 reg, uint32 val) {
   assert(EagleSocInterface::instance);
   return EagleSocInterface::instance->gpioRegWrite(reg, val);
 }
+
+void pin_func_select(int a, int b) {};
+void pin_pullup_dis(int PIN_NAME) {};
+
 }
 
 EagleSocInterface *EagleSocInterface::instance = nullptr;

@@ -269,15 +269,10 @@ void GPIO_REG_WRITE(uint32 reg, uint32 value);
 #define PERIPHS_IO_MUX_GPIO5_U          (PERIPHS_IO_MUX + 0x40)
 #define FUNC_GPIO5                      0
 
-#define PIN_PULLUP_DIS(PIN_NAME)                 CLEAR_PERI_REG_MASK(PIN_NAME, PERIPHS_IO_MUX_PULLUP)
+#define PIN_PULLUP_DIS(PIN_NAME)  pin_pullup_dis(PIN_NAME);
 #define PIN_PULLUP_EN(PIN_NAME)                  SET_PERI_REG_MASK(PIN_NAME, PERIPHS_IO_MUX_PULLUP)
 
-#define PIN_FUNC_SELECT(PIN_NAME, FUNC)  do { \
-    WRITE_PERI_REG(PIN_NAME,   \
-                                (READ_PERI_REG(PIN_NAME) \
-                                     &  (~(PERIPHS_IO_MUX_FUNC<<PERIPHS_IO_MUX_FUNC_S)))  \
-                                     |( (((FUNC&BIT2)<<2)|(FUNC&0x3))<<PERIPHS_IO_MUX_FUNC_S) );  \
-    } while (0)
+#define PIN_FUNC_SELECT(PIN_NAME, FUNC)  pin_func_select(PIN_NAME, FUNC);
 
 //}}
 

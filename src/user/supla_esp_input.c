@@ -125,6 +125,10 @@ void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
 
   input_cfg->last_state = new_state;
 
+#ifdef BOARD_INPUT_STATE_CHANGE_NOTIF
+  supla_esp_board_input_state_change(input_cfg);
+#endif
+
   if (supla_esp_input_is_advanced_mode_enabled(input_cfg)) {
     os_timer_setfn(&input_cfg->timer, supla_esp_input_advanced_timer_cb,
         input_cfg);
@@ -288,6 +292,10 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
       input_cfg->max_clicks = CFG_BTN_PRESS_COUNT;
     }
 
+    supla_log(LOG_DEBUG, "input %d, flags %d, max clicks %d, active %d", 
+        input_cfg->gpio_id, input_cfg->flags, input_cfg->max_clicks,
+        input_cfg->active_triggers);
+
     int max_clicks_from_actions = 0;
     if ((input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x5) ||
         (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x5) ) {
@@ -313,6 +321,15 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
     if (prev_triggers != input_cfg->active_triggers) {
         os_timer_disarm(&input_cfg->timer);
         input_cfg->click_counter = 0;
+    }
+
+    if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
+          input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x1) ||
+        (input_cfg->type == INPUT_TYPE_BTN_BISTABLE &&
+         input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x1)) {
+      supla_esp_input_disable_relay_connection(input_cfg);
+    } else {
+      supla_esp_input_enable_relay_connection(input_cfg);
     }
   }
 }
@@ -559,4 +576,32 @@ void GPIO_ICACHE_FLASH supla_esp_input_validate_advanced_time_settings(
   if (*hold_time_ms < 300) {
     *hold_time_ms = 800;
   }
+}
+
+void GPIO_ICACHE_FLASH
+supla_esp_input_disable_relay_connection(supla_input_cfg_t *input_cfg) {
+  if (input_cfg && input_cfg->disabled_relay_gpio_id == 255) {
+    supla_log(LOG_DEBUG, "Disabling local action for input %d and output %d",
+        input_cfg->gpio_id, input_cfg->relay_gpio_id);
+    input_cfg->disabled_relay_gpio_id = input_cfg->relay_gpio_id;
+    input_cfg->relay_gpio_id = 255;
+  } 
+}
+
+void GPIO_ICACHE_FLASH
+supla_esp_input_enable_relay_connection(supla_input_cfg_t *input_cfg) {
+  if (input_cfg && input_cfg->disabled_relay_gpio_id != 255) {
+    input_cfg->relay_gpio_id = input_cfg->disabled_relay_gpio_id;
+    input_cfg->disabled_relay_gpio_id = 255;
+    supla_log(LOG_DEBUG, "Enabling local action for input %d and output %d",
+        input_cfg->gpio_id, input_cfg->relay_gpio_id);
+  } 
+}
+
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_relay_connection_enabled(supla_input_cfg_t *input_cfg) {
+  if (input_cfg && input_cfg->relay_gpio_id != 255) {
+    return true;
+  }
+  return false;
 }

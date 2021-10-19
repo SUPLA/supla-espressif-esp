@@ -23,7 +23,6 @@ SPI_MODE="DIO"
 BOARD_SELECTED=0
 
 set -e
-
 export PATH=/hdd2/Espressif/sdk_3x/xtensa-lx106-elf/bin:$PATH
 export COMPILE=gcc
 
@@ -221,15 +220,22 @@ find ./ -type d -name ".output" -exec rm -rf {} +
 
 BOARD_NAME=$1
 
+USE_USER2=0
+
+for var in "$@"
+do
+  case "$var" in
+    "test")  EXTRA_CCFLAGS="${EXTRA_CCFLAGS} -DSUPLA_CUSTOM_TEST -DSUPLA_DEBUG";;
+    "debug") EXTRA_CCFLAGS="${EXTRA_CCFLAGS} -DSUPLA_DEBUG";;
+    "user2") USE_USER2=1
+  esac
+done
+
 if [ "$NOSSL" -eq 1 ]; then
   EXTRA_CCFLAGS="${EXTRA_CCFLAGS} -DNOSSL=1"
   BOARD_NAME="$1"_nossl
 else
   EXTRA_CCFLAGS="${EXTRA_CCFLAGS} -DNOSSL=0"
-fi
-
-if [ "debug" = "$2" ]; then
-  EXTRA_CCFLAGS="${EXTRA_CCFLAGS} -DSUPLA_DEBUG"
 fi
 
 [ -e $OUTDIR ] || mkdir $OUTDIR
@@ -239,7 +245,7 @@ if [ "$FOTA" -eq 1 ]; then
 
   APP=1
 
-  if [ "user2" = "$2" ]; then
+  if [ "$USE_USER2" = "1" ]; then
    APP=2
   fi
 
