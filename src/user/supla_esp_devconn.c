@@ -584,7 +584,7 @@ supla_esp_channel_rgbw_value_changed(int channel_number, int color, char color_b
 
 	os_timer_disarm(&devconn->cvd[channel_number].timer);
 	os_timer_setfn(&devconn->cvd[channel_number].timer, (os_timer_func_t *)supla_esp_channel_value_changed_delayed_cb, &devconn->cvd[channel_number]);
-	os_timer_arm(&devconn->cvd[channel_number].timer, 1500, 0);
+	os_timer_arm(&devconn->cvd[channel_number].timer, 750, 0);
 
 }
 #endif /*CVD_MAX_COUNT*/
@@ -1068,9 +1068,9 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 			} else if ( new_value->ChannelNumber == dimmer_cn
 					RGBW_CHANNEl_CMP ) {
 
+        supla_esp_state.turnedOff[new_value->ChannelNumber] = 0;
 				if (TurnOnOff == 0) {
 					supla_esp_state.brightness[new_value->ChannelNumber] = Brightness;
-					supla_esp_state.turnedOff[new_value->ChannelNumber] = 0;
 				} else {
 					if ( Brightness > 0) {
 						Brightness = supla_esp_state.brightness[new_value->ChannelNumber];
