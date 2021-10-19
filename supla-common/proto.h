@@ -96,7 +96,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 // CS  - client -> server
 // SC  - server -> client
 
-#define SUPLA_PROTO_VERSION 16
+#define SUPLA_PROTO_VERSION 17
 #define SUPLA_PROTO_VERSION_MIN 1
 #if defined(ARDUINO_ARCH_AVR)     // Arduino IDE for Arduino HW
 #define SUPLA_MAX_DATA_SIZE 1248  // Registration header + 32 channels x 21 B
@@ -159,6 +159,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_CS_CALL_REGISTER_CLIENT_D 87  // ver. >= 12
 #define SUPLA_SC_CALL_REGISTER_CLIENT_RESULT 90
 #define SUPLA_SC_CALL_REGISTER_CLIENT_RESULT_B 92  // ver. >= 9
+#define SUPLA_SC_CALL_REGISTER_CLIENT_RESULT_C 94  // ver. >= 17
 #define SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED 100
 #define SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_B 102        // ver. >= 12
 #define SUPLA_DS_CALL_DEVICE_CHANNEL_VALUE_CHANGED_C 103        // ver. >= 12
@@ -228,6 +229,7 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_DS_CALL_GET_CHANNEL_CONFIG 680                  // ver. >= 16
 #define SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT 690           // ver. >= 16
 #define SUPLA_DS_CALL_ACTIONTRIGGER 700                       // ver. >= 16
+#define SUPLA_CS_CALL_TIMER_ARM 800                           // ver. >= 17
 
 #define SUPLA_RESULT_CALL_NOT_ALLOWED -5
 #define SUPLA_RESULT_DATA_TOO_LARGE -4
@@ -267,6 +269,8 @@ extern char sproto_tag[SUPLA_TAG_SIZE];
 #define SUPLA_RESULTCODE_DENY_CHANNEL_BELONG_TO_GROUP 27           // ver. >= 12
 #define SUPLA_RESULTCODE_DENY_CHANNEL_HAS_SCHEDULE 28              // ver. >= 12
 #define SUPLA_RESULTCODE_DENY_CHANNEL_IS_ASSOCIETED_WITH_SCENE 29  // ver. >= 12
+#define SUPLA_RESULTCODE_DENY_CHANNEL_IS_ASSOCIETED_WITH_ACTION_TRIGGER \
+  30  // ver. >= 16
 
 #define SUPLA_OAUTH_RESULTCODE_ERROR 0         // ver. >= 10
 #define SUPLA_OAUTH_RESULTCODE_SUCCESS 1       // ver. >= 10
@@ -541,6 +545,7 @@ typedef struct {
 #define SUBV_TYPE_ELECTRICITY_MEASUREMENTS 2
 #define SUBV_TYPE_IC_MEASUREMENTS 3
 
+#define EV_TYPE_NONE 0
 #ifdef USE_DEPRECATED_EMEV_V1
 #define EV_TYPE_ELECTRICITY_METER_MEASUREMENT_V1 10
 #endif /*USE_DEPRECATED_EMEV_V1*/
@@ -550,6 +555,7 @@ typedef struct {
 #define EV_TYPE_CHANNEL_STATE_V1 40
 #define EV_TYPE_TIMER_STATE_V1 50
 #define EV_TYPE_CHANNEL_AND_TIMER_STATE_V1 60
+#define EV_TYPE_MULTI_VALUE 100
 
 #define CALCFG_TYPE_THERMOSTAT_DETAILS_V1 10
 
@@ -611,6 +617,11 @@ typedef struct {
 } TDS_SuplaDeviceChannel_B;  // ver. >= 2
 
 typedef struct {
+  unsigned char relatedChannelNumber;  // ChannelNumber + 1.
+  unsigned _supla_int_t disablesLocalOperation;
+} TActionTriggerProperties;
+
+typedef struct {
   // device -> server
 
   unsigned char Number;
@@ -626,8 +637,7 @@ typedef struct {
 
   union {
     char value[SUPLA_CHANNELVALUE_SIZE];
-    unsigned char
-        ActionTriggerRelatedChannelNumber;  // ChannelNumber + 1. ver. >= 16
+    TActionTriggerProperties actionTriggerProperties;  // ver. >= 16
   };
 } TDS_SuplaDeviceChannel_C;  // ver. >= 10
 
@@ -1092,6 +1102,21 @@ typedef struct {
   unsigned char version;
   unsigned char version_min;
 } TSC_SuplaRegisterClientResult_B;  // ver. >= 9
+
+typedef struct {
+  // server -> client
+
+  _supla_int_t result_code;
+  _supla_int_t ClientID;
+  _supla_int_t LocationCount;
+  _supla_int_t ChannelCount;
+  _supla_int_t ChannelGroupCount;
+  _supla_int_t Flags;
+  unsigned char activity_timeout;
+  unsigned char version;
+  unsigned char version_min;
+  unsigned _supla_int_t serverUnixTimestamp;  // current server time
+} TSC_SuplaRegisterClientResult_C;            // ver. >= 17
 
 typedef struct {
   // client -> server
@@ -1666,7 +1691,7 @@ typedef struct {
   union {
     // Remaining time to turn off
     unsigned _supla_int_t RemainingTimeMs;
-    unsigned _supla_int_t RemainingTimeTs;  // Unix timestamp - Filled by server
+    unsigned _supla_int_t CountdownEndsAt;  // Unix timestamp - Filled by server
   };
 
   unsigned char TargetValue[SUPLA_CHANNELVALUE_SIZE];
@@ -1807,7 +1832,7 @@ typedef struct {
   _supla_int_t ChannelID;
   unsigned _supla_int_t DurationMS;
   unsigned char On;
-} TCS_TimerArmRequest;  // v. >= 16
+} TCS_TimerArmRequest;  // v. >= 17
 
 // Recommended for bistable buttons
 #define SUPLA_ACTION_CAP_TURN_ON (1 << 0)
