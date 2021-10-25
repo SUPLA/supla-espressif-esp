@@ -741,6 +741,10 @@ int DEVCONN_ICACHE_FLASH hsv2rgb(hsv in)
 #ifndef SUPLA_SMOOTH_DISABLED
 void DEVCONN_ICACHE_FLASH supla_esp_devconn_smooth_brightness(float *brightness, float *dest_brightness, float *step) {
 
+  if (*step < (100.0 / 255.0)) {
+    *step = (100.0 / 255.0);
+  }
+
 	if ( *brightness > *dest_brightness ) {
 
 		 *brightness=*brightness - *step;
