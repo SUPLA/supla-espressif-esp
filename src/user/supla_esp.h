@@ -121,7 +121,17 @@
 #define INPUT_FLAG_FACTORY_RESET 0x04
 #define INPUT_FLAG_DISABLE_INTR 0x08
 #define INPUT_FLAG_TRIGGER_ON_PRESS 0x10 // used for monostable inputs
-#define INPUT_FLAG_CFG_ON_TOGGLE 0x20 // used for monostable inputs
+
+// If none of below flags are set, then by default "on hold" entry to cfg mode
+// is used for monostable button, and 10x toggle for bistable button.
+// In case of monostable input, "on toggle" flag enables 10x press to enter cfg
+// mode and disables default "on hold".
+// If both "on toggle" and "on hold" flags are set for monostable input then 
+// both methods will be enabled for monostable input.
+// Those flags doesn't have any effect on bistable inputs - there is always
+// only "on toggle" variant possible.
+#define INPUT_FLAG_CFG_ON_TOGGLE 0x20
+#define INPUT_FLAG_CFG_ON_HOLD 0x40
 
 #define INPUT_TYPE_SENSOR 1
 #define INPUT_TYPE_BTN_MONOSTABLE 2

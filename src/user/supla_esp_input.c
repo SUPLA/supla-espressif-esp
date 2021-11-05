@@ -149,9 +149,25 @@ supla_esp_input_is_cfg_on_hold_enabled(supla_input_cfg_t *input_cfg) {
     return false;
   }
   if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
-    if (!(input_cfg->flags & INPUT_FLAG_CFG_ON_TOGGLE)) {
+    if (!(input_cfg->flags & INPUT_FLAG_CFG_ON_TOGGLE) ||
+        (input_cfg->flags & INPUT_FLAG_CFG_ON_HOLD)) {
       return true;
     }
+  }
+  return false;
+}
+
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_cfg_on_toggle_enabled(supla_input_cfg_t *input_cfg) {
+  if (!input_cfg) {
+    return false;
+  }
+  if (!(input_cfg->flags & INPUT_FLAG_CFG_BTN)) {
+    return false;
+  }
+  if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      (input_cfg->flags & INPUT_FLAG_CFG_ON_TOGGLE)) {
+      return true;
   }
   return false;
 }
@@ -165,8 +181,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
 
   if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
     if (supla_esp_cfgmode_started() == 0) {
-      if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg) ||
-          (system_get_time() - input_cfg->last_state_change >= 2000 * 1000)) {
+      if ((system_get_time() - input_cfg->last_state_change >= 2000 * 1000)) {
         input_cfg->click_counter = 1;
       } else {
         if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
@@ -175,7 +190,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
           input_cfg->click_counter++;
         }
       }
-      if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
+      if (supla_esp_input_is_cfg_on_toggle_enabled(input_cfg) &&
           input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
         input_cfg->click_counter = 0;
         // CFG MODE
@@ -287,8 +302,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
 
     input_cfg->max_clicks = 0;
 
-    if ((input_cfg->flags & INPUT_FLAG_CFG_BTN) &&
-        !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+    if (supla_esp_input_is_cfg_on_toggle_enabled(input_cfg)) {
       input_cfg->max_clicks = CFG_BTN_PRESS_COUNT;
     }
 
@@ -389,8 +403,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
         }
       }
 
-      if (input_cfg->flags & INPUT_FLAG_CFG_BTN &&
-          !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+      if (supla_esp_input_is_cfg_on_toggle_enabled(input_cfg)) {
         // Handling of CFG BTN functionality
         if (input_cfg->click_counter >= CFG_BTN_PRESS_COUNT) {
           input_cfg->click_counter = 0;
