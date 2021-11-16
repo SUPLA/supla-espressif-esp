@@ -1103,26 +1103,26 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch_by_input(
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port, unsigned char hi) {
 
-	if (port != 255 ) {
+  if (port != 255) {
     int channel = -1;
     for (int i = 0; i < RELAY_MAX_COUNT; i++) {
-      if ( supla_relay_cfg[i].gpio_id == port ) {
+      if (supla_relay_cfg[i].gpio_id == port) {
         channel = supla_relay_cfg[i].channel;
       }
     }
-    
+
 #ifndef COUNTDOWN_TIMER_DISABLED
-    // If Time2 > 0 then it is configured as staircase timer. In such case 
+    // If Time2 > 0 then it is configured as staircase timer. In such case
     // button behavior depends on cfg parameter
-    if (hi != 0 && supla_esp_cfg.Time2[channel] > 0 &&
+    if (channel < CFG_TIME2_COUNT && hi != 0 &&
+        supla_esp_cfg.Time2[channel] > 0 &&
         supla_esp_cfg.StaircaseButtonType == STAIRCASE_BTN_TYPE_RESET) {
       hi = HI_VALUE;
-    } 
-    if ( hi == 255 ) {
+    }
+    if (hi == 255) {
       hi = supla_esp_gpio_relay_is_hi(port) == 1 ? LO_VALUE : HI_VALUE;
     }
-
-    if (channel >= 0) {
+    if (channel >= 0 && channel < STATE_CFG_TIME2_COUNT) {
       supla_esp_state.Time2Left[channel] = 0;
       supla_esp_gpio_relay_set_duration_timer(channel, hi, 0, 0);
     }
@@ -1395,14 +1395,15 @@ supla_esp_gpio_init(void) {
            system_get_rst_info()->reason == 0)) {
 				//supla_log(LOG_DEBUG, "RESTORE, %i, %i, %i", a, supla_relay_cfg[a].gpio_id, supla_esp_state.Relay[a]);
 #ifndef COUNTDOWN_TIMER_DISABLED
-        if (supla_relay_cfg[a].channel >= 0) {
+        int channel = supla_relay_cfg[a].channel;
+        if (channel >= 0 && channel < STATE_CFG_TIME2_COUNT) {
           supla_log(LOG_DEBUG, 
               "Restoring relay state: ch %d, value %d, duration %d",
-              supla_relay_cfg[a].channel, supla_esp_state.Relay[a],
-              supla_esp_state.Time2Left[a]);
-          supla_esp_gpio_relay_set_duration_timer(supla_relay_cfg[a].channel,
+              channel, supla_esp_state.Relay[a],
+              supla_esp_state.Time2Left[channel]);
+          supla_esp_gpio_relay_set_duration_timer(channel,
               supla_esp_state.Relay[a],
-              supla_esp_state.Time2Left[a], 0);
+              supla_esp_state.Time2Left[channel], 0);
         }
 #endif /*COUNTDOWN_TIMER_DISABLED*/
 				supla_esp_gpio_relay_hi(supla_relay_cfg[a].gpio_id, 
@@ -1759,7 +1760,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
     int durationMs,
     int senderID) {
 #ifndef COUNTDOWN_TIMER_DISABLED
-  if (supla_esp_cfg.Time2[channel] > 0) {
+  if (channel < STATE_CFG_TIME2_COUNT && channel < CFG_TIME2_COUNT &&
+      supla_esp_cfg.Time2[channel] > 0) {
     // this is for staircase timer - we reset duration ms to the duration
     // that was configred on the server.
     // Staircase timer uses the same implementation as Countdown timer
