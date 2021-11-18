@@ -143,6 +143,8 @@ void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(uint8 value);
+
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms,
                                                          int ot_ms);
 bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,

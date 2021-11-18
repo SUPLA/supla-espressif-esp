@@ -58,6 +58,15 @@ static ETSTimer supla_gpio_timer2;
 unsigned char supla_esp_restart_on_cfg_press = 0;
 
 #ifdef _ROLLERSHUTTER_SUPPORT
+
+static uint8 rs_time_margin = 110;
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(uint8 value) {
+  if (value >= 0 && value <= 110) {
+    rs_time_margin = value;
+  }
+}
+
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_flag(
     supla_roller_shutter_cfg_t *rsCfg, unsigned _supla_int16_t flag) {
   if (rsCfg) {
@@ -368,7 +377,7 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg,
     // This part of code is executed only for "MOVE UP/DOWN" actions (either
     // from physical buttons or in app). It is not executed when new position
     // is given in % value.
-    if ((*time) / 1000 >= (int)(full_time * 1.1)) {
+    if ((*time) / 1000 >= (int)(full_time * (1.0 * rs_time_margin / 100.0))) {
       int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
       if (idx >= 0) {
         if (supla_esp_gpio_rs_is_autocal_done(idx)) {
@@ -383,7 +392,7 @@ supla_esp_gpio_rs_move_position(supla_roller_shutter_cfg_t *rs_cfg,
         }
       }
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
-      supla_log(LOG_DEBUG, "Timeout full_time + 10%");
+      supla_log(LOG_DEBUG, "Timeout full_time * %d%", rs_time_margin);
     }
 
     return;
@@ -475,17 +484,23 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
 				|| ( rs_cfg->task.direction == RS_DIRECTION_DOWN
 					 && position >= rs_cfg->task.percent * 100)  ) {
 
+    uint8 time_margin = 5; // default 5% margin
+    // default rs_time_margin is set to 1.1 -> 110% for button movement
+    // If it is changed to other value, then we apply it also as margin for
+    // percantage control
+    if (rs_time_margin < 110) {
+      time_margin = rs_time_margin;
+      if (isRsInMove && time_margin < 50) {
+        time_margin = 50;
+      }
+    }
+
     if (rs_cfg->task.percent == 0 &&
         1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_opening_time,
-          rs_cfg->up_time, isRsInMove ? 50 : 5)) {  // margin 5%
-
-      // supla_log(LOG_DEBUG, "UP MARGIN isRsInMove %d", isRsInMove);
-
+          rs_cfg->up_time, time_margin)) {
     } else if (rs_cfg->task.percent == 100 &&
         1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_closing_time,
-          rs_cfg->down_time, isRsInMove ? 50 : 5)) {
-
-      // supla_log(LOG_DEBUG, "DOWN MARGIN isRsInMove %d", isRsInMove);
+          rs_cfg->down_time, time_margin)) {
 		} else {
       int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
       if (idx >= 0 && (rs_cfg->task.percent == 0 || rs_cfg->task.percent == 100)) {
