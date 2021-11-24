@@ -60,6 +60,9 @@ void ICACHE_FLASH_ATTR supla_esp_ic_on_timer(void *ptr) {
       memcpy(&last_icv[channel_number], &icv, sizeof(TDS_ImpulseCounter_Value));
       supla_esp_channel_value__changed(channel_number, value);
 
+#ifdef MQTT_SUPPORT_ENABLED
+      supla_esp_board_mqtt_on_state_changed(NULL);
+#endif /*MQTT_SUPPORT_ENABLED*/
       // supla_log(LOG_DEBUG, "Value changed %i",
       // last_icv[channel_number].counter);
     }
