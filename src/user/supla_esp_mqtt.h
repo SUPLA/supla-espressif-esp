@@ -50,6 +50,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_channel_state_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
     const char *topic, const char *message, uint8 channel_number);
 
+void ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_val(char buffer[25],
+                                                  uint8 is_unsigned,
+                                                  _supla_int64_t value,
+                                                  uint8 precision);
 #ifdef ELECTRICITY_METER_COUNT
 uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
@@ -153,6 +157,18 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_color(
 int ICACHE_FLASH_ATTR supla_esp_mqtt_str2rgb(const char *str, int len,
     uint8 *red, uint8 *green, uint8 *blue);
 #endif /*MQTT_RGB_SUPPORT*/
+
+#ifdef MQTT_IMPULSE_COUNTER_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_impulse_counter_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr, int device_class);
+
+#define MQTT_DEVICE_CLASS_NONE 0
+#define MQTT_DEVICE_CLASS_ENERGY_WH 1
+#define MQTT_DEVICE_CLASS_ENERGY_KWH 2
+#define MQTT_DEVICE_CLASS_GAS_FT3 3
+#define MQTT_DEVICE_CLASS_GAS_M3 4
+#endif /*MQTT_IMPULSE_COUNTER_SUPPORT*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/
 

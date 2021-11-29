@@ -21,6 +21,7 @@
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_countdown_timer.h"
 #include "supla_esp_electricity_meter.h"
+#include "supla_esp_impulse_counter.h"
 #include "supla_update.h"
 
 #ifdef MQTT_SUPPORT_ENABLED
@@ -2560,5 +2561,100 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_set_color(
 }
 
 #endif /*MQTT_RGB_SUPPORT*/
+
+#ifdef MQTT_IMPULSE_COUNTER_SUPPORT
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_impulse_counter_prepare_message(
+    char **topic_name_out, void **message_out, size_t *message_size_out,
+    uint8 channel_number, const char *mfr, int device_class) {
+  if (!supla_esp_mqtt_prepare_ha_cfg_topic("sensor", topic_name_out,
+                                           channel_number, 0)) {
+    return 0;
+  }
+
+  const char cfg[] =
+      "{"
+      "\"avty\":{"
+        "\"topic\":\"%s/state/connected\","
+        "\"payload_available\":\"true\","
+        "\"payload_not_available\":\"false\""
+      "},"
+      "\"~\":\"%s/channels/%i\","
+      "\"device\":{"
+        "\"ids\":\"%s\","
+        "\"mf\":\"%s\","
+        "\"name\":\"%s\","
+        "\"sw\":\"%s\""
+      "},"
+      "\"name\":\"#%i %s\","
+      "\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i\","
+      "\"qos\":0,"
+      "\"stat_t\":\"~/state/value\","
+      "\"state_class\":\"total_increasing\""
+      "%s"
+      "}";
+  char c = 0;
+  char device_name[SUPLA_DEVICE_NAME_MAXSIZE] = {};
+  supla_esp_board_set_device_name(device_name, SUPLA_DEVICE_NAME_MAXSIZE);
+
+  unsigned char mac[6] = {};
+  wifi_get_macaddr(STATION_IF, mac);
+
+  size_t buffer_size = 0;
+
+  char mqtt_append[100] = {};
+  char mqtt_name[100] = "Impulse counter";
+  if (device_class != MQTT_DEVICE_CLASS_NONE) {
+
+    switch (device_class) {
+      case MQTT_DEVICE_CLASS_ENERGY_WH:
+        strncpy(mqtt_append, ",\"dev_cla\":\"energy\",\"unit_of_meas\":\"Wh\"",
+            100);
+        strncpy(mqtt_name, "Total energy", 100);
+        break;
+      case MQTT_DEVICE_CLASS_ENERGY_KWH:
+        strncpy(mqtt_append, ",\"dev_cla\":\"energy\",\"unit_of_meas\":\"kWh\"",
+            100);
+        strncpy(mqtt_name, "Total energy", 100);
+        break;
+      case MQTT_DEVICE_CLASS_GAS_FT3:
+        strncpy(mqtt_append, ",\"dev_cla\":\"gas\",\"unit_of_meas\":\"ft³\"",
+            100);
+        strncpy(mqtt_name, "Total gas", 100);
+        break;
+      case MQTT_DEVICE_CLASS_GAS_M3:
+        strncpy(mqtt_append, ",\"dev_cla\":\"gas\",\"unit_of_meas\":\"m³\"",
+            100);
+        strncpy(mqtt_name, "Total gas", 100);
+        break;
+      default:
+        break;
+    }
+  }
+
+  for (uint8 a = 0; a < 2; a++) {
+    buffer_size =
+        ets_snprintf(a ? *message_out : &c, a ? buffer_size : 1, cfg,
+                     supla_esp_mqtt_vars->prefix, supla_esp_mqtt_vars->prefix,
+                     channel_number, supla_esp_mqtt_vars->device_id, mfr,
+                     device_name, SUPLA_ESP_SOFTVER, channel_number, mqtt_name,
+                     mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+                     channel_number, mqtt_append) + 1;
+    if (!a) {
+      *message_out = malloc(buffer_size);
+      if (*message_out == NULL) {
+        if (*topic_name_out) {
+          free(*topic_name_out);
+          *topic_name_out = NULL;
+        }
+        return 0;
+      }
+    }
+  }
+
+  *message_size_out = strnlen(*message_out, buffer_size);
+  return 1;
+}
+
+#endif /*MQTT_IMPULSE_COUNTER_SUPPORT*/
 
 #endif /*MQTT_SUPPORT_ENABLED*/
