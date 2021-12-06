@@ -26,6 +26,5 @@ typedef void (*_wifi_void_status)(uint8 status);
 void ICACHE_FLASH_ATTR supla_esp_wifi_init(void);
 void ICACHE_FLASH_ATTR
 supla_esp_wifi_station_connect(_wifi_void_status status_cb);
-void ICACHE_FLASH_ATTR supla_esp_wifi_station_disconnect(void);
 
 #endif /* SUPLA_WIFI_H_ */

@@ -20,6 +20,7 @@
 #define _SUPLA_TEST_BOARD_INIT_H_
 
 #include <supla_esp_gpio.h>
+#include <supla_esp_rs_fb.h>
 
 typedef void (testBoardGpioInitCb)(void);
 

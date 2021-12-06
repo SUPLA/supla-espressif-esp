@@ -60,6 +60,7 @@ file(GLOB SRC
   ../src/user/supla_esp_dns_client.c
   ../src/user/supla_esp_wifi.c
   ../src/user/uptime.c
+  ../src/user/supla_esp_rs_fb.c
   )
 
 add_executable(supla_common_test ${SRC} ${TEST_SRC} ${COMMON_DOUBLE_SRC})

@@ -18,6 +18,7 @@
 
 #include "supla_esp_input.h"
 #include "supla_esp_gpio.h"
+#include "supla_esp_rs_fb.h"
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_cfg.h"
 #include "supla_esp_mqtt.h"

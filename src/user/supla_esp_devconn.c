@@ -29,6 +29,7 @@
 #include "supla_esp_devconn.h"
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_gpio.h"
+#include "supla_esp_rs_fb.h"
 #include "supla_esp_cfg.h"
 #include "supla_esp_pwm.h"
 #include "supla_esp_hw_timer.h"
@@ -1143,9 +1144,11 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 					ot = 0;
 
         supla_esp_gpio_rs_apply_new_times(a, ct, ot);
+//        char tilt = new_value->value[1];
 
 				if ( v >= 10 && v <= 110 ) {
-					supla_esp_gpio_rs_add_task(a, v-10);
+          // TODO: change to: tilt - 10
+					supla_esp_gpio_rs_add_task(a, v-10, -1);//tilt);
         } else if ( v == 1 ) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
         } else if ( v == 2 ) {
@@ -1897,7 +1900,7 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
           supla_esp_gpio_rs_apply_new_times(i, rsSettings->FullClosingTimeMS,
               rsSettings->FullOpeningTimeMS);
           // trigger calibration by setting position to fully open
-          supla_esp_gpio_rs_add_task(i, 0);
+          supla_esp_gpio_rs_add_task(i, 0, 0);
         }
       }
     }

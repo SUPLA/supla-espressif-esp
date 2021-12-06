@@ -102,6 +102,8 @@ typedef struct {
   // disalbed), or if ActionTrigger should be published
   char ButtonMode[BTN_MAX_COUNT];
 
+  unsigned int Time3[CFG_TIME3_COUNT];
+
   char zero[200];
 
 } SuplaEspCfg;
@@ -195,27 +197,31 @@ typedef struct {
 
 typedef struct {
 
-	char Relay[RELAY_MAX_COUNT];
+  char Relay[RELAY_MAX_COUNT];
 
+  union {
     int color[RS_MAX_COUNT];
-    char color_brightness[RS_MAX_COUNT];
-    char brightness[RS_MAX_COUNT];
+    int tilt[RS_MAX_COUNT];
+  };
 
-    int rs_position[RS_MAX_COUNT];
-    
-    unsigned int Time1Left[STATE_CFG_TIME1_COUNT];
-    unsigned int Time2Left[STATE_CFG_TIME2_COUNT];
+  char color_brightness[RS_MAX_COUNT];
+  char brightness[RS_MAX_COUNT];
 
-    char turnedOff[RS_MAX_COUNT];
+  int rs_position[RS_MAX_COUNT];
 
-    char zero[200];
-/*
-	char ltag;
-	char len;
-	char log[20][200];
-*/
+  unsigned int Time1Left[STATE_CFG_TIME1_COUNT];
+  unsigned int Time2Left[STATE_CFG_TIME2_COUNT];
 
-}SuplaEspState;
+  char turnedOff[RS_MAX_COUNT];
+
+  char zero[200];
+  /*
+     char ltag;
+     char len;
+     char log[20][200];
+     */
+
+} SuplaEspState;
 
 #define CMD_MAXSIZE 100
 extern char *user_cmd;

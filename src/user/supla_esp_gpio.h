@@ -30,10 +30,6 @@
 #define RELAY_FLAG_LO_LEVEL_TRIGGER   0x10
 #define RELAY_FLAG_VIRTUAL_GPIO       0x20
 
-#define RS_RELAY_OFF   0
-#define RS_RELAY_UP    2
-#define RS_RELAY_DOWN  1
-
 typedef struct {
   uint8 gpio_id;
   uint8 flags;  // RELAY_FLAG_*
@@ -41,59 +37,7 @@ typedef struct {
   unsigned _supla_int_t channel_flags; // SUPLA_CHANNEL_FLAG_*
 } supla_relay_cfg_t;
 
-typedef struct {
-
-	uint8 percent;
-	uint8 direction;
-	uint8 active;
-
-}rs_task_t;
-
-typedef struct {
-
-	ETSTimer timer;
-	uint8 value;
-  bool autoCal_request;
-
-}supla_rs_delayed_trigger;
-
-typedef struct {
-
-  supla_relay_cfg_t *up;
-  supla_relay_cfg_t *down;
-
-  int *position;
-
-  unsigned int *full_opening_time;
-  unsigned int *full_closing_time;
-  unsigned int *auto_opening_time;
-  unsigned int *auto_closing_time;
-
-  unsigned int last_comm_time;
-
-  unsigned int up_time;
-  unsigned int down_time;
-  unsigned int last_time;
-  unsigned int stop_time;
-  unsigned int start_time;
-
-  unsigned int autoCal_step;
-
-  ETSTimer timer;
-  supla_rs_delayed_trigger delayed_trigger;
-  rs_task_t task;
-
-  int last_position;
-  bool performAutoCalibration;
-  bool autoCal_button_request;
-
-  unsigned _supla_int16_t flags; // RS_VALUE_FLAG_*
-  unsigned _supla_int16_t last_flags; // last send RS_VALUE_FLAG_*
-  bool detectedPowerConsumption;
-} supla_roller_shutter_cfg_t;
-
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
-extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 extern unsigned int supla_esp_gpio_init_time;
 extern unsigned char supla_esp_restart_on_cfg_press;
 
@@ -141,29 +85,6 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_relay_switch(int port,
 
 void supla_esp_gpio_set_led(char r, char g, char b);
 void supla_esp_gpio_led_blinking(int led, int time);
-
-#ifdef _ROLLERSHUTTER_SUPPORT
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(uint8 value);
-
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms,
-                                                         int ot_ms);
-bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
-                                                          int ot_ms,
-                                                          bool save);
-void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
-                                 uint8 value, uint8 cancel_task,
-                                 uint8 stop_delay);
-uint8 GPIO_ICACHE_FLASH
-supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg);
-void GPIO_ICACHE_FLASH
-supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg);
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, uint8 percent);
-
-sint8 supla_esp_gpio_rs_get_current_position(
-    supla_roller_shutter_cfg_t *rs_cfg);
-void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
-#endif /*_ROLLERSHUTTER_SUPPORT*/
-supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_relay_set_duration_timer(int channel,
     int newValue, int durationMs, int senderID);

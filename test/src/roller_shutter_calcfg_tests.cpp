@@ -556,7 +556,7 @@ TEST_F(RollerShutterCalCfgAutoCalF, RsDuringCalibration_CalCfgRecalibrate) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   
   // trigger autocalibration
-  supla_esp_gpio_rs_add_task(0, 10);
+  supla_esp_gpio_rs_add_task(0, 10, 0);
 
   // +2000 ms
   for (int i = 0; i < 250; i++) {
@@ -862,7 +862,7 @@ TEST_F(RollerShutterCalCfgManualCalF, RsDuringCalibration_CalCfgRecalibrate) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   
   // trigger autocalibration
-  supla_esp_gpio_rs_add_task(0, 10);
+  supla_esp_gpio_rs_add_task(0, 10, 0);
 
   for (int i = 0; i < 80; i++) {
     curTime += 10000; // +10ms

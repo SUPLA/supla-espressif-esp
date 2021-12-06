@@ -1890,7 +1890,7 @@ supla_esp_mqtt_rs_recalibrate(unsigned char channelNumber) {
       supla_esp_gpio_rs_apply_new_times(i, supla_esp_cfg.Time2[i],
                                         supla_esp_cfg.Time1[i]);
       // trigger calibration by setting position to fully open
-      supla_esp_gpio_rs_add_task(i, 0);
+      supla_esp_gpio_rs_add_task(i, 0, 0);
     }
   }
 }

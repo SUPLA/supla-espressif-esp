@@ -1025,7 +1025,7 @@ TEST_F(RollerShutterAutoCalF, RsNotCalibrated_TriggerAutoCalAddTask0) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 0);
+  supla_esp_gpio_rs_add_task(0, 0, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1089,7 +1089,7 @@ TEST_F(RollerShutterAutoCalF, RsNotCalibrated_TriggerAutoCalAddTask60) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1150,7 +1150,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1179,7 +1179,7 @@ TEST_F(RollerShutterAutoCalF,
       eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_GT(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   // Calibration procedure should happen here
   for (int i = 0; i < 800; i++) {
@@ -1246,7 +1246,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1324,7 +1324,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1351,13 +1351,13 @@ TEST_F(RollerShutterAutoCalF,
       eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_GT(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
   for (int i = 0; i < 50; i++) {
     curTime += 10000; // +10ms
     executeTimers();
   }
 
-  supla_esp_gpio_rs_add_task(0, 90);
+  supla_esp_gpio_rs_add_task(0, 90, 0);
   for (int i = 0; i < 50; i++) {
     curTime += 10000; // +10ms
     executeTimers();
@@ -1421,7 +1421,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1499,7 +1499,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1837,7 +1837,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
 
   // manual calibration times
   supla_esp_gpio_rs_apply_new_times(0, 2000, 2200);
-  supla_esp_gpio_rs_add_task(0, 50);
+  supla_esp_gpio_rs_add_task(0, 50, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -1868,7 +1868,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
 
   // enable auto calibration 
   supla_esp_gpio_rs_apply_new_times(0, 0, 0);
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -1889,7 +1889,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
 
   // new times should be ignored
   supla_esp_gpio_rs_apply_new_times(0, 0, 0);
-  supla_esp_gpio_rs_add_task(0, 30);
+  supla_esp_gpio_rs_add_task(0, 30, 0);
 
   // + 10 s
   for (int i = 0; i < 150; i++) {
@@ -1930,7 +1930,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
   
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -1971,7 +1971,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 53);
+  supla_esp_gpio_rs_add_task(0, 53, 0);
   
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2022,7 +2022,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToManualCalibrationDuringAutoCalibration) {
 
   // manual calibration times
   supla_esp_gpio_rs_apply_new_times(0, 0, 0);
-  supla_esp_gpio_rs_add_task(0, 50);
+  supla_esp_gpio_rs_add_task(0, 50, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2064,7 +2064,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToManualCalibrationDuringAutoCalibration) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
   
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2114,7 +2114,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringManualCalibration) {
 
   // manual calibration times
   supla_esp_gpio_rs_apply_new_times(0, 2000, 2000);
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2160,7 +2160,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringManualCalibration) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
   
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2210,7 +2210,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringMoveDown) {
 
   // manual calibration times
   supla_esp_gpio_rs_apply_new_times(0, 2000, 2000);
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2266,7 +2266,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringMoveDown) {
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
   
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -3218,7 +3218,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 100);
+  supla_esp_gpio_rs_add_task(0, 100, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -3272,7 +3272,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
  
   // Move RS up.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 0);
+  supla_esp_gpio_rs_add_task(0, 0, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +10.1 s 
