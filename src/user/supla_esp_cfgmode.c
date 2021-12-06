@@ -31,6 +31,7 @@
 #include "supla_esp_devconn.h"
 #include "supla_esp_gpio.h"
 #include "supla_esp_mqtt.h"
+#include "supla_esp_rs_fb.h"
 
 #define TYPE_UNKNOWN 0
 #define TYPE_GET 1

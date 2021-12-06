@@ -18,6 +18,7 @@
 
 #include "supla_ds18b20.h"
 #include "supla_esp.h"
+#include "supla_esp_rs_fb.h"
 
 #define B_CFG_PORT 0
 #define B_RELAY1_PORT 4
