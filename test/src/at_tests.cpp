@@ -166,6 +166,11 @@ public:
     memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
     gpioInitCb = gpioCallbackAt;
     supla_esp_gpio_init_time = 0;
+
+    strncpy(supla_esp_cfg.Server, "test", 4);
+    strncpy(supla_esp_cfg.Email, "test", 4);
+    strncpy(supla_esp_cfg.WIFI_SSID, "test", 4);
+    strncpy(supla_esp_cfg.WIFI_PWD, "test", 4);
   }
 
   void TearDown() override {
@@ -829,14 +834,14 @@ TEST_F(ATRegisteredFixture, MonostableMultipleAndHold) {
 TEST_F(ATRegisteredFixture, MonostableMoreThan5x) {
   gpioConfigId = 1;
 
-  {                                               
+  {
     InSequence seq;
     // Expected channel 1 (ActionTrigger) state changes
     EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
     EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x5));
 
     // Expected channel 0 (relay) state changes ON
-    EXPECT_CALL(srpc, 
+    EXPECT_CALL(srpc,
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
   }
@@ -1056,13 +1061,13 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtn) {
     executeTimers();
   }
 
-  // AT is enabled, so monostable button shouldn't change relay 
+  // AT is enabled, so monostable button shouldn't change relay
   EXPECT_FALSE(eagleStub.getGpioValue(2));
 
   EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
 
-  // 12x press 
-  for (int i = 0; i < 12; i++) {
+  // 10x press
+  for (int i = 0; i < 10; i++) {
     // simulate active input on gpio 1
     eagleStub.gpioOutputSet(1, 1);
     ets_gpio_intr_func(NULL);
@@ -1073,7 +1078,7 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtn) {
       executeTimers();
     }
 
-    // AT is enabled, so monostable button shouldn't change relay 
+    // AT is enabled, so monostable button shouldn't change relay
     EXPECT_FALSE(eagleStub.getGpioValue(2));
 
     // simulate inactive input on gpio 1
@@ -1086,6 +1091,7 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtn) {
       executeTimers();
     }
   }
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
 
   // +500 ms
   for (int i = 0; i < 50; i++) {
@@ -1093,7 +1099,7 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtn) {
     executeTimers();
   }
 
-  // AT is enabled, so monostable button shouldn't change relay 
+  // AT is enabled, so monostable button shouldn't change relay
   EXPECT_FALSE(eagleStub.getGpioValue(2));
 
   // 1x press
@@ -1108,7 +1114,6 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtn) {
       executeTimers();
     }
 
-    // AT is enabled, so monostable button shouldn't change relay 
     EXPECT_FALSE(eagleStub.getGpioValue(2));
 
     // simulate inactive input on gpio 1

@@ -137,16 +137,13 @@ void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 }
 
 char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_ready_to_connect(void) {
-	
-	if (strnlen(supla_esp_cfg.Server, SERVER_MAXSIZE) == 0
-		|| strnlen(supla_esp_cfg.Email, SUPLA_EMAIL_MAXSIZE) == 0
-		|| strnlen(supla_esp_cfg.WIFI_SSID, WIFI_SSID_MAXSIZE) == 0
-		|| strnlen(supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE) == 0) {
-		
-		return 0;
-	}
-	
-	return 1;
+  if (strnlen(supla_esp_cfg.Server, SERVER_MAXSIZE) == 0 ||
+      strnlen(supla_esp_cfg.Email, SUPLA_EMAIL_MAXSIZE) == 0 ||
+      strnlen(supla_esp_cfg.WIFI_SSID, WIFI_SSID_MAXSIZE) == 0 ||
+      strnlen(supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE) == 0) {
+    return 0;
+  }
+  return 1;
 }
 
 char CFG_ICACHE_FLASH_ATTR

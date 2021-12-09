@@ -53,7 +53,7 @@ void gpioCallbackInput() {
   supla_relay_cfg[0].gpio_id = 2;
   supla_relay_cfg[0].channel = 0;
   supla_relay_cfg[0].flags = RELAY_FLAG_RESTORE_FORCE;
-  supla_relay_cfg[0].channel_flags = 
+  supla_relay_cfg[0].channel_flags =
     SUPLA_CHANNEL_FLAG_COUNTDOWN_TIMER_SUPPORTED;
   if (gpioConfigId == 0) {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
@@ -88,16 +88,28 @@ void gpioCallbackInput() {
     supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS;
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   } else if (gpioConfigId == 12) {
-    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS | 
-                               INPUT_FLAG_CFG_BTN | 
+    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS |
+                               INPUT_FLAG_CFG_BTN |
                                INPUT_FLAG_CFG_ON_TOGGLE;
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
   } else if (gpioConfigId == 13) {
-    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS | 
-                               INPUT_FLAG_CFG_BTN | 
+    supla_input_cfg[0].flags = INPUT_FLAG_TRIGGER_ON_PRESS |
+                               INPUT_FLAG_CFG_BTN |
                                INPUT_FLAG_CFG_ON_TOGGLE |
                                INPUT_FLAG_CFG_ON_HOLD;
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+  } else if (gpioConfigId == 14) {
+    supla_input_cfg[0].flags = INPUT_FLAG_CFG_BTN |
+                               INPUT_FLAG_FACTORY_RESET;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[0].relay_gpio_id = 255;
+
+    supla_input_cfg[1].gpio_id = 3;
+    supla_input_cfg[1].flags = 0;
+    supla_input_cfg[1].channel = 255;
+    supla_input_cfg[1].relay_gpio_id = 2;
+    supla_input_cfg[1].flags = INPUT_FLAG_CFG_BTN;
+    supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
   } else {
     assert(false);
   }
@@ -121,6 +133,10 @@ public:
     memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
     gpioInitCb = gpioCallbackInput;
     supla_esp_gpio_init_time = 0;
+    strncpy(supla_esp_cfg.Server, "test", 4);
+    strncpy(supla_esp_cfg.Email, "test", 4);
+    strncpy(supla_esp_cfg.WIFI_SSID, "test", 4);
+    strncpy(supla_esp_cfg.WIFI_PWD, "test", 4);
   }
 
   void TearDown() override {
@@ -182,6 +198,28 @@ public:
     supla_esp_devconn_release();
   }
 };
+
+class InputsFactoryDefaultFixture: public InputsFixture {
+public:
+  void SetUp() override {
+    InputsFixture::SetUp();
+    memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
+    supla_esp_cfgmode_start();
+  }
+
+  void setButton(int gpio, int state, int timeMs) {
+    eagleStub.gpioOutputSet(gpio, state);
+    ets_gpio_intr_func(NULL);
+
+    for (int i = 0; i < timeMs / 10; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+
+  }
+
+};
+
 
 TEST_F(InputsFixture, MonostableButtonWithRelay) {
   gpioConfigId = 0;
@@ -1925,4 +1963,106 @@ TEST_F(InputsFixture, MonostableCfgOnToggleAndOnHold2) {
   }
 
   EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
+}
+
+TEST_F(InputsFactoryDefaultFixture, CfgButtonTriggersReset) {
+  gpioConfigId = 14;
+
+  // GPIO 1, 3 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  // GPIO 2 - relay
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  setButton(1, 1, 300);
+  setButton(1, 0, 700);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  EXPECT_CALL(board, supla_system_restart()).Times(1);
+
+  // +5000 ms
+  for (int i = 0; i < 500; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  setButton(1, 1, 300);
+  setButton(1, 0, 700);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+}
+
+// In this scenario, device is in config mode but it doesn't have complete
+// configuration (i.e. with factory defaults). In this case, input buttons
+// associated with control over other elements (like relays), should
+// control those elements and should not cause exit from cfg mode
+TEST_F(InputsFactoryDefaultFixture, InputButtonShouldNotTriggersReset) {
+  gpioConfigId = 14;
+
+  // GPIO 1, 3 - input button
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  // GPIO 2 - relay
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
+  EXPECT_CALL(board, supla_system_restart()).Times(0);
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  setButton(3, 1, 300);
+  setButton(3, 0, 700);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  // relay
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+
+  // +5000 ms
+  for (int i = 0; i < 500; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  setButton(3, 1, 300);
+  setButton(3, 0, 700);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  setButton(3, 1, 300);
+  setButton(3, 0, 700);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
 }

@@ -167,13 +167,19 @@ class RsInputsFixture : public ::testing::Test {
     void SetUp() override {
       cleanupTimers();
       supla_esp_gpio_clear_vars();
-      curTime = 10000; 
+      curTime = 10000;
       currentDeviceState = STATE_UNKNOWN;
       EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
       memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
       memset(&supla_esp_state, 0, sizeof(SuplaEspState));
       memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
       memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
+
+      strncpy(supla_esp_cfg.Server, "test", 4);
+      strncpy(supla_esp_cfg.Email, "test", 4);
+      strncpy(supla_esp_cfg.WIFI_SSID, "test", 4);
+      strncpy(supla_esp_cfg.WIFI_PWD, "test", 4);
+
       gpioInitCb = gpioCallbackRsInputs;
       supla_esp_gpio_init_time = 0;
       EXPECT_CALL(srpc, srpc_params_init(_));
