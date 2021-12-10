@@ -173,6 +173,53 @@ supla_esp_input_is_cfg_on_toggle_enabled(supla_input_cfg_t *input_cfg) {
   return false;
 }
 
+bool GPIO_ICACHE_FLASH
+supla_esp_input_is_cfg_button_enabled(supla_input_cfg_t *input_cfg) {
+  if (!input_cfg) {
+    return false;
+  }
+
+  if (!(input_cfg->flags & INPUT_FLAG_CFG_BTN)) {
+    return false;
+  }
+
+  // when device doesn't have server configuration set, we allow only
+  // buttons with "factory reset" flag to act as cfg mode buttons.
+  if (!supla_esp_cfg_ready_to_connect() &&
+      !(input_cfg->flags & INPUT_FLAG_FACTORY_RESET)) {
+    return false;
+  }
+
+  return true;
+}
+
+bool GPIO_ICACHE_FLASH
+supla_esp_input_can_button_exit_cfgmode(supla_input_cfg_t *input_cfg) {
+  if (!input_cfg) {
+    return false;
+  }
+
+  if (!supla_esp_cfgmode_started()) {
+    return false;
+  }
+
+  if (!(input_cfg->flags && INPUT_FLAG_CFG_BTN)) {
+    return false;
+  }
+
+
+  if (supla_esp_cfg_ready_to_connect()) {
+    return true;
+  }
+
+  if (input_cfg->relay_gpio_id == 255 &&
+      input_cfg->disabled_relay_gpio_id == 255) {
+    return true;
+  }
+
+  return false;
+}
+
 // Handling of inputs in standard (pre ActionTrigger) way
 // Called only on state change
 void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
@@ -180,7 +227,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
 
   os_timer_disarm(&input_cfg->timer);
 
-  if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
+  if (supla_esp_input_is_cfg_button_enabled(input_cfg)) {
     if (supla_esp_cfgmode_started() == 0) {
       if ((system_get_time() - input_cfg->last_state_change >= 2000 * 1000)) {
         input_cfg->click_counter = 1;
@@ -204,7 +251,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
       // Leave CFG MODE
       input_cfg->click_counter = 1;
       if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
-          system_get_time() - supla_esp_cfgmode_entertime() > 3000 * 1000) {
+          system_get_time() - supla_esp_cfgmode_entertime() > 3000 * 1000 &&
+          supla_esp_input_can_button_exit_cfgmode(input_cfg)) {
         // If we are in CFG mode and there was button press 3s after entering
         // CFG mode, then EXIT CFG MODE
         supla_system_restart();
@@ -222,27 +270,28 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
       supla_system_restart();
       return;
     }
-   
+
     if (supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
       os_timer_arm(&input_cfg->timer, INPUT_CYCLE_TIME, true);
     }
 
     input_cfg->last_state_change = system_get_time();
-    if ( supla_esp_cfgmode_started() == 0) {
+    if (! supla_esp_input_can_button_exit_cfgmode(input_cfg) ) {
       supla_esp_gpio_on_input_active(input_cfg);
     }
   } else if (new_state == INPUT_STATE_INACTIVE) {
-    if (input_cfg->flags & INPUT_FLAG_CFG_BTN) {
+    if (supla_esp_input_is_cfg_button_enabled(input_cfg)) {
       // Handling of CFG BTN functionality
-      if ( input_cfg->click_counter > 0 && supla_esp_cfgmode_started() == 1 && 
-          (system_get_time() - supla_esp_cfgmode_entertime() > 3000*1000)) {
+      if (input_cfg->click_counter > 0 &&
+          system_get_time() - supla_esp_cfgmode_entertime() > 3000 * 1000 &&
+          supla_esp_input_can_button_exit_cfgmode(input_cfg)) {
         // If we are in CFG mode and there was button press 3s after entering 
         // CFG mode, then EXIT CFG MODE
         supla_system_restart();
         return;
       }
     }
-    if ( supla_esp_cfgmode_started() == 0) {
+    if (! supla_esp_input_can_button_exit_cfgmode(input_cfg) ) {
       supla_esp_gpio_on_input_inactive(input_cfg);
     }
   }
