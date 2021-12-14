@@ -1182,30 +1182,17 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
     if (rs_cfg != NULL) {
 #ifdef _ROLLERSHUTTER_SUPPORT
       int direction = (rs_cfg->up->gpio_id == input_cfg->relay_gpio_id)
-          ? RS_RELAY_UP
-          : RS_RELAY_DOWN;
+        ? RS_RELAY_UP
+        : RS_RELAY_DOWN;
 
-      // in advanced mode, only input_active method is being called
-      // so it has to handle RS_RELAY UP/DOWN/OFF for all button types
-      if (advanced_mode) {
+      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+        supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+      } else { // monostable
         if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
         } else {
           supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
         }
-
-      } else { // legacy mode uses active/inactive method, so here for 
-               // bistable button we handle only button "active" trigger
-        if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
-          supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
-        } else { // monostable
-          if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
-            supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
-          } else {
-            supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
-          }
-        }
-
       }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
     } else {
@@ -1239,6 +1226,9 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
           ? RS_RELAY_UP
           : RS_RELAY_DOWN;
       if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+        // inactive button state (change to "released"/unpress) should
+        // switch off relay only if current RS movement direction is the same
+        // as button
         if (supla_esp_gpio_rs_get_value(rs_cfg) == direction) {
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
         }

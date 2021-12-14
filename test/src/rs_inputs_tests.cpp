@@ -996,8 +996,8 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
   EXPECT_TRUE(eagleStub.getGpioValue(3));
   EXPECT_FALSE(eagleStub.getGpioValue(4));
 
-  // simulate button press on gpio 1
-  eagleStub.gpioOutputSet(2, 1);
+  // simulate button press on gpio 2
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 1);
   ets_gpio_intr_func(NULL);
 
   for (int i = 0; i < 150; i++) {
@@ -1005,7 +1005,7 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
     executeTimers();
   }
   EXPECT_FALSE(eagleStub.getGpioValue(3));
-  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_TRUE(eagleStub.getGpioValue(4));
 
   // simulate button release on gpio 1
   eagleStub.gpioOutputSet(BUTTON_UP, 0);
@@ -1017,11 +1017,11 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
     executeTimers();
   }
 
-  EXPECT_TRUE(eagleStub.getGpioValue(3));
-  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_TRUE(eagleStub.getGpioValue(4));
 
   // simulate button release on gpio 2
-  eagleStub.gpioOutputSet(2, 0);
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 0);
   ets_gpio_intr_func(NULL);
 
   // +500 ms
@@ -1480,7 +1480,7 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
   EXPECT_FALSE(eagleStub.getGpioValue(4));
 
   // simulate button press on gpio 1
-  eagleStub.gpioOutputSet(2, 1);
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 1);
   ets_gpio_intr_func(NULL);
 
   for (int i = 0; i < 150; i++) {
@@ -1488,7 +1488,7 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
     executeTimers();
   }
   EXPECT_FALSE(eagleStub.getGpioValue(3));
-  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_TRUE(eagleStub.getGpioValue(4));
 
   // simulate button release on gpio 1
   eagleStub.gpioOutputSet(BUTTON_UP, 0);
@@ -1500,8 +1500,8 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
     executeTimers();
   }
 
-  EXPECT_TRUE(eagleStub.getGpioValue(3));
-  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_TRUE(eagleStub.getGpioValue(4));
 
   // simulate button release on gpio 2
   eagleStub.gpioOutputSet(2, 0);
@@ -1934,6 +1934,148 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputs) {
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
+
+
+}
+
+TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
+  gpioConfigId = 1;
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  {
+    InSequence seq;
+
+    EXPECT_CALL(
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+  }
+
+  moveTime(1000);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_DOWN));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
+
+  TSD_ChannelConfig configResult = {};
+  configResult.ChannelNumber = 1;  // AT channel number
+  configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
+  configResult.ConfigType = 0;
+  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+
+  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
+  memcpy(configResult.Config, &atSettings,
+      sizeof(TSD_ChannelConfig_ActionTrigger));
+
+  supla_esp_channel_config_result(&configResult);
+
+  EXPECT_EQ(supla_input_cfg[0].active_triggers, SUPLA_ACTION_CAP_TOGGLE_x2);
+
+  configResult.ChannelNumber = 2;
+  supla_esp_channel_config_result(&configResult);
+
+  EXPECT_EQ(supla_input_cfg[1].active_triggers, SUPLA_ACTION_CAP_TOGGLE_x2);
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(BUTTON_UP, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(500);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  moveTime(1500);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+
+  // release up and shortly after that press down
+  eagleStub.gpioOutputSet(BUTTON_UP, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(10);
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press up and release down and at the same time
+  eagleStub.gpioOutputSet(BUTTON_UP, 1);
+  ets_gpio_intr_func(NULL);
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 0);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press down and after short time release up
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(10);
+  eagleStub.gpioOutputSet(BUTTON_UP, 0);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press up while down is also pressed
+  eagleStub.gpioOutputSet(BUTTON_UP, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release up, down is still pressed but there should be no down movement
+  eagleStub.gpioOutputSet(BUTTON_UP, 0);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release down
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 0);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press up
+  eagleStub.gpioOutputSet(BUTTON_UP, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press down, while up is still pressed
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release down
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 0);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
 
 }
