@@ -1144,11 +1144,18 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 					ot = 0;
 
         supla_esp_gpio_rs_apply_new_times(a, ct, ot);
-//        char tilt = new_value->value[1];
+        sint8 tilt = new_value->value[1];
 
-				if ( v >= 10 && v <= 110 ) {
-          // TODO: change to: tilt - 10
-					supla_esp_gpio_rs_add_task(a, v-10, -1);//tilt);
+        if (tilt >= 10 && tilt <= 110) {
+          tilt = tilt - 10;
+        } else {
+          tilt = -1;
+        }
+
+        if (v >= 10 && v <= 110) {
+					supla_esp_gpio_rs_add_task(a, v-10, tilt);
+        } else if ( v == -1) {
+					supla_esp_gpio_rs_add_task(a, v, tilt);
         } else if ( v == 1 ) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
         } else if ( v == 2 ) {

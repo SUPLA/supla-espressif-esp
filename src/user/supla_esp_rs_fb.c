@@ -474,30 +474,111 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
     return;
   }
 
-  int position = supla_esp_gpio_rs_get_current_position(rs_cfg);
-  int tilt = supla_esp_gpio_rs_get_current_tilt(rs_cfg);
   int raw_position = (*rs_cfg->position) - 100;
   int raw_tilt = (*rs_cfg->tilt) - 100;
-  int task_position = rs_cfg->task.position;
-  int task_tilt = rs_cfg->task.tilt;
+  if (raw_tilt < 0) {
+    raw_tilt = 0;
+  }
+  int task_position = (int)rs_cfg->task.position * 100;
+  int task_tilt = (int)rs_cfg->task.tilt * 100;
+
+  // delta_pos_ variables defines how much position should be reduced/increased
+  // in order to match requested position after tilting
+  int delta_pos_up = 0;
+  int delta_pos_down = 0;
+
+  switch (rs_cfg->tilt_type) {
+    case FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING: {
+      // adjust position so it will match requested value after tilting
+      if (rs_cfg->task.state == RS_TASK_SETTING_POSITION
+          || (task_position != -100 && task_tilt != -100)) {
+
+        int tilt_direction =
+          (task_tilt > raw_tilt) ? RS_DIRECTION_DOWN : RS_DIRECTION_UP;
+        int delta_tilt =
+          (task_tilt > raw_tilt) ?
+          (task_tilt - raw_tilt) : (raw_tilt - task_tilt);
+        int tilting_time =
+          1.0 * (*rs_cfg->tilt_change_time) * delta_tilt / 10000.0;
+
+
+        int raw_position_after_pre_tilt =
+          (tilt_direction == RS_DIRECTION_DOWN) ?
+          raw_position + 10000.0 * tilting_time / *rs_cfg->full_closing_time :
+          raw_position - 10000.0 * tilting_time / *rs_cfg->full_opening_time;
+
+        int tmp = 1;
+        /*
+        int delta_tilt_to_bottom = 10000 - raw_tilt;
+        unsigned remaining_tilt_down =
+          (1.0 * delta_tilt_to_bottom) * (*rs_cfg->tilt_change_time);
+        int remaining_delta_pos =
+          remaining_tilt_down / (*rs_cfg->full_closing_time);
+        int pos_at_max_tilt = raw_position + remaining_delta_pos;
+        if (pos_at_max_tilt > 10000) {
+          pos_at_max_tilt = 10000;
+        }
+
+        int delta_tilt_to_top = raw_tilt;
+        unsigned remaining_tilt_up =
+          (1.0 * delta_tilt_to_top) * (*rs_cfg->tilt_change_time);
+        remaining_delta_pos =
+          remaining_tilt_up / (*rs_cfg->full_opening_time);
+        int pos_at_min_tilt = raw_position - remaining_delta_pos;
+        if (pos_at_min_tilt < 0) {
+          pos_at_min_tilt = 0;
+        }
+        */
+
+        int required_correction_up = 10000 - task_tilt;
+        unsigned int tilt_correction_time_up =
+          (1.0 * required_correction_up) * (*rs_cfg->tilt_change_time);
+        delta_pos_down = tilt_correction_time_up / (*rs_cfg->full_opening_time);
+        if (raw_tilt < 10000) {
+
+        }
+
+        if (task_position + delta_pos_down > 10000) {
+          delta_pos_down = 10000 - task_position;
+        }
+
+        int required_tilt_movement_down = task_tilt;
+        unsigned int tilt_time_down =
+          (1.0 * required_tilt_movement_down) * (*rs_cfg->tilt_change_time);
+        delta_pos_up = tilt_time_down / (*rs_cfg->full_closing_time);
+
+        if (task_position < delta_pos_up) {
+          delta_pos_up = task_position;
+        }
+      }
+      break;
+    }
+    case FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED: {
+      // ignore tilt when position <100
+      break;
+    }
+  }
 
   // As a first step we will start movement in order to reach desired position
   if (rs_cfg->task.state == RS_TASK_ACTIVE) {
     rs_cfg->task.state = RS_TASK_SETTING_POSITION;
-    if (position > task_position) {
-      rs_cfg->task.direction = RS_DIRECTION_UP;
-      supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
+
+    if (task_position != -100) {
+      if (raw_position > task_position - delta_pos_up) {
+        rs_cfg->task.direction = RS_DIRECTION_UP;
+        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 #ifdef SUPLA_DEBUG
-      supla_log(LOG_DEBUG, "task go UP %i, %i, %i, %i", position, task_position,
-          tilt, task_tilt);
+        supla_log(LOG_DEBUG, "task go UP %i, %i, %i, %i", raw_position,
+            task_position, raw_tilt, task_tilt);
 #endif /*SUPLA_DEBUG*/
-    } else if (position < task_position) {
-      rs_cfg->task.direction = RS_DIRECTION_DOWN;
-      supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
+      } else if (raw_position < task_position + delta_pos_down) {
+        rs_cfg->task.direction = RS_DIRECTION_DOWN;
+        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
 #ifdef SUPLA_DEBUG
-      supla_log(LOG_DEBUG, "task go DOWN %i, %i, %i, %i", position,
-          task_position, tilt, task_tilt);
+        supla_log(LOG_DEBUG, "task go DOWN %i, %i, %i, %i", raw_position,
+            task_position, raw_tilt, task_tilt);
 #endif /*SUPLA_DEBUG*/
+      }
     }
   }
 
@@ -506,14 +587,14 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
   if (rs_cfg->task.state == RS_TASK_SETTING_POSITION &&
       rs_cfg->task.direction == RS_DIRECTION_NONE) {
     rs_cfg->task.state = RS_TASK_SETTING_TILT;
-    if (tilt > task_tilt) {
+    if (raw_tilt > task_tilt && task_tilt != -100) {
       rs_cfg->task.direction = RS_DIRECTION_UP;
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 #ifdef SUPLA_DEBUG
       supla_log(LOG_DEBUG, "task go UP %i, %i, %i, %i", position, task_position,
           tilt, task_tilt);
 #endif /*SUPLA_DEBUG*/
-    } else if (tilt < task_tilt) {
+    } else if (raw_tilt < task_tilt && task_tilt != -100) {
       rs_cfg->task.direction = RS_DIRECTION_DOWN;
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
 #ifdef SUPLA_DEBUG
@@ -533,9 +614,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
   if (rs_cfg->task.state == RS_TASK_SETTING_POSITION) {
     // Task was already started, so we are in the middle of processing
     if ((rs_cfg->task.direction == RS_DIRECTION_UP &&
-          raw_position <= task_position * 100) ||
+          raw_position <= task_position - delta_pos_up) ||
         (rs_cfg->task.direction == RS_DIRECTION_DOWN &&
-         raw_position >= task_position * 100)) {
+         raw_position >= task_position + delta_pos_down)) {
 
       uint8 time_margin = 5;  // default 5% margin
       // default rs_time_margin is set to 1.1 -> 110% for button movement
@@ -548,10 +629,10 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
         }
       }
 
-      if (rs_cfg->task.position == 0 &&
+      if (raw_position == 0 &&
           1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_opening_time,
             rs_cfg->up_time, time_margin)) {
-      } else if (rs_cfg->task.position == 100 &&
+      } else if (raw_position == 10000 &&
           1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_closing_time,
             rs_cfg->down_time,
             time_margin)) {
@@ -584,9 +665,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
 
   if (rs_cfg->task.state == RS_TASK_SETTING_TILT) {
     if ((rs_cfg->task.direction == RS_DIRECTION_UP &&
-          raw_tilt <= task_tilt * 100) ||
+          raw_tilt <= task_tilt) ||
         (rs_cfg->task.direction == RS_DIRECTION_DOWN &&
-         raw_tilt >= task_tilt * 100)) {
+         raw_tilt >= task_tilt)) {
       rs_cfg->task.state = RS_TASK_INACTIVE;
       rs_cfg->task.direction = RS_DIRECTION_NONE;
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
@@ -806,13 +887,22 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
       rs_cfg->last_flags = rs_cfg->flags;
 
       char value[SUPLA_CHANNELVALUE_SIZE] = {};
-      sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
-      sint8 tilt = supla_esp_gpio_rs_get_current_tilt(rs_cfg);
-      TRollerShutterValue *rsValue = (TRollerShutterValue *)value;
+      if (rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED) {
+        // Roller shutter
+        sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
+        TDSC_RollerShutterValue *rsValue = (TDSC_RollerShutterValue *)value;
+        rsValue->position = pos;
+        rsValue->flags = rs_cfg->flags;
+      } else if (rs_cfg->tilt_type != FB_TILT_TYPE_NOT_SUPPORTED) {
+        // Facade blind
+        sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
+        sint8 tilt = supla_esp_gpio_rs_get_current_tilt(rs_cfg);
+        TDSC_FacadeBlindValue *fbValue = (TDSC_FacadeBlindValue *)value;
+        fbValue->position = pos;
+        fbValue->flags = rs_cfg->flags;
+        fbValue->tilt = tilt;
+      }
 
-      rsValue->position = pos;
-      rsValue->flags = rs_cfg->flags;
-      rsValue->tilt = tilt;
       supla_esp_channel_value__changed(rs_cfg->up->channel, value);
 
 #ifdef BOARD_ON_ROLLERSHUTTER_POSITION_CHANGED
@@ -872,22 +962,20 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
     supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[idx]);
   sint8 current_tilt = supla_esp_gpio_rs_get_current_tilt(&supla_rs_cfg[idx]);
 
-  if (position == -1) {
-    position = current_position;
-  }
-
-  if (tilt == -1) {
-    tilt = current_tilt;
-  }
-
-  if (current_position == position) {
+  if (current_position == position || position == -1) {
     if (!supla_esp_gpio_rs_is_tilt_supported(&supla_rs_cfg[idx]) ||
-        current_tilt == tilt) {
+        current_tilt == tilt || tilt == -1) {
       return;
     }
   }
 
-  // supla_log(LOG_DEBUG, "Task added %i", position);
+  // If we are in the middle of processing other task and only tilt
+  // was changed in new task, then we keep other's task position
+  if (supla_rs_cfg[idx].task.state != RS_TASK_INACTIVE
+      && supla_rs_cfg[idx].task.state != RS_TASK_SETTING_TILT
+      && position == -1) {
+    position = supla_rs_cfg[idx].task.position;
+  }
 
   supla_rs_cfg[idx].task.position = position;
   supla_rs_cfg[idx].task.tilt = tilt;
@@ -976,6 +1064,22 @@ supla_esp_gpio_rs_is_tilt_supported(supla_roller_shutter_cfg_t *rs_cfg) {
   }
 
   return true;
+}
+
+bool GPIO_ICACHE_FLASH
+supla_esp_gpio_is_rs(supla_roller_shutter_cfg_t *rs_cfg) {
+  if (rs_cfg && rs_cfg->tilt_type == 0) {
+    return true;
+  }
+  return false;
+}
+
+bool GPIO_ICACHE_FLASH
+supla_esp_gpio_is_fb(supla_roller_shutter_cfg_t *rs_cfg) {
+  if (rs_cfg && rs_cfg->tilt_type > 0) {
+    return true;
+  }
+  return false;
 }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 

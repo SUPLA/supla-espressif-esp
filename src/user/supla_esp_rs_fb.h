@@ -32,8 +32,8 @@
 #define RS_TASK_SETTING_TILT 3
 
 typedef struct {
-  uint8 position;
-  uint8 tilt;
+  sint8 position;
+  sint8 tilt;
   uint8 direction;
   uint8 state;  // RS_TASK_*
 } rs_task_t;
@@ -46,9 +46,10 @@ typedef struct {
 
 } supla_rs_delayed_trigger;
 
-#define FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING 0
-#define FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING 1
-#define FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED 2
+#define FB_TILT_TYPE_NOT_SUPPORTED 0
+#define FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING 1
+#define FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING 2
+#define FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED 3
 
 typedef struct {
 
@@ -61,6 +62,8 @@ typedef struct {
               // tilt 10 * 100 corresponds with fully open
               // tilt 110 * 100 corresponds with fully closed
   signed char tilt_type;  // FB_TILT_TYPE_*
+                          // value set by channel config
+                          // If set to 0, then it is Roller Shutter
 
   unsigned int *full_opening_time;
   unsigned int *full_closing_time;
@@ -96,6 +99,8 @@ extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
 #ifdef _ROLLERSHUTTER_SUPPORT
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(uint8 value);
+bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs(supla_roller_shutter_cfg_t *rs_cfg);
+bool GPIO_ICACHE_FLASH supla_esp_gpio_is_fb(supla_roller_shutter_cfg_t *rs_cfg);
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms,
     int ot_ms);
