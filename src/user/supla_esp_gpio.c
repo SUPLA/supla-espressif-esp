@@ -1205,7 +1205,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
             supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
           }
         }
-            
+
       }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
     } else {
@@ -1239,7 +1239,9 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
           ? RS_RELAY_UP
           : RS_RELAY_DOWN;
       if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
-        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+        if (supla_esp_gpio_rs_get_value(rs_cfg) == direction) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
+        }
       } else { // monostable
         if (supla_esp_gpio_rs_get_value(rs_cfg) != RS_RELAY_OFF) {
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
