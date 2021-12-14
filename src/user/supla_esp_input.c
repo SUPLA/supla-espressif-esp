@@ -539,8 +539,22 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     // if there is related relay gpio id, then single click/press is used for
     // device's local action
     if (input_cfg->click_counter == 1 && input_cfg->relay_gpio_id != 255) {
-      supla_esp_gpio_on_input_active(input_cfg);
-      return;
+      supla_roller_shutter_cfg_t *rs_cfg =
+        supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
+      if (rs_cfg != NULL) {
+        // in advanced mode with AT, roller shutter still requires
+        // to call input active/inactive methods depending on input state
+        if (input_cfg->last_state == INPUT_STATE_ACTIVE) {
+          supla_esp_gpio_on_input_active(input_cfg);
+        } else {
+          // in advanvced mode, inputs which are not controlling roller
+          // shutter, should call only input active method
+          supla_esp_gpio_on_input_inactive(input_cfg);
+        }
+        return;
+      } else {
+        supla_esp_gpio_on_input_active(input_cfg);
+      }
     }
     // map click_counter to proper action
     if (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {

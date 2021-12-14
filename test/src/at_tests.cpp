@@ -188,6 +188,13 @@ public:
     cleanupTimers();
     gpioInitCb = nullptr;
   }
+
+  void moveTime(const int timeMs) {
+    for (int i = 0; i < timeMs / 10; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
+  }
 };
 
 TSD_SuplaRegisterDeviceResult regAt;
@@ -239,27 +246,23 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
   {
     InSequence seq;
     // Expected channel 0 (relay) state changes ON
-    EXPECT_CALL(srpc, 
+    EXPECT_CALL(srpc,
         valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})));
 
-    EXPECT_CALL(srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x2));
+    EXPECT_CALL(
+        srpc, srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_SHORT_PRESS_x2));
 
     // RELAY OFF
-    EXPECT_CALL(srpc, 
+    EXPECT_CALL(srpc,
         valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})));
   }
-
   // GPIO 1 - input button
   EXPECT_FALSE(eagleStub.getGpioValue(1));
 
   supla_esp_gpio_init();
   ASSERT_NE(ets_gpio_intr_func, nullptr);
 
-  // +1000 ms
-  for (int i = 0; i < 100; i++) {
-    curTime += 10000; // +10ms
-    executeTimers();
-  }
+  moveTime(1000);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_FALSE(eagleStub.getGpioValue(2));
@@ -267,12 +270,8 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
   // simulate active input on gpio 1
   eagleStub.gpioOutputSet(1, 1);
   ets_gpio_intr_func(NULL);
-  
-  // +300 ms
-  for (int i = 0; i < 30; i++) {
-    curTime += 10000; // +10ms
-    executeTimers();
-  }
+
+  moveTime(300);
 
   // AT is not enabled yet, so monostable button should change relay on press
   EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -280,12 +279,8 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
   // simulate inactive sensor on gpio 1
   eagleStub.gpioOutputSet(1, 0);
   ets_gpio_intr_func(NULL);
- 
-  // +700 ms
-  for (int i = 0; i < 70; i++) {
-    curTime += 10000; // +10ms
-    executeTimers();
-  }
+
+  moveTime(700);
 
   EXPECT_EQ(supla_input_cfg[0].active_triggers, 0);
 
@@ -309,11 +304,7 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
     eagleStub.gpioOutputSet(1, 1);
     ets_gpio_intr_func(NULL);
 
-    // +200 ms
-    for (int i = 0; i < 20; i++) {
-      curTime += 10000; // +10ms
-      executeTimers();
-    }
+    moveTime(200);
 
     // AT is enabled, so monostable button shouldn't change relay 
     EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -322,18 +313,10 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
     eagleStub.gpioOutputSet(1, 0);
     ets_gpio_intr_func(NULL);
 
-    // +200 ms
-    for (int i = 0; i < 20; i++) {
-      curTime += 10000; // +10ms
-      executeTimers();
-    }
+    moveTime(200);
   }
 
-  // +500 ms
-  for (int i = 0; i < 50; i++) {
-    curTime += 10000; // +10ms
-    executeTimers();
-  }
+  moveTime(500);
 
   // AT is enabled, so monostable button shouldn't change relay 
   EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -343,11 +326,7 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
     eagleStub.gpioOutputSet(1, 1);
     ets_gpio_intr_func(NULL);
 
-    // +200 ms
-    for (int i = 0; i < 20; i++) {
-      curTime += 10000; // +10ms
-      executeTimers();
-    }
+    moveTime(200);
 
     // AT is enabled, so monostable button shouldn't change relay 
     EXPECT_TRUE(eagleStub.getGpioValue(2));
@@ -356,18 +335,10 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
     eagleStub.gpioOutputSet(1, 0);
     ets_gpio_intr_func(NULL);
 
-    // +200 ms
-    for (int i = 0; i < 20; i++) {
-      curTime += 10000; // +10ms
-      executeTimers();
-    }
+    moveTime(200);
   }
 
-  // +500 ms
-  for (int i = 0; i < 500; i++) {
-    curTime += 10000; // +10ms
-    executeTimers();
-  }
+  moveTime(500);
 
   // AT is enabled, so monostable button change relay on press_1x
   EXPECT_FALSE(eagleStub.getGpioValue(2));
