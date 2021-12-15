@@ -439,7 +439,8 @@ uint8 GPIO_ICACHE_FLASH supla_esp_gpio_rs_time_margin(
 }
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
-    supla_roller_shutter_cfg_t *rs_cfg, bool isRsInMove) {
+    supla_roller_shutter_cfg_t *rs_cfg, bool isRsInMove,
+    unsigned int full_opening_time, unsigned int full_closing_time) {
   if (rs_cfg->task.state == RS_TASK_INACTIVE || rs_cfg->autoCal_step > 0) {
     return;
   }
@@ -447,17 +448,6 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
   if (rs_cfg->performAutoCalibration) {
     supla_esp_gpio_rs_start_autoCal(rs_cfg);
     return;
-  }
-
-  int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
-  unsigned int full_opening_time = 0;
-  unsigned int full_closing_time = 0;
-  if (supla_esp_gpio_rs_is_autocal_enabled(idx)) {
-    full_opening_time = *rs_cfg->auto_opening_time;
-    full_closing_time = *rs_cfg->auto_closing_time;
-  } else {
-    full_opening_time = *rs_cfg->full_opening_time;
-    full_closing_time = *rs_cfg->full_closing_time;
   }
 
   // Start calibration is needed
@@ -513,13 +503,13 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
 
         raw_position_after_pre_tilt =
           (tilt_direction == RS_DIRECTION_DOWN) ?
-          raw_position + 10000.0 * tilting_time / *rs_cfg->full_closing_time :
-          raw_position - 10000.0 * tilting_time / *rs_cfg->full_opening_time;
+          raw_position + 10000.0 * tilting_time / full_closing_time :
+          raw_position - 10000.0 * tilting_time / full_opening_time;
 
         int required_correction_up = 10000 - task_tilt;
         unsigned int tilt_correction_time_up =
           (1.0 * required_correction_up) * (*rs_cfg->tilt_change_time);
-        delta_pos_down = tilt_correction_time_up / (*rs_cfg->full_opening_time);
+        delta_pos_down = tilt_correction_time_up / full_opening_time;
         if (raw_tilt < 10000) {
 
         }
@@ -531,7 +521,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
         int required_tilt_movement_down = task_tilt;
         unsigned int tilt_time_down =
           (1.0 * required_tilt_movement_down) * (*rs_cfg->tilt_change_time);
-        delta_pos_up = tilt_time_down / (*rs_cfg->full_closing_time);
+        delta_pos_up = tilt_time_down / full_closing_time;
 
         if (task_position < delta_pos_up) {
           delta_pos_up = task_position;
@@ -854,7 +844,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
   }
 
   supla_esp_gpio_rs_check_if_autocal_is_needed(rs_cfg);
-  supla_esp_gpio_rs_task_processing(rs_cfg, isRsInMove);
+  supla_esp_gpio_rs_task_processing(rs_cfg, isRsInMove, full_opening_time,
+      full_closing_time);
 
   if (t - rs_cfg->last_comm_time >= 500000) {  // 500 ms.
 
