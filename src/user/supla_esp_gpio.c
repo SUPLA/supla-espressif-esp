@@ -1229,7 +1229,9 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
         // inactive button state (change to "released"/unpress) should
         // switch off relay only if current RS movement direction is the same
         // as button
-        if (supla_esp_gpio_rs_get_value(rs_cfg) == direction) {
+        if (supla_esp_gpio_rs_get_value(rs_cfg) == direction
+            || (supla_esp_gpio_rs_get_value(rs_cfg) == RS_RELAY_OFF
+            && rs_cfg->delayed_trigger.value == direction)) {
           supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 1, 1);
         }
       } else { // monostable
