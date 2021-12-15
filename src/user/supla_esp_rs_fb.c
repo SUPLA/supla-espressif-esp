@@ -487,6 +487,15 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
   int delta_pos_up = 0;
   int delta_pos_down = 0;
 
+  // we calculate what will be actual position after setting
+  // the requested tilt. Then if that position is higher than task position
+  // we should start movement down, if lower, then move up, if ~equal, then
+  // just proceed with tilting.
+  // Positioning should happen until we reach task_position corrected by
+  // delta_pos_up/down
+
+  int raw_position_after_pre_tilt = raw_position;
+
   switch (rs_cfg->tilt_type) {
     case FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING: {
       // adjust position so it will match requested value after tilting
@@ -502,33 +511,10 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
           1.0 * (*rs_cfg->tilt_change_time) * delta_tilt / 10000.0;
 
 
-        int raw_position_after_pre_tilt =
+        raw_position_after_pre_tilt =
           (tilt_direction == RS_DIRECTION_DOWN) ?
           raw_position + 10000.0 * tilting_time / *rs_cfg->full_closing_time :
           raw_position - 10000.0 * tilting_time / *rs_cfg->full_opening_time;
-
-        int tmp = 1;
-        /*
-        int delta_tilt_to_bottom = 10000 - raw_tilt;
-        unsigned remaining_tilt_down =
-          (1.0 * delta_tilt_to_bottom) * (*rs_cfg->tilt_change_time);
-        int remaining_delta_pos =
-          remaining_tilt_down / (*rs_cfg->full_closing_time);
-        int pos_at_max_tilt = raw_position + remaining_delta_pos;
-        if (pos_at_max_tilt > 10000) {
-          pos_at_max_tilt = 10000;
-        }
-
-        int delta_tilt_to_top = raw_tilt;
-        unsigned remaining_tilt_up =
-          (1.0 * delta_tilt_to_top) * (*rs_cfg->tilt_change_time);
-        remaining_delta_pos =
-          remaining_tilt_up / (*rs_cfg->full_opening_time);
-        int pos_at_min_tilt = raw_position - remaining_delta_pos;
-        if (pos_at_min_tilt < 0) {
-          pos_at_min_tilt = 0;
-        }
-        */
 
         int required_correction_up = 10000 - task_tilt;
         unsigned int tilt_correction_time_up =
@@ -564,14 +550,14 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
     rs_cfg->task.state = RS_TASK_SETTING_POSITION;
 
     if (task_position != -100) {
-      if (raw_position > task_position - delta_pos_up) {
+      if (raw_position_after_pre_tilt > task_position) {
         rs_cfg->task.direction = RS_DIRECTION_UP;
         supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 #ifdef SUPLA_DEBUG
         supla_log(LOG_DEBUG, "task go UP %i, %i, %i, %i", raw_position,
             task_position, raw_tilt, task_tilt);
 #endif /*SUPLA_DEBUG*/
-      } else if (raw_position < task_position + delta_pos_down) {
+      } else if (raw_position_after_pre_tilt < task_position) {
         rs_cfg->task.direction = RS_DIRECTION_DOWN;
         supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
 #ifdef SUPLA_DEBUG
@@ -971,10 +957,18 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
 
   // If we are in the middle of processing other task and only tilt
   // was changed in new task, then we keep other's task position
-  if (supla_rs_cfg[idx].task.state != RS_TASK_INACTIVE
-      && supla_rs_cfg[idx].task.state != RS_TASK_SETTING_TILT
+  if (supla_rs_cfg[idx].task.state != RS_TASK_INACTIVE) {
+    if (supla_rs_cfg[idx].task.state != RS_TASK_SETTING_TILT
       && position == -1) {
-    position = supla_rs_cfg[idx].task.position;
+      position = supla_rs_cfg[idx].task.position;
+    }
+    if (tilt == -1) {
+      tilt = supla_rs_cfg[idx].task.tilt;
+    }
+  }
+
+  if (tilt == -1) {
+    tilt = current_tilt;
   }
 
   supla_rs_cfg[idx].task.position = position;

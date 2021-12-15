@@ -420,7 +420,7 @@ TEST_F(FacadeBlindTestsF, FacadeBlindKeepPositionWhileTiltingTasks) {
   supla_esp_gpio_rs_add_task(0, 30, -1);
   moveTime(15000);
   EXPECT_NEAR(*rsCfg->position, 100 + (30 * 100), 50);
-  EXPECT_NEAR(*rsCfg->tilt, 100 + (100 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 50);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
@@ -521,7 +521,7 @@ TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingTasks) {
   supla_esp_gpio_rs_add_task(0, 30, -1);
   moveTime(15000);
   EXPECT_NEAR(*rsCfg->position, 100 + (30 * 100), 50);
-  EXPECT_NEAR(*rsCfg->tilt, 100 + (100 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 50);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
@@ -534,7 +534,7 @@ TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingTasks) {
 
   supla_esp_gpio_rs_add_task(0, -1, 90);
   moveTime(15000);
-  EXPECT_NEAR(*rsCfg->position, 100 + (30 * 100), 50);
+  EXPECT_NEAR(*rsCfg->position, 100 + (46 * 100), 50);
   EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 50);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
