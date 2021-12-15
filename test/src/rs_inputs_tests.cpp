@@ -1933,9 +1933,6 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputs) {
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
-
-
-
 }
 
 TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
@@ -2076,6 +2073,226 @@ TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+}
+
+TEST_F(RsInputsFixture, BistableButtonWithLessThan1sToggles) {
+  gpioConfigId = 1;
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  {
+    InSequence seq;
+    EXPECT_CALL(
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+  }
+
+  moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_DOWN));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(BUTTON_UP, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(300);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release up and shortly after that press down
+  eagleStub.gpioOutputSet(BUTTON_UP, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(10);
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(200);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  eagleStub.gpioOutputSet(BUTTON_DOWN, 0);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(2000);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+}
+
+TEST_F(RsInputsFixture, BistableButtonWithLessThan1sTogglesWithNotify) {
+  gpioConfigId = 1;
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  {
+    InSequence seq;
+    EXPECT_CALL(
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+  }
+
+  moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_DOWN));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  // simulate button press on gpio 1
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+
+  moveTime(30);
+
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
+
+  moveTime(1500);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  moveTime(200);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  moveTime(1500);
+
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+
+  // Depending on HW in this scenario it may be expected to have RS moving
+  // UP, however we may also accept case when RS is not in move
+  //EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
 
+}
+
+TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
+  gpioConfigId = 1;
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  {
+    InSequence seq;
+
+    EXPECT_CALL(
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+  }
+
+  moveTime(1000);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(BUTTON_DOWN));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  EXPECT_EQ(currentDeviceState, STATE_CONNECTED);
+
+  // simulate button press on gpio 1
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+
+  moveTime(300);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  moveTime(1500);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+
+  // release up and shortly after that press down
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  moveTime(10);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press up and release down and at the same time
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press down and after short time release up
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
+  moveTime(10);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press up while down is also pressed
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+
+  moveTime(1500);
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release up, down is still pressed but there should be no down movement
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release down
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press up
+  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
+
+  moveTime(1500);
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // press down, while up is still pressed
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
+
+  // release down
+  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+
+  moveTime(1500);
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
+  EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 }
