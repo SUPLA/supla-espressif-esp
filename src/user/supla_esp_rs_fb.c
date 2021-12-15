@@ -964,6 +964,15 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
     tilt = current_tilt;
   }
 
+  if (supla_rs_cfg[idx].tilt_type ==
+      FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED) {
+    if (position != 100) {
+      if (!(position == -1 && *supla_rs_cfg[idx].position == 10100)) {
+        tilt = 0;
+      }
+    }
+  }
+
   supla_rs_cfg[idx].task.position = position;
   supla_rs_cfg[idx].task.tilt = tilt;
   supla_rs_cfg[idx].task.direction = RS_DIRECTION_NONE;

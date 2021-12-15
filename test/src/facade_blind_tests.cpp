@@ -273,8 +273,10 @@ TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingMoveUpDown) {
 }
 
 TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltMoveUpDown) {
-  // this time of facade blinds has fixed tilt at any position other than fully
+  // facade blinds has a fixed tilt at any position other than fully
   // closed. Tilting is possible only at fully closed
+  // tilt change should be ignored if it is requested with
+  // position == -1 and when actual position != 100
 
   rsCfg->tilt_type = FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED;
 
@@ -536,6 +538,87 @@ TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingTasks) {
   moveTime(15000);
   EXPECT_NEAR(*rsCfg->position, 100 + (46 * 100), 50);
   EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 50);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
+
+TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltAddTask) {
+  // facade blinds has a fixed tilt at any position other than fully
+  // closed. Tilting is possible only at fully closed
+  // tilt change should be ignored if it is requested with
+  // position == -1 and when actual position != 100
+
+  rsCfg->tilt_type = FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED;
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  moveTime(2000);
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Request tilt change, while it it not possible
+  supla_esp_gpio_rs_add_task(0, -1, 90);
+
+  moveTime(800);
+  EXPECT_EQ(*rsCfg->position, 100 + (0 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100); // tilt should not change
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  moveTime(1500);
+
+  // Request postion=30 and tilt=50. Tilt setting is not possible at this
+  // position, so it will be ignored
+  supla_esp_gpio_rs_add_task(0, 30, 50);
+  moveTime(5000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (30*100), 50);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Request tilt change, while it it not possible
+  supla_esp_gpio_rs_add_task(0, -1, 90);
+
+  moveTime(800);
+  EXPECT_NEAR(*rsCfg->position, 100 + (30*100), 50);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Request tilt change, while it it not possible
+  supla_esp_gpio_rs_add_task(0, 100, -1);
+
+  moveTime(15000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (100*100), 50);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // Request tilt change
+  supla_esp_gpio_rs_add_task(0, -1, 60);
+
+  moveTime(8000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (100*100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (60 * 100), 50);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  supla_esp_gpio_rs_add_task(0, 95, -1);
+
+  moveTime(8000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (95*100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 50);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 }
