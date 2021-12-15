@@ -577,15 +577,15 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
       rs_cfg->task.direction = RS_DIRECTION_UP;
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_UP, 0, 0);
 #ifdef SUPLA_DEBUG
-      supla_log(LOG_DEBUG, "task go UP %i, %i, %i, %i", position, task_position,
-          tilt, task_tilt);
+      supla_log(LOG_DEBUG, "task go UP %i, %i, %i, %i", raw_position,
+          task_position, raw_tilt, task_tilt);
 #endif /*SUPLA_DEBUG*/
     } else if (raw_tilt < task_tilt && task_tilt != -100) {
       rs_cfg->task.direction = RS_DIRECTION_DOWN;
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_DOWN, 0, 0);
 #ifdef SUPLA_DEBUG
-      supla_log(LOG_DEBUG, "task go DOWN %i, %i, %i, %i", position,
-          task_position, tilt, task_tilt);
+      supla_log(LOG_DEBUG, "task go DOWN %i, %i, %i, %i", raw_position,
+          task_position, raw_tilt, task_tilt);
 #endif /*SUPLA_DEBUG*/
     } else {
 #ifdef SUPLA_DEBUG
@@ -873,16 +873,18 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
       rs_cfg->last_flags = rs_cfg->flags;
 
       char value[SUPLA_CHANNELVALUE_SIZE] = {};
+      sint8 pos = -1;
+      sint8 tilt = -1;
       if (rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED) {
         // Roller shutter
-        sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
+        pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
         TDSC_RollerShutterValue *rsValue = (TDSC_RollerShutterValue *)value;
         rsValue->position = pos;
         rsValue->flags = rs_cfg->flags;
       } else if (rs_cfg->tilt_type != FB_TILT_TYPE_NOT_SUPPORTED) {
         // Facade blind
-        sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
-        sint8 tilt = supla_esp_gpio_rs_get_current_tilt(rs_cfg);
+        pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
+        tilt = supla_esp_gpio_rs_get_current_tilt(rs_cfg);
         TDSC_FacadeBlindValue *fbValue = (TDSC_FacadeBlindValue *)value;
         fbValue->position = pos;
         fbValue->flags = rs_cfg->flags;
