@@ -106,6 +106,10 @@ LOCAL void supla_esp_input_debounce_timer_cb(void *timer_arg) {
 void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
     supla_input_cfg_t *input_cfg, int new_state) {
 
+#ifdef SUPLA_DEBUG
+  supla_log(LOG_DEBUG, "notify input %d change: %d", input_cfg->gpio_id,
+      new_state);
+#endif /*SUPLA_DEBUG*/
   // Silent period disables inputs for first 400 ms after startup in order to
   // init current input state.
   static bool silent_period = true;
@@ -355,7 +359,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
       input_cfg->max_clicks = CFG_BTN_PRESS_COUNT;
     }
 
-    supla_log(LOG_DEBUG, "input %d, flags %d, max clicks %d, active %d", 
+    supla_log(LOG_DEBUG, "input %d, flags %d, max clicks %d, active %d",
         input_cfg->gpio_id, input_cfg->flags, input_cfg->max_clicks,
         input_cfg->active_triggers);
 
@@ -376,7 +380,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
         (input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x1) ) {
       max_clicks_from_actions = 1;
     }
-        
+
     if (input_cfg->max_clicks < max_clicks_from_actions) {
       input_cfg->max_clicks = max_clicks_from_actions;
     }
@@ -543,7 +547,8 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
       if (rs_cfg != NULL) {
         // in advanced mode with AT, roller shutter still requires
         // to call input active/inactive methods depending on input state
-        if (input_cfg->last_state == INPUT_STATE_ACTIVE) {
+        if (input_cfg->last_state == INPUT_STATE_ACTIVE
+            || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
           supla_esp_gpio_on_input_active(input_cfg);
         } else {
           supla_esp_gpio_on_input_inactive(input_cfg);
