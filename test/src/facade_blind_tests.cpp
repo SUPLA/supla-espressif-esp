@@ -44,7 +44,9 @@ using ::testing::SaveArg;
 using ::testing::DoAll;
 using ::testing::SetArgPointee;
 using ::testing::Invoke;
-
+using ::testing::Pointee;
+using ::testing::ElementsAreArray;
+using ::testing::AnyNumber;
 
 // method will be called by supla_esp_gpio_init method in order to initialize
 // gpio input/outputs board configuration (supla_esb_board_gpio_init)
@@ -67,8 +69,17 @@ void gpioCallbackFacadeBlind() {
   supla_rs_cfg[0].delayed_trigger.value = 0;
 }
 
+TSD_SuplaRegisterDeviceResult regResultFacadeBlinds;
+
+char custom_srpc_getdata_facade_blinds(void *_srpc, TsrpcReceivedData *rd,
+    unsigned _supla_int_t rr_id) {
+  rd->call_type = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
+  rd->data.sd_register_device_result = &regResultFacadeBlinds;
+  return 1;
+}
 class FacadeBlindTestsF : public ::testing::Test {
 public:
+  SrpcMock srpc;
   TimeMock time;
   EagleSocStub eagleStub;
   int curTime = 10000; // start at +10 ms
@@ -94,9 +105,32 @@ public:
     *rsCfg->tilt_change_time = 2000;
     *rsCfg->tilt = 100;
 
+    EXPECT_CALL(srpc, srpc_params_init(_));
+    EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
+    EXPECT_CALL(srpc, srpc_set_proto_version(_, 17));
+
+    regResultFacadeBlinds.result_code = SUPLA_RESULTCODE_TRUE;
+
+    EXPECT_CALL(srpc, srpc_getdata(_, _, _))
+      .WillOnce(DoAll(Invoke(custom_srpc_getdata_facade_blinds), Return(1)));
+    EXPECT_CALL(srpc, srpc_rd_free(_));
+    EXPECT_CALL(srpc, srpc_free(_));
+    EXPECT_CALL(srpc, srpc_iterate(_)).WillRepeatedly(Return(SUPLA_RESULT_TRUE));
+    EXPECT_CALL(srpc, srpc_dcs_async_set_activity_timeout(_, _));
+
+    supla_esp_devconn_init();
+    // this is called to disable devconn watchdog timer
+    supla_esp_devconn_before_update_start();
+
+    supla_esp_srpc_init();
+    ASSERT_NE(srpc.on_remote_call_received, nullptr);
+
+    srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+    EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
   }
 
   void TearDown() override {
+    supla_esp_devconn_release();
     supla_esp_gpio_rs_set_time_margin(110);
     cleanupTimers();
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
@@ -119,6 +153,10 @@ public:
 };
 
 TEST_F(FacadeBlindTestsF, FacadeBlindKeepPositionWhileTiltingMoveUpDown) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
   rsCfg->tilt_type = FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING;
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -196,6 +234,10 @@ TEST_F(FacadeBlindTestsF, FacadeBlindKeepPositionWhileTiltingMoveUpDown) {
 }
 
 TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingMoveUpDown) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
   rsCfg->tilt_type = FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING;
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -273,6 +315,10 @@ TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingMoveUpDown) {
 }
 
 TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltMoveUpDown) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
   // facade blinds has a fixed tilt at any position other than fully
   // closed. Tilting is possible only at fully closed
   // tilt change should be ignored if it is requested with
@@ -356,6 +402,10 @@ TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltMoveUpDown) {
 }
 
 TEST_F(FacadeBlindTestsF, FacadeBlindKeepPositionWhileTiltingTasks) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
   rsCfg->tilt_type = FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING;
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -459,6 +509,10 @@ TEST_F(FacadeBlindTestsF, FacadeBlindKeepPositionWhileTiltingTasks) {
 }
 
 TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingTasks) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
   rsCfg->tilt_type = FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING;
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -543,6 +597,10 @@ TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingTasks) {
 }
 
 TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltAddTask) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
   // facade blinds has a fixed tilt at any position other than fully
   // closed. Tilting is possible only at fully closed
   // tilt change should be ignored if it is requested with
@@ -621,4 +679,532 @@ TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltAddTask) {
   EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 50);
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+}
+
+TEST_F(FacadeBlindTestsF, FacadeBlindKeepPositionWhileTiltingReqFromServer) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
+  rsCfg->tilt_type = FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING;
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms
+  moveTime(2000);
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = (100) | (100 << 16);
+
+  reqValue.value[0] = 1; // move down
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (100 * 100));
+
+  reqValue.value[0] = 2; // move up
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 0; // stop
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+50; // 50
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+50; // position
+  reqValue.value[1] = 10+50; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (50 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // commands stop/up/down on position field have priority over tilt setting
+  // which is ignored in this case
+  reqValue.value[0] = 0; // position stop
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (50 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 1; // position move down
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (100 * 100));
+
+  reqValue.value[0] = 2; // position move up
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000 + 1000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (50 * 100), 60);
+
+  reqValue.value[0] = 0; // position stop
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (50 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = -1; // position
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(2000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (20 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = -1; // position
+  reqValue.value[1] = 10+100; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(3000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (100 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+20; // position
+  reqValue.value[1] = 10+90; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (20 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+70; // position
+  reqValue.value[1] = -1; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (70 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+71; // position
+  reqValue.value[1] = 0; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(2000);
+  EXPECT_EQ(*rsCfg->position, 100 + (71 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+69; // position
+  reqValue.value[1] = 1; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000); // move up requires more time
+  EXPECT_EQ(*rsCfg->position, 100 + (69 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+68; // position
+  reqValue.value[1] = 2; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (68 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+67; // position
+  reqValue.value[1] = 9; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (67 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+}
+
+TEST_F(FacadeBlindTestsF, FacadeBlindChangePositionWhileTiltingReqFromServer) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
+  rsCfg->tilt_type = FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING;
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms
+  moveTime(2000);
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = (100) | (100 << 16);
+
+  reqValue.value[0] = 1; // move down
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (100 * 100));
+
+  reqValue.value[0] = 2; // move up
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 0; // stop
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+50; // 50
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+50; // position
+  reqValue.value[1] = 10+50; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (50 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // commands stop/up/down on position field have priority over tilt setting
+  // which is ignored in this case
+  reqValue.value[0] = 0; // position stop
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (50 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 1; // position move down
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_EQ(*rsCfg->position, 100 + (60 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (100 * 100));
+
+  reqValue.value[0] = 2; // position move up
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000 + 1000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (50 * 100), 60);
+
+  reqValue.value[0] = 0; // position stop
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (50 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = -1; // position
+  reqValue.value[1] = 10+0; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(2000);
+  EXPECT_EQ(*rsCfg->position, 100 + (40 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = -1; // position
+  reqValue.value[1] = 10+100; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(3000);
+  EXPECT_EQ(*rsCfg->position, 100 + (60 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (100 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+20; // position
+  reqValue.value[1] = 10+90; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (20 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+70; // position
+  reqValue.value[1] = -1; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (70 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+71; // position
+  reqValue.value[1] = 0; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(2000);
+  EXPECT_EQ(*rsCfg->position, 100 + (71 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+69; // position
+  reqValue.value[1] = 1; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000); // move up requires more time
+  EXPECT_EQ(*rsCfg->position, 100 + (69 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+68; // position
+  reqValue.value[1] = 2; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (68 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+67; // position
+  reqValue.value[1] = 9; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (67 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (90 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+}
+
+TEST_F(FacadeBlindTestsF, FacadeBlindFixedTiltReqFromServer) {
+  // ignore value changes in this test
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0, _)).Times(AnyNumber());
+
+  rsCfg->tilt_type = FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED;
+
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // +2000 ms
+  moveTime(2000);
+
+  // nothing should change
+  EXPECT_EQ(rsCfg->up_time, 0);
+  EXPECT_EQ(rsCfg->down_time, 0);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  TSD_SuplaChannelNewValue reqValue = {};
+  reqValue.ChannelNumber = 0;
+  reqValue.DurationMS = (100) | (100 << 16);
+
+  reqValue.value[0] = 1; // move down
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (100 * 100));
+
+  reqValue.value[0] = 2; // move up
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_TRUE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 0; // stop
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_EQ(*rsCfg->position, 100);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+50; // 50
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(12000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+50; // position
+  reqValue.value[1] = 10+50; // tilt is ignored when position != 100
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  // commands stop/up/down on position field have priority over tilt setting
+  // which is ignored in this case
+  reqValue.value[0] = 0; // position stop
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_EQ(*rsCfg->position, 100 + (50 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 1; // position move down
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(800);
+  EXPECT_EQ(*rsCfg->position, 100 + (60 * 100));
+  EXPECT_EQ(*rsCfg->tilt, 100 + (0 * 100));
+
+  reqValue.value[0] = 2; // position move up
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000 + 800);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+
+  reqValue.value[0] = 0; // position stop
+  reqValue.value[1] = 10+20; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(1000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = -1; // position
+  reqValue.value[1] = 10+0; // tilt is ignored - current position != 100
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(2000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = -1; // position
+  reqValue.value[1] = 10+100; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(3000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (50 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+20; // position
+  reqValue.value[1] = 10+90; // tilt - ignored
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (20 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+70; // position
+  reqValue.value[1] = -1; // tilt
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(10000);
+  EXPECT_NEAR(*rsCfg->position, 100 + (70 * 100), 50);
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+100; // position
+  reqValue.value[1] = 10; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(4000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+100; // position
+  reqValue.value[1] = 1; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+100; // position
+  reqValue.value[1] = 2; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
+  reqValue.value[0] = 10+100; // position
+  reqValue.value[1] = 9; // tilt values 0-9 are ignored and converted to -1
+  supla_esp_channel_set_value(&reqValue);
+  moveTime(7000);
+  EXPECT_EQ(*rsCfg->position, 100 + (100 * 100));
+  EXPECT_NEAR(*rsCfg->tilt, 100 + (0 * 100), 60);
+  EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
+  EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
+
 }
