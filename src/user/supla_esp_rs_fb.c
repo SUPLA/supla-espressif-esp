@@ -605,17 +605,28 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
         }
       }
 
+      // time margin is added when RS/FB reach fully open or fully closed
+      // position. In case of some FB type "fully open/close" means that
+      // tilt also has to be set to 100%
       if (raw_position == 0 &&
           1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_opening_time,
             rs_cfg->up_time, time_margin)) {
-      } else if (raw_position == 10000 &&
-          1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_closing_time,
-            rs_cfg->down_time,
-            time_margin)) {
+      } else if ((raw_position == 10000
+            && (rs_cfg->tilt_type == FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING
+              || rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED
+              || raw_tilt == 10000))
+          && 1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_closing_time,
+            rs_cfg->down_time, time_margin)
+          ) {
       } else {
         int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
         if (idx >= 0 &&
-            (rs_cfg->task.position == 0 || rs_cfg->task.position == 100)) {
+            (rs_cfg->task.position == 0 ||
+             (rs_cfg->task.position == 100
+              && (rs_cfg->tilt_type == FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING
+              || rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED
+              || rs_cfg->task.tilt == 100))
+              )) {
           if (supla_esp_gpio_rs_is_autocal_done(idx)) {
             // when RS is fully closed/opened, we add 10% of time to finilize
             // operation. In such case we expect that motor will shut down
