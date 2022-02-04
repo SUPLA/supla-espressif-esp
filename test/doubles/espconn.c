@@ -40,8 +40,11 @@ sint8 espconn_regist_time(struct espconn *espconn, uint32 interval,
   return 0;
 }
 
+espconn_connect_callback last_espconn_connectcb = NULL;
+
 sint8 espconn_regist_connectcb(struct espconn *espconn,
                                espconn_connect_callback connect_cb) {
+  last_espconn_connectcb = connect_cb;
   return 0;
 }
 

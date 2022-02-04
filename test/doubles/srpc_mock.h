@@ -43,7 +43,12 @@ public:
                                    _supla_int_t SenderID, char Success) = 0;
   virtual _supla_int_t
   srpc_ds_async_device_calcfg_result(void *_srpc,
-                                     TDS_DeviceCalCfgResult *result) = 0;
+                                    _supla_int_t ReceiverID,
+                                    _supla_int_t ChannelNumber,
+                                    _supla_int_t Command,
+                                    _supla_int_t Result,
+                                    _supla_int_t DataSize) = 0;
+  unsigned _supla_int_t DataSize;
   virtual void *srpc_init(TsrpcParams *params) = 0;
   virtual void srpc_rd_free(TsrpcReceivedData *rd) = 0;
   virtual char srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
@@ -93,7 +98,9 @@ public:
   MOCK_METHOD(_supla_int_t, srpc_ds_async_set_channel_result,
               (void *, unsigned char, _supla_int_t, char), (override));
   MOCK_METHOD(_supla_int_t, srpc_ds_async_device_calcfg_result,
-              (void *, TDS_DeviceCalCfgResult *), (override));
+      (void *, _supla_int_t, _supla_int_t, _supla_int_t, _supla_int_t,
+       _supla_int_t),
+      (override));
   MOCK_METHOD((void *), srpc_init, (TsrpcParams *), (override));
   MOCK_METHOD(void, srpc_rd_free, (TsrpcReceivedData *), (override));
   MOCK_METHOD(char, srpc_getdata,

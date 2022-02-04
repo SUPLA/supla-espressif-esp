@@ -62,8 +62,10 @@ _supla_int_t
 srpc_ds_async_device_calcfg_result(void *_srpc,
                                    TDS_DeviceCalCfgResult *result) {
   assert(SrpcInterface::instance);
-  return SrpcInterface::instance->srpc_ds_async_device_calcfg_result(_srpc,
-                                                                     result);
+  // last parameter - data - is ignored. Add it if you need to check it
+  return SrpcInterface::instance->srpc_ds_async_device_calcfg_result(
+      _srpc, result->ReceiverID, result->ChannelNumber, result->Command,
+      result->Result, result->DataSize);
 }
 
 void *srpc_init(TsrpcParams *params) {

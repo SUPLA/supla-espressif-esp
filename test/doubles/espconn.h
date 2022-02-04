@@ -33,6 +33,7 @@ typedef void *espconn_handle;
 typedef void (* espconn_connect_callback)(void *arg);
 typedef void (* espconn_reconnect_callback)(void *arg, sint8 err);
 
+extern espconn_connect_callback last_espconn_connectcb;
 /* Definitions for error constants. */
 
 #define ESPCONN_OK          0    /* No error, everything OK. */
