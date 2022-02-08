@@ -22,6 +22,7 @@
 #include "supla_esp.h"
 
 void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void);
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start_with_timeout(void);
 char ICACHE_FLASH_ATTR supla_esp_cfgmode_started(void);
 void ICACHE_FLASH_ATTR supla_esp_channel_value_changed(int channel_number,
                                                        char v);

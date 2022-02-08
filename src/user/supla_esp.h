@@ -22,7 +22,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.8.47"
+#define SUPLA_ESP_SOFTVER "2.8.48"
 
 #define STATE_UNKNOWN 0
 #define STATE_DISCONNECTED 1
@@ -219,7 +219,7 @@
 #endif
 
 #ifndef DEVICE_FLAGS
-#define DEVICE_FLAGS 0
+#define DEVICE_FLAGS SUPLA_DEVICE_FLAG_CALCFG_ENTER_CFG_MODE
 #endif
 
 #ifndef MQTT_PREFIX_SIZE

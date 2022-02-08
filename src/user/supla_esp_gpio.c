@@ -728,7 +728,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
 
       char value[SUPLA_CHANNELVALUE_SIZE] = {};
       sint8 pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
-      TRollerShutterValue *rsValue = (TRollerShutterValue*)value;
+      TDSC_RollerShutterValue *rsValue = (TDSC_RollerShutterValue*)value;
 
       rsValue->position = pos;
       rsValue->flags = rs_cfg->flags;

@@ -1864,17 +1864,30 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
 
 #ifdef BOARD_CALCFG
   // execute board specific calcfg handling
-  supla_esp_board_calcfg_request(request);
+  if (supla_esp_board_calcfg_request(request)) {
+    // request was handled by board specific calcfg_request handler
+    return;
+  }
 #endif /*BOARD_CALCFG*/
 
-#ifdef _ROLLERSHUTTER_SUPPORT
   TDS_DeviceCalCfgResult result = {};
   result.ReceiverID = request->SenderID;
   result.ChannelNumber = request->ChannelNumber;
   result.Command = request->Command;
   result.Result = SUPLA_CALCFG_RESULT_NOT_SUPPORTED;
 
-  if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
+  if (request->Command == SUPLA_CALCFG_CMD_ENTER_CFG_MODE) {
+    if (request->SuperUserAuthorized == 1) {
+      result.Result = SUPLA_CALCFG_RESULT_DONE;
+      supla_esp_calcfg_result(&result);
+      supla_esp_cfgmode_start_with_timeout();
+      return;
+    } else {
+      result.Result = SUPLA_CALCFG_RESULT_UNAUTHORIZED;
+    }
+  }
+#ifdef _ROLLERSHUTTER_SUPPORT
+  else if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
       request->DataType == SUPLA_CALCFG_DATATYPE_RS_SETTINGS &&
       request->DataSize == sizeof(TCalCfg_RollerShutterSettings)) {
     for (int i = 0; i < RS_MAX_COUNT; i++) {
@@ -1901,10 +1914,9 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
         }
       }
     }
-
-    supla_esp_calcfg_result(&result);
   }
 #endif
+  supla_esp_calcfg_result(&result);
 }
 
 #ifdef BOARD_ON_USER_LOCALTIME_RESULT

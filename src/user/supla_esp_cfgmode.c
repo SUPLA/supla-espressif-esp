@@ -115,6 +115,7 @@ typedef struct {
 typedef struct {
   ETSTimer timer;
   unsigned int entertime;
+  bool exit_after_timeout;
 } _cfgmode_vars_t;
 
 _cfgmode_vars_t cfgmode_vars = {};
@@ -944,6 +945,8 @@ void ICACHE_FLASH_ATTR supla_esp_discon_callback(void *arg) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_connectcb(void *arg) {
+  os_timer_disarm(&cfgmode_vars.timer);
+
   struct espconn *conn = (struct espconn *)arg;
 
   // espconn_set_opt(conn, ESPCONN_NODELAY);
@@ -990,6 +993,11 @@ int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *name,
   return mac_str_len + apssid_len;
 }
 
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_timeout_exit(void *ptr) {
+  supla_log(LOG_DEBUG, "Exit cfgmode after timeout with no AP connection");
+  supla_system_restart();
+}
+
 void ICACHE_FLASH_ATTR supla_esp_cfgmode_enter_ap_mode(void *ptr) {
   struct softap_config apconfig;
   wifi_softap_get_config(&apconfig);
@@ -1023,9 +1031,23 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_enter_ap_mode(void *ptr) {
 
   espconn_regist_connectcb(conn, supla_esp_connectcb);
   espconn_accept(conn);
+
+  if (cfgmode_vars.exit_after_timeout) {
+    cfgmode_vars.exit_after_timeout = false;
+    os_timer_disarm(&cfgmode_vars.timer);
+    os_timer_setfn(&cfgmode_vars.timer,
+        (os_timer_func_t *)supla_esp_cfgmode_timeout_exit, NULL);
+    os_timer_arm(&cfgmode_vars.timer, 5*60*1000, 0); // 5 min, don't repeat
+  }
 }
 
-void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start_with_timeout(void) {
+  cfgmode_vars.exit_after_timeout = true;
+  supla_esp_cfgmode_start();
+}
+
+
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start() {
 #ifdef BOARD_BEFORE_CFGMODE_START
   supla_esp_board_before_cfgmode_start();
 #endif
