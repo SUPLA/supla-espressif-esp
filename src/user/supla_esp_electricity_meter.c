@@ -36,7 +36,7 @@ TElectricityMeter_ExtendedValue_V2 last_ev[ELECTRICITY_METER_COUNT];
 void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
     TElectricityMeter_ExtendedValue_V2 *ev, char *value);
 
-void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
+void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *force) {
 #ifdef MQTT_SUPPORT_ENABLED
   if (!supla_esp_devconn_is_registered() &&
       !supla_esp_mqtt_server_connected()) {
@@ -56,8 +56,10 @@ void ICACHE_FLASH_ATTR supla_esp_em_on_timer(void *ptr) {
   while (channel_number <
          ELECTRICITY_METER_COUNT + ELECTRICITY_METER_CHANNEL_OFFSET) {
     if (supla_esp_board_get_measurements(channel_number, &ev) == 1 &&
-        memcmp(&ev, &last_ev[channel_number - ELECTRICITY_METER_CHANNEL_OFFSET],
-               sizeof(TElectricityMeter_ExtendedValue_V2)) != 0) {
+        (force != NULL ||
+         memcmp(&ev,
+                &last_ev[channel_number - ELECTRICITY_METER_CHANNEL_OFFSET],
+                sizeof(TElectricityMeter_ExtendedValue_V2)) != 0)) {
       memcpy(&last_ev[channel_number - ELECTRICITY_METER_CHANNEL_OFFSET], &ev,
              sizeof(TElectricityMeter_ExtendedValue_V2));
       supla_esp_em_extendedvalue_to_value(&ev, value);
@@ -88,7 +90,7 @@ void ICACHE_FLASH_ATTR supla_esp_em_stop(void) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_em_device_registered(void) {
-  supla_esp_em_on_timer(NULL);
+  supla_esp_em_on_timer((void *)1);
 }
 
 void ICACHE_FLASH_ATTR supla_esp_em_extendedvalue_to_value(
