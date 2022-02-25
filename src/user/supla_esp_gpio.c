@@ -947,7 +947,8 @@ void supla_esp_gpio_btn_irq_lock(uint8 lock) {
     if (input_cfg->gpio_id != 255 && input_cfg->gpio_id < 16 &&
         !(input_cfg->flags & INPUT_FLAG_DISABLE_INTR) &&
         (input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE ||
-         input_cfg->type == INPUT_TYPE_BTN_BISTABLE)) {
+         input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+         input_cfg->type == INPUT_TYPE_MOTION_SENSOR)) {
       gpio_pin_intr_state_set(GPIO_ID_PIN(input_cfg->gpio_id),
           lock == 1 ? GPIO_PIN_INTR_DISABLE
           : GPIO_PIN_INTR_ANYEDGE);
@@ -1175,6 +1176,7 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
   if (((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
         input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS) ||
       input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      input_cfg->type == INPUT_TYPE_MOTION_SENSOR ||
       advanced_mode) &&
       input_cfg->relay_gpio_id != 255) {
     supla_roller_shutter_cfg_t *rs_cfg =
@@ -1196,7 +1198,15 @@ supla_esp_gpio_on_input_active(supla_input_cfg_t *input_cfg) {
       }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
     } else {
-      supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
+      unsigned char newState = 255;
+      if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+        if (input_cfg->active_triggers & SUPLA_ACTION_CAP_TURN_ON) {
+          // ignore when type is motion sensor and AT is configured for turn on
+          return;
+        }
+        newState = 1;
+      }
+      supla_esp_gpio_relay_switch_by_input(input_cfg, newState);
     }
   } else if (input_cfg->type == INPUT_TYPE_SENSOR && input_cfg->channel != 255) {
 
@@ -1216,7 +1226,8 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
 
   if (((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
         !(input_cfg->flags & INPUT_FLAG_TRIGGER_ON_PRESS)) ||
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE) &&
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      input_cfg->type == INPUT_TYPE_MOTION_SENSOR) &&
       input_cfg->relay_gpio_id != 255) {
     supla_roller_shutter_cfg_t *rs_cfg =
       supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
@@ -1243,7 +1254,15 @@ supla_esp_gpio_on_input_inactive(supla_input_cfg_t *input_cfg) {
       }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
     } else {
-      supla_esp_gpio_relay_switch_by_input(input_cfg, 255);
+      unsigned char newState = 255;
+      if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+        if (input_cfg->active_triggers & SUPLA_ACTION_CAP_TURN_OFF) {
+          // ignore when type is motion sensor and AT is configured for turn off
+          return;
+        }
+        newState = 0;
+      }
+      supla_esp_gpio_relay_switch_by_input(input_cfg, newState);
     }
   } else if (input_cfg->type == INPUT_TYPE_SENSOR &&
       input_cfg->channel != 255) {
@@ -1393,11 +1412,26 @@ supla_esp_gpio_init(void) {
 				 && !(supla_relay_cfg[a].flags & RELAY_FLAG_VIRTUAL_GPIO ) ) {
 
 				GPIO_REG_WRITE(GPIO_STATUS_W1TC_ADDRESS, BIT(supla_relay_cfg[a].gpio_id));
-				gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id), GPIO_PIN_INTR_DISABLE);
+        gpio_pin_intr_state_set(GPIO_ID_PIN(supla_relay_cfg[a].gpio_id),
+            GPIO_PIN_INTR_DISABLE);
 
 			} else if (supla_relay_cfg[a].gpio_id == 16) {
 				gpio16_output_conf();
 			}
+
+      // In case of motion sensor input we don't restore state, but we'll
+      // set relay according to startup state of input.
+      int input_number = 0;
+      for (; input_number < INPUT_MAX_COUNT; input_number++) {
+        if (supla_input_cfg[input_number].relay_gpio_id ==
+            supla_relay_cfg[a].gpio_id) {
+          break;
+        }
+      }
+      if (input_number < INPUT_MAX_COUNT &&
+          supla_input_cfg[input_number].type == INPUT_TYPE_MOTION_SENSOR) {
+        continue;
+      }
 
       if (supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE_FORCE ||
           (supla_relay_cfg[a].flags & RELAY_FLAG_RESTORE &&

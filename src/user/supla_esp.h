@@ -144,7 +144,11 @@
 
 #define INPUT_TYPE_SENSOR 1
 #define INPUT_TYPE_BTN_MONOSTABLE 2
+// Standard BISTABLE button toggles relay on each input state change
 #define INPUT_TYPE_BTN_BISTABLE 4
+// Motion sensor turns relay on, when sensor is on, and turns off,
+// when sensor is off (fixed position-state). It ignores stored relay state
+#define INPUT_TYPE_MOTION_SENSOR 8
 #define INPUT_TYPE_CUSTOM 200
 
 #ifndef INPUT_MIN_CYCLE_COUNT
