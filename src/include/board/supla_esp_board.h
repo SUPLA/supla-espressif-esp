@@ -70,6 +70,10 @@
 
 #include "board/h801.h"
 
+#elif defined(__BOARD_lightswitch_at)
+
+#include "board/lightswitch_at.h"
+
 #elif defined(__BOARD_lightswitch_x2) ||        \
     defined(__BOARD_lightswitch_x2_DHT11) ||    \
     defined(__BOARD_lightswitch_x2_DHT22) ||    \

@@ -73,6 +73,10 @@
 
 #include "board/lightswitch.c"
 
+#elif defined(__BOARD_lightswitch_at)
+
+#include "board/lightswitch_at.c"
+
 #elif defined(__BOARD_impulse_counter)
 
 #include "board/impulse_counter.c"
