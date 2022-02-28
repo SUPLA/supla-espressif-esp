@@ -596,7 +596,7 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 
 	char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
-	supla_esp_gpio_relay_hi(port, _v, 1);
+	supla_esp_gpio_relay_hi(port, _v);
 
 	_v = supla_esp_gpio_relay_is_hi(port);
 

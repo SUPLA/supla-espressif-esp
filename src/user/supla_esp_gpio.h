@@ -131,7 +131,7 @@ void supla_esp_gpio_set_hi(int port, unsigned char hi);
 char supla_esp_gpio_output_is_hi(int port);
 char supla_esp_gpio_relay_is_hi(int port);
 char __supla_esp_gpio_relay_is_hi(supla_relay_cfg_t *relay_cfg);
-char supla_esp_gpio_relay_hi(int port, unsigned char hi, char save_before);
+char supla_esp_gpio_relay_hi(int port, unsigned char hi);
 char supla_esp_gpio_relay_on(int port);
 
 // use this method to control relay from local buttons etc.

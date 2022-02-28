@@ -437,7 +437,7 @@ TEST_F(InputsFixture, BistableButtonWithRelayInvertedInitState) {
   supla_esp_gpio_init();
   ASSERT_NE(ets_gpio_intr_func, nullptr);
 
-  supla_esp_gpio_relay_hi(2, 1, 0); // turn gpio on
+  supla_esp_gpio_relay_hi(2, 1); // turn gpio on
 
   // +1000 ms
   for (int i = 0; i < 100; i++) {
@@ -2248,7 +2248,7 @@ TEST_F(InputsFixture, MotionSensorWithRelayInvertedInitState) {
   supla_esp_gpio_init();
   ASSERT_NE(ets_gpio_intr_func, nullptr);
 
-  supla_esp_gpio_relay_hi(2, 1, 0); // turn gpio on
+  supla_esp_gpio_relay_hi(2, 1); // turn gpio on
 
   moveTime(200);
   EXPECT_TRUE(eagleStub.getGpioValue(2));
