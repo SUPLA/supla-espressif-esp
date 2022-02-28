@@ -34,6 +34,7 @@
 #include "supla_esp_countdown_timer.h"
 #include "supla_esp_mqtt.h"
 #include "supla_update.h"
+#include "supla_esp_input.h"
 
 #include "supla-dev/log.h"
 
@@ -55,7 +56,10 @@ unsigned int supla_esp_gpio_init_time = 0;
 static char supla_last_state = STATE_UNKNOWN;
 static ETSTimer supla_gpio_timer1;
 static ETSTimer supla_gpio_timer2;
+static ETSTimer supla_motion_sensor_init_timer;
 unsigned char supla_esp_restart_on_cfg_press = 0;
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_set_motion_sensor_state(void *timer_arg);
 
 #ifdef _ROLLERSHUTTER_SUPPORT
 
@@ -1326,8 +1330,8 @@ supla_esp_gpio_init(void) {
 	//supla_log(LOG_DEBUG, "supla_esp_gpio_init");
 
 	supla_esp_gpio_init_time = 0;
-	supla_esp_restart_on_cfg_press = 0;
-
+  supla_esp_restart_on_cfg_press = 0;
+  bool schedule_motion_sensor_update = false;
 	memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
 	memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
 	memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
@@ -1430,6 +1434,7 @@ supla_esp_gpio_init(void) {
       }
       if (input_number < INPUT_MAX_COUNT &&
           supla_input_cfg[input_number].type == INPUT_TYPE_MOTION_SENSOR) {
+        schedule_motion_sensor_update = true;
         continue;
       }
 
@@ -1501,6 +1506,12 @@ supla_esp_gpio_init(void) {
 
 			}
 	#endif /*_ROLLERSHUTTER_SUPPORT*/
+
+    if (schedule_motion_sensor_update) {
+      os_timer_disarm(&supla_motion_sensor_init_timer);
+      os_timer_setfn(&supla_motion_sensor_init_timer, supla_esp_gpio_set_motion_sensor_state, NULL);
+      os_timer_arm (&supla_motion_sensor_init_timer, INPUT_SILENT_STARTUP_TIME_MS + 100, 0);
+    }
 
 }
 
@@ -1859,4 +1870,18 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_clear_vars(void) {
   supla_last_state = STATE_UNKNOWN;
   supla_esp_gpio_init_time = 0;
   supla_esp_restart_on_cfg_press = 0;
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_set_motion_sensor_state(void *timer_arg) {
+  for (int i = 0; i < INPUT_MAX_COUNT; i++) {
+    supla_input_cfg_t *input = &supla_input_cfg[i];
+    if (input->relay_gpio_id != 255 &&
+        input->type == INPUT_TYPE_MOTION_SENSOR) {
+      if (input->last_state == INPUT_STATE_ACTIVE) {
+        supla_esp_gpio_on_input_active(input);
+      } else if (input->last_state == INPUT_STATE_INACTIVE) {
+        supla_esp_gpio_on_input_inactive(input);
+      }
+    }
+  }
 }

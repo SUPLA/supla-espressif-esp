@@ -2250,10 +2250,13 @@ TEST_F(InputsFixture, MotionSensorWithRelayInvertedInitState) {
 
   supla_esp_gpio_relay_hi(2, 1, 0); // turn gpio on
 
-  moveTime(1000);
-
-  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  moveTime(200);
   EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  moveTime(400);
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  // relay is turned off during strtup becuase input is off
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
 
   // simulate button press on gpio 1
   eagleStub.gpioOutputSet(1, 1);
@@ -2305,4 +2308,32 @@ TEST_F(InputsFixture, MotionSensorWithRelayInvertedInitState) {
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
   EXPECT_FALSE(eagleStub.getGpioValue(2));
+}
+
+TEST_F(InputsFixture, MotionSensorWithRelayTurnOnDuringStart) {
+  gpioConfigId = 15;
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  supla_esp_gpio_init();
+  ASSERT_NE(ets_gpio_intr_func, nullptr);
+
+  moveTime(100);
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+
+  moveTime(100);
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  moveTime(400);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  // relay is turned off during strtup becuase input is off
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+
+  moveTime(500);
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
 }

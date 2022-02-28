@@ -114,7 +114,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
   // init current input state.
   static bool silent_period = true;
   if (silent_period) {
-    if (system_get_time() - supla_esp_gpio_init_time < 400000) {
+    if (system_get_time() - supla_esp_gpio_init_time < INPUT_SILENT_STARTUP_TIME_MS * 1000) {
       input_cfg->last_state = new_state;
       return;
     }  else {
