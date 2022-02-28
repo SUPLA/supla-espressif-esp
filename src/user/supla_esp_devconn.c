@@ -1108,7 +1108,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
         ColorBrightness, Brightness, 1, 1);
 #endif /*RGBW_ONOFF_SUPPORT*/
 
-		supla_esp_save_state(1000);
+		supla_esp_save_state(SAVE_STATE_DELAY);
 
 		return;
 	}
