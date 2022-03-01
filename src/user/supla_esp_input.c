@@ -461,9 +461,15 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
         if (new_state == INPUT_STATE_ACTIVE) {
           supla_esp_input_send_action_trigger(input_cfg,
               SUPLA_ACTION_CAP_TURN_ON);
+          if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+            supla_esp_gpio_on_input_active(input_cfg);
+          }
         } else {
           supla_esp_input_send_action_trigger(input_cfg,
               SUPLA_ACTION_CAP_TURN_OFF);
+          if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+            supla_esp_gpio_on_input_inactive(input_cfg);
+          }
         }
       }
 
@@ -556,16 +562,19 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     if (input_cfg->click_counter == 1 && input_cfg->relay_gpio_id != 255) {
       supla_roller_shutter_cfg_t *rs_cfg =
         supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-      if (rs_cfg != NULL || input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+      if (rs_cfg != NULL) {
         // in advanced mode with AT, roller shutter still requires
         // to call input active/inactive methods depending on input state
-        // Motion sensor also requires active/inactive calls
         if (input_cfg->last_state == INPUT_STATE_ACTIVE
             || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
           supla_esp_gpio_on_input_active(input_cfg);
         } else {
           supla_esp_gpio_on_input_inactive(input_cfg);
         }
+      } else if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+        // Motion sensor use turn on and off triggers, so here it should be
+        // ignored
+        return;
       } else {
         // in advanvced mode, inputs which are not controlling roller
         // shutter, should call only input active method

@@ -2264,7 +2264,7 @@ TEST_F(RelayTests, RelayConnectionWithMotionSensorWithAT) {
 
   EXPECT_CALL(
       srpc, srpc_ds_async_action_trigger(7, SUPLA_ACTION_CAP_TURN_OFF))
-    .Times(2);
+    .Times(3);
 
   EXPECT_CALL(
       srpc, srpc_ds_async_action_trigger(7, SUPLA_ACTION_CAP_TURN_ON))
@@ -2336,6 +2336,20 @@ TEST_F(RelayTests, RelayConnectionWithMotionSensorWithAT) {
   eagleStub.gpioOutputSet(8, 0);
   ets_gpio_intr_func(NULL);
   moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(200);
+
+  // buton release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+  supla_esp_gpio_relay_hi(2, 0); // turn gpio off
   EXPECT_FALSE(eagleStub.getGpioValue(2));
 
   // enabling AT TURN ON (option with OFF is disabled)
