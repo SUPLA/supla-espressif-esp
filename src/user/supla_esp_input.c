@@ -556,9 +556,10 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     if (input_cfg->click_counter == 1 && input_cfg->relay_gpio_id != 255) {
       supla_roller_shutter_cfg_t *rs_cfg =
         supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
-      if (rs_cfg != NULL) {
+      if (rs_cfg != NULL || input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
         // in advanced mode with AT, roller shutter still requires
         // to call input active/inactive methods depending on input state
+        // Motion sensor also requires active/inactive calls
         if (input_cfg->last_state == INPUT_STATE_ACTIVE
             || input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE) {
           supla_esp_gpio_on_input_active(input_cfg);
