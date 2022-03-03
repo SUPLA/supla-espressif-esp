@@ -133,6 +133,7 @@ public:
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
+    memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
     gpioInitCb = gpioCallbackInput;
     supla_esp_gpio_init_time = 0;
     strncpy(supla_esp_cfg.Server, "test", 4);
@@ -147,6 +148,7 @@ public:
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
+    memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
     supla_esp_gpio_init_time = 0;
     gpioConfigId = 0;
     supla_esp_cfgmode_clear_vars();
@@ -2336,4 +2338,50 @@ TEST_F(InputsFixture, MotionSensorWithRelayTurnOnDuringStart) {
   moveTime(500);
   EXPECT_TRUE(eagleStub.getGpioValue(1));
   EXPECT_TRUE(eagleStub.getGpioValue(2));
+}
+
+TEST_F(InputsFixture, BistableButtonPressedDuringStartupWithRelay) {
+  gpioConfigId = 1;
+
+  // simulate button press on gpio 1 without interupt call
+  eagleStub.gpioOutputSet(1, 1);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  supla_esp_gpio_init();
+
+  // +1000 ms
+  for (int i = 0; i < 100; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // simulate button release on gpio 1
+  eagleStub.gpioOutputSet(1, 0);
+  ets_gpio_intr_func(NULL);
+
+  // +500 ms
+  for (int i = 0; i < 50; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // simulate button press on gpio 1
+  eagleStub.gpioOutputSet(1, 1);
+  ets_gpio_intr_func(NULL);
+
+  // +300 ms
+  for (int i = 0; i < 30; i++) {
+    curTime += 10000; // +10ms
+    executeTimers();
+  }
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
 }

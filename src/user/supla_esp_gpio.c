@@ -52,6 +52,7 @@ supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
 supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
 unsigned int supla_esp_gpio_init_time = 0;
+bool silent_period = true;
 
 static char supla_last_state = STATE_UNKNOWN;
 static ETSTimer supla_gpio_timer1;
@@ -1493,6 +1494,18 @@ supla_esp_gpio_init(void) {
 			}
 	#endif /*_ROLLERSHUTTER_SUPPORT*/
 
+    for (int i = 0; i < INPUT_MAX_COUNT; i++) {
+      if (supla_input_cfg[i].gpio_id != 255) {
+        if (supla_input_cfg[i].type == INPUT_TYPE_MOTION_SENSOR &&
+            supla_input_cfg[i].relay_gpio_id != 255) {
+          schedule_motion_sensor_update = true;
+        }
+        if (!(supla_input_cfg[i].flags & INPUT_FLAG_DISABLE_INTR)) {
+          supla_esp_input_start_debounce_timer(&supla_input_cfg[i]);
+        }
+      }
+    }
+
     if (schedule_motion_sensor_update) {
       os_timer_disarm(&supla_motion_sensor_init_timer);
       os_timer_setfn(&supla_motion_sensor_init_timer, supla_esp_gpio_set_motion_sensor_state, NULL);
@@ -1856,6 +1869,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_clear_vars(void) {
   supla_last_state = STATE_UNKNOWN;
   supla_esp_gpio_init_time = 0;
   supla_esp_restart_on_cfg_press = 0;
+  silent_period = true;
 }
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_set_motion_sensor_state(void *timer_arg) {
@@ -1863,6 +1877,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_set_motion_sensor_state(void *timer_arg) {
     supla_input_cfg_t *input = &supla_input_cfg[i];
     if (input->relay_gpio_id != 255 &&
         input->type == INPUT_TYPE_MOTION_SENSOR) {
+      supla_log(LOG_DEBUG, "sensor state i %d, active %d", i, input->last_state);
       if (input->last_state == INPUT_STATE_ACTIVE) {
         supla_esp_gpio_on_input_active(input);
       } else if (input->last_state == INPUT_STATE_INACTIVE) {

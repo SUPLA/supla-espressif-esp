@@ -2270,6 +2270,9 @@ TEST_F(RelayTests, RelayConnectionWithMotionSensorWithAT) {
       srpc, srpc_ds_async_action_trigger(7, SUPLA_ACTION_CAP_TURN_ON))
     .Times(2);
 
+  // button press without interrupt call (i.e. it was pressed before power up)
+  eagleStub.gpioOutputSet(8, 1);
+
   supla_esp_gpio_init();
 
   supla_esp_devconn_init();
@@ -2281,7 +2284,7 @@ TEST_F(RelayTests, RelayConnectionWithMotionSensorWithAT) {
   moveTime(1000);
 
   EXPECT_FALSE(eagleStub.getGpioValue(1));
-  EXPECT_FALSE(eagleStub.getGpioValue(2)); // relay with motion sensor
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // relay with motion sensor
   EXPECT_FALSE(eagleStub.getGpioValue(3)); // relay with motion sensor
   EXPECT_FALSE(eagleStub.getGpioValue(4));
   EXPECT_TRUE(eagleStub.getGpioValue(5)); // inverted logic
