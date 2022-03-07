@@ -146,6 +146,7 @@ case $1 in
    "lightswitch_at")
      FOTA=1
      FLASH_SIZE="2048"
+     EXTRA_CCFLAGS="-DSRPC_WITHOUT_OUT_QUEUE -DSRPC_WITHOUT_IN_QUEUE -DSPROTO_WITHOUT_OUT_BUFFER"
   ;;
     
    *)
