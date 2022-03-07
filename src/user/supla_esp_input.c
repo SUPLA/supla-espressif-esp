@@ -112,9 +112,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
 #endif /*SUPLA_DEBUG*/
   // Silent period disables inputs for first 400 ms after startup in order to
   // init current input state.
-  static bool silent_period = true;
   if (silent_period) {
-    if (system_get_time() - supla_esp_gpio_init_time < 400000) {
+    if (system_get_time() - supla_esp_gpio_init_time < INPUT_SILENT_STARTUP_TIME_MS * 1000) {
       input_cfg->last_state = new_state;
       return;
     }  else {
@@ -170,6 +169,7 @@ supla_esp_input_is_cfg_on_toggle_enabled(supla_input_cfg_t *input_cfg) {
     return false;
   }
   if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      input_cfg->type == INPUT_TYPE_MOTION_SENSOR ||
       (input_cfg->flags & INPUT_FLAG_CFG_ON_TOGGLE)) {
       return true;
   }
@@ -237,7 +237,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
       } else {
         if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
               new_state == INPUT_STATE_ACTIVE) ||
-            input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+            input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+            input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
           input_cfg->click_counter++;
         }
       }
@@ -250,7 +251,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_legacy_state_change_handling(
       }
     } else if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
         new_state == INPUT_STATE_ACTIVE) ||
-        input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+        input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+        input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
       // Leave CFG MODE
       input_cfg->click_counter = 1;
       if (!supla_esp_input_is_cfg_on_hold_enabled(input_cfg) &&
@@ -390,10 +392,16 @@ void GPIO_ICACHE_FLASH supla_esp_input_set_active_triggers(
         input_cfg->click_counter = 0;
     }
 
+
+    unsigned _supla_int_t at_turn_on_and_off =
+      SUPLA_ACTION_CAP_TURN_ON | SUPLA_ACTION_CAP_TURN_OFF;
     if ((input_cfg->type == INPUT_TYPE_BTN_MONOSTABLE &&
           input_cfg->active_triggers & SUPLA_ACTION_CAP_SHORT_PRESS_x1) ||
         (input_cfg->type == INPUT_TYPE_BTN_BISTABLE &&
-         input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x1)) {
+         input_cfg->active_triggers & SUPLA_ACTION_CAP_TOGGLE_x1) ||
+        (input_cfg->type == INPUT_TYPE_MOTION_SENSOR &&
+         (input_cfg->active_triggers & at_turn_on_and_off) == at_turn_on_and_off)
+        ) {
       supla_esp_input_disable_relay_connection(input_cfg);
     } else {
       supla_esp_input_enable_relay_connection(input_cfg);
@@ -442,17 +450,25 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
     // Monostable buttons counts "click" when state change to "active"
     // Bistable buttons counts "click" on each state change
     if (new_state == INPUT_STATE_ACTIVE ||
-        (input_cfg->type & INPUT_TYPE_BTN_BISTABLE)) {
+        (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) ||
+        (input_cfg->type == INPUT_TYPE_MOTION_SENSOR)) {
 
       input_cfg->click_counter++;
 
-      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+      if (input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+          input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
         if (new_state == INPUT_STATE_ACTIVE) {
-          supla_esp_input_send_action_trigger(input_cfg, 
+          supla_esp_input_send_action_trigger(input_cfg,
               SUPLA_ACTION_CAP_TURN_ON);
+          if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+            supla_esp_gpio_on_input_active(input_cfg);
+          }
         } else {
-          supla_esp_input_send_action_trigger(input_cfg, 
+          supla_esp_input_send_action_trigger(input_cfg,
               SUPLA_ACTION_CAP_TURN_OFF);
+          if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+            supla_esp_gpio_on_input_inactive(input_cfg);
+          }
         }
       }
 
@@ -463,7 +479,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
           // CFG MODE
           supla_esp_input_start_cfg_mode();
         }
-      } 
+      }
     }
   }
 
@@ -503,8 +519,9 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
   }
 
   // BISTABLE buttons and inactive state for monostable
-  if (input_cfg->last_state == INPUT_STATE_INACTIVE || 
-      input_cfg->type == INPUT_TYPE_BTN_BISTABLE) {
+  if (input_cfg->last_state == INPUT_STATE_INACTIVE ||
+      input_cfg->type == INPUT_TYPE_BTN_BISTABLE ||
+      input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
     // if below condition is true, it means that button was
     // released for more time then multiclick detection.
     // As a result we send detected click_counter as an action trigger
@@ -553,6 +570,10 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
         } else {
           supla_esp_gpio_on_input_inactive(input_cfg);
         }
+      } else if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+        // Motion sensor use turn on and off triggers, so here it should be
+        // ignored
+        return;
       } else {
         // in advanvced mode, inputs which are not controlling roller
         // shutter, should call only input active method

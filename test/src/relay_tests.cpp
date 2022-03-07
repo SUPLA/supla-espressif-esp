@@ -42,6 +42,8 @@ using ::testing::Invoke;
 using ::testing::Pointee;
 using ::testing::ElementsAreArray;
 
+bool configureInputs = false;
+
 // method will be called by supla_esp_gpio_init method in order to initialize
 // gpio input/outputs board configuration (supla_esb_board_gpio_init)
 void gpioCallbackRelay() {
@@ -72,6 +74,32 @@ void gpioCallbackRelay() {
   supla_relay_cfg[5].channel = 5;
   supla_relay_cfg[5].flags =
     RELAY_FLAG_LO_LEVEL_TRIGGER | RELAY_FLAG_RESET;
+
+  if (configureInputs) {
+    supla_input_cfg[0].gpio_id = 7;
+    supla_input_cfg[0].relay_gpio_id = 1;
+    supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[0].channel = 6;
+
+    supla_input_cfg[1].gpio_id = 8;
+    supla_input_cfg[1].relay_gpio_id = 2;
+    supla_input_cfg[1].type = INPUT_TYPE_MOTION_SENSOR;
+    supla_input_cfg[1].action_trigger_cap = SUPLA_ACTION_CAP_TURN_ON |
+      SUPLA_ACTION_CAP_TURN_OFF;
+    supla_input_cfg[1].channel = 7;
+
+    supla_input_cfg[2].gpio_id = 9;
+    supla_input_cfg[2].relay_gpio_id = 3;
+    supla_input_cfg[2].type = INPUT_TYPE_MOTION_SENSOR;
+    supla_input_cfg[2].action_trigger_cap = SUPLA_ACTION_CAP_TURN_ON |
+      SUPLA_ACTION_CAP_TURN_OFF;
+    supla_input_cfg[2].channel = 8;
+
+    supla_input_cfg[3].gpio_id = 10;
+    supla_input_cfg[3].relay_gpio_id = 4;
+    supla_input_cfg[3].type = INPUT_TYPE_BTN_MONOSTABLE;
+    supla_input_cfg[3].channel = 9;
+  }
 }
 
 TSD_SuplaRegisterDeviceResult regResultRelay;
@@ -91,6 +119,7 @@ public:
   int curTime;
 
   void SetUp() override {
+    configureInputs = false;
     supla_esp_countdown_timer_init();
     startupTimeDelay = 0;
     upTime = 1100;
@@ -120,6 +149,7 @@ public:
   }
 
   void TearDown() override {
+    configureInputs = false;
     supla_esp_devconn_release();
     startupTimeDelay = 0;
     upTime = 1100;
@@ -132,6 +162,13 @@ public:
     supla_esp_gpio_clear_vars();
 
     gpioInitCb = nullptr;
+  }
+
+  void moveTime(const int timeMs) {
+    for (int i = 0; i < timeMs / 10; i++) {
+      curTime += 10000; // +10ms
+      executeTimers();
+    }
   }
 };
 
@@ -2064,4 +2101,294 @@ TEST_F(RelayTests, CountdownTimerTurnOffFor2sAfterRestart) {
   EXPECT_EQ(supla_esp_state.Time2Left[0], 0);
 }
 
+
+TEST_F(RelayTests, StartupRestoreWithMotionSensor) {
+  configureInputs = true;
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  supla_esp_state.Relay[0] = 1;
+  supla_esp_state.Relay[1] = 1;
+  supla_esp_state.Relay[2] = 1;
+  supla_esp_state.Relay[3] = 1;
+  supla_esp_state.Relay[4] = 1;
+  supla_esp_state.Relay[5] = 1;
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
+  supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // relay with motion sensor
+  EXPECT_FALSE(eagleStub.getGpioValue(3)); // relay with motion sensor
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(5)); // inverted logic
+  EXPECT_TRUE(eagleStub.getGpioValue(6)); // inverted logic
+
+}
+
+TEST_F(RelayTests, RelayConnectionWithMotionSensor) {
+  configureInputs = true;
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  supla_esp_state.Relay[0] = 0;
+  supla_esp_state.Relay[1] = 0;
+  supla_esp_state.Relay[2] = 0;
+  supla_esp_state.Relay[3] = 0;
+  supla_esp_state.Relay[4] = 0;
+  supla_esp_state.Relay[5] = 0;
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
+  // turn on relay on channel 1
+  EXPECT_CALL(srpc,
+      valueChanged(_, 1, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(2)
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 1, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+    .Times(3)
+    .WillRepeatedly(Return(0));
+
+  supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // relay with motion sensor
+  EXPECT_FALSE(eagleStub.getGpioValue(3)); // relay with motion sensor
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_TRUE(eagleStub.getGpioValue(5)); // inverted logic
+  EXPECT_TRUE(eagleStub.getGpioValue(6)); // inverted logic
+
+  supla_input_cfg_t *input = &supla_input_cfg[1];
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+
+  supla_esp_input_set_active_triggers(input, 0);
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+  supla_esp_gpio_on_input_active(input);
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // notif to server: ON
+  supla_esp_gpio_on_input_inactive(input);
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // notif to server: OFF
+
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_ON);
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+  supla_esp_gpio_on_input_active(input);
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // nothing
+  supla_esp_gpio_on_input_inactive(input);
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // notif to server: OFF
+
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_OFF);
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+  supla_esp_gpio_on_input_active(input);
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // notif to server: ON
+  supla_esp_gpio_on_input_inactive(input);
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // nothing
+
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_OFF |
+      SUPLA_ACTION_CAP_TURN_ON);
+  EXPECT_FALSE(supla_esp_input_is_relay_connection_enabled(input));
+  supla_esp_gpio_on_input_active(input);
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // nothing
+  supla_esp_gpio_on_input_inactive(input);
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // nothing
+
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_ON);
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+  supla_esp_gpio_on_input_active(input);
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // nothing
+  supla_esp_gpio_on_input_inactive(input);
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // notif to server: OFF
+
+
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_OFF |
+      SUPLA_ACTION_CAP_TURN_ON);
+  EXPECT_FALSE(supla_esp_input_is_relay_connection_enabled(input));
+  supla_esp_gpio_on_input_active(input);
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // nothing
+  supla_esp_gpio_on_input_inactive(input);
+  EXPECT_FALSE(eagleStub.getGpioValue(2)); // nothing
+
+}
+
+TEST_F(RelayTests, RelayConnectionWithMotionSensorWithAT) {
+  configureInputs = true;
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_FALSE(eagleStub.getGpioValue(5));
+  EXPECT_FALSE(eagleStub.getGpioValue(6));
+  supla_esp_state.Relay[0] = 0;
+  supla_esp_state.Relay[1] = 0;
+  supla_esp_state.Relay[2] = 0;
+  supla_esp_state.Relay[3] = 0;
+  supla_esp_state.Relay[4] = 0;
+  supla_esp_state.Relay[5] = 0;
+
+  EXPECT_CALL(srpc, srpc_ds_async_channel_extendedvalue_changed(_, 0, _))
+    .Times(1);
+
+  // turn on relay on channel 1
+  EXPECT_CALL(srpc,
+      valueChanged(_, 1, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 1, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc,
+      valueChanged(_, 2, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+    .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(
+      srpc, srpc_ds_async_action_trigger(7, SUPLA_ACTION_CAP_TURN_OFF))
+    .Times(3);
+
+  EXPECT_CALL(
+      srpc, srpc_ds_async_action_trigger(7, SUPLA_ACTION_CAP_TURN_ON))
+    .Times(2);
+
+  // button press without interrupt call (i.e. it was pressed before power up)
+  eagleStub.gpioOutputSet(8, 1);
+
+  supla_esp_gpio_init();
+
+  supla_esp_devconn_init();
+  supla_esp_srpc_init();
+  ASSERT_NE(srpc.on_remote_call_received, nullptr);
+  srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+  EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+
+  moveTime(1000);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(1));
+  EXPECT_TRUE(eagleStub.getGpioValue(2)); // relay with motion sensor
+  EXPECT_FALSE(eagleStub.getGpioValue(3)); // relay with motion sensor
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+  EXPECT_TRUE(eagleStub.getGpioValue(5)); // inverted logic
+  EXPECT_TRUE(eagleStub.getGpioValue(6)); // inverted logic
+
+  supla_input_cfg_t *input = &supla_input_cfg[1];
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // button release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // enabling AT TURN OFF
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_OFF);
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // buton release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // disable relay
+  supla_esp_gpio_relay_hi(2, 0); // turn gpio off
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+  moveTime(1000);
+
+  // button release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(200);
+
+  // buton release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+  supla_esp_gpio_relay_hi(2, 0); // turn gpio off
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // enabling AT TURN ON (option with OFF is disabled)
+  supla_esp_input_set_active_triggers(input, SUPLA_ACTION_CAP_TURN_ON);
+  EXPECT_TRUE(supla_esp_input_is_relay_connection_enabled(input));
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // button release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+  // enable relay
+  supla_esp_gpio_relay_hi(2, 1);
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+  moveTime(1000);
+
+  // button press
+  eagleStub.gpioOutputSet(8, 1);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+
+  EXPECT_TRUE(eagleStub.getGpioValue(2));
+
+  // button release
+  eagleStub.gpioOutputSet(8, 0);
+  ets_gpio_intr_func(NULL);
+  moveTime(1000);
+  EXPECT_FALSE(eagleStub.getGpioValue(2));
+
+}
 

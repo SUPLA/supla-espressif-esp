@@ -22,7 +22,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.8.48"
+#define SUPLA_ESP_SOFTVER "2.8.49"
 
 #define STATE_UNKNOWN 0
 #define STATE_DISCONNECTED 1
@@ -144,7 +144,11 @@
 
 #define INPUT_TYPE_SENSOR 1
 #define INPUT_TYPE_BTN_MONOSTABLE 2
+// Standard BISTABLE button toggles relay on each input state change
 #define INPUT_TYPE_BTN_BISTABLE 4
+// Motion sensor turns relay on, when sensor is on, and turns off,
+// when sensor is off (fixed position-state). It ignores stored relay state
+#define INPUT_TYPE_MOTION_SENSOR 8
 #define INPUT_TYPE_CUSTOM 200
 
 #ifndef INPUT_MIN_CYCLE_COUNT
@@ -431,5 +435,9 @@ uint32 MAIN_ICACHE_FLASH uptime_sec(void);
 #define CFG_TIME_VARIABLES_PRECISION 0
 #endif /*CFG_TIME_VARIABLES_PRECISION*/
 #endif /*CFG_TIME_VARIABLES*/
+
+#ifndef INPUT_SILENT_STARTUP_TIME_MS
+#define INPUT_SILENT_STARTUP_TIME_MS 400
+#endif /*INPUT_SILENT_STARTUP_TIME_MS*/
 
 #endif /* SUPLA_ESP_H_ */

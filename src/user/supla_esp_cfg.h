@@ -27,6 +27,7 @@
 // used for Button1Type, Button2Type, BtnType[x]
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
+#define BTN_TYPE_MOTION_SENSOR    2
 
 #define STAIRCASE_BTN_TYPE_RESET  0
 #define STAIRCASE_BTN_TYPE_TOGGLE 1

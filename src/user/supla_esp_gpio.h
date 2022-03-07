@@ -95,6 +95,7 @@ typedef struct {
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
 extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 extern unsigned int supla_esp_gpio_init_time;
+extern bool silent_period;
 extern unsigned char supla_esp_restart_on_cfg_press;
 
 void gpio16_output_conf(void);
@@ -131,7 +132,7 @@ void supla_esp_gpio_set_hi(int port, unsigned char hi);
 char supla_esp_gpio_output_is_hi(int port);
 char supla_esp_gpio_relay_is_hi(int port);
 char __supla_esp_gpio_relay_is_hi(supla_relay_cfg_t *relay_cfg);
-char supla_esp_gpio_relay_hi(int port, unsigned char hi, char save_before);
+char supla_esp_gpio_relay_hi(int port, unsigned char hi);
 char supla_esp_gpio_relay_on(int port);
 
 // use this method to control relay from local buttons etc.
