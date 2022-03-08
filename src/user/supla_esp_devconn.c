@@ -596,7 +596,7 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 
 	char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
-	supla_esp_gpio_relay_hi(port, _v, 1);
+	supla_esp_gpio_relay_hi(port, _v);
 
 	_v = supla_esp_gpio_relay_is_hi(port);
 
@@ -1108,7 +1108,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
         ColorBrightness, Brightness, 1, 1);
 #endif /*RGBW_ONOFF_SUPPORT*/
 
-		supla_esp_save_state(1000);
+		supla_esp_save_state(SAVE_STATE_DELAY);
 
 		return;
 	}
