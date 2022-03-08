@@ -1170,9 +1170,9 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
             if (supla_rs_cfg[a].last_direction == 0) {
               sint8 pos = supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]);
               if (pos > 50) {
-                supla_rs_cfg[a].last_direction == RS_RELAY_DOWN;
+                supla_rs_cfg[a].last_direction = RS_RELAY_DOWN;
               } else {
-                supla_rs_cfg[a].last_direction == RS_RELAY_UP;
+                supla_rs_cfg[a].last_direction = RS_RELAY_UP;
               }
             }
             if (supla_rs_cfg[a].last_direction == RS_RELAY_UP) {
