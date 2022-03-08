@@ -1146,11 +1146,44 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 
 				if ( v >= 10 && v <= 110 ) {
 					supla_esp_gpio_rs_add_task(a, v-10);
-        } else if ( v == 1 ) {
+        } else if ( v == 1 ) { // DOWN
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
-        } else if ( v == 2 ) {
+        } else if ( v == 2 ) { // UP
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
-        } else {
+        } else if ( v == 3 ) { // DOWN OR STOP
+          uint8 current_direction = supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
+          if (current_direction == RS_RELAY_OFF) {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
+          } else {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+          }
+        } else if ( v == 4 ) { // UP OR STOP
+          uint8 current_direction = supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
+          if (current_direction == RS_RELAY_OFF) {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
+          } else {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+          }
+        } else if ( v == 5 ) { // SBS
+          uint8 current_direction = supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
+          if (current_direction == RS_RELAY_OFF) {
+            if (supla_rs_cfg[a].last_direction == 0) {
+              sint8 pos = supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]);
+              if (pos > 50) {
+                supla_rs_cfg[a].last_direction = RS_RELAY_DOWN;
+              } else {
+                supla_rs_cfg[a].last_direction = RS_RELAY_UP;
+              }
+            }
+            if (supla_rs_cfg[a].last_direction == RS_RELAY_UP) {
+              supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
+            } else {
+              supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
+            }
+          } else {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+          }
+        } else {  // 0 and all other = STOP
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
         }
 

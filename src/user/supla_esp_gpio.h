@@ -90,6 +90,7 @@ typedef struct {
   unsigned _supla_int16_t flags; // RS_VALUE_FLAG_*
   unsigned _supla_int16_t last_flags; // last send RS_VALUE_FLAG_*
   bool detectedPowerConsumption;
+  uint8 last_direction;
 } supla_roller_shutter_cfg_t;
 
 extern supla_relay_cfg_t supla_relay_cfg[RELAY_MAX_COUNT];
