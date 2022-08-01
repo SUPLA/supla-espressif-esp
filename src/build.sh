@@ -242,9 +242,6 @@ if [[ "$EXTRA_CCFLAGS" =~ .*"-DSUPLA_DEBUG".* ]]; then
      EXTRA_CCFLAGS=${EXTRA_CCFLAGS//-DESP8266_LOG_DISABLED/}
 fi
 
-echo $EXTRA_CCFLAGS
-exit 
-
 if [ "$NOSSL" -eq 1 ]; then
   EXTRA_CCFLAGS="${EXTRA_CCFLAGS} -DNOSSL=1"
   BOARD_NAME="$1"_nossl
