@@ -1327,7 +1327,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_c(
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 
 void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
-    void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd,
+    void *_srpc, unsigned int rr_id, unsigned int call_id, void *_dcd,
     unsigned char proto_version) {
   TsrpcReceivedData rd;
   char result;
@@ -1337,7 +1337,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
   // supla_log(LOG_DEBUG, "call_received");
 
   if (SUPLA_RESULT_TRUE == (result = srpc_getdata(_srpc, &rd, 0))) {
-    switch (rd.call_type) {
+    switch (rd.call_id) {
       case SUPLA_SDC_CALL_VERSIONERROR:
         supla_esp_on_version_error(rd.data.sdc_version_error);
         break;
