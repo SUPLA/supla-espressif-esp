@@ -1937,7 +1937,7 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithRelayUpFromServer) {
 TSD_SuplaRegisterDeviceResult regResult;
 
 char custom_srpc_getdata(void *_srpc, TsrpcReceivedData *rd, unsigned _supla_int_t rr_id) {
-  rd->call_type = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
+  rd->call_id = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
   rd->data.sd_register_device_result = &regResult;
   return 1;
 }
