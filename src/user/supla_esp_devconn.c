@@ -394,6 +394,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
     case SUPLA_RESULTCODE_USER_CONFLICT:
       supla_esp_set_state(LOG_ERR, "User conflict!");
       break;
+    case SUPLA_RESULTCODE_COUNTRY_REJECTED:
+      supla_esp_set_state(LOG_ERR, "Country rejected!");
+      break;
 
     case SUPLA_RESULTCODE_TRUE:
 
