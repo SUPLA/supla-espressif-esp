@@ -217,7 +217,7 @@ case $FLASH_SIZE in
 esac
 
 OUTDIR=../firmware
-export SDK_PATH=/hdd2/Espressif/sdk_3x/ESP8266_NONOS_SDK-3.0.6
+export SDK_PATH=/hdd2/Espressif/sdk_3x/ESP8266_NONOS_SDK-3.0.4
 export BIN_PATH=/hdd2/Espressif/sdk_3x/ESP8266_BIN304
 LD_DIR=sdk304
 
