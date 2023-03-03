@@ -1246,9 +1246,16 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
     case 13:
     case 25:
     case 37:
-      if (em_ev->measured_values & EM_VAR_POWER_ACTIVE) {
-        supla_esp_mqtt_prepare_val(value, 0, em_ev->m[0].power_active[phase],
-                                   5);
+      if (em_ev->measured_values & EM_VAR_POWER_ACTIVE ||
+          em_ev->measured_values & EM_VAR_POWER_ACTIVE_KW) {
+        _supla_int64_t power_active = em_ev->m[0].power_active[phase];
+
+        if ((em_ev->measured_values & EM_VAR_POWER_ACTIVE_KW) &&
+            !(em_ev->measured_values & EM_VAR_POWER_ACTIVE)) {
+          power_active *= 1000;
+        }
+
+        supla_esp_mqtt_prepare_val(value, 0, power_active, 5);
 
         return supla_esp_mqtt_prepare_phase_message(
             topic_name_out, message_out, message_size_out, "power_active",
@@ -1259,9 +1266,16 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
     case 14:
     case 26:
     case 38:
-      if (em_ev->measured_values & EM_VAR_POWER_REACTIVE) {
-        supla_esp_mqtt_prepare_val(value, 0, em_ev->m[0].power_reactive[phase],
-                                   5);
+      if (em_ev->measured_values & EM_VAR_POWER_REACTIVE ||
+          em_ev->measured_values & EM_VAR_POWER_REACTIVE_KVAR) {
+        _supla_int64_t power_reactive = em_ev->m[0].power_reactive[phase];
+
+        if ((em_ev->measured_values & EM_VAR_POWER_REACTIVE_KVAR) &&
+            !(em_ev->measured_values & EM_VAR_POWER_REACTIVE)) {
+          power_reactive *= 1000;
+        }
+
+        supla_esp_mqtt_prepare_val(value, 0, power_reactive, 5);
 
         return supla_esp_mqtt_prepare_phase_message(
             topic_name_out, message_out, message_size_out, "power_reactive",
@@ -1272,9 +1286,16 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_prepare_em_message(
     case 15:
     case 27:
     case 39:
-      if (em_ev->measured_values & EM_VAR_POWER_APPARENT) {
-        supla_esp_mqtt_prepare_val(value, 0, em_ev->m[0].power_apparent[phase],
-                                   5);
+      if (em_ev->measured_values & EM_VAR_POWER_APPARENT ||
+          em_ev->measured_values & EM_VAR_POWER_APPARENT_KVA) {
+        _supla_int64_t power_apparent = em_ev->m[0].power_apparent[phase];
+
+        if ((em_ev->measured_values & EM_VAR_POWER_APPARENT_KVA) &&
+            !(em_ev->measured_values & EM_VAR_POWER_APPARENT)) {
+          power_apparent *= 1000;
+        }
+
+        supla_esp_mqtt_prepare_val(value, 0, power_apparent, 5);
 
         return supla_esp_mqtt_prepare_phase_message(
             topic_name_out, message_out, message_size_out, "power_apparent",
