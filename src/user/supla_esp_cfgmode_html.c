@@ -115,7 +115,7 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
       "5z\"/></svg><h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
       "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X<br>MAC:"
-      " %02X:%02X:%02X:%02X:%02X:%02X</span><form form id=\"cfgform\" "
+      " %02X:%02X:%02X:%02X:%02X:%02X</span><form id=\"cfgform\" "
       "method=\"post\"><div class=\"w\"><h3>Wi-Fi Settings</h3><i><input "
       "name=\"sid\" value=\"%s\"><label>Network name</label></i><i><input "
       "name=\"wpw\" type=\"password\"><label>Password</label></i></div><div "
@@ -127,7 +127,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "%s>switch</option></select><label>Button type</label></i><i><select "
       "name=\"upd\"><option value=\"0\" %s>NO</option><option value=\"1\" "
       "%s>YES</option></select><label>Firmware update</label></i></div><button "
-      "type=\"submit\">SAVE</button></form></div><br><br>";
+      "type=\"submit\">SAVE</button><br><br><button type=\"button\" "
+      "onclick=\"saveAndReboot();\">SAVE &amp; RESTART</button><input "
+      "type=\"hidden\" name=\"rbt\" value=\"0\" /></form></div><br><br>";
 #else
   char html_template[] =
       "%s%s<div class=\"s\"><svg version=\"1.1\" id=\"l\" x=\"0\" y=\"0\" "
@@ -159,9 +161,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
       "5z\"/></svg><h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
       "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X<br>MAC:"
-      " %02X:%02X:%02X:%02X:%02X:%02X</span><form method=\"post\"><div "
-      "class=\"w\"><h3>Wi-Fi Settings</h3><i><input name=\"sid\" "
-      "value=\"%s\"><label>Network name</label></i><i><input "
+      " %02X:%02X:%02X:%02X:%02X:%02X</span><form id=\"cfgform\" "
+      "method=\"post\"><div class=\"w\"><h3>Wi-Fi Settings</h3><i><input "
+      "name=\"sid\" value=\"%s\"><label>Network name</label></i><i><input "
       "name=\"wpw\" type=\"password\"><label>Password</label></i></div><div "
       "class=\"w\"><h3>Supla Settings</h3><i><input name=\"svr\" "
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
@@ -261,9 +263,11 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "input,select{width:calc(100% - "
       "10px);font-size:16px;line-height:28px;padding:0 5px;border-bottom:solid "
       "1px #00d151}select{width:100%;float:none;margin:0}}</style><script "
-      "type=\"text/javascript\">setTimeout(function(){var element =  "
-      "document.getElementById('msg');if ( element != null ) "
-      "element.style.visibility = \"hidden\";},3200);</script>";
+      "type=\"text/javascript\">function saveAndReboot(){var "
+      "e=document.getElementById(\"cfgform\");e.rbt.value=\"2\",e.submit()}"
+      "setTimeout(function(){var element =  document.getElementById('msg');if "
+      "( element != null ) element.style.visibility = "
+      "\"hidden\";},3200);</script>";
 
 #ifdef __FOTA
   char html_template[] =
@@ -296,9 +300,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
       "5z\"/></svg><h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
       "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X<br>MAC:"
-      " %02X:%02X:%02X:%02X:%02X:%02X</span><form method=\"post\"><div "
-      "class=\"w\"><h3>Wi-Fi Settings</h3><i><input name=\"sid\" "
-      "value=\"%s\"><label>Network name</label></i><i><input "
+      " %02X:%02X:%02X:%02X:%02X:%02X</span><form id=\"cfgform\" "
+      "method=\"post\"><div class=\"w\"><h3>Wi-Fi Settings</h3><i><input "
+      "name=\"sid\" value=\"%s\"><label>Network name</label></i><i><input "
       "name=\"wpw\" type=\"password\"><label>Password</label></i></div><div "
       "class=\"w\"><h3>Supla Settings</h3><i><input name=\"svr\" "
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
@@ -310,7 +314,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "%s>switch</option></select><label>Input2 type:</label></i><i><select "
       "name=\"upd\"><option value=\"0\" %s>NO</option><option value=\"1\" "
       "%s>YES</option></select><label>Firmware update</label></i></div><button "
-      "type=\"submit\">SAVE</button></form></div><br><br>";
+      "type=\"submit\">SAVE</button><br><br><button type=\"button\" "
+      "onclick=\"saveAndReboot();\">SAVE &amp; RESTART</button><input "
+      "type=\"hidden\" name=\"rbt\" value=\"0\" /></form></div><br><br>";
 #else
   char html_template[] =
       "%s%s<div class=\"s\"><svg version=\"1.1\" id=\"l\" x=\"0\" y=\"0\" "
@@ -342,9 +348,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
       "5z\"/></svg><h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
       "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X<br>MAC:"
-      " %02X:%02X:%02X:%02X:%02X:%02X</span><form method=\"post\"><div "
-      "class=\"w\"><h3>Wi-Fi Settings</h3><i><input name=\"sid\" "
-      "value=\"%s\"><label>Network name</label></i><i><input "
+      " %02X:%02X:%02X:%02X:%02X:%02X</span><form id=\"cfgform\" "
+      "method=\"post\"><div class=\"w\"><h3>Wi-Fi Settings</h3><i><input "
+      "name=\"sid\" value=\"%s\"><label>Network name</label></i><i><input "
       "name=\"wpw\" type=\"password\"><label>Password</label></i></div><div "
       "class=\"w\"><h3>Supla Settings</h3><i><input name=\"svr\" "
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
@@ -354,7 +360,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "%s>bistable</option></select><label>Input1 type:</label></i><i><select "
       "name=\"bt2\"><option value=\"0\" %s>button</option><option value=\"1\" "
       "%s>switch</option></select><label>Input2 type:</label></i></div><button "
-      "type=\"submit\">SAVE</button></form></div><br><br>";
+      "type=\"submit\">SAVE</button><br><br><button type=\"button\" "
+      "onclick=\"saveAndReboot();\">SAVE &amp; RESTART</button><input "
+      "type=\"hidden\" name=\"rbt\" value=\"0\" /></form></div><br><br>";
 #endif
 
   int bufflen = strlen(supla_esp_get_laststate()) + strlen(dev_name) +
@@ -447,9 +455,11 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "input,select{width:calc(100% - "
       "10px);font-size:16px;line-height:28px;padding:0 5px;border-bottom:solid "
       "1px #00d151}select{width:100%;float:none;margin:0}}</style><script "
-      "type=\"text/javascript\">setTimeout(function(){var element =  "
-      "document.getElementById('msg');if ( element != null ) "
-      "element.style.visibility = \"hidden\";},3200);</script>";
+      "type=\"text/javascript\">function saveAndReboot(){var "
+      "e=document.getElementById(\"cfgform\");e.rbt.value=\"2\",e.submit()}"
+      "setTimeout(function(){var element =  document.getElementById('msg');if "
+      "( element != null ) element.style.visibility = "
+      "\"hidden\";},3200);</script>";
 
 #ifdef __FOTA
   char html_template[] =
@@ -482,9 +492,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
       "5z\"/></svg><h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
       "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X<br>MAC:"
-      " %02X:%02X:%02X:%02X:%02X:%02X</span><form method=\"post\"><div "
-      "class=\"w\"><h3>Wi-Fi Settings</h3><i><input name=\"sid\" "
-      "value=\"%s\"><label>Network name</label></i><i><input "
+      " %02X:%02X:%02X:%02X:%02X:%02X</span><form id=\"cfgform\" "
+      "method=\"post\"><div class=\"w\"><h3>Wi-Fi Settings</h3><i><input "
+      "name=\"sid\" value=\"%s\"><label>Network name</label></i><i><input "
       "name=\"wpw\" type=\"password\"><label>Password</label></i></div><div "
       "class=\"w\"><h3>Supla Settings</h3><i><input name=\"svr\" "
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
@@ -492,7 +502,9 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "class=\"w\"><h3>Additional Settings</h3><i><select name=\"upd\"><option "
       "value=\"0\" %s>NO</option><option value=\"1\" "
       "%s>YES</option></select><label>Firmware update</label></i></div><button "
-      "type=\"submit\">SAVE</button></form></div><br><br>";
+      "type=\"submit\">SAVE</button><br><br><button type=\"button\" "
+      "onclick=\"saveAndReboot();\">SAVE &amp; RESTART</button><input "
+      "type=\"hidden\" name=\"rbt\" value=\"0\" /></form></div><br><br>";
 #else
   char html_template[] =
       "%s%s<div class=\"s\"><svg version=\"1.1\" id=\"l\" x=\"0\" y=\"0\" "
@@ -524,14 +536,16 @@ char *ICACHE_FLASH_ATTR supla_esp_cfgmode_get_html_template(
       "4,10.3,19,7.8c7.1-2.3,11.1-9.1,9.6-15.9C180.9,93,174.8,88.5,167.7,88."
       "5z\"/></svg><h1>%s</h1><span>LAST STATE: %s<br>Firmware: %s<br>GUID: "
       "%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X%02X<br>MAC:"
-      " %02X:%02X:%02X:%02X:%02X:%02X</span><form method=\"post\"><div "
-      "class=\"w\"><h3>Wi-Fi Settings</h3><i><input name=\"sid\" "
-      "value=\"%s\"><label>Network name</label></i><i><input "
+      " %02X:%02X:%02X:%02X:%02X:%02X</span><form id=\"cfgform\" "
+      "method=\"post\"><div class=\"w\"><h3>Wi-Fi Settings</h3><i><input "
+      "name=\"sid\" value=\"%s\"><label>Network name</label></i><i><input "
       "name=\"wpw\" type=\"password\"><label>Password</label></i></div><div "
       "class=\"w\"><h3>Supla Settings</h3><i><input name=\"svr\" "
       "value=\"%s\"><label>Server</label></i><i><input name=\"eml\" "
       "value=\"%s\"><label>E-mail</label></i></div><button "
-      "type=\"submit\">SAVE</button></form></div><br><br>";
+      "type=\"submit\">SAVE</button><br><br><button type=\"button\" "
+      "onclick=\"saveAndReboot();\">SAVE &amp; RESTART</button><input "
+      "type=\"hidden\" name=\"rbt\" value=\"0\" /></form></div><br><br>";
 #endif
 
   int bufflen = strlen(supla_esp_get_laststate()) + strlen(dev_name) +
