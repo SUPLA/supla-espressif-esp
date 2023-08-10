@@ -39,6 +39,8 @@
 // PUBLISH_AT mode will publish ActionTrigger depending on button input. 
 #define BTN_MODE_PUBLISH_AT     1
 
+#define CLEAN_CONFIG_SIGNATURE 0xDEADBABE
+
 typedef struct {
   char TAG[6];
   char GUID[SUPLA_GUID_SIZE];
@@ -103,6 +105,12 @@ typedef struct {
   // disalbed), or if ActionTrigger should be published
   char ButtonMode[BTN_MAX_COUNT];
 
+  uint32_t CleanConfigSignature;
+
+  // Don't add new parameters here without decrementing zero[200] array below.
+  // It is not guaranteed that bytes outside of this 200 bytes array will be
+  // initialized to 0 when CleanConfigSignature is set.
+  // So if needed, add new parameter and decrease below array size accordingly.
   char zero[200];
 
 } SuplaEspCfg;
