@@ -96,44 +96,42 @@ supla_esp_save_state(int delay) {
 
 void CFG_ICACHE_FLASH_ATTR factory_defaults(char save) {
 
-	char GUID[SUPLA_GUID_SIZE];
-	char AuthKey[SUPLA_AUTHKEY_SIZE];
-	char TAG[6];
-	char Test;
+  char GUID[SUPLA_GUID_SIZE];
+  char AuthKey[SUPLA_AUTHKEY_SIZE];
+  char TAG[6];
+  char Test;
 
-	memcpy(GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
-	memcpy(AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
-	memcpy(TAG, supla_esp_cfg.TAG, 6);
-	Test = supla_esp_cfg.Test;
+  memcpy(GUID, supla_esp_cfg.GUID, SUPLA_GUID_SIZE);
+  memcpy(AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
+  memcpy(TAG, supla_esp_cfg.TAG, 6);
+  Test = supla_esp_cfg.Test;
 
-	memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
-	memcpy(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE);
-	memcpy(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE);
-	memcpy(supla_esp_cfg.TAG, TAG, 6);
+  memset(&supla_esp_cfg, 0, sizeof(SuplaEspCfg));
+  memcpy(supla_esp_cfg.GUID, GUID, SUPLA_GUID_SIZE);
+  memcpy(supla_esp_cfg.AuthKey, AuthKey, SUPLA_AUTHKEY_SIZE);
+  memcpy(supla_esp_cfg.TAG, TAG, 6);
 
-	supla_esp_cfg.CfgButtonType = BTN_TYPE_MONOSTABLE;
-	supla_esp_cfg.Button1Type = BTN1_DEFAULT;
-	supla_esp_cfg.Button2Type = BTN2_DEFAULT;
-	supla_esp_cfg.Flags = 0;
-	supla_esp_cfg.Port = 1883;
-	supla_esp_cfg.MqttTopicPrefix[0] = 0;
-	supla_esp_cfg.MqttQoS = 0;
-	supla_esp_cfg.MqttPoolPublicationDelay = 0;
+  supla_esp_cfg.CfgButtonType = BTN_TYPE_MONOSTABLE;
+  supla_esp_cfg.Button1Type = BTN1_DEFAULT;
+  supla_esp_cfg.Button2Type = BTN2_DEFAULT;
+  supla_esp_cfg.Flags = 0;
+  supla_esp_cfg.Port = 1883;
+  supla_esp_cfg.MqttTopicPrefix[0] = 0;
+  supla_esp_cfg.MqttQoS = 0;
+  supla_esp_cfg.MqttPoolPublicationDelay = 0;
+  supla_esp_cfg.CleanConfigSignature = CLEAN_CONFIG_SIGNATURE;
 
-	memset(&supla_esp_state, 0, sizeof(SuplaEspState));
-	supla_esp_cfg.Test = Test;
+  memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+  supla_esp_cfg.Test = Test;
 
 #ifdef BOARD_ESP_FACTORY_DEFAULTS
-	BOARD_ESP_FACTORY_DEFAULTS
+  BOARD_ESP_FACTORY_DEFAULTS
 #endif /*BOARD_ESP_FACTORY_DEFAULTS*/
 
-	if ( save == 1 ) {
-
-		supla_esp_cfg_save(&supla_esp_cfg);
-		supla_esp_save_state(0);
-
-	}
-
+  if (save == 1) {
+    supla_esp_cfg_save(&supla_esp_cfg);
+    supla_esp_save_state(0);
+  }
 }
 
 char CFG_ICACHE_FLASH_ATTR supla_esp_cfg_ready_to_connect(void) {
