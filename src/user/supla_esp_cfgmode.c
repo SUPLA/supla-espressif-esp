@@ -311,6 +311,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_proto_var(TrivialHttpParserVars *pVars,
 void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
                                             char *pdata, unsigned short len,
                                             SuplaEspCfg *cfg, char *reboot) {
+  char tempPassword[SUPLA_EMAIL_MAXSIZE];
+
   for (int a = 0; a < len; a++) {
     if (pVars->current_var == VAR_NONE) {
       char sid[3] = {'s', 'i', 'd'};
@@ -392,8 +394,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (memcmp(pwd, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_PWD;
-          pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
-          pVars->pbuff = cfg->LocationPwd;
+          pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+          pVars->pbuff = tempPassword;
 
         } else if (memcmp(btncfg, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_CFGBTN;
@@ -486,8 +488,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (memcmp(mwd, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_MWD;
-          pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
-          pVars->pbuff = cfg->Password;
+          pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+          pVars->pbuff = tempPassword;
 
         } else if (memcmp(pfx, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_PFX;
@@ -784,6 +786,26 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       }
     }
   }
+
+  // workaround for long passwords - if password is longer than max password
+  // field length, then we keep part in Password field, and reset in Email
+  // field, after null char
+  if (tempPassword[0] != '\0') {
+    int newPassLen = strnlen(tempPassword, SUPLA_EMAIL_MAXSIZE);
+    int mailLen = strnlen(cfg->Email, SUPLA_EMAIL_MAXSIZE);
+    int passwordMaxLength = SUPLA_LOCATION_PWD_MAXSIZE;
+
+    if (newPassLen < passwordMaxLength) {
+      strncpy(cfg->Password, tempPassword, newPassLen + 1);
+      return;
+    }
+
+    memcpy(cfg->Password, tempPassword, passwordMaxLength);
+    strncpy(cfg->Email + mailLen + 1, tempPassword + passwordMaxLength,
+            SUPLA_EMAIL_MAXSIZE - mailLen - 1);
+    cfg->Email[SUPLA_EMAIL_MAXSIZE - 1] = '\0';
+    return;
+  }
 }
 
 void ICACHE_FLASH_ATTR supla_esp_parse_request(TrivialHttpParserVars *pVars,
@@ -849,6 +871,7 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
 
   SuplaEspCfg new_cfg;
   memcpy(&new_cfg, &supla_esp_cfg, sizeof(SuplaEspCfg));
+  new_cfg.LocationPwd[0] = '\0';
 
   supla_esp_parse_request(pVars, pdata, len, &new_cfg, &reboot);
 
@@ -875,9 +898,33 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
     }
 
     // This also works for cfg->Password (union)
-    if (new_cfg.LocationPwd[0] == 0)
+    if (new_cfg.LocationPwd[0] == 0) {
       memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd,
              SUPLA_LOCATION_PWD_MAXSIZE);
+
+      // workaround for long passwords:
+      if (supla_esp_cfg.LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE - 1] != '\0') {
+        memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd,
+               SUPLA_LOCATION_PWD_MAXSIZE);
+        int oldMailLen = strnlen(supla_esp_cfg.Email, SUPLA_EMAIL_MAXSIZE);
+        int newMailLen = strnlen(new_cfg.Email, SUPLA_EMAIL_MAXSIZE);
+        if (oldMailLen < SUPLA_EMAIL_MAXSIZE &&
+            newMailLen < SUPLA_EMAIL_MAXSIZE) {
+          int partPasswordLen = strnlen(supla_esp_cfg.Email + oldMailLen + 1,
+                                        SUPLA_EMAIL_MAXSIZE - oldMailLen - 1);
+          if (partPasswordLen < SUPLA_EMAIL_MAXSIZE - oldMailLen - 1) {
+            if (partPasswordLen >= SUPLA_EMAIL_MAXSIZE - newMailLen - 1) {
+              partPasswordLen = SUPLA_EMAIL_MAXSIZE - newMailLen - 1;
+            }
+            memcpy(new_cfg.Email + newMailLen + 1,
+                   supla_esp_cfg.Email + oldMailLen + 1, partPasswordLen + 1);
+          }
+        } else {
+          // mail was too long, so truncate password:
+          new_cfg.LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE - 1] = '\0';
+        }
+      }
+    }
 
     if (new_cfg.WIFI_PWD[0] == 0)
       memcpy(new_cfg.WIFI_PWD, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
