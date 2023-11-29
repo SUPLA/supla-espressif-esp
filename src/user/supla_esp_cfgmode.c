@@ -903,7 +903,9 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
              SUPLA_LOCATION_PWD_MAXSIZE);
 
       // workaround for long passwords:
-      if (supla_esp_cfg.LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE - 1] != '\0') {
+      int passwordLen = strnlen(supla_esp_cfg.LocationPwd,
+                                SUPLA_LOCATION_PWD_MAXSIZE);
+      if (passwordLen == SUPLA_LOCATION_PWD_MAXSIZE) {
         memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd,
                SUPLA_LOCATION_PWD_MAXSIZE);
         int oldMailLen = strnlen(supla_esp_cfg.Email, SUPLA_EMAIL_MAXSIZE);

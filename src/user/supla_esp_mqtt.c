@@ -510,11 +510,28 @@ void ICACHE_FLASH_ATTR supla_esp_mqtt_conn_on_connect(void *arg) {
   supla_esp_mqtt_prepare_topic(&will_topic, "state/connected");
 
   char *username = NULL;
-  char *password = NULL;
+  char password[300];
 
   if (!(supla_esp_cfg.Flags & CFG_FLAG_MQTT_NO_AUTH)) {
     username = supla_esp_cfg.Username;
-    password = supla_esp_cfg.Password;
+    int passwordLen =
+        strnlen(supla_esp_cfg.Password, SUPLA_LOCATION_PWD_MAXSIZE);
+    memcpy(password, supla_esp_cfg.Password, passwordLen);
+    password[passwordLen] = '\0';
+    if (passwordLen >= SUPLA_LOCATION_PWD_MAXSIZE) {
+      int usernameLength = strnlen(supla_esp_cfg.Username,
+                                   SUPLA_EMAIL_MAXSIZE);
+      if (usernameLength < SUPLA_EMAIL_MAXSIZE - 1) {
+        int passwordPartLen =
+            strnlen(supla_esp_cfg.Username + usernameLength + 1,
+                    SUPLA_EMAIL_MAXSIZE - usernameLength - 1);
+        if (passwordPartLen < SUPLA_EMAIL_MAXSIZE - usernameLength - 1 - 1) {
+          memcpy(password + passwordLen,
+                 supla_esp_cfg.Username + usernameLength + 1,
+                 passwordPartLen + 1);
+        }
+      }
+    }
   }
 
   if (MQTT_OK == mqtt_connect(&supla_esp_mqtt_vars->client, clientId,
