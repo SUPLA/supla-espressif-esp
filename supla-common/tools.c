@@ -16,6 +16,13 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#ifndef ARDUINO
+
+#include "tools.h"
+
+#ifndef __ANDROID_API__
+#include <execinfo.h>
+#endif /*__ANDROID_API__*/
 #include <pthread.h>
 #include <signal.h>
 #include <stdio.h>
@@ -26,7 +33,6 @@
 
 #include "eh.h"
 #include "log.h"
-#include "tools.h"
 
 #ifdef __OPENSSL_TOOLS
 #include <openssl/bio.h>
@@ -52,14 +58,51 @@ void st_signal_handler(int sig) {
   if (st_eh != 0) eh_raise_event(st_eh);
 }
 
+void st_critical_signal_handler(int sig) {
+#ifndef __ANDROID_API__
+  void *array[20] = {};
+  size_t count = 0;
+
+  supla_log(LOG_CRIT,
+            "Critical Error! Terminate: %i Signal %d:", st_app_terminate,
+            sig);
+
+  count = backtrace(array, 20);
+  char **symbols = backtrace_symbols(array, count);
+
+  for (int i = 0; i < count; i++) {
+    supla_log(LOG_CRIT, "%s", symbols[i]);
+  }
+
+  free(symbols);
+
+  exit(1);
+#endif /*__ANDROID_API__*/
+}
+
 void st_hook_signals(void) {
   main_thread = pthread_self();
 
+#if defined(__ANDROID_API__) && (__ANDROID_API__ < 21)
+  bsd_signal(SIGHUP, st_signal_handler);
+  bsd_signal(SIGINT, st_signal_handler);
+  bsd_signal(SIGTERM, st_signal_handler);
+  bsd_signal(SIGQUIT, st_signal_handler);
+  bsd_signal(SIGPIPE, SIG_IGN);
+#else
   signal(SIGHUP, st_signal_handler);
   signal(SIGINT, st_signal_handler);
   signal(SIGTERM, st_signal_handler);
   signal(SIGQUIT, st_signal_handler);
   signal(SIGPIPE, SIG_IGN);
+#endif /*__ANDROID__*/
+}
+
+void st_hook_critical_signals(void) {
+#ifndef __ANDROID_API__
+  signal(SIGSEGV, st_critical_signal_handler);
+  signal(SIGABRT, st_critical_signal_handler);
+#endif /*__ANDROID_API__*/
 }
 
 unsigned char st_file_exists(const char *fp) {
@@ -196,7 +239,7 @@ char st_read_randkey_from_file(char *file, char *KEY, int size, char create) {
         gettimeofday(&tv, NULL);
 
 #ifdef __ANDROID__
-        srand(tv.tv_usec);
+        srand48(tv.tv_usec);
         gettimeofday(&tv, NULL);
 
         for (a = 0; a < size; a++)
@@ -505,7 +548,8 @@ char st_bcrypt_gensalt(char *salt, int salt_buffer_size, char rounds) {
              : 1;
 }
 
-char st_bcrypt_hash(char *str, char *salt, char *hash, int hash_buffer_size) {
+char st_bcrypt_hash(const char *str, const char *salt, char *hash,
+                    int hash_buffer_size) {
   if (str == NULL || hash == NULL || salt == NULL || hash_buffer_size == 0)
     return 0;
 
@@ -523,7 +567,7 @@ char st_bcrypt_crypt(char *str, char *hash, int hash_buffer_size, char rounds) {
   return 0;
 }
 
-char st_bcrypt_check(char *str, char *hash, int hash_len) {
+char st_bcrypt_check(const char *str, char *hash, int hash_len) {
   if (str == NULL || hash == NULL || hash_len == 0) return 0;
 
   char *cmp_hash = malloc(hash_len + 1);
@@ -567,7 +611,7 @@ char *st_get_authkey_hash_hex(const char AuthKey[SUPLA_AUTHKEY_SIZE]) {
 
 #ifdef __OPENSSL_TOOLS
 
-char *st_openssl_base64_encode(char *src, int src_len) {
+char *st_openssl_base64_encode(const char *src, int src_len) {
   BIO *bio, *b64;
   BUF_MEM *bufferPtr;
   char *result = NULL;
@@ -580,7 +624,6 @@ char *st_openssl_base64_encode(char *src, int src_len) {
   bio = BIO_new(BIO_s_mem());
   bio = BIO_push(b64, bio);
   BIO_set_flags(bio, BIO_FLAGS_BASE64_NO_NL);
-  (void)BIO_set_close(bio, BIO_NOCLOSE);
 
   BIO_write(bio, src, src_len);
   (void)BIO_flush(bio);
@@ -592,12 +635,11 @@ char *st_openssl_base64_encode(char *src, int src_len) {
   result[bufferPtr->length] = 0;
 
   BIO_free_all(bio);
-  BUF_MEM_free(bufferPtr);
 
   return result;
 }
 
-char *st_openssl_base64_decode(char *src, int src_len, int *dst_len) {
+char *st_openssl_base64_decode(const char *src, int src_len, int *dst_len) {
   BIO *bio, *b64;
 
   char *buffer = (char *)malloc(src_len + 1);
@@ -625,3 +667,4 @@ char *st_openssl_base64_decode(char *src, int src_len, int *dst_len) {
 }
 
 #endif /*__OPENSSL_TOOLS*/
+#endif /* !ARDUINO */

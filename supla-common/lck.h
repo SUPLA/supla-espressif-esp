@@ -19,10 +19,14 @@
 #ifndef LCK_H_
 #define LCK_H_
 
-#if defined(ESP8266) || defined(ESP32)
+#if defined(ESP8266)
 #include <mem.h>
 #define LCK_ICACHE_FLASH ICACHE_FLASH_ATTR
 #endif
+
+#if defined(ARDUINO)
+#undef LCK_ICACHE_FLASH
+#endif /*defined(ARDUINO)*/
 
 #ifndef LCK_ICACHE_FLASH
 #define LCK_ICACHE_FLASH
@@ -32,19 +36,7 @@
 extern "C" {
 #endif
 
-#ifdef __DEBUG
-// #define __LCK_DEBUG
-#endif
-
-#ifdef __LCK_DEBUG
-#define lck_lock(ptr) __lck_lock(ptr, __FILE__, __LINE__)
-void LCK_ICACHE_FLASH _lck_lock(void *lck);
-void LCK_ICACHE_FLASH __lck_lock(void *lck, const char *file, int line);
-void LCK_ICACHE_FLASH lck_debug_init(void);
-void LCK_ICACHE_FLASH lck_debug_dump(void);
-#else
 void LCK_ICACHE_FLASH lck_lock(void *lck);
-#endif /*__LCK_DEBUG*/
 
 char LCK_ICACHE_FLASH lck_lock_with_timeout(void *lck, int timeout_sec);
 void LCK_ICACHE_FLASH lck_unlock(void *lck);
