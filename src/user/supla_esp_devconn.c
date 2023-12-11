@@ -486,6 +486,11 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
       supla_esp_set_state(LOG_NOTICE, "Incorrect device GUID!");
       break;
 
+    case SUPLA_RESULTCODE_DEVICE_LOCKED:
+      supla_esp_set_state(LOG_NOTICE, "The device is locked, check it on Supla "
+                                      "Cloud for further instructions.");
+      break;
+
     default:
       buff = os_malloc(30);
       ets_snprintf(buff, 30, "Unknown code %i",
@@ -1885,7 +1890,6 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
         }
       }
     }
-
   }
 }
 
