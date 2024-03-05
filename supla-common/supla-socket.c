@@ -41,7 +41,6 @@
 #include <netdb.h>
 #include <openssl/err.h>
 #include <openssl/ssl.h>
-#include <pthread.h>
 #include <resolv.h>
 #include <stdlib.h>
 #include <string.h>
@@ -85,61 +84,11 @@ typedef struct {
   TSuplaSocket supla_socket;
 } TSuplaSocketData;
 
-struct CRYPTO_dynlock_value {
-  void *lck;
-};
-
 #ifndef NOSSL
 #ifndef _SERVER_EXCLUDED
-static void **ssl_locks = NULL;
 
-static void ssocket_ssl_locking_function(int mode, int n, const char *file,
-                                         int line) {
-  if (mode & CRYPTO_LOCK) {
-    lck_lock(ssl_locks[n]);
-  } else {
-    lck_unlock(ssl_locks[n]);
-  }
-}
-
-static unsigned long ssocket_ssl_id_function(void) {
-  return ((unsigned long)pthread_self());
-}
-
-static struct CRYPTO_dynlock_value *ssocket_ssl_dyn_create_function(
-    const char *file, int line) {
-  struct CRYPTO_dynlock_value *value;
-
-  value = (struct CRYPTO_dynlock_value *)malloc(
-      sizeof(struct CRYPTO_dynlock_value));
-
-  if (!value) {
-    goto err;
-  }
-
-  value->lck = lck_init();
-
-  return value;
-
-err:
-  return (NULL);
-}
-
-static void ssocket_ssl_dyn_lock_function(int mode,
-                                          struct CRYPTO_dynlock_value *l,
-                                          const char *file, int line) {
-  if (mode & CRYPTO_LOCK) {
-    lck_lock(l->lck);
-  } else {
-    lck_unlock(l->lck);
-  }
-}
-
-static void ssocket_ssl_dyn_destroy_function(struct CRYPTO_dynlock_value *l,
-                                             const char *file, int line) {
-  lck_free(l->lck);
-  free(l);
-}
+int ssocket_last_accept_errno = 0;
+struct timeval ssocket_last_accept_error_time = {};
 
 void ssocket_ssl_error_log(void) {
   char *errstr;
@@ -158,8 +107,8 @@ SSL_CTX *ssocket_initserverctx(void) {
   SSL_CTX *ctx;
 
   OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-  method = (SSL_METHOD *)SSLv23_server_method();
+
+  method = (SSL_METHOD *)TLS_server_method();
   ctx = SSL_CTX_new(method);
 
   if (ctx == NULL) ssocket_ssl_error_log();
@@ -194,8 +143,30 @@ unsigned char ssocket_loadcertificates(SSL_CTX *ctx, const char *CertFile,
     return 0;
   }
 
+  X509 *x509 = SSL_CTX_get0_certificate(ctx);
+  const ASN1_TIME *notAfter = X509_getm_notAfter(x509);
+
+  int remaining_days = 0, remaining_seconds = 0;
+  ASN1_TIME_diff(&remaining_days, &remaining_seconds, NULL, notAfter);
+  if (remaining_days <= 60) {
+    if (remaining_days > 0 || remaining_seconds > 0) {
+      supla_log(LOG_WARNING,
+                "The SSL certificate is expiring. Days remaining: %i",
+                remaining_days);
+    } else {
+      supla_log(LOG_ERR, "SSL certificate expired!");
+    }
+  }
+
   return 1;
 }
+
+int ssocket_get_last_accept_errno(void) { return ssocket_last_accept_errno; }
+
+long int ssocket_get_last_accept_error_time_sec(void) {
+  return ssocket_last_accept_error_time.tv_sec;
+}
+
 #endif /*ifndef _SERVER_EXCLUDED*/
 
 void ssocket_showcerts(SSL *ssl) {
@@ -217,51 +188,12 @@ void ssocket_showcerts(SSL *ssl) {
   }
 }
 
-int32_t ssocket_ssl_error(TSuplaSocket *supla_socket, int ret_code) {
-  int32_t ssl_error;
-
-  ssl_error = SSL_get_error(supla_socket->ssl, ret_code);
-
-  switch (ssl_error) {
-    case SSL_ERROR_NONE:
-      supla_log(LOG_DEBUG, "SSL_ERROR_NONE");
-      break;
-    case SSL_ERROR_SSL:
-      supla_log(LOG_DEBUG, "SSL_ERROR_SSL");
-      break;
-    case SSL_ERROR_WANT_READ:
-      supla_log(LOG_DEBUG, "SSL_ERROR_WANT_READ");
-      break;
-    case SSL_ERROR_WANT_WRITE:
-      supla_log(LOG_DEBUG, "SSL_ERROR_WANT_WRITE");
-      break;
-    case SSL_ERROR_WANT_X509_LOOKUP:
-      supla_log(LOG_DEBUG, "SSL_ERROR_WANT_X509_LOOKUP");
-      break;
-    case SSL_ERROR_SYSCALL:
-      supla_log(LOG_DEBUG, "SSL_ERROR_SYSCALL");
-      break;
-    case SSL_ERROR_ZERO_RETURN:
-      supla_log(LOG_DEBUG, "SSL_ERROR_ZERO_RETURN");
-      break;
-    case SSL_ERROR_WANT_CONNECT:
-      supla_log(LOG_DEBUG, "SSL_ERROR_WANT_CONNECT");
-      break;
-    case SSL_ERROR_WANT_ACCEPT:
-      supla_log(LOG_DEBUG, "SSL_ERROR_WANT_ACCEPT");
-      break;
-  }
-
-  return ssl_error;
-}
-
 SSL_CTX *ssocket_client_initctx(void) {
   SSL_METHOD *method;
   SSL_CTX *ctx;
 
   OpenSSL_add_all_algorithms();
-  SSL_load_error_strings();
-  method = (SSL_METHOD *)TLSv1_2_client_method();
+  method = (SSL_METHOD *)TLS_client_method();
   ctx = SSL_CTX_new(method);
 
   if (ctx == NULL) ssocket_ssl_error_log();
@@ -313,12 +245,10 @@ char ssocket_openlistener(void *_ssd) {
   return 0;
 }
 
+// If you want to use SSL support, call SSL_library_init() and
+// SSL_load_error_strings() before you use this function with SSL support
 void *ssocket_server_init(const char cert[], const char key[], int port,
                           unsigned char secure) {
-#ifndef NOSSL
-  int i;
-#endif /*NOSSL*/
-
   TSuplaSocketData *ssd = malloc(sizeof(TSuplaSocketData));
 
   if (ssd == NULL) return NULL;
@@ -332,35 +262,13 @@ void *ssocket_server_init(const char cert[], const char key[], int port,
 #ifdef NOSSL
     assert(secure == 0);
 #else
+    ssd->secure = 1;
+    ssd->ctx = ssocket_initserverctx();
 
-#ifndef NOSSL
-    supla_log(LOG_INFO, "SSL version: %s", OPENSSL_VERSION_TEXT);
-#endif
-
-    SSL_library_init();
-
-    ssl_locks = malloc(CRYPTO_num_locks() * sizeof(void *));
-
-    if (ssl_locks != 0) {
-      for (i = 0; i < CRYPTO_num_locks(); i++) {
-        ssl_locks[i] = lck_init();
-      }
-
-      // http://openssl.6102.n7.nabble.com/When-to-use-CRYPTO-set-locking-callback-and-CRYPTO-set-id-callback-td7379.html
-      CRYPTO_set_locking_callback(ssocket_ssl_locking_function);
-      CRYPTO_set_id_callback(ssocket_ssl_id_function);
-      CRYPTO_set_dynlock_create_callback(ssocket_ssl_dyn_create_function);
-      CRYPTO_set_dynlock_lock_callback(ssocket_ssl_dyn_lock_function);
-      CRYPTO_set_dynlock_destroy_callback(ssocket_ssl_dyn_destroy_function);
-
-      ssd->secure = 1;
-      ssd->ctx = ssocket_initserverctx();
-
-      if (ssd->ctx == NULL ||
-          ssocket_loadcertificates(ssd->ctx, cert, key) == 0) {
-        ssocket_free(ssd);
-        ssd = NULL;
-      }
+    if (ssd->ctx == NULL ||
+        ssocket_loadcertificates(ssd->ctx, cert, key) == 0) {
+      ssocket_free(ssd);
+      ssd = NULL;
     }
 
 #endif /*ifdef NOSSL*/
@@ -378,28 +286,14 @@ void ssocket_free(void *_ssd) {
     ssocket_close(ssd);
 
 #ifndef NOSSL
-
-    int i;
-
 #ifndef _SERVER_EXCLUDED
-    if (ssl_locks != 0) {
-      CRYPTO_set_dynlock_create_callback(NULL);
-      CRYPTO_set_dynlock_lock_callback(NULL);
-      CRYPTO_set_dynlock_destroy_callback(NULL);
-
-      CRYPTO_set_locking_callback(NULL);
-      CRYPTO_set_id_callback(NULL);
-
-      for (i = 0; i < CRYPTO_num_locks(); i++) {
-        lck_free(ssl_locks[i]);
-      }
-      free(ssl_locks);
-      ssl_locks = NULL;
-    }
 
     EVP_cleanup();
     ERR_clear_error();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     ERR_remove_thread_state(NULL);
+#pragma GCC diagnostic pop
     ERR_free_strings();
     CRYPTO_cleanup_all_ex_data();
 
@@ -432,8 +326,14 @@ char ssocket_accept(void *_ssd, unsigned int *ipv4, void **_supla_socket) {
     client_sd = accept(ssd->supla_socket.sfd, (struct sockaddr *)&addr, &len);
 
     if (client_sd == -1) {
-      supla_log(LOG_ERR, "Connection accept error %i", errno);
+      if (errno != EAGAIN && errno != ECONNABORTED) {
+        ssocket_last_accept_errno = errno;
+        gettimeofday(&ssocket_last_accept_error_time, NULL);
+      }
 
+      supla_log(LOG_ERR, "Connection accept error %i, %s:%d",
+                ssocket_last_accept_errno, inet_ntoa(addr.sin_addr),
+                ntohs(addr.sin_port));
     } else {
       supla_log(LOG_INFO, "Connection accepted: %s:%d ClientSD: %i Secure: %i",
                 inet_ntoa(addr.sin_addr), ntohs(addr.sin_port), client_sd,
@@ -476,6 +376,14 @@ char ssocket_accept(void *_ssd, unsigned int *ipv4, void **_supla_socket) {
   return result;
 }
 
+void ssocket_ssl_new(void *_ssd, void *_supla_socket) {
+  TSuplaSocket *supla_socket = (TSuplaSocket *)_supla_socket;
+  TSuplaSocketData *ssd = (TSuplaSocketData *)_ssd;
+  if (supla_socket && supla_socket->sfd != -1 && ssd && ssd->secure == 1) {
+    supla_socket->ssl = SSL_new(ssd->ctx);
+  }
+}
+
 char ssocket_accept_ssl(void *_ssd, void *_supla_socket) {
   TSuplaSocket *supla_socket = (TSuplaSocket *)_supla_socket;
 #ifndef NOSSL
@@ -493,7 +401,6 @@ char ssocket_accept_ssl(void *_ssd, void *_supla_socket) {
     if (n == -1) {
       supla_log(LOG_ERR, "SO_RCVTIMEO/%i", tv.tv_sec);
     } else {
-      supla_socket->ssl = SSL_new(ssd->ctx);
       SSL_set_fd(supla_socket->ssl, supla_socket->sfd);
     }
 
@@ -517,8 +424,9 @@ char ssocket_accept_ssl(void *_ssd, void *_supla_socket) {
         ssocket_supla_socket_close(supla_socket);
       }
 
-      supla_log(LOG_INFO, "Cipher: %s, ClientSD: %i",
-                SSL_get_cipher(supla_socket->ssl), supla_socket->sfd);
+      supla_log(LOG_INFO, "Cipher: %s, SSL Version: %s, ClientSD: %i",
+                SSL_get_cipher(supla_socket->ssl),
+                SSL_get_version(supla_socket->ssl), supla_socket->sfd);
     }
   }
 
@@ -539,7 +447,10 @@ void ssocket_supla_socket_close(void *_supla_socket) {
     }
 
     ERR_clear_error();
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
     ERR_remove_thread_state(NULL);
+#pragma GCC diagnostic pop
 
 #endif /*ifndef NOSSL */
 
@@ -593,9 +504,13 @@ void ssocket_close(void *_ssd) {
 
 int ssocket_client_openconnection(TSuplaSocketData *ssd, const char *state_file,
                                   int *err) {
-  struct sockaddr_in addr;
-  long ip = 0;
-  struct hostent *host;
+  struct in6_addr serveraddr;
+  struct addrinfo hints, *res = NULL;
+
+  memset(&hints, 0, sizeof(hints));
+  hints.ai_flags = AI_NUMERICSERV;
+  hints.ai_family = AF_UNSPEC;
+  hints.ai_socktype = SOCK_STREAM;
 
   ssd->supla_socket.sfd = -1;
 
@@ -607,38 +522,33 @@ int ssocket_client_openconnection(TSuplaSocketData *ssd, const char *state_file,
   }
 #endif
 
+  char port[15];
+  snprintf(port, sizeof(port), "%i", ssd->port);
+
+  char empty[] = "";
+  char *server = empty;
+
   if (ssd->host != NULL && strnlen(ssd->host, 1024) > 0) {
-    /*
-    #if defined(_WIN32) && WINAPI_FAMILY == WINAPI_FAMILY_PHONE_APP
-
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-
-    if ( getaddrinfo(ssd->host, NULL, &hints, &res) == 0
-             && res != NULL
-             && res->ai_family == AF_INET ) {
-
-            ip = ((struct sockaddr_in*)res->ai_addr)->sin_addr.S_un.S_addr;
-    }
-    #else
-    */
-    if ((host = gethostbyname(ssd->host)) != NULL) {
-      ip = *(long *)(host->h_addr);
-    }
-
-    // #endif
+    server = ssd->host;
   }
 
-  if (ip == 0) {
-    if (err) *err = SUPLA_RESULTCODE_HOSTNOTFOUND;
+  if (inet_pton(AF_INET, server, &serveraddr) == 1) {
+    hints.ai_family = AF_INET;
+    hints.ai_flags |= AI_NUMERICHOST;
+  } else if (inet_pton(AF_INET6, server, &serveraddr) == 1) {
+    hints.ai_family = AF_INET6;
+    hints.ai_flags |= AI_NUMERICHOST;
+  }
 
-    supla_write_state_file(state_file, LOG_ERR, "Host not found %s",
-                           ssd->host == NULL ? "" : ssd->host);
+  if (getaddrinfo(server, port, &hints, &res) != 0) {
+    if (err) *err = SUPLA_RESULT_HOST_NOT_FOUND;
+
+    supla_write_state_file(state_file, LOG_ERR, "Host not found %s", server);
     return -1;
   }
 
-  ssd->supla_socket.sfd = socket(PF_INET, SOCK_STREAM, 0);
+  ssd->supla_socket.sfd =
+      socket(res->ai_family, res->ai_socktype, res->ai_protocol);
 
   if (ssd->supla_socket.sfd == -1) {
 #ifdef _WIN32
@@ -648,13 +558,7 @@ int ssocket_client_openconnection(TSuplaSocketData *ssd, const char *state_file,
     return -1;
   }
 
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(ssd->port);
-  addr.sin_addr.s_addr = ip;
-
-  if (connect(ssd->supla_socket.sfd, (struct sockaddr *)&addr, sizeof(addr)) !=
-      0) {
+  if (connect(ssd->supla_socket.sfd, res->ai_addr, res->ai_addrlen) != 0) {
 #ifdef _WIN32
     shutdown(ssd->supla_socket.sfd, SD_SEND);
     closesocket(ssd->supla_socket.sfd);
@@ -665,11 +569,13 @@ int ssocket_client_openconnection(TSuplaSocketData *ssd, const char *state_file,
 
     ssd->supla_socket.sfd = -1;
 
-    if (err) *err = SUPLA_RESULTCODE_CANTCONNECTTOHOST;
+    if (err) *err = SUPLA_RESULT_CANT_CONNECT_TO_HOST;
 
     supla_write_state_file(state_file, LOG_ERR, "Can't connect to host %s",
                            ssd->host == NULL ? "" : ssd->host);
   }
+
+  freeaddrinfo(res);
 
 #ifdef _WIN32
   if (ssd->secure == 0) {
@@ -686,7 +592,7 @@ void *ssocket_client_init(const char host[], int port, unsigned char secure) {
 
   if (ssd == NULL) return NULL;
 
-  supla_log(LOG_INFO, "SSL version: %s", OPENSSL_VERSION_TEXT);
+  supla_log(LOG_INFO, "SSL version: %s", OpenSSL_version(OPENSSL_VERSION));
 
   memset(ssd, 0, sizeof(TSuplaSocketData));
 
@@ -705,6 +611,8 @@ void *ssocket_client_init(const char host[], int port, unsigned char secure) {
 #ifndef NOSSL
   if (secure == 1) {
     SSL_library_init();
+    SSL_load_error_strings();
+
     ssd->ctx = ssocket_client_initctx();
 
     if (ssd->ctx == NULL) {
@@ -763,6 +671,38 @@ char ssocket_is_secure(void *_ssd) {
   return ((TSuplaSocketData *)_ssd)->secure == 1;
 }
 
+void ssocket_log_ssl_error(void *_supla_socket, int ret) {
+  TSuplaSocket *supla_socket = (TSuplaSocket *)_supla_socket;
+
+  // SSL_get_error consumes quite a few CPU cycles.
+  int32_t ssl_error = SSL_get_error(supla_socket->ssl, ret);
+  if (ssl_error != SSL_ERROR_WANT_READ && ssl_error != SSL_ERROR_WANT_WRITE) {
+    switch (ssl_error) {
+      case SSL_ERROR_NONE:
+        supla_log(LOG_DEBUG, "SSL_ERROR_NONE");
+        break;
+      case SSL_ERROR_SSL:
+        supla_log(LOG_DEBUG, "SSL_ERROR_SSL");
+        break;
+      case SSL_ERROR_WANT_X509_LOOKUP:
+        supla_log(LOG_DEBUG, "SSL_ERROR_WANT_X509_LOOKUP");
+        break;
+      case SSL_ERROR_SYSCALL:
+        supla_log(LOG_DEBUG, "SSL_ERROR_SYSCALL");
+        break;
+      case SSL_ERROR_ZERO_RETURN:
+        supla_log(LOG_DEBUG, "SSL_ERROR_ZERO_RETURN");
+        break;
+      case SSL_ERROR_WANT_CONNECT:
+        supla_log(LOG_DEBUG, "SSL_ERROR_WANT_CONNECT");
+        break;
+      case SSL_ERROR_WANT_ACCEPT:
+        supla_log(LOG_DEBUG, "SSL_ERROR_WANT_ACCEPT");
+        break;
+    }
+  }
+}
+
 int ssocket_read(void *_ssd, void *_supla_socket, void *buf, int count) {
   TSuplaSocketData *ssd = (TSuplaSocketData *)_ssd;
   TSuplaSocket *supla_socket = _supla_socket == NULL
@@ -771,15 +711,31 @@ int ssocket_read(void *_ssd, void *_supla_socket, void *buf, int count) {
 
   assert(ssd != NULL);
 
+  if (supla_socket->sfd == -1) {
+    return 0;
+  }
+
   if (ssd->secure == 1) {
 #ifdef NOSSL
     count = 0;
 #else
     count = SSL_read(supla_socket->ssl, buf, count);
 
-    if (count < 0 &&
-        SSL_get_error(supla_socket->ssl, count) != SSL_ERROR_WANT_READ)
-      ssocket_ssl_error(supla_socket, count);
+    // Only for debug purposes
+    // if (count < 0) {
+    //  ssocket_log_ssl_error(supla_socket, count);
+    //}
+
+#ifndef __SUPLA_SERVER
+    if (count < 0) {
+      int32_t ssl_error = SSL_get_error(supla_socket->ssl, count);
+      if (ssl_error == SSL_ERROR_SYSCALL || ssl_error == SSL_ERROR_SSL) {
+        return 0;
+      }
+    }
+
+#endif
+
 #endif /*ifdef NOSSL*/
 
   } else {
@@ -807,6 +763,10 @@ int ssocket_write(void *_ssd, void *_supla_socket, const void *buf, int count) {
 
   assert(ssd != NULL);
 
+  if (supla_socket->sfd == -1) {
+    return -1;
+  }
+
 #if defined(__DEBUG) && __SSOCKET_WRITE_TO_FILE == 1
   if (count > 0) {
     FILE *f = fopen("ssocket_write.raw", "ab");
@@ -821,7 +781,10 @@ int ssocket_write(void *_ssd, void *_supla_socket, const void *buf, int count) {
 #ifndef NOSSL
     count = SSL_write(supla_socket->ssl, buf, count);
 
-    if (count < 0) ssocket_ssl_error(supla_socket, count);
+    // Only for debug purposes
+    // if (count < 0) {
+    //  ssocket_log_ssl_error(_supla_socket, count);
+    //}
 #else
     return -1;
 #endif /*ifndef NOSSL*/
@@ -832,8 +795,8 @@ int ssocket_write(void *_ssd, void *_supla_socket, const void *buf, int count) {
                  MSG_NOSIGNAL
 #else
                  0
-#endif               /*ifdef __linux__*/
-                 );  // NOLINT
+#endif  /*ifdef __linux__*/
+    );  // NOLINT
   }
 
   return count;

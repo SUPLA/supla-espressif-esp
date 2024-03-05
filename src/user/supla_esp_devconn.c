@@ -429,7 +429,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
         for (uint8 a = 0; a < CHANNEL_CONFIG_LIMIT; a++) {
           if (RETREIVE_CHANNEL_CONFIG & (1 << a)) {
             request.ChannelNumber = a;
-            srpc_ds_async_get_channel_config(devconn->srpc, &request);
+            srpc_ds_async_get_channel_config_request(devconn->srpc, &request);
           }
         }
       }
@@ -484,6 +484,11 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
 
     case SUPLA_RESULTCODE_GUID_ERROR:
       supla_esp_set_state(LOG_NOTICE, "Incorrect device GUID!");
+      break;
+
+    case SUPLA_RESULTCODE_DEVICE_LOCKED:
+      supla_esp_set_state(LOG_NOTICE, "The device is locked, check it on Supla "
+                                      "Cloud for further instructions.");
       break;
 
     default:
@@ -1854,9 +1859,9 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
       int staircaseTimeMs = 0;
       if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
         if (result->ConfigType == 0 &&
-            result->ConfigSize == sizeof(TSD_ChannelConfig_StaircaseTimer)) {
-          TSD_ChannelConfig_StaircaseTimer *staircaseCfg =
-            (TSD_ChannelConfig_StaircaseTimer *)(result->Config);
+            result->ConfigSize == sizeof(TChannelConfig_StaircaseTimer)) {
+          TChannelConfig_StaircaseTimer *staircaseCfg =
+            (TChannelConfig_StaircaseTimer *)(result->Config);
           supla_log(LOG_DEBUG, "Staircase cfg time: %d ms",
               staircaseCfg->TimeMS);
           staircaseTimeMs = staircaseCfg->TimeMS;
@@ -1875,17 +1880,16 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     // TODO
   } else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
     if (result->ConfigType == 0 &&
-        result->ConfigSize == sizeof(TSD_ChannelConfig_ActionTrigger)) {
+        result->ConfigSize == sizeof(TChannelConfig_ActionTrigger)) {
       for (int i = 0; i < INPUT_MAX_COUNT; i++) {
         if (supla_input_cfg[i].channel == result->ChannelNumber) {
-          TSD_ChannelConfig_ActionTrigger *actionTriggerCfg =
-            (TSD_ChannelConfig_ActionTrigger *)(result->Config);
+          TChannelConfig_ActionTrigger *actionTriggerCfg =
+            (TChannelConfig_ActionTrigger *)(result->Config);
             supla_esp_input_set_active_triggers(&(supla_input_cfg[i]),
                 actionTriggerCfg->ActiveActions);
         }
       }
     }
-
   }
 }
 

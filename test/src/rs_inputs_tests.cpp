@@ -696,12 +696,12 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -711,7 +711,7 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
   configResult.ChannelNumber = 2;
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -957,12 +957,12 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1189,14 +1189,14 @@ TEST_F(RsInputsFixture, MonostableRsWithATOnSingleButton) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
 
   configResult.ChannelNumber = 2;
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1444,12 +1444,12 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1974,12 +1974,12 @@ TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2349,12 +2349,12 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithATAndTriggerOnPress) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2364,7 +2364,7 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithATAndTriggerOnPress) {
   configResult.ChannelNumber = 2;
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-         sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 

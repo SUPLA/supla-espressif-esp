@@ -17,11 +17,18 @@
  */
 
 #include "sthread.h"
+
+#ifndef NOMYSQL
+#include <mariadb/mysql.h>
+#endif /*NOMYSQL*/
+
 #include <pthread.h>
 #include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+
 #include "lck.h"
+#include "log.h"
 
 typedef struct {
   pthread_t _thread;
@@ -34,6 +41,11 @@ typedef struct {
 void *_sthread_run(void *ptr) {
   Tsthread *sthread = (Tsthread *)ptr;
 
+#ifndef NOMYSQL
+  mysql_thread_init();  // We can't refer to d'common, so we directly refer to
+                        // mysql
+#endif                  /*NOMYSQL*/
+
   if (sthread->params.initialize != 0)
     sthread->params.user_data =
         sthread->params.initialize(sthread->params.user_data, ptr);
@@ -45,31 +57,39 @@ void *_sthread_run(void *ptr) {
     sthread->params.finish(sthread->params.user_data, ptr);
 
   lck_lock(sthread->lck);
+  char free_on_finish = sthread->params.free_on_finish;
   sthread->finished = 1;
   lck_unlock(sthread->lck);
 
-  if (sthread->params.free_on_finish) sthread_free(sthread);
+  if (free_on_finish) sthread_free(sthread);
+
+#ifndef NOMYSQL
+  mysql_thread_end();
+#endif /*NOMYSQL*/
 
   return 0;
 }
 
-void *sthread_run(Tsthread_params *sthread_params) {
-  Tsthread *sthread = malloc(sizeof(Tsthread));
+void sthread_run(Tsthread_params *sthread_params, void **_sthread) {
+  Tsthread *sthread = (Tsthread *)malloc(sizeof(Tsthread));
+  *_sthread = sthread;
+  int r = -1;
 
-  if (sthread == NULL) return NULL;
+  if (sthread == NULL) return;
 
   memset(sthread, 0, sizeof(Tsthread));
 
   sthread->lck = lck_init();
   memcpy(&sthread->params, sthread_params, sizeof(Tsthread_params));
 
-  pthread_create(&sthread->_thread, NULL, &_sthread_run, sthread);
-
-  return sthread;
+  if ((r = pthread_create(&sthread->_thread, NULL, &_sthread_run, sthread)) !=
+      0) {
+    supla_log(LOG_ERR, "Could not create a new thread. Error code: %i", r);
+  }
 }
 
-void *sthread_simple_run(_func_sthread_execute execute, void *user_data,
-                         char free_on_finish) {
+void sthread_simple_run(_func_sthread_execute execute, void *user_data,
+                        char free_on_finish, void **sthread) {
   Tsthread_params p;
   p.user_data = user_data;
   p.free_on_finish = free_on_finish;
@@ -77,7 +97,7 @@ void *sthread_simple_run(_func_sthread_execute execute, void *user_data,
   p.finish = NULL;
   p.initialize = NULL;
 
-  return sthread_run(&p);
+  sthread_run(&p, sthread);
 }
 
 void sthread_wait(void *sthread) {
@@ -104,12 +124,14 @@ char sthread_isfinished(void *sthread) {
   return result;
 }
 
-void sthread_terminate(void *sthread) {
+void sthread_terminate(void *sthread, char kill) {
   lck_lock(((Tsthread *)sthread)->lck);
   ((Tsthread *)sthread)->terminated = 1;
   lck_unlock(((Tsthread *)sthread)->lck);
 
-  pthread_kill(((Tsthread *)sthread)->_thread, SIGINT);
+  if (kill) {
+    pthread_kill(((Tsthread *)sthread)->_thread, SIGINT);
+  }
 }
 
 void sthread_free(void *sthread) {
@@ -118,8 +140,8 @@ void sthread_free(void *sthread) {
   free((Tsthread *)sthread);
 }
 
-void sthread_twf(void *sthread) {
-  sthread_terminate(sthread);
+void sthread_twf(void *sthread, char kill) {
+  sthread_terminate(sthread, kill);
   sthread_wait(sthread);
   sthread_free(sthread);
 }
