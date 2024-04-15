@@ -110,7 +110,7 @@ supla_esp_devconn_get_channel_int_params(unsigned char channel_number);
 #endif /*BOARD_ON_CHANNEL_INT_PARAMS_RESULT*/
 
 #ifdef BOARD_CALCFG
-void ICACHE_FLASH_ATTR
+bool ICACHE_FLASH_ATTR
 supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request);
 #endif /*BOARD_CALCFG*/
 

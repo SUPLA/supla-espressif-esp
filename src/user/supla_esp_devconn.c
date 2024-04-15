@@ -395,6 +395,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
     case SUPLA_RESULTCODE_USER_CONFLICT:
       supla_esp_set_state(LOG_ERR, "User conflict!");
       break;
+    case SUPLA_RESULTCODE_COUNTRY_REJECTED:
+      supla_esp_set_state(LOG_ERR, "Country rejected!");
+      break;
 
     case SUPLA_RESULTCODE_TRUE:
 
@@ -427,7 +430,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
         for (uint8 a = 0; a < CHANNEL_CONFIG_LIMIT; a++) {
           if (RETREIVE_CHANNEL_CONFIG & (1 << a)) {
             request.ChannelNumber = a;
-            srpc_ds_async_get_channel_config(devconn->srpc, &request);
+            srpc_ds_async_get_channel_config_request(devconn->srpc, &request);
           }
         }
       }
@@ -482,6 +485,11 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
 
     case SUPLA_RESULTCODE_GUID_ERROR:
       supla_esp_set_state(LOG_NOTICE, "Incorrect device GUID!");
+      break;
+
+    case SUPLA_RESULTCODE_DEVICE_LOCKED:
+      supla_esp_set_state(LOG_NOTICE, "The device is locked, check it on Supla "
+                                      "Cloud for further instructions.");
       break;
 
     default:
@@ -597,7 +605,7 @@ _supla_esp_channel_set_value(int port, char v, int channel_number) {
 
 	char _v = v == 1 ? HI_VALUE : LO_VALUE;
 
-	supla_esp_gpio_relay_hi(port, _v, 1);
+	supla_esp_gpio_relay_hi(port, _v);
 
 	_v = supla_esp_gpio_relay_is_hi(port);
 
@@ -1109,7 +1117,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
         ColorBrightness, Brightness, 1, 1);
 #endif /*RGBW_ONOFF_SUPPORT*/
 
-		supla_esp_save_state(1000);
+		supla_esp_save_state(SAVE_STATE_DELAY);
 
 		return;
 	}
@@ -1127,47 +1135,81 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 	supla_esp_write_log(buff);
 */
 
-	#ifdef _ROLLERSHUTTER_SUPPORT
-		for(a=0;a<RS_MAX_COUNT;a++)
-			if ( supla_rs_cfg[a].up != NULL
-				 && supla_rs_cfg[a].down != NULL
-				 && supla_rs_cfg[a].up->channel == new_value->ChannelNumber ) {
+#ifdef _ROLLERSHUTTER_SUPPORT
+  for (a = 0; a < RS_MAX_COUNT; a++)
+    if (supla_rs_cfg[a].up != NULL && supla_rs_cfg[a].down != NULL &&
+        supla_rs_cfg[a].up->channel == new_value->ChannelNumber) {
+      int ct = (new_value->DurationMS & 0xFFFF) * 100;
+      int ot = ((new_value->DurationMS >> 16) & 0xFFFF) * 100;
 
+      if (ct < 0)
+        ct = 0;
 
-				int ct = (new_value->DurationMS & 0xFFFF)*100;
-				int ot = ((new_value->DurationMS >> 16) & 0xFFFF)*100;
+      if (ot < 0)
+        ot = 0;
 
-				if ( ct < 0 )
-					ct = 0;
+      supla_esp_gpio_rs_apply_new_times(a, ct, ot);
+      sint8 tilt = new_value->value[1];
 
-				if ( ot < 0 )
-					ot = 0;
+      if (tilt >= 10 && tilt <= 110) {
+        tilt = tilt - 10;
+      } else {
+        tilt = -1;
+      }
 
-        supla_esp_gpio_rs_apply_new_times(a, ct, ot);
-        sint8 tilt = new_value->value[1];
-
-        if (tilt >= 10 && tilt <= 110) {
-          tilt = tilt - 10;
-        } else {
-          tilt = -1;
-        }
-
-        if (v >= 10 && v <= 110) {
-					supla_esp_gpio_rs_add_task(a, v-10, tilt);
-        } else if ( v == -1) {
-					supla_esp_gpio_rs_add_task(a, v, tilt);
-        } else if ( v == 1 ) {
+      if (v >= 10 && v <= 110) {
+        supla_esp_gpio_rs_add_task(a, v - 10, tilt);
+      } else if (v == -1) {
+        supla_esp_gpio_rs_add_task(a, v, tilt);
+      } else if (v == 1) {  // DOWN
+        supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
+      } else if (v == 2) {  // UP
+        supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
+      } else if (v == 3) {  // DOWN OR STOP
+        uint8 current_direction =
+          supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
+        if (current_direction == RS_RELAY_OFF) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
-        } else if ( v == 2 ) {
+        } else {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+        }
+      } else if (v == 4) {  // UP OR STOP
+        uint8 current_direction =
+          supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
+        if (current_direction == RS_RELAY_OFF) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
         } else {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
         }
+      } else if (v == 5) {  // SBS
+        uint8 current_direction =
+          supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
+        if (current_direction == RS_RELAY_OFF) {
+          if (supla_rs_cfg[a].last_direction == 0) {
+            sint8 pos =
+              supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]);
+            if (pos > 50) {
+              supla_rs_cfg[a].last_direction = RS_RELAY_DOWN;
+            } else {
+              supla_rs_cfg[a].last_direction = RS_RELAY_UP;
+            }
+          }
+          if (supla_rs_cfg[a].last_direction == RS_RELAY_UP) {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
+          } else {
+            supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
+          }
+        } else {
+          supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+        }
+      } else {  // 0 and all other = STOP
+        supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
+      }
 
-				Success = 1;
-				return;
-			}
-	#endif /*_ROLLERSHUTTER_SUPPORT*/
+      Success = 1;
+      return;
+    }
+#endif /*_ROLLERSHUTTER_SUPPORT*/
 
 	for(a=0;a<RELAY_MAX_COUNT;a++)
 		if ( supla_relay_cfg[a].gpio_id != 255
@@ -1301,7 +1343,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_channel_value__changed_c(
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 
 void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
-    void *_srpc, unsigned int rr_id, unsigned int call_type, void *_dcd,
+    void *_srpc, unsigned int rr_id, unsigned int call_id, void *_dcd,
     unsigned char proto_version) {
   TsrpcReceivedData rd;
   char result;
@@ -1311,7 +1353,7 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
   // supla_log(LOG_DEBUG, "call_received");
 
   if (SUPLA_RESULT_TRUE == (result = srpc_getdata(_srpc, &rd, 0))) {
-    switch (rd.call_type) {
+    switch (rd.call_id) {
       case SUPLA_SDC_CALL_VERSIONERROR:
         supla_esp_on_version_error(rd.data.sdc_version_error);
         break;
@@ -1828,9 +1870,9 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
       int staircaseTimeMs = 0;
       if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
         if (result->ConfigType == 0 &&
-            result->ConfigSize == sizeof(TSD_ChannelConfig_StaircaseTimer)) {
-          TSD_ChannelConfig_StaircaseTimer *staircaseCfg =
-            (TSD_ChannelConfig_StaircaseTimer *)(result->Config);
+            result->ConfigSize == sizeof(TChannelConfig_StaircaseTimer)) {
+          TChannelConfig_StaircaseTimer *staircaseCfg =
+            (TChannelConfig_StaircaseTimer *)(result->Config);
           supla_log(LOG_DEBUG, "Staircase cfg time: %d ms",
               staircaseCfg->TimeMS);
           staircaseTimeMs = staircaseCfg->TimeMS;
@@ -1849,17 +1891,16 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     // TODO
   } else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
     if (result->ConfigType == 0 &&
-        result->ConfigSize == sizeof(TSD_ChannelConfig_ActionTrigger)) {
+        result->ConfigSize == sizeof(TChannelConfig_ActionTrigger)) {
       for (int i = 0; i < INPUT_MAX_COUNT; i++) {
         if (supla_input_cfg[i].channel == result->ChannelNumber) {
-          TSD_ChannelConfig_ActionTrigger *actionTriggerCfg =
-            (TSD_ChannelConfig_ActionTrigger *)(result->Config);
+          TChannelConfig_ActionTrigger *actionTriggerCfg =
+            (TChannelConfig_ActionTrigger *)(result->Config);
             supla_esp_input_set_active_triggers(&(supla_input_cfg[i]),
                 actionTriggerCfg->ActiveActions);
         }
       }
     }
-
   }
 }
 
@@ -1874,17 +1915,30 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
 
 #ifdef BOARD_CALCFG
   // execute board specific calcfg handling
-  supla_esp_board_calcfg_request(request);
+  if (supla_esp_board_calcfg_request(request)) {
+    // request was handled by board specific calcfg_request handler
+    return;
+  }
 #endif /*BOARD_CALCFG*/
 
-#ifdef _ROLLERSHUTTER_SUPPORT
   TDS_DeviceCalCfgResult result = {};
   result.ReceiverID = request->SenderID;
   result.ChannelNumber = request->ChannelNumber;
   result.Command = request->Command;
   result.Result = SUPLA_CALCFG_RESULT_NOT_SUPPORTED;
 
-  if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
+  if (request->Command == SUPLA_CALCFG_CMD_ENTER_CFG_MODE) {
+    if (request->SuperUserAuthorized == 1) {
+      result.Result = SUPLA_CALCFG_RESULT_DONE;
+      supla_esp_calcfg_result(&result);
+      supla_esp_cfgmode_start_with_timeout();
+      return;
+    } else {
+      result.Result = SUPLA_CALCFG_RESULT_UNAUTHORIZED;
+    }
+  }
+#ifdef _ROLLERSHUTTER_SUPPORT
+  else if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
       request->DataType == SUPLA_CALCFG_DATATYPE_RS_SETTINGS &&
       request->DataSize == sizeof(TCalCfg_RollerShutterSettings)) {
     for (int i = 0; i < RS_MAX_COUNT; i++) {
@@ -1911,10 +1965,9 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
         }
       }
     }
-
-    supla_esp_calcfg_result(&result);
   }
 #endif
+  supla_esp_calcfg_result(&result);
 }
 
 #ifdef BOARD_ON_USER_LOCALTIME_RESULT

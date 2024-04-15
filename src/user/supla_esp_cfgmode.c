@@ -116,6 +116,7 @@ typedef struct {
 typedef struct {
   ETSTimer timer;
   unsigned int entertime;
+  bool exit_after_timeout;
 } _cfgmode_vars_t;
 
 _cfgmode_vars_t cfgmode_vars = {};
@@ -311,6 +312,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_proto_var(TrivialHttpParserVars *pVars,
 void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
                                             char *pdata, unsigned short len,
                                             SuplaEspCfg *cfg, char *reboot) {
+  char tempPassword[SUPLA_EMAIL_MAXSIZE];
+
   for (int a = 0; a < len; a++) {
     if (pVars->current_var == VAR_NONE) {
       char sid[3] = {'s', 'i', 'd'};
@@ -392,8 +395,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (memcmp(pwd, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_PWD;
-          pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
-          pVars->pbuff = cfg->LocationPwd;
+          pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+          pVars->pbuff = tempPassword;
 
         } else if (memcmp(btncfg, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_CFGBTN;
@@ -486,8 +489,8 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
 
         } else if (memcmp(mwd, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_MWD;
-          pVars->buff_size = SUPLA_LOCATION_PWD_MAXSIZE;
-          pVars->pbuff = cfg->Password;
+          pVars->buff_size = SUPLA_EMAIL_MAXSIZE;
+          pVars->pbuff = tempPassword;
 
         } else if (memcmp(pfx, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_PFX;
@@ -784,6 +787,26 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       }
     }
   }
+
+  // workaround for long passwords - if password is longer than max password
+  // field length, then we keep part in Password field, and reset in Email
+  // field, after null char
+  if (tempPassword[0] != '\0') {
+    int newPassLen = strnlen(tempPassword, SUPLA_EMAIL_MAXSIZE);
+    int mailLen = strnlen(cfg->Email, SUPLA_EMAIL_MAXSIZE);
+    int passwordMaxLength = SUPLA_LOCATION_PWD_MAXSIZE;
+
+    if (newPassLen < passwordMaxLength) {
+      strncpy(cfg->Password, tempPassword, newPassLen + 1);
+      return;
+    }
+
+    memcpy(cfg->Password, tempPassword, passwordMaxLength);
+    strncpy(cfg->Email + mailLen + 1, tempPassword + passwordMaxLength,
+            SUPLA_EMAIL_MAXSIZE - mailLen - 1);
+    cfg->Email[SUPLA_EMAIL_MAXSIZE - 1] = '\0';
+    return;
+  }
 }
 
 void ICACHE_FLASH_ATTR supla_esp_parse_request(TrivialHttpParserVars *pVars,
@@ -849,6 +872,7 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
 
   SuplaEspCfg new_cfg;
   memcpy(&new_cfg, &supla_esp_cfg, sizeof(SuplaEspCfg));
+  new_cfg.LocationPwd[0] = '\0';
 
   supla_esp_parse_request(pVars, pdata, len, &new_cfg, &reboot);
 
@@ -875,9 +899,35 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
     }
 
     // This also works for cfg->Password (union)
-    if (new_cfg.LocationPwd[0] == 0)
+    if (new_cfg.LocationPwd[0] == 0) {
       memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd,
              SUPLA_LOCATION_PWD_MAXSIZE);
+
+      // workaround for long passwords:
+      int passwordLen = strnlen(supla_esp_cfg.LocationPwd,
+                                SUPLA_LOCATION_PWD_MAXSIZE);
+      if (passwordLen == SUPLA_LOCATION_PWD_MAXSIZE) {
+        memcpy(new_cfg.LocationPwd, supla_esp_cfg.LocationPwd,
+               SUPLA_LOCATION_PWD_MAXSIZE);
+        int oldMailLen = strnlen(supla_esp_cfg.Email, SUPLA_EMAIL_MAXSIZE);
+        int newMailLen = strnlen(new_cfg.Email, SUPLA_EMAIL_MAXSIZE);
+        if (oldMailLen < SUPLA_EMAIL_MAXSIZE &&
+            newMailLen < SUPLA_EMAIL_MAXSIZE) {
+          int partPasswordLen = strnlen(supla_esp_cfg.Email + oldMailLen + 1,
+                                        SUPLA_EMAIL_MAXSIZE - oldMailLen - 1);
+          if (partPasswordLen < SUPLA_EMAIL_MAXSIZE - oldMailLen - 1) {
+            if (partPasswordLen >= SUPLA_EMAIL_MAXSIZE - newMailLen - 1) {
+              partPasswordLen = SUPLA_EMAIL_MAXSIZE - newMailLen - 1;
+            }
+            memcpy(new_cfg.Email + newMailLen + 1,
+                   supla_esp_cfg.Email + oldMailLen + 1, partPasswordLen + 1);
+          }
+        } else {
+          // mail was too long, so truncate password:
+          new_cfg.LocationPwd[SUPLA_LOCATION_PWD_MAXSIZE - 1] = '\0';
+        }
+      }
+    }
 
     if (new_cfg.WIFI_PWD[0] == 0)
       memcpy(new_cfg.WIFI_PWD, supla_esp_cfg.WIFI_PWD, WIFI_PWD_MAXSIZE);
@@ -945,6 +995,8 @@ void ICACHE_FLASH_ATTR supla_esp_discon_callback(void *arg) {
 }
 
 void ICACHE_FLASH_ATTR supla_esp_connectcb(void *arg) {
+  os_timer_disarm(&cfgmode_vars.timer);
+
   struct espconn *conn = (struct espconn *)arg;
 
   // espconn_set_opt(conn, ESPCONN_NODELAY);
@@ -991,6 +1043,11 @@ int ICACHE_FLASH_ATTR supla_esp_cfgmode_generate_ssid_name(char *name,
   return mac_str_len + apssid_len;
 }
 
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_timeout_exit(void *ptr) {
+  supla_log(LOG_DEBUG, "Exit cfgmode after timeout with no AP connection");
+  supla_system_restart();
+}
+
 void ICACHE_FLASH_ATTR supla_esp_cfgmode_enter_ap_mode(void *ptr) {
   struct softap_config apconfig;
   wifi_softap_get_config(&apconfig);
@@ -1024,9 +1081,23 @@ void ICACHE_FLASH_ATTR supla_esp_cfgmode_enter_ap_mode(void *ptr) {
 
   espconn_regist_connectcb(conn, supla_esp_connectcb);
   espconn_accept(conn);
+
+  if (cfgmode_vars.exit_after_timeout) {
+    cfgmode_vars.exit_after_timeout = false;
+    os_timer_disarm(&cfgmode_vars.timer);
+    os_timer_setfn(&cfgmode_vars.timer,
+        (os_timer_func_t *)supla_esp_cfgmode_timeout_exit, NULL);
+    os_timer_arm(&cfgmode_vars.timer, 5*60*1000, 0); // 5 min, don't repeat
+  }
 }
 
-void ICACHE_FLASH_ATTR supla_esp_cfgmode_start(void) {
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start_with_timeout(void) {
+  cfgmode_vars.exit_after_timeout = true;
+  supla_esp_cfgmode_start();
+}
+
+
+void ICACHE_FLASH_ATTR supla_esp_cfgmode_start() {
 #ifdef BOARD_BEFORE_CFGMODE_START
   supla_esp_board_before_cfgmode_start();
 #endif

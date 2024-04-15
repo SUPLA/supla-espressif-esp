@@ -291,6 +291,13 @@ void MAIN_ICACHE_FLASH user_init(void) {
     supla_esp_cfgmode_start();
     return;
   }
+  if (supla_esp_cfg.Flags & CFG_FLAG_MQTT_ENABLED &&
+      supla_esp_cfg.Flags & CFG_FLAG_DEVICE_LOCKED) {
+    supla_esp_set_state(LOG_NOTICE, "The device is locked, check it on Supla "
+                                    "Cloud for further instructions.");
+    supla_esp_cfgmode_start();
+    return;
+  }
 #else
   if (((supla_esp_cfg.LocationID == 0 || supla_esp_cfg.LocationPwd[0] == 0) &&
        supla_esp_cfg.Email[0] == 0) ||

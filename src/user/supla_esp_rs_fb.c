@@ -245,6 +245,9 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
     }
 
   } else {
+    // keep last direction for SBS handling in devconn
+    rs_cfg->last_direction = value;
+
     supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_FAILED);
     supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_MOTOR_PROBLEM);
     supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_LOST);
@@ -253,7 +256,7 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
 
     if (__supla_esp_gpio_relay_is_hi(rel)) {
 
-      supla_esp_gpio_relay_hi(rel->gpio_id, 0, 0);
+      supla_esp_gpio_relay_hi(rel->gpio_id, 0);
       os_delay_us(10000);
 
       t = system_get_time();
@@ -285,12 +288,12 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
   }
 
   if (value == RS_RELAY_UP) {
-    supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 1, 0);
+    supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 1);
   } else if (value == RS_RELAY_DOWN) {
-    supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 1, 0);
+    supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 1);
   } else {
-    supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 0, 0);
-    supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 0, 0);
+    supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 0);
+    supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 0);
   }
   rs_cfg->autoCal_button_request = false;
 }

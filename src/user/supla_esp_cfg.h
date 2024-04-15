@@ -27,6 +27,7 @@
 // used for Button1Type, Button2Type, BtnType[x]
 #define BTN_TYPE_MONOSTABLE       0
 #define BTN_TYPE_BISTABLE         1
+#define BTN_TYPE_MOTION_SENSOR    2
 
 #define STAIRCASE_BTN_TYPE_RESET  0
 #define STAIRCASE_BTN_TYPE_TOGGLE 1
@@ -37,6 +38,8 @@
 #define BTN_MODE_USE_INTERNALLY 0
 // PUBLISH_AT mode will publish ActionTrigger depending on button input. 
 #define BTN_MODE_PUBLISH_AT     1
+
+#define CLEAN_CONFIG_SIGNATURE 0xDEADBABE
 
 typedef struct {
   char TAG[6];
@@ -98,13 +101,18 @@ typedef struct {
   // Please implement it in board code depending on needs.
   // ButtonType defines type of button: monostable, bistable
   char ButtonType[BTN_MAX_COUNT];
-  // ButtonMode defines if button is used only internally by device (or is 
+  // ButtonMode defines if button is used only internally by device (or is
   // disalbed), or if ActionTrigger should be published
   char ButtonMode[BTN_MAX_COUNT];
 
-  unsigned int Time3[CFG_TIME3_COUNT];
+  uint32_t CleanConfigSignature;
 
-  char zero[200];
+  // Don't add new parameters here without decrementing zero[200] array below.
+  // It is not guaranteed that bytes outside of this 200 bytes array will be
+  // initialized to 0 when CleanConfigSignature is set.
+  // So if needed, add new parameter and decrease below array size accordingly.
+  unsigned int Time3[CFG_TIME3_COUNT];
+  char zero[200 - CFG_TIME3_COUNT * sizeof(unsigned int)];
 
 } SuplaEspCfg;
 

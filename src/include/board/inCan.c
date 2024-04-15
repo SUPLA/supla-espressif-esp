@@ -373,7 +373,7 @@ void ICACHE_FLASH_ATTR supla_esp_board_gpio_relay_switch(void* _input_cfg,
 
         // supla_log(LOG_DEBUG, "RELAY");
 
-        supla_esp_gpio_relay_hi(input_cfg->relay_gpio_id, hi, 0);
+        supla_esp_gpio_relay_hi(input_cfg->relay_gpio_id, hi);
 
         if (input_cfg->channel != 255)
             supla_esp_channel_value_changed(

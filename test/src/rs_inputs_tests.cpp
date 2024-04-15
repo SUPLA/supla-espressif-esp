@@ -23,12 +23,13 @@
 #include <time_mock.h>
 
 extern "C" {
-#include "board_stub.h"
 #include <osapi.h>
 #include <supla_esp_cfg.h>
 #include <supla_esp_cfgmode.h>
 #include <supla_esp_devconn.h>
 #include <supla_esp_gpio.h>
+
+#include "board_stub.h"
 }
 
 using ::testing::_;
@@ -85,18 +86,18 @@ void gpioCallbackRsInputs() {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
     supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
     supla_input_cfg[0].action_trigger_cap = SUPLA_ACTION_CAP_HOLD |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x3;
     supla_input_cfg[1].action_trigger_cap = SUPLA_ACTION_CAP_HOLD |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x3;
   } else if (gpioConfigId == 1) {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_BISTABLE;
     supla_input_cfg[1].type = INPUT_TYPE_BTN_BISTABLE;
     supla_input_cfg[0].action_trigger_cap =
-      SUPLA_ACTION_CAP_TOGGLE_x2 | SUPLA_ACTION_CAP_TOGGLE_x3;
+        SUPLA_ACTION_CAP_TOGGLE_x2 | SUPLA_ACTION_CAP_TOGGLE_x3;
     supla_input_cfg[1].action_trigger_cap =
-      SUPLA_ACTION_CAP_TOGGLE_x2 | SUPLA_ACTION_CAP_TOGGLE_x3;
+        SUPLA_ACTION_CAP_TOGGLE_x2 | SUPLA_ACTION_CAP_TOGGLE_x3;
   } else if (gpioConfigId == 2) {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
     supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
@@ -149,11 +150,11 @@ void gpioCallbackRsInputs() {
     supla_input_cfg[0].type = INPUT_TYPE_BTN_MONOSTABLE;
     supla_input_cfg[1].type = INPUT_TYPE_BTN_MONOSTABLE;
     supla_input_cfg[0].action_trigger_cap = SUPLA_ACTION_CAP_HOLD |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x3;
     supla_input_cfg[1].action_trigger_cap = SUPLA_ACTION_CAP_HOLD |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
-      SUPLA_ACTION_CAP_SHORT_PRESS_x3;
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
+                                            SUPLA_ACTION_CAP_SHORT_PRESS_x3;
     supla_input_cfg[0].flags |= INPUT_FLAG_TRIGGER_ON_PRESS;
     supla_input_cfg[1].flags |= INPUT_FLAG_TRIGGER_ON_PRESS;
   } else {
@@ -164,81 +165,81 @@ void gpioCallbackRsInputs() {
 TSD_SuplaRegisterDeviceResult regRsInputs;
 
 char custom_srpc_getdata_rs_inputs(void *_srpc, TsrpcReceivedData *rd,
-    unsigned _supla_int_t rr_id) {
-  rd->call_type = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
+                                   unsigned _supla_int_t rr_id) {
+  rd->call_id = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
   rd->data.sd_register_device_result = &regRsInputs;
   return 1;
 }
 
 class RsInputsFixture : public ::testing::Test {
-  public:
-    TimeMock time;
-    EagleSocStub eagleStub;
-    BoardMock board;
-    int curTime;
-    SrpcMock srpc;
+ public:
+  TimeMock time;
+  EagleSocStub eagleStub;
+  BoardMock board;
+  int curTime;
+  SrpcMock srpc;
 
-    void SetUp() override {
-      cleanupTimers();
-      supla_esp_gpio_clear_vars();
-      curTime = 10000;
-      currentDeviceState = STATE_UNKNOWN;
-      EXPECT_CALL(time, system_get_time())
+  void SetUp() override {
+    cleanupTimers();
+    supla_esp_gpio_clear_vars();
+    curTime = 10000;
+    currentDeviceState = STATE_UNKNOWN;
+    EXPECT_CALL(time, system_get_time())
         .WillRepeatedly(ReturnPointee(&curTime));
-      memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
-      memset(&supla_esp_state, 0, sizeof(SuplaEspState));
-      memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
-      memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
+    memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
+    memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
+    memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
 
-      strncpy(supla_esp_cfg.Server, "test", 4);
-      strncpy(supla_esp_cfg.Email, "test", 4);
-      strncpy(supla_esp_cfg.WIFI_SSID, "test", 4);
-      strncpy(supla_esp_cfg.WIFI_PWD, "test", 4);
+    strncpy(supla_esp_cfg.Server, "test", 4);
+    strncpy(supla_esp_cfg.Email, "test", 4);
+    strncpy(supla_esp_cfg.WIFI_SSID, "test", 4);
+    strncpy(supla_esp_cfg.WIFI_PWD, "test", 4);
 
-      gpioInitCb = gpioCallbackRsInputs;
-      supla_esp_gpio_init_time = 0;
-      EXPECT_CALL(srpc, srpc_params_init(_));
-      EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
-      EXPECT_CALL(srpc, srpc_set_proto_version(_, 17));
+    gpioInitCb = gpioCallbackRsInputs;
+    supla_esp_gpio_init_time = 0;
+    EXPECT_CALL(srpc, srpc_params_init(_));
+    EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
+    EXPECT_CALL(srpc, srpc_set_proto_version(_, SUPLA_PROTO_VERSION));
 
-      regRsInputs.result_code = SUPLA_RESULTCODE_TRUE;
+    regRsInputs.result_code = SUPLA_RESULTCODE_TRUE;
 
-      EXPECT_CALL(srpc, srpc_getdata(_, _, _))
+    EXPECT_CALL(srpc, srpc_getdata(_, _, _))
         .WillOnce(DoAll(Invoke(custom_srpc_getdata_rs_inputs), Return(1)));
-      EXPECT_CALL(srpc, srpc_rd_free(_));
-      EXPECT_CALL(srpc, srpc_free(_));
-      EXPECT_CALL(srpc, srpc_iterate(_))
+    EXPECT_CALL(srpc, srpc_rd_free(_));
+    EXPECT_CALL(srpc, srpc_free(_));
+    EXPECT_CALL(srpc, srpc_iterate(_))
         .WillRepeatedly(Return(SUPLA_RESULT_TRUE));
-      EXPECT_CALL(srpc, srpc_dcs_async_set_activity_timeout(_, _));
+    EXPECT_CALL(srpc, srpc_dcs_async_set_activity_timeout(_, _));
 
-      supla_esp_devconn_init();
-      supla_esp_srpc_init();
-      ASSERT_NE(srpc.on_remote_call_received, nullptr);
+    supla_esp_devconn_init();
+    supla_esp_srpc_init();
+    ASSERT_NE(srpc.on_remote_call_received, nullptr);
 
-      srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
-      EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
-    }
+    srpc.on_remote_call_received((void *)1, 0, 0, nullptr, 0);
+    EXPECT_EQ(supla_esp_devconn_is_registered(), 1);
+  }
 
-    void TearDown() override {
-      currentDeviceState = STATE_UNKNOWN;
-      memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
-      memset(&supla_esp_state, 0, sizeof(SuplaEspState));
-      memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
-      memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
-      supla_esp_gpio_init_time = 0;
-      gpioConfigId = 0;
-      supla_esp_cfgmode_clear_vars();
-      supla_esp_restart_on_cfg_press = 0;
-      ets_clear_isr();
-      cleanupTimers();
-      gpioInitCb = nullptr;
-      supla_esp_devconn_release();
-      supla_esp_gpio_clear_vars();
-    }
+  void TearDown() override {
+    currentDeviceState = STATE_UNKNOWN;
+    memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
+    memset(&supla_esp_state, 0, sizeof(SuplaEspState));
+    memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
+    memset(&supla_rs_cfg, 0, sizeof(supla_rs_cfg));
+    supla_esp_gpio_init_time = 0;
+    gpioConfigId = 0;
+    supla_esp_cfgmode_clear_vars();
+    supla_esp_restart_on_cfg_press = 0;
+    ets_clear_isr();
+    cleanupTimers();
+    gpioInitCb = nullptr;
+    supla_esp_devconn_release();
+    supla_esp_gpio_clear_vars();
+  }
 
   void moveTime(const int timeMs) {
     for (int i = 0; i < timeMs / 10; i++) {
-      curTime += 10000; // +10ms
+      curTime += 10000;  // +10ms
       executeTimers();
     }
   }
@@ -695,22 +696,22 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
   EXPECT_EQ(supla_input_cfg[0].active_triggers,
-      SUPLA_ACTION_CAP_SHORT_PRESS_x2);
+            SUPLA_ACTION_CAP_SHORT_PRESS_x2);
 
   configResult.ChannelNumber = 2;
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -934,7 +935,7 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
         srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
     EXPECT_CALL(srpc,
-        srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
+                srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
   }
 
   // +1000 ms
@@ -956,12 +957,12 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1188,14 +1189,14 @@ TEST_F(RsInputsFixture, MonostableRsWithATOnSingleButton) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
 
   configResult.ChannelNumber = 2;
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1420,7 +1421,7 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
         srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
     EXPECT_CALL(srpc,
-        srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
+                srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
   }
 
   // +1000 ms
@@ -1443,12 +1444,12 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1643,10 +1644,10 @@ TEST_F(RsInputsFixture, TwoRs) {
   ASSERT_NE(ets_gpio_intr_func, nullptr);
 
   EXPECT_CALL(srpc,
-      valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+              valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
   EXPECT_CALL(srpc,
-      valueChanged(_, 1, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+              valueChanged(_, 1, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
 
   // +1000 ms
   for (int i = 0; i < 100; i++) {
@@ -1864,7 +1865,6 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputs) {
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
-
   // release up and shortly after that press down
   eagleStub.gpioOutputSet(BUTTON_UP, 0);
   ets_gpio_intr_func(NULL);
@@ -1974,12 +1974,12 @@ TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2003,7 +2003,6 @@ TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
 
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
-
 
   // release up and shortly after that press down
   eagleStub.gpioOutputSet(BUTTON_UP, 0);
@@ -2159,7 +2158,8 @@ TEST_F(RsInputsFixture, BistableButtonWithLessThan1sTogglesWithNotify) {
 
   moveTime(30);
 
-  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0],
+                                      INPUT_STATE_INACTIVE);
   supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
 
   moveTime(1500);
@@ -2167,7 +2167,8 @@ TEST_F(RsInputsFixture, BistableButtonWithLessThan1sTogglesWithNotify) {
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
 
-  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1],
+                                      INPUT_STATE_INACTIVE);
   moveTime(200);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
@@ -2176,31 +2177,32 @@ TEST_F(RsInputsFixture, BistableButtonWithLessThan1sTogglesWithNotify) {
 
   supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
   supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
-  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
 
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
 
-  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1],
+                                      INPUT_STATE_INACTIVE);
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
   supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
   supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
-  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
 
   // Depending on HW in this scenario it may be expected to have RS moving
   // UP, however we may also accept case when RS is not in move
-  //EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
+  // EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
-
-
 }
 
 TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
@@ -2238,9 +2240,9 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
-
   // release up and shortly after that press down
-  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0],
+                                      INPUT_STATE_INACTIVE);
   moveTime(10);
   supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
 
@@ -2250,7 +2252,8 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
 
   // press up and release down and at the same time
   supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_ACTIVE);
-  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_UP));
@@ -2259,7 +2262,8 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
   // press down and after short time release up
   supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_ACTIVE);
   moveTime(10);
-  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
@@ -2273,14 +2277,16 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
   // release up, down is still pressed but there should be no down movement
-  supla_esp_input_notify_state_change(&supla_input_cfg[0], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[0],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_DOWN));
 
   // release down
-  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
@@ -2301,7 +2307,8 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
   EXPECT_TRUE(eagleStub.getGpioValue(RELAY_DOWN));
 
   // release down
-  supla_esp_input_notify_state_change(&supla_input_cfg[1], INPUT_STATE_INACTIVE);
+  supla_esp_input_notify_state_change(&supla_input_cfg[1],
+                                      INPUT_STATE_INACTIVE);
 
   moveTime(1500);
   EXPECT_FALSE(eagleStub.getGpioValue(RELAY_UP));
@@ -2342,22 +2349,22 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithATAndTriggerOnPress) {
   configResult.ChannelNumber = 1;  // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
   EXPECT_EQ(supla_input_cfg[0].active_triggers,
-      SUPLA_ACTION_CAP_SHORT_PRESS_x2);
+            SUPLA_ACTION_CAP_SHORT_PRESS_x2);
 
   configResult.ChannelNumber = 2;
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+         sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 

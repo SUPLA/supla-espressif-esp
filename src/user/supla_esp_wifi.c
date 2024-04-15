@@ -26,8 +26,8 @@
 #include "supla_esp_cfg.h"
 #include "supla_esp_cfgmode.h"
 #include "supla_esp_gpio.h"
-#include "supla_esp_state.h"
 #include "supla_esp_input.h"
+#include "supla_esp_state.h"
 
 #define WIFI_CHECK_STATUS_INTERVAL_MS 200
 
@@ -41,6 +41,13 @@ _supla_esp_wifi_vars_t supla_esp_wifi_vars = {};
 
 void ICACHE_FLASH_ATTR supla_esp_wifi_init(void) {
   supla_esp_wifi_vars.last_status = STATION_GOT_IP + 1;
+
+  // Clearing the settings fixes a rare problem that caused each subsequent WiFi
+  // connection to fail.
+  wifi_set_opmode(STATION_MODE);
+  struct station_config stationConf = {};
+  wifi_station_set_config(&stationConf);
+  wifi_station_connect();
 }
 
 void ICACHE_FLASH_ATTR supla_esp_wifi_check_status(void *ptr) {
@@ -89,8 +96,7 @@ supla_esp_wifi_station_connect(_wifi_void_status status_cb) {
 
   supla_esp_gpio_state_disconnected();
 
-  struct station_config stationConf;
-  memset(&stationConf, 0, sizeof(struct station_config));
+  struct station_config stationConf = {};
 
   wifi_set_opmode(STATION_MODE);
 
@@ -104,6 +110,7 @@ supla_esp_wifi_station_connect(_wifi_void_status status_cb) {
   stationConf.ssid[31] = 0;
   stationConf.password[63] = 0;
   stationConf.threshold.rssi = -127;
+  stationConf.all_channel_scan = true;
 
   wifi_station_set_config(&stationConf);
   wifi_station_set_auto_connect(1);

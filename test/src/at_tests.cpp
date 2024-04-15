@@ -201,7 +201,7 @@ TSD_SuplaRegisterDeviceResult regAt;
 
 char custom_srpc_getdata_at(void *_srpc, TsrpcReceivedData *rd,
     unsigned _supla_int_t rr_id) {
-  rd->call_type = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
+  rd->call_id = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
   rd->data.sd_register_device_result = &regAt;
   return 1;
 }
@@ -214,7 +214,7 @@ public:
     ATFixture::SetUp();
     EXPECT_CALL(srpc, srpc_params_init(_));
     EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
-    EXPECT_CALL(srpc, srpc_set_proto_version(_, 17));
+    EXPECT_CALL(srpc, srpc_set_proto_version(_, SUPLA_PROTO_VERSION));
 
     regAt.result_code = SUPLA_RESULTCODE_TRUE;
 
@@ -288,12 +288,12 @@ TEST_F(ATRegisteredFixture, MonostablePress_x2) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -385,14 +385,14 @@ TEST_F(ATRegisteredFixture, MonostablePressMultipleWithout3x) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -620,14 +620,14 @@ TEST_F(ATRegisteredFixture, MonostableMultipleAndHold) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x3 |
     SUPLA_ACTION_CAP_HOLD;
 
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -838,14 +838,14 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5x) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -985,14 +985,14 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtn) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1172,14 +1172,14 @@ TEST_F(ATRegisteredFixture, MonostableMoreThan5xAndCfgBtnOnHold) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1380,15 +1380,15 @@ TEST_F(ATRegisteredFixture, MonostableCfgBtnOnHoldAndOnHoldAction) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5 |
     SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1588,16 +1588,16 @@ TEST_F(ATRegisteredFixture, MonostableWithoutRelay) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x1 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x3 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5 |
     SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1787,13 +1787,13 @@ TEST_F(ATRegisteredFixture, BistableMulticlick) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2 |
     SUPLA_ACTION_CAP_TOGGLE_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -1972,13 +1972,13 @@ TEST_F(ATRegisteredFixture, BistableMulticlickWithCfg) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2 |
     SUPLA_ACTION_CAP_TOGGLE_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2163,13 +2163,13 @@ TEST_F(ATRegisteredFixture, BistableTurnOnOffAndToggle) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2 |
     SUPLA_ACTION_CAP_TURN_ON | SUPLA_ACTION_CAP_TURN_OFF;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2243,13 +2243,13 @@ TEST_F(ATRegisteredFixture, MonostableLimitMaxClickDetection) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x3;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2400,13 +2400,13 @@ TEST_F(ATRegisteredFixture, MonostableWithoutRelayOnly1xAndHold) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x1 |
     SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2508,12 +2508,12 @@ TEST_F(ATRegisteredFixture, MonostableWithoutRelayOnlyHold) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_HOLD;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2652,13 +2652,13 @@ TEST_F(ATRegisteredFixture, BistableTurnOnOffAndTogglex1) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x1 |
     SUPLA_ACTION_CAP_TURN_ON | SUPLA_ACTION_CAP_TURN_OFF;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2733,13 +2733,13 @@ TEST_F(ATRegisteredFixture, BistableOnlyTurnOnOff) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TURN_ON | 
     SUPLA_ACTION_CAP_TURN_OFF;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -2833,13 +2833,13 @@ TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x3;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -3029,13 +3029,13 @@ TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress2) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x3;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -3106,7 +3106,7 @@ TEST_F(ATRegisteredFixture, MonostableChangeConfigDuringPress2) {
 
   atSettings.ActiveActions = 0;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -3225,13 +3225,13 @@ TEST_F(ATRegisteredFixture, BistableMulticlickConfigChangeDuringPress) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_TOGGLE_x2 |
     SUPLA_ACTION_CAP_TOGGLE_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
@@ -3371,14 +3371,14 @@ TEST_F(ATRegisteredFixture, MonostableCfgBtnOnHoldAndOnToggle) {
   configResult.ChannelNumber = 1; // AT channel number
   configResult.Func = SUPLA_CHANNELFNC_ACTIONTRIGGER;
   configResult.ConfigType = 0;
-  configResult.ConfigSize = sizeof(TSD_ChannelConfig_ActionTrigger);
+  configResult.ConfigSize = sizeof(TChannelConfig_ActionTrigger);
 
-  TSD_ChannelConfig_ActionTrigger atSettings = {};
+  TChannelConfig_ActionTrigger atSettings = {};
   atSettings.ActiveActions = SUPLA_ACTION_CAP_SHORT_PRESS_x2 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x4 |
     SUPLA_ACTION_CAP_SHORT_PRESS_x5;
   memcpy(configResult.Config, &atSettings,
-      sizeof(TSD_ChannelConfig_ActionTrigger));
+      sizeof(TChannelConfig_ActionTrigger));
 
   supla_esp_channel_config_result(&configResult);
 
