@@ -1922,7 +1922,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -1963,7 +1963,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 53);
+  supla_esp_gpio_rs_add_task(0, 53, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2054,7 +2054,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToManualCalibrationDuringAutoCalibration) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2149,7 +2149,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringManualCalibration) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2254,7 +2254,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringMoveDown) {
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {

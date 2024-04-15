@@ -225,7 +225,7 @@ TEST_F(RollerShutterTestsF, gpioInitWithRsAndTasks) {
   // check if task is not executed when current possition is the same as
   // requested
   *rsCfg->position = 1600;  // 15 * 100 + 100
-  supla_esp_gpio_rs_add_task(0, 15);
+  supla_esp_gpio_rs_add_task(0, 15, 0);
 
   EXPECT_EQ(rsCfg->task.position, 0);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);

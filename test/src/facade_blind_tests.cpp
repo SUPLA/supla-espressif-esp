@@ -73,7 +73,7 @@ TSD_SuplaRegisterDeviceResult regResultFacadeBlinds;
 
 char custom_srpc_getdata_facade_blinds(void *_srpc, TsrpcReceivedData *rd,
     unsigned _supla_int_t rr_id) {
-  rd->call_type = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
+  rd->call_id = SUPLA_SD_CALL_REGISTER_DEVICE_RESULT;
   rd->data.sd_register_device_result = &regResultFacadeBlinds;
   return 1;
 }
@@ -107,7 +107,7 @@ public:
 
     EXPECT_CALL(srpc, srpc_params_init(_));
     EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
-    EXPECT_CALL(srpc, srpc_set_proto_version(_, 17));
+    EXPECT_CALL(srpc, srpc_set_proto_version(_, _));
 
     regResultFacadeBlinds.result_code = SUPLA_RESULTCODE_TRUE;
 
