@@ -1132,40 +1132,6 @@ supla_esp_gpio_is_fb(supla_roller_shutter_cfg_t *rs_cfg) {
   }
   return false;
 }
-#endif /*_ROLLERSHUTTER_SUPPORT*/
-
-supla_roller_shutter_cfg_t *GPIO_ICACHE_FLASH
-supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg) {
-
-  if (rel_cfg == NULL)
-    return NULL;
-
-  int a;
-
-  for (a = 0; a < RS_MAX_COUNT; a++)
-    if (supla_rs_cfg[a].up == rel_cfg || supla_rs_cfg[a].down == rel_cfg) {
-
-      return &supla_rs_cfg[a];
-    }
-
-  return NULL;
-}
-
-supla_roller_shutter_cfg_t *GPIO_ICACHE_FLASH
-supla_esp_gpio_get_rs__cfg(int port) {
-
-  int a;
-
-  if (port == 255)
-    return NULL;
-
-  for (a = 0; a < RELAY_MAX_COUNT; a++)
-    if (supla_relay_cfg[a].gpio_id == port) {
-      return supla_esp_gpio_get_rs_cfg(&supla_relay_cfg[a]);
-    }
-
-  return NULL;
-}
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
     int channel_number, TChannelConfig_RollerShutter *rsConfig) {
@@ -1304,4 +1270,38 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
     supla_log(LOG_DEBUG, "SAVE CFG");
     supla_esp_cfg_save(&supla_esp_cfg);
   }
+}
+#endif /*_ROLLERSHUTTER_SUPPORT*/
+
+supla_roller_shutter_cfg_t *GPIO_ICACHE_FLASH
+supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg) {
+
+  if (rel_cfg == NULL)
+    return NULL;
+
+  int a;
+
+  for (a = 0; a < RS_MAX_COUNT; a++)
+    if (supla_rs_cfg[a].up == rel_cfg || supla_rs_cfg[a].down == rel_cfg) {
+
+      return &supla_rs_cfg[a];
+    }
+
+  return NULL;
+}
+
+supla_roller_shutter_cfg_t *GPIO_ICACHE_FLASH
+supla_esp_gpio_get_rs__cfg(int port) {
+
+  int a;
+
+  if (port == 255)
+    return NULL;
+
+  for (a = 0; a < RELAY_MAX_COUNT; a++)
+    if (supla_relay_cfg[a].gpio_id == port) {
+      return supla_esp_gpio_get_rs_cfg(&supla_relay_cfg[a]);
+    }
+
+  return NULL;
 }

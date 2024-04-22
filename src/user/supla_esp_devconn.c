@@ -2004,7 +2004,9 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
         supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0, 0);
       }
     }
-  } else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER) {
+  }
+#ifdef _ROLLERSHUTTER_SUPPORT
+  else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER) {
     TChannelConfig_RollerShutter *channelConfig =
       (TChannelConfig_RollerShutter *)result->Config;
     supla_esp_gpio_rs_apply_new_config(result->ChannelNumber, channelConfig);
@@ -2034,7 +2036,9 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     if (channelConfig->TimeMargin == 0) {
       return false;
     }
-  } else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
+  }
+#endif
+  else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
     if (result->ConfigType == 0 &&
         result->ConfigSize == sizeof(TChannelConfig_ActionTrigger)) {
       for (int i = 0; i < INPUT_MAX_COUNT; i++) {

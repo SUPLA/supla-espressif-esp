@@ -130,15 +130,16 @@ supla_esp_gpio_rs_get_current_tilt(supla_roller_shutter_cfg_t *rs_cfg);
 void supla_esp_gpio_rs_start_autoCal(supla_roller_shutter_cfg_t *rs_cfg);
 bool GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_is_tilt_supported(supla_roller_shutter_cfg_t *rs_cfg);
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
+    int channel_number, TChannelConfig_RollerShutter *rsConfig);
+void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
+    int channel_number, TChannelConfig_FacadeBlind *fbConfig);
 #endif /*_ROLLERSHUTTER_SUPPORT*/
 
 supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 supla_roller_shutter_cfg_t *GPIO_ICACHE_FLASH
 supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg);
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg);
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
-    int channel_number, TChannelConfig_RollerShutter *rsConfig);
-void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
-    int channel_number, TChannelConfig_FacadeBlind *fbConfig);
 
 #endif /*_SUPLA_ESP_RS_FB_H*/
