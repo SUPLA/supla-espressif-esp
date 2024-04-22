@@ -44,9 +44,12 @@ supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
 static uint8 rs_time_margin = 110;
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(uint8 value) {
-  if (value >= 0 && value <= 110) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(int value) {
+  supla_log(LOG_DEBUG, "supla_esp_gpio_rs_set_time_margin(%d)", value);
+  if (value >= 0 && value <= 100) {
     rs_time_margin = value;
+  } else {
+    rs_time_margin = 110;
   }
 }
 
@@ -143,6 +146,15 @@ supla_esp_gpio_rs_get_current_tilt(supla_roller_shutter_cfg_t *rs_cfg) {
   return result;
 }
 
+bool GPIO_ICACHE_FLASH
+supla_esp_gpio_rs_is_tilt_set(supla_roller_shutter_cfg_t *rs_cfg) {
+  bool result = true;
+  if (rs_cfg && (*rs_cfg->tilt < 100 || *rs_cfg->tilt > 10100)) {
+    result = false;
+  }
+  return result;
+}
+
 // calibration with manually provided times
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(
     supla_roller_shutter_cfg_t *rs_cfg, unsigned int full_time,
@@ -152,11 +164,17 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_calibrate(
 
     supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
     full_time *= 1.1;  // 10% margin
+    *rs_cfg->position = 0;
+    *rs_cfg->tilt = 0;
+    supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
 
     if ((time / 1000) >= full_time) {
       *rs_cfg->position = pos;
       if (supla_esp_gpio_rs_is_tilt_supported(rs_cfg)) {
         *rs_cfg->tilt = pos;
+      } else {
+        *rs_cfg->tilt = 0;
+        supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
       }
       supla_esp_save_state(RS_SAVE_STATE_DELAY);
     }
@@ -223,6 +241,7 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
       *rs_cfg->auto_closing_time = 0;
       *rs_cfg->position = 0;  // not calibrated
       *rs_cfg->tilt = 0;      // not calibrated or not used
+      supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
     }
   }
 
@@ -236,11 +255,9 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
   os_timer_disarm(&rs_cfg->delayed_trigger.timer);
 
   if (value == RS_RELAY_OFF) {
-
     if (RS_STOP_DELAY && stop_delay == 1 && rs_cfg->start_time > 0 &&
         rs_cfg->stop_time == 0 && t >= rs_cfg->start_time &&
         (t - rs_cfg->start_time) / 1000 < RS_STOP_DELAY) {
-
       delay_time = RS_STOP_DELAY - (t - rs_cfg->start_time) / 1000 + 1;
     }
 
@@ -255,7 +272,6 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
     supla_relay_cfg_t *rel = value == RS_RELAY_UP ? rs_cfg->down : rs_cfg->up;
 
     if (__supla_esp_gpio_relay_is_hi(rel)) {
-
       supla_esp_gpio_relay_hi(rel->gpio_id, 0);
       os_delay_us(10000);
 
@@ -265,7 +281,6 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
     if (RS_START_DELAY && rs_cfg->start_time == 0 && rs_cfg->stop_time > 0 &&
         t >= rs_cfg->stop_time &&
         (t - rs_cfg->stop_time) / 1000 < RS_START_DELAY) {
-
       delay_time = RS_START_DELAY - (t - rs_cfg->stop_time) / 1000 + 1;
     }
   }
@@ -273,7 +288,6 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
   // supla_log(LOG_DEBUG, "VALUE: %i", value);
 
   if (delay_time > 100) {
-
     rs_cfg->delayed_trigger.autoCal_request = rs_cfg->autoCal_button_request;
     rs_cfg->delayed_trigger.value = value;
 
@@ -300,9 +314,7 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
 
 uint8 GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_get_value(supla_roller_shutter_cfg_t *rs_cfg) {
-
   if (rs_cfg != NULL) {
-
     if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->up)) {
       return RS_RELAY_UP;
     } else if (1 == __supla_esp_gpio_relay_is_hi(rs_cfg->down)) {
@@ -328,7 +340,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
   unsigned int full_tilting_time = *rs_cfg->tilt_change_time * 1000;
   unsigned int full_position_time = full_time;
 
-  switch (rs_cfg->tilt_type) {
+  switch (*rs_cfg->tilt_type) {
     case FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING:
     case FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED:
       full_position_time -= full_tilting_time;
@@ -350,7 +362,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
 
   unsigned int time_delta = 0;
 
-  if (rs_cfg->tilt_type == FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED &&
+  if (*rs_cfg->tilt_type == FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED &&
       *rs_cfg->position < 10100) {
     remaining_tilt_time = 0;
   }
@@ -370,8 +382,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
 
   // skip position change when position change is not happening during tilting
   if (time_delta > 0 &&
-      (rs_cfg->tilt_type == FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING ||
-       rs_cfg->tilt_type == FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED)) {
+      (*rs_cfg->tilt_type == FB_TILT_TYPE_KEEP_POSITION_WHILE_TILTING ||
+       *rs_cfg->tilt_type == FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED)) {
     remaining_position_time = 0;
   }
 
@@ -403,9 +415,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
 
   // Handling of extreem motor positions (fully open/closed) with time margin
   if (((*rs_cfg->position) == 100 && up == 1 &&
-        (*rs_cfg->tilt == 0 || *rs_cfg->tilt == 100)) ||
+       (*rs_cfg->tilt == 0 || *rs_cfg->tilt == -1 || *rs_cfg->tilt == 100)) ||
       ((*rs_cfg->position) == 10100 && up == 0 &&
-       (*rs_cfg->tilt == 0 || *rs_cfg->tilt == 10100))) {
+       (*rs_cfg->tilt == 0 || *rs_cfg->tilt == -1 || *rs_cfg->tilt == 10100))) {
     // This time margin starts counting time when RS reach either 0 or 100%. So
     // it adds "full_time * 110%" of enabled relay after it was expected to
     // reach fully open or closed RS.
@@ -489,52 +501,54 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
 
   int raw_position_after_pre_tilt = raw_position;
 
-  switch (rs_cfg->tilt_type) {
-    case FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING: {
-      // adjust position so it will match requested value after tilting
-      if (rs_cfg->task.state == RS_TASK_SETTING_POSITION
-          || (task_position != -100 && task_tilt != -100)) {
+  if (task_tilt >= 0) {
+    switch (*rs_cfg->tilt_type) {
+      case FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING: {
+        // adjust position so it will match requested value after tilting
+        if (rs_cfg->task.state == RS_TASK_SETTING_POSITION
+            || (task_position != -100 && task_tilt != -100)) {
 
-        int tilt_direction =
-          (task_tilt > raw_tilt) ? RS_DIRECTION_DOWN : RS_DIRECTION_UP;
-        int delta_tilt =
-          (task_tilt > raw_tilt) ?
-          (task_tilt - raw_tilt) : (raw_tilt - task_tilt);
-        int tilting_time =
-          1.0 * (*rs_cfg->tilt_change_time) * delta_tilt / 10000.0;
+          int tilt_direction =
+            (task_tilt > raw_tilt) ? RS_DIRECTION_DOWN : RS_DIRECTION_UP;
+          int delta_tilt =
+            (task_tilt > raw_tilt) ?
+            (task_tilt - raw_tilt) : (raw_tilt - task_tilt);
+          int tilting_time =
+            1.0 * (*rs_cfg->tilt_change_time) * delta_tilt / 10000.0;
 
 
-        raw_position_after_pre_tilt =
-          (tilt_direction == RS_DIRECTION_DOWN) ?
-          raw_position + 10000.0 * tilting_time / full_closing_time :
-          raw_position - 10000.0 * tilting_time / full_opening_time;
+          raw_position_after_pre_tilt =
+            (tilt_direction == RS_DIRECTION_DOWN) ?
+            raw_position + 10000.0 * tilting_time / full_closing_time :
+            raw_position - 10000.0 * tilting_time / full_opening_time;
 
-        int required_correction_up = 10000 - task_tilt;
-        unsigned int tilt_correction_time_up =
-          (1.0 * required_correction_up) * (*rs_cfg->tilt_change_time);
-        delta_pos_down = tilt_correction_time_up / full_opening_time;
-        if (raw_tilt < 10000) {
+          int required_correction_up = 10000 - task_tilt;
+          unsigned int tilt_correction_time_up =
+            (1.0 * required_correction_up) * (*rs_cfg->tilt_change_time);
+          delta_pos_down = tilt_correction_time_up / full_opening_time;
+          if (raw_tilt < 10000) {
 
+          }
+
+          if (task_position + delta_pos_down > 10000) {
+            delta_pos_down = 10000 - task_position;
+          }
+
+          int required_tilt_movement_down = task_tilt;
+          unsigned int tilt_time_down =
+            (1.0 * required_tilt_movement_down) * (*rs_cfg->tilt_change_time);
+          delta_pos_up = tilt_time_down / full_closing_time;
+
+          if (task_position < delta_pos_up) {
+            delta_pos_up = task_position;
+          }
         }
-
-        if (task_position + delta_pos_down > 10000) {
-          delta_pos_down = 10000 - task_position;
-        }
-
-        int required_tilt_movement_down = task_tilt;
-        unsigned int tilt_time_down =
-          (1.0 * required_tilt_movement_down) * (*rs_cfg->tilt_change_time);
-        delta_pos_up = tilt_time_down / full_closing_time;
-
-        if (task_position < delta_pos_up) {
-          delta_pos_up = task_position;
-        }
+        break;
       }
-      break;
-    }
-    case FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED: {
-      // ignore tilt when position <100
-      break;
+      case FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED: {
+        // ignore tilt when position <100
+        break;
+      }
     }
   }
 
@@ -615,8 +629,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
           1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_opening_time,
             rs_cfg->up_time, time_margin)) {
       } else if ((raw_position == 10000
-            && (rs_cfg->tilt_type == FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING
-              || rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED
+            && (*rs_cfg->tilt_type == FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING
+              || *rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED
               || raw_tilt == 10000))
           && 1 == supla_esp_gpio_rs_time_margin(rs_cfg, full_closing_time,
             rs_cfg->down_time, time_margin)
@@ -626,8 +640,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
         if (idx >= 0 &&
             (rs_cfg->task.position == 0 ||
              (rs_cfg->task.position == 100
-              && (rs_cfg->tilt_type == FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING
-              || rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED
+              && (*rs_cfg->tilt_type == FB_TILT_TYPE_CHANGE_POSITION_WHILE_TILTING
+              || *rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED
               || rs_cfg->task.tilt == 100))
               )) {
           if (supla_esp_gpio_rs_is_autocal_done(idx)) {
@@ -751,6 +765,10 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_autocalibrate(
                   *rs_cfg->position = 100;  // fully open and calibrated
                   if (supla_esp_gpio_rs_is_tilt_supported(rs_cfg)) {
                     *rs_cfg->tilt = 100;
+                  } else {
+                    *rs_cfg->tilt = 0;
+                    supla_esp_gpio_rs_clear_flag(rs_cfg,
+                                                 RS_VALUE_FLAG_TILT_IS_SET);
                   }
                   supla_esp_gpio_rs_clear_flag(rs_cfg,
                       RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
@@ -785,6 +803,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
     if (full_opening_time == 0 && full_closing_time == 0) {
       *rs_cfg->position = 0;
       *rs_cfg->tilt = 0;
+      supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
     }
   } else {
     full_opening_time = *rs_cfg->full_opening_time;
@@ -795,6 +814,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
       *rs_cfg->auto_closing_time = 0;
       *rs_cfg->position = 0;
       *rs_cfg->tilt = 0;
+      supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
       rs_cfg->autoCal_step = 0;
     }
   }
@@ -861,7 +881,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
   supla_esp_gpio_rs_task_processing(rs_cfg, isRsInMove, full_opening_time,
       full_closing_time);
 
-  if (t - rs_cfg->last_comm_time >= 500000) {  // 500 ms.
+  if (t - rs_cfg->last_comm_time >= 200000) {  // 500 ms.
 
     if (rs_cfg->last_position != *rs_cfg->position ||
         rs_cfg->last_flags != rs_cfg->flags ||
@@ -880,20 +900,27 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg) {
       char value[SUPLA_CHANNELVALUE_SIZE] = {};
       sint8 pos = -1;
       sint8 tilt = -1;
-      if (rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED) {
+      if (*rs_cfg->tilt_type == FB_TILT_TYPE_NOT_SUPPORTED) {
         // Roller shutter
         pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
         TDSC_RollerShutterValue *rsValue = (TDSC_RollerShutterValue *)value;
         rsValue->position = pos;
+        rsValue->reserved1 = 0;
+        supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
         rsValue->flags = rs_cfg->flags;
-      } else if (rs_cfg->tilt_type != FB_TILT_TYPE_NOT_SUPPORTED) {
+      } else if (*rs_cfg->tilt_type != FB_TILT_TYPE_NOT_SUPPORTED) {
         // Facade blind
         pos = supla_esp_gpio_rs_get_current_position(rs_cfg);
         tilt = supla_esp_gpio_rs_get_current_tilt(rs_cfg);
+        if (supla_esp_gpio_rs_is_tilt_set(rs_cfg)) {
+          supla_esp_gpio_rs_set_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
+        } else {
+          supla_esp_gpio_rs_clear_flag(rs_cfg, RS_VALUE_FLAG_TILT_IS_SET);
+        }
         TDSC_FacadeBlindValue *fbValue = (TDSC_FacadeBlindValue *)value;
         fbValue->position = pos;
-        fbValue->flags = rs_cfg->flags;
         fbValue->tilt = tilt;
+        fbValue->flags = rs_cfg->flags;
       }
 
       supla_esp_channel_value__changed(rs_cfg->up->channel, value);
@@ -974,11 +1001,11 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
     }
   }
 
-  if (tilt == -1) {
-    tilt = current_tilt;
-  }
+//  if (tilt == -1) {
+//    tilt = current_tilt;
+//  }
 
-  if (supla_rs_cfg[idx].tilt_type ==
+  if (*supla_rs_cfg[idx].tilt_type ==
       FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED) {
     if (position != 100) {
       if (!(position == -1 && *supla_rs_cfg[idx].position == 10100)) {
@@ -995,9 +1022,13 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
   supla_esp_save_state(RS_SAVE_STATE_DELAY);
 }
 
-bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
-    int ot_ms,
-    bool save) {
+bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx,
+                                                          int close_time_ms,
+                                                          int open_time_ms,
+                                                          int tilt_time_ms,
+                                                          bool save) {
+  supla_log(LOG_DEBUG, "Apply new times[%d]: ct %i, ot %i, tt %i", idx,
+            close_time_ms, open_time_ms, tilt_time_ms);
   bool resetRsConfig = false;
   bool result = false;
   if (idx >= RS_MAX_COUNT || supla_rs_cfg[idx].up == NULL ||
@@ -1008,14 +1039,14 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
   if (supla_rs_cfg[idx].up->channel_flags &
       SUPLA_CHANNEL_FLAG_RS_AUTO_CALIBRATION) {
     // Handling of time when auto calibration is supported
-    if (ct_ms != 0 || ot_ms != 0) {
+    if (close_time_ms != 0 || open_time_ms != 0) {
       if (supla_esp_gpio_rs_is_autocal_enabled(idx)) {
         supla_esp_cfg.AutoCalOpenTime[idx] = 0;
         supla_esp_cfg.AutoCalCloseTime[idx] = 0;
         resetRsConfig = true;
       } else {
-        if (ct_ms != supla_esp_cfg.Time2[idx] ||
-            ot_ms != supla_esp_cfg.Time1[idx]) {
+        if (close_time_ms != supla_esp_cfg.Time2[idx] ||
+            open_time_ms != supla_esp_cfg.Time1[idx]) {
           resetRsConfig = true;
         }
       }
@@ -1028,25 +1059,32 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
     }
   } else {
     // Default behavior when auto calibration is not supported
-    if (ct_ms != supla_esp_cfg.Time2[idx] ||
-        ot_ms != supla_esp_cfg.Time1[idx]) {
+    if (close_time_ms != supla_esp_cfg.Time2[idx] ||
+        open_time_ms != supla_esp_cfg.Time1[idx]) {
       resetRsConfig = true;
     }
   }
   if (resetRsConfig) {
-    supla_esp_cfg.Time2[idx] = ct_ms;
-    supla_esp_cfg.Time1[idx] = ot_ms;
+    supla_esp_cfg.Time2[idx] = close_time_ms;
+    supla_esp_cfg.Time1[idx] = open_time_ms;
     supla_esp_cfg.AutoCalOpenTime[idx] = 0;
     supla_esp_cfg.AutoCalCloseTime[idx] = 0;
 
     // Reset position to 0. It means that RS is not calibrated
     supla_esp_state.rs_position[idx] = 0;
+    supla_esp_state.tilt[idx] = 0;
+    supla_esp_gpio_rs_clear_flag(&supla_rs_cfg[idx], RS_VALUE_FLAG_TILT_IS_SET);
 
-    if (save) {
-      supla_esp_save_state(0);
-      supla_esp_cfg_save(&supla_esp_cfg);
-    }
     result = true;
+  }
+
+  if (tilt_time_ms != -1 && tilt_time_ms != supla_esp_cfg.Time3[idx]) {
+    supla_esp_cfg.Time3[idx] = tilt_time_ms;
+  }
+
+  if (save) {
+    supla_esp_save_state(0);
+    supla_esp_cfg_save(&supla_esp_cfg);
   }
 
   // calibration is not needed if times are already set
@@ -1058,9 +1096,12 @@ bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
   return result;
 }
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms,
-    int ot_ms) {
-  supla_esp_gpio_rs_apply_new__times(idx, ct_ms, ot_ms, true);
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx,
+                                                         int close_time_ms,
+                                                         int open_time_ms,
+                                                         int tilt_time_ms) {
+  supla_esp_gpio_rs_apply_new__times(idx, close_time_ms, open_time_ms,
+                                     tilt_time_ms, true);
 }
 
 bool GPIO_ICACHE_FLASH
@@ -1078,7 +1119,7 @@ supla_esp_gpio_rs_is_tilt_supported(supla_roller_shutter_cfg_t *rs_cfg) {
 
 bool GPIO_ICACHE_FLASH
 supla_esp_gpio_is_rs(supla_roller_shutter_cfg_t *rs_cfg) {
-  if (rs_cfg && rs_cfg->tilt_type == 0) {
+  if (rs_cfg && *rs_cfg->tilt_type == 0) {
     return true;
   }
   return false;
@@ -1086,7 +1127,7 @@ supla_esp_gpio_is_rs(supla_roller_shutter_cfg_t *rs_cfg) {
 
 bool GPIO_ICACHE_FLASH
 supla_esp_gpio_is_fb(supla_roller_shutter_cfg_t *rs_cfg) {
-  if (rs_cfg && rs_cfg->tilt_type > 0) {
+  if (rs_cfg && *rs_cfg->tilt_type > 0) {
     return true;
   }
   return false;
@@ -1124,4 +1165,143 @@ supla_esp_gpio_get_rs__cfg(int port) {
     }
 
   return NULL;
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
+    int channel_number, TChannelConfig_RollerShutter *rsConfig) {
+  if (channel_number < 0 || channel_number >= RS_MAX_COUNT) {
+    return;
+  }
+  bool saveConfig = false;
+  if (rsConfig->MotorUpsideDown > 0 && rsConfig->MotorUpsideDown < 3) {
+    bool newMotorUpsideDown = (rsConfig->MotorUpsideDown == 2);
+    bool oldMotorUpsideDown =
+      (supla_esp_cfg.MotorUpsideDown & (1 << channel_number)) != 0;
+    if (newMotorUpsideDown != oldMotorUpsideDown) {
+      if (newMotorUpsideDown) {
+        supla_esp_cfg.MotorUpsideDown |= (1 << channel_number);
+      } else {
+        supla_esp_cfg.MotorUpsideDown &= ~(1 << channel_number);
+      }
+      supla_relay_cfg_t *newUp = supla_rs_cfg[channel_number].down;
+      supla_relay_cfg_t *newDown = supla_rs_cfg[channel_number].up;
+      supla_rs_cfg[channel_number].down = newDown;
+      supla_rs_cfg[channel_number].up = newUp;
+      supla_log(LOG_DEBUG, "RS[%d] motor upside down %d", channel_number,
+                newMotorUpsideDown);
+      saveConfig = true;
+    }
+  }
+
+  if (rsConfig->ButtonsUpsideDown > 0 && rsConfig->ButtonsUpsideDown < 3) {
+    bool newButtonsUpsideDown = (rsConfig->ButtonsUpsideDown == 2);
+    bool oldButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown) != 0;
+    if (newButtonsUpsideDown != oldButtonsUpsideDown) {
+      supla_esp_cfg.ButtonsUpsideDown = (newButtonsUpsideDown ? 1 : 0);
+      int newUpButtonGpio = supla_input_cfg[(2 * channel_number) + 1].gpio_id;
+      int newDownButtonGpio = supla_input_cfg[(2 * channel_number)].gpio_id;
+      supla_input_cfg[(2 * channel_number)].gpio_id = newUpButtonGpio;
+      supla_input_cfg[(2 * channel_number) + 1].gpio_id = newDownButtonGpio;
+      supla_log(LOG_DEBUG, "RS[%d] buttons upside down %d", channel_number,
+                newButtonsUpsideDown);
+      saveConfig = true;
+    }
+  }
+
+  int timeMargin = rsConfig->TimeMargin;
+  if (timeMargin == -1 || (timeMargin >= 1 && timeMargin <= 101)) {
+    if (timeMargin > 0) {
+      timeMargin -= 1;
+    }
+    if (timeMargin != supla_esp_cfg.AdditionalTimeMargin) {
+      supla_esp_cfg.AdditionalTimeMargin = timeMargin;
+      supla_esp_gpio_rs_set_time_margin(supla_esp_cfg.AdditionalTimeMargin);
+      saveConfig = true;
+    }
+  }
+
+  supla_esp_gpio_rs_apply_new_times(channel_number,
+                                    rsConfig->ClosingTimeMS,
+                                    rsConfig->OpeningTimeMS, 0);
+
+  if (saveConfig) {
+    supla_esp_cfg_save(&supla_esp_cfg);
+  }
+}
+
+void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
+    int channel_number, TChannelConfig_FacadeBlind *fbConfig) {
+  if (channel_number < 0 || channel_number >= RS_MAX_COUNT) {
+    return;
+  }
+  supla_log(LOG_DEBUG, "FB[%d] new config: mud %d, bud %d, ot %d, ct %d, "
+      "tt %d, tm %d, type %d", channel_number, fbConfig->MotorUpsideDown,
+      fbConfig->ButtonsUpsideDown, fbConfig->OpeningTimeMS,
+      fbConfig->ClosingTimeMS, fbConfig->TiltingTimeMS,
+      fbConfig->TimeMargin, fbConfig->FacadeBlindType);
+
+  bool saveConfig = false;
+  if (fbConfig->MotorUpsideDown > 0 && fbConfig->MotorUpsideDown < 3) {
+    bool newMotorUpsideDown = (fbConfig->MotorUpsideDown == 2);
+    bool oldMotorUpsideDown =
+      (supla_esp_cfg.MotorUpsideDown & (1 << channel_number)) != 0;
+    if (newMotorUpsideDown != oldMotorUpsideDown) {
+      if (newMotorUpsideDown) {
+        supla_esp_cfg.MotorUpsideDown |= (1 << channel_number);
+      } else {
+        supla_esp_cfg.MotorUpsideDown &= ~(1 << channel_number);
+      }
+      supla_relay_cfg_t *newUp = supla_rs_cfg[channel_number].down;
+      supla_relay_cfg_t *newDown = supla_rs_cfg[channel_number].up;
+      supla_rs_cfg[channel_number].down = newDown;
+      supla_rs_cfg[channel_number].up = newUp;
+      supla_log(LOG_DEBUG, "FB[%d] motor upside down %d", channel_number,
+          newMotorUpsideDown);
+      saveConfig = true;
+    }
+  }
+
+  if (fbConfig->ButtonsUpsideDown > 0 && fbConfig->ButtonsUpsideDown < 3) {
+    bool newButtonsUpsideDown = (fbConfig->ButtonsUpsideDown == 2);
+    bool oldButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown) != 0;
+    if (newButtonsUpsideDown != oldButtonsUpsideDown) {
+      supla_esp_cfg.ButtonsUpsideDown = (newButtonsUpsideDown ? 1 : 0);
+      int newUpButtonGpio = supla_input_cfg[(2 * channel_number) + 1].gpio_id;
+      int newDownButtonGpio = supla_input_cfg[(2 * channel_number)].gpio_id;
+      supla_input_cfg[(2 * channel_number)].gpio_id = newUpButtonGpio;
+      supla_input_cfg[(2 * channel_number) + 1].gpio_id = newDownButtonGpio;
+      supla_log(LOG_DEBUG, "FB[%d] buttons upside down %d", channel_number,
+          newButtonsUpsideDown);
+      saveConfig = true;
+    }
+  }
+
+  int timeMargin = fbConfig->TimeMargin;
+  if (timeMargin == -1 || (timeMargin >= 1 && timeMargin <= 101)) {
+    if (timeMargin > 0) {
+      timeMargin -= 1;
+    }
+    if (timeMargin != supla_esp_cfg.AdditionalTimeMargin) {
+      supla_esp_cfg.AdditionalTimeMargin = timeMargin;
+      supla_esp_gpio_rs_set_time_margin(supla_esp_cfg.AdditionalTimeMargin);
+      saveConfig = true;
+    }
+  }
+
+  if (fbConfig->FacadeBlindType !=
+      supla_esp_cfg.FacadeBlindType[channel_number]) {
+    supla_esp_cfg.FacadeBlindType[channel_number] = fbConfig->FacadeBlindType;
+    supla_log(LOG_DEBUG, "FB[%d] blind type %d", channel_number,
+              fbConfig->FacadeBlindType);
+    saveConfig = true;
+  }
+
+  supla_esp_gpio_rs_apply_new_times(
+      channel_number, fbConfig->ClosingTimeMS,
+      fbConfig->OpeningTimeMS, fbConfig->TiltingTimeMS);
+
+  if (saveConfig) {
+    supla_log(LOG_DEBUG, "SAVE CFG");
+    supla_esp_cfg_save(&supla_esp_cfg);
+  }
 }

@@ -71,6 +71,15 @@ typedef struct {
 
 }channel_value_delayed;
 
+#define CHANNEL_MAX_COUNT 8
+
+enum RuntimeChannelConfigState {
+  CfgNotSupported,
+  WaitingForConfig,
+  EmptyConfigReceived,
+  ConfigReceived,
+};
+
 typedef struct {
 
 	ETSTimer supla_devconn_timer1;
@@ -108,7 +117,9 @@ typedef struct {
 
 	bool resolving_started;
 
-
+  enum RuntimeChannelConfigState runtime_config_channels[CHANNEL_MAX_COUNT];
+  int channel_function_from_server[CHANNEL_MAX_COUNT];
+  int channel_count;
 }devconn_params;
 
 
@@ -325,28 +336,26 @@ supla_esp_on_version_error(TSDC_SuplaVersionError *version_error) {
 	supla_esp_devconn_stop_with_delay();
 }
 
-void DEVCONN_ICACHE_FLASH
-supla_esp_devconn_send_channel_values_cb(void *ptr) {
-
-	if ( supla_esp_devconn_is_registered() == 1 ) {
-
+void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_channel_values_cb(void *ptr) {
+  if (supla_esp_devconn_is_registered() == 1) {
 #ifdef _ROLLERSHUTTER_SUPPORT
-		int a;
+    int a;
+    for (a = 0; a < RS_MAX_COUNT; a++) {
+      if (supla_rs_cfg[a].up != NULL && supla_rs_cfg[a].down != NULL &&
+          supla_rs_cfg[a].up->channel != 255) {
+        char value[SUPLA_CHANNELVALUE_SIZE];
+        memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
+        value[0] = supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]);
+        value[1] = supla_esp_gpio_rs_get_current_tilt(&supla_rs_cfg[a]);
+        value[3] = supla_rs_cfg[a].flags;
 
-		for(a=0; a<RS_MAX_COUNT; a++) {
-			if ( supla_rs_cfg[a].up != NULL
-				   && supla_rs_cfg[a].down != NULL
-				   && supla_rs_cfg[a].up->channel != 255 ) {
-
-				supla_esp_channel_value_changed(supla_rs_cfg[a].up->channel, supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]));
-			}
-		}
+        srpc_ds_async_channel_value_changed(
+            devconn->srpc, supla_rs_cfg[a].up->channel, value);
+      }
+    }
 #endif /*_ROLLERSHUTTER_SUPPORT*/
-
-		supla_esp_board_send_channel_values_with_delay(devconn->srpc);
-
-	}
-
+    supla_esp_board_send_channel_values_with_delay(devconn->srpc);
+  }
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -428,7 +437,10 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_register_result(
       {
         TDS_GetChannelConfigRequest request = {};
         for (uint8 a = 0; a < CHANNEL_CONFIG_LIMIT; a++) {
-          if (RETREIVE_CHANNEL_CONFIG & (1 << a)) {
+          // Don't explicitly send request for channels with runtime config
+          // change flag
+          if (RETREIVE_CHANNEL_CONFIG & (1 << a) &&
+              devconn->runtime_config_channels[a] == CfgNotSupported) {
             request.ChannelNumber = a;
             srpc_ds_async_get_channel_config_request(devconn->srpc, &request);
           }
@@ -521,6 +533,12 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_channel_value__changed(int channel_number, char value[SUPLA_CHANNELVALUE_SIZE]) {
 
 	if ( supla_esp_devconn_is_registered() ) {
+#ifdef SUPLA_DEBUG
+    supla_log(LOG_DEBUG,
+      "sending[%d] value[7-0]: %2X %2X %2X %2X %2X %2X %2X %2X",
+      channel_number, value[7], value[6], value[5], value[4], value[3],
+      value[2], value[1], value[0]);
+#endif
 		srpc_ds_async_channel_value_changed(devconn->srpc, channel_number, value);
 	}
 
@@ -972,7 +990,7 @@ void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 #ifdef SUPLA_DEBUG
   supla_log(LOG_DEBUG,
-      "supla_esp_channel_set_value: sender %d, channel %d, duration %d"
+      "New value from server: sender %d, channel %d, duration %d"
       ", value[7-0] %2X %2X %2X %2X %2X %2X %2X %2X",
       new_value->SenderID, new_value->ChannelNumber, new_value->DurationMS,
       new_value->value[7],
@@ -1125,7 +1143,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
 #endif
 
 
-	char v = new_value->value[0];
+	signed char v = new_value->value[0];
 	int a;
 	char Success = 0;
 
@@ -1139,6 +1157,8 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
   for (a = 0; a < RS_MAX_COUNT; a++)
     if (supla_rs_cfg[a].up != NULL && supla_rs_cfg[a].down != NULL &&
         supla_rs_cfg[a].up->channel == new_value->ChannelNumber) {
+
+// Opening/Closing time are now used only with ChannelConfig
       int ct = (new_value->DurationMS & 0xFFFF) * 100;
       int ot = ((new_value->DurationMS >> 16) & 0xFFFF) * 100;
 
@@ -1148,7 +1168,8 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
       if (ot < 0)
         ot = 0;
 
-      supla_esp_gpio_rs_apply_new_times(a, ct, ot);
+      supla_esp_gpio_rs_apply_new_times(a, ct, ot, -1);
+
       sint8 tilt = new_value->value[1];
 
       if (tilt >= 10 && tilt <= 110) {
@@ -1158,14 +1179,21 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
       }
 
       if (v >= 10 && v <= 110) {
+        supla_log(LOG_DEBUG, "rs add task[%d]: position %d, tilt %d", a, v,
+                  tilt);
         supla_esp_gpio_rs_add_task(a, v - 10, tilt);
       } else if (v == -1) {
+        supla_log(LOG_DEBUG, "rs add task[%d]: position %d, tilt %d", a, v,
+                  tilt);
         supla_esp_gpio_rs_add_task(a, v, tilt);
       } else if (v == 1) {  // DOWN
+        supla_log(LOG_DEBUG, "rs set relay[%d]: DOWN", a);
         supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_DOWN, 1, 0);
       } else if (v == 2) {  // UP
+        supla_log(LOG_DEBUG, "rs set relay[%d]: UP", a);
         supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_UP, 1, 0);
       } else if (v == 3) {  // DOWN OR STOP
+        supla_log(LOG_DEBUG, "rs set relay[%d]: DOWN or STOP", a);
         uint8 current_direction =
           supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
         if (current_direction == RS_RELAY_OFF) {
@@ -1174,6 +1202,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
         }
       } else if (v == 4) {  // UP OR STOP
+        supla_log(LOG_DEBUG, "rs set relay[%d]: UP or STOP", a);
         uint8 current_direction =
           supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
         if (current_direction == RS_RELAY_OFF) {
@@ -1182,6 +1211,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
         }
       } else if (v == 5) {  // SBS
+        supla_log(LOG_DEBUG, "rs set relay[%d]: SBS", a);
         uint8 current_direction =
           supla_esp_gpio_rs_get_value(&supla_rs_cfg[a]);
         if (current_direction == RS_RELAY_OFF) {
@@ -1203,6 +1233,7 @@ supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value) {
           supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
         }
       } else {  // 0 and all other = STOP
+        supla_log(LOG_DEBUG, "rs set relay[%d]: STOP", a);
         supla_esp_gpio_rs_set_relay(&supla_rs_cfg[a], RS_RELAY_OFF, 1, 0);
       }
 
@@ -1398,10 +1429,78 @@ void DEVCONN_ICACHE_FLASH supla_esp_on_remote_call_received(
 #endif /*BOARD_ON_GET_CHANNEL_FUNCTIONS_RESULT*/
 #endif /*ESP8266_SUPLA_PROTO_VERSION >= 12*/
 #if defined(RETREIVE_CHANNEL_CONFIG) && ESP8266_SUPLA_PROTO_VERSION >= 16
-      case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT:
-        supla_esp_channel_config_result(rd.data.sd_channel_config);
+      case SUPLA_SD_CALL_SET_CHANNEL_CONFIG:
+      case SUPLA_SD_CALL_GET_CHANNEL_CONFIG_RESULT: {
+        TSD_ChannelConfig *cfg = rd.data.sd_channel_config;
+
+        TSDS_SetChannelConfigResult cfgResult;
+        memset(&cfgResult, 0, sizeof(TSDS_SetChannelConfigResult));
+        cfgResult.Result = 1;
+        cfgResult.ChannelNumber = cfg->ChannelNumber;
+        cfgResult.ConfigType = cfg->ConfigType;
+        // always store channel function from server
+        if (cfg->ChannelNumber < CHANNEL_MAX_COUNT) {
+          devconn->channel_function_from_server[cfg->ChannelNumber] =
+              cfg->Func;
+          if (!supla_esp_channel_config_result(cfg)) {
+            if (devconn->runtime_config_channels[cfg->ChannelNumber] !=
+                CfgNotSupported) {
+              devconn->runtime_config_channels[cfg->ChannelNumber] =
+                  EmptyConfigReceived;
+            }
+          }
+        }
+        if (rd.call_id == SUPLA_SD_CALL_SET_CHANNEL_CONFIG) {
+          srpc_ds_async_set_channel_config_result(_srpc, &cfgResult);
+        }
         break;
+      }
+      case SUPLA_SD_CALL_SET_CHANNEL_CONFIG_RESULT: {
+        TSDS_SetChannelConfigResult *cfgResult =
+            rd.data.sds_set_channel_config_result;
+        supla_log(LOG_DEBUG, "Channel[%d] set config result: %d (type: %d)",
+                  cfgResult->ChannelNumber, cfgResult->Result,
+                  cfgResult->ConfigType);
+        break;
+      }
+      case SUPLA_SD_CALL_CHANNEL_CONFIG_FINISHED: {
+        TSD_ChannelConfigFinished *cfgFinish =
+            rd.data.sd_channel_config_finished;
+        supla_log(LOG_DEBUG, "Channel[%d] config finished",
+                  cfgFinish->ChannelNumber);
+        if (cfgFinish->ChannelNumber < CHANNEL_MAX_COUNT) {
+          if (devconn->runtime_config_channels[cfgFinish->ChannelNumber] ==
+              WaitingForConfig) {
+            devconn->runtime_config_channels[cfgFinish->ChannelNumber] =
+                ConfigReceived;
+          }
+        }
+
+        bool all_channels_configured = true;
+        for (int i = 0; i < CHANNEL_MAX_COUNT && i < devconn->channel_count;
+             i++) {
+          if (devconn->runtime_config_channels[i] == WaitingForConfig) {
+            all_channels_configured = false;
+          }
+        }
+
+        if (all_channels_configured) {
+          for (int i = 0; i < CHANNEL_MAX_COUNT && i < devconn->channel_count;
+               i++) {
+            if (devconn->runtime_config_channels[i] == EmptyConfigReceived) {
+              supla_esp_set_channel_config(i);
+            }
+          }
+        }
+
+        break;
+      }
 #endif /*defined(RETREIVE_CHANNEL_CONFIG)*/
+      case SUPLA_SDC_CALL_PING_SERVER_RESULT:
+        break;
+      default:
+        supla_log(LOG_DEBUG, "unknown call_id: %i", rd.call_id);
+        break;
     }
 
     srpc_rd_free(&rd);
@@ -1421,8 +1520,12 @@ supla_esp_devconn_set_channels(TDS_SuplaRegisterDevice_E *srd) {
 
   for (a = 0; a < srd->channel_count; a++) {
     if (srd->channels[a].FuncList &
-        SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER) {
+            SUPLA_BIT_FUNC_CONTROLLINGTHEROLLERSHUTTER ||
+        srd->channels[a].FuncList & SUPLA_BIT_FUNC_CONTROLLINGTHEFACADEBLIND) {
       srd->channels[a].Flags |= SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE;
+      srd->channels[a].value[3] = supla_rs_cfg[a].flags;
+      supla_log(LOG_DEBUG, "FB[%d] flags %d on register", a,
+                srd->channels[a].value[3]);
     }
   }
 
@@ -1467,6 +1570,16 @@ supla_esp_devconn_iterate(void *timer_arg) {
 					os_memcpy(srd.AuthKey, supla_esp_cfg.AuthKey, SUPLA_AUTHKEY_SIZE);
 
 					supla_esp_devconn_set_channels(&srd);
+
+          devconn->channel_count = srd.channel_count;
+          for (int i = 0; i < srd.channel_count; i++) {
+            if (srd.channels[i].Flags &
+                SUPLA_CHANNEL_FLAG_RUNTIME_CHANNEL_CONFIG_UPDATE) {
+              if (i < CHANNEL_MAX_COUNT) {
+                devconn->runtime_config_channels[i] = WaitingForConfig;
+              }
+            }
+          }
 
 					srpc_ds_async_registerdevice_e(devconn->srpc, &srd);
 				#else
@@ -1846,10 +1959,10 @@ void DEVCONN_ICACHE_FLASH supla_esp_calcfg_result(TDS_DeviceCalCfgResult *result
 	}
 }
 
-void DEVCONN_ICACHE_FLASH
+bool DEVCONN_ICACHE_FLASH
 supla_esp_channel_config_result(TSD_ChannelConfig *result) {
   if (!result) {
-    return;
+    return true;
   }
 
   supla_log(LOG_DEBUG,
@@ -1862,10 +1975,14 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
   supla_esp_board_channel_config(result);
 #endif /*BOARD_CHANNEL_CONFIG*/
 
+  // ConfigSize == 0 means that server doesn't have device config yet
+  if (result->Func > 0 && result->ConfigType == 0 && result->ConfigSize == 0) {
+    return false;
+  }
+
   if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER ||
       result->Func == SUPLA_CHANNELFNC_POWERSWITCH ||
       result->Func == SUPLA_CHANNELFNC_LIGHTSWITCH) {
-
     if (result->ChannelNumber >= 0 && result->ChannelNumber < CFG_TIME2_COUNT) {
       int staircaseTimeMs = 0;
       if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
@@ -1888,7 +2005,35 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
       }
     }
   } else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER) {
-    // TODO
+    TChannelConfig_RollerShutter *channelConfig =
+      (TChannelConfig_RollerShutter *)result->Config;
+    supla_esp_gpio_rs_apply_new_config(result->ChannelNumber, channelConfig);
+    // TODO(klew): add ignoring "not set" values in case where device doesn't
+    // support such setting at all
+    if (channelConfig->MotorUpsideDown == 0) {
+      return false;
+    }
+    if (channelConfig->ButtonsUpsideDown == 0) {
+      return false;
+    }
+    if (channelConfig->TimeMargin == 0) {
+      return false;
+    }
+  } else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND) {
+    TChannelConfig_FacadeBlind *channelConfig =
+      (TChannelConfig_FacadeBlind *)result->Config;
+    supla_esp_gpio_fb_apply_new_config(result->ChannelNumber, channelConfig);
+    // TODO(klew): add ignoring "not set" values in case where device doesn't
+    // support such setting at all
+    if (channelConfig->MotorUpsideDown == 0) {
+      return false;
+    }
+    if (channelConfig->ButtonsUpsideDown == 0) {
+      return false;
+    }
+    if (channelConfig->TimeMargin == 0) {
+      return false;
+    }
   } else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
     if (result->ConfigType == 0 &&
         result->ConfigSize == sizeof(TChannelConfig_ActionTrigger)) {
@@ -1902,6 +2047,7 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
       }
     }
   }
+  return true;
 }
 
 void DEVCONN_ICACHE_FLASH
@@ -1959,7 +2105,35 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
           *(supla_rs_cfg[i].auto_closing_time) = 0;
           *(supla_rs_cfg[i].position) = 0;  // not calibrated
           supla_esp_gpio_rs_apply_new_times(i, rsSettings->FullClosingTimeMS,
-              rsSettings->FullOpeningTimeMS);
+              rsSettings->FullOpeningTimeMS, 0);
+          // trigger calibration by setting position to fully open
+          supla_esp_gpio_rs_add_task(i, 0, 0);
+        }
+      }
+    }
+  } else if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
+      request->DataType == SUPLA_CALCFG_DATATYPE_FB_SETTINGS &&
+      request->DataSize == sizeof(TCalCfg_FacadeBlindSettings)) {
+    for (int i = 0; i < RS_MAX_COUNT; i++) {
+      if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
+          supla_rs_cfg[i].up->channel == request->ChannelNumber &&
+          supla_rs_cfg[i].up->channel_flags &
+              SUPLA_CHANNEL_FLAG_CALCFG_RECALIBRATE) {
+        if (!request->SuperUserAuthorized) {
+          result.Result = SUPLA_CALCFG_RESULT_UNAUTHORIZED;
+        } else {
+          result.Result = SUPLA_CALCFG_RESULT_DONE;
+
+          TCalCfg_FacadeBlindSettings *fbSettings =
+            (TCalCfg_FacadeBlindSettings *)(request->Data);
+
+          supla_rs_cfg[i].autoCal_step = 0;
+          *(supla_rs_cfg[i].auto_opening_time) = 0;
+          *(supla_rs_cfg[i].auto_closing_time) = 0;
+          *(supla_rs_cfg[i].position) = 0;  // not calibrated
+          *(supla_rs_cfg[i].tilt) = 0;  // not calibrated
+          supla_esp_gpio_rs_apply_new_times(i, fbSettings->FullClosingTimeMS,
+              fbSettings->FullOpeningTimeMS, fbSettings->TiltingTimeMS);
           // trigger calibration by setting position to fully open
           supla_esp_gpio_rs_add_task(i, 0, 0);
         }
@@ -1996,3 +2170,55 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_action_trigger(
   }
 }
 
+#ifdef RETREIVE_CHANNEL_CONFIG
+void DEVCONN_ICACHE_FLASH
+supla_esp_set_channel_config(int channel_number) {
+  supla_log(LOG_DEBUG, "supla_esp_set_channel_config(%i)", channel_number);
+  TSDS_SetChannelConfig config = {};
+  config.ChannelNumber = channel_number;
+  config.Func = devconn->channel_function_from_server[channel_number];
+  config.ConfigType = 0;  // Default config
+  switch (devconn->channel_function_from_server[channel_number]) {
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER: {
+      config.ConfigSize = sizeof(TChannelConfig_RollerShutter);
+      TChannelConfig_RollerShutter *channelConfig =
+          (TChannelConfig_RollerShutter *)&config.Config;
+      channelConfig->ClosingTimeMS = supla_esp_cfg.Time2[channel_number];
+      channelConfig->OpeningTimeMS = supla_esp_cfg.Time1[channel_number];
+      channelConfig->MotorUpsideDown = (supla_esp_cfg.MotorUpsideDown &
+          (1 << channel_number)) ? 2 : 1;
+      channelConfig->ButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown == 1 ?
+          2 : 1);
+      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
+
+      srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
+      break;
+    }
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND: {
+      config.ConfigSize = sizeof(TChannelConfig_FacadeBlind);
+      TChannelConfig_FacadeBlind *channelConfig =
+          (TChannelConfig_FacadeBlind *)&config.Config;
+      channelConfig->ClosingTimeMS = supla_esp_cfg.Time2[channel_number];
+      channelConfig->OpeningTimeMS = supla_esp_cfg.Time1[channel_number];
+      channelConfig->TiltingTimeMS = supla_esp_cfg.Time3[channel_number];
+      bool motorUpsideDown =
+          (supla_esp_cfg.MotorUpsideDown & (1 << channel_number));
+      channelConfig->MotorUpsideDown = (motorUpsideDown ? 2 : 1);
+      channelConfig->ButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown == 1 ?
+          2 : 1);
+      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
+      channelConfig->Tilt0Angle = supla_esp_cfg.Tilt0Angle[channel_number];
+      channelConfig->Tilt100Angle = supla_esp_cfg.Tilt100Angle[channel_number];
+      channelConfig->FacadeBlindType =
+          supla_esp_cfg.FacadeBlindType[channel_number];
+
+      srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
+      break;
+    }
+    default:
+      supla_log(LOG_ERR, "Unknown channel function %i",
+                devconn->channel_function_from_server[channel_number]);
+      break;
+  }
+}
+#endif /*RETREIVE_CHANNEL_CONFIG*/

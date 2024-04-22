@@ -145,7 +145,12 @@ TEST_F(RollerShutterMotorProblem, MotorProblemMoveDown) {
 
   EXPECT_CALL(srpc, valueChanged(
                         _, 0,
-                        ElementsAreArray({54, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                        ElementsAreArray({70, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged( _, 0,
+                        ElementsAreArray({90, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
                                           0, 0, 0, 0})))
       .WillRepeatedly(Return(0));
 
@@ -222,6 +227,18 @@ TEST_F(RollerShutterMotorProblem, MotorProblemMoveUp) {
   EXPECT_CALL(srpc, valueChanged(
                         _, 0,
                         ElementsAreArray({46, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(
+                        _, 0,
+                        ElementsAreArray({30, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(
+                        _, 0,
+                        ElementsAreArray({10, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
                                           0, 0, 0, 0})))
       .WillRepeatedly(Return(0));
 
@@ -433,6 +450,18 @@ TEST_F(RollerShutterMotorProblem, MotorProblemByTask) {
 
   EXPECT_CALL(srpc, valueChanged(
                         _, 0,
+                        ElementsAreArray({69, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(
+                        _, 0,
+                        ElementsAreArray({89, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(
+                        _, 0,
                         ElementsAreArray({90, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
                                           0, 0, 0, 0})))
       .WillOnce(Return(0));
@@ -507,6 +536,18 @@ TEST_F(RollerShutterMotorProblem, MotorProblemWithLongStartupTime) {
               valueChanged(_, 0, ElementsAreArray({50, 0, 0, 0, 0, 0, 0, 0})))
       .Times(2)
       .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(
+                        _, 0,
+                        ElementsAreArray({69, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(
+                        _, 0,
+                        ElementsAreArray({89, 0, 0, RS_VALUE_FLAG_MOTOR_PROBLEM,
+                                          0, 0, 0, 0})))
+      .WillOnce(Return(0));
 
   EXPECT_CALL(srpc, valueChanged(
                         _, 0,

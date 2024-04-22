@@ -19,6 +19,7 @@
 #ifndef _SUPLA_ESP_RS_FB_H
 #define _SUPLA_ESP_RS_FB_H
 
+#include <supla-dev/proto.h>
 #include "supla_esp.h"
 #include "supla_esp_gpio.h"
 
@@ -61,9 +62,9 @@ typedef struct {
               // it is in 10-110 range, multiplied by 100
               // tilt 10 * 100 corresponds with fully open
               // tilt 110 * 100 corresponds with fully closed
-  signed char tilt_type;  // FB_TILT_TYPE_*
-                          // value set by channel config
-                          // If set to 0, then it is Roller Shutter
+  unsigned char *tilt_type;  // FB_TILT_TYPE_*
+                           // value set by channel config
+                           // If set to 0, then it is Roller Shutter
 
   unsigned int *full_opening_time;
   unsigned int *full_closing_time;
@@ -99,14 +100,19 @@ typedef struct {
 extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
 #ifdef _ROLLERSHUTTER_SUPPORT
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(uint8 value);
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(int value);
 bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs(supla_roller_shutter_cfg_t *rs_cfg);
 bool GPIO_ICACHE_FLASH supla_esp_gpio_is_fb(supla_roller_shutter_cfg_t *rs_cfg);
 
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx, int ct_ms,
-    int ot_ms);
-bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx, int ct_ms,
-    int ot_ms, bool save);
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_times(int idx,
+                                                         int close_time_ms,
+                                                         int open_time_ms,
+                                                         int tilt_time_ms);
+bool GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new__times(int idx,
+                                                          int close_time_ms,
+                                                          int open_time_ms,
+                                                          int tilt_time_ms,
+                                                          bool save);
 void supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg,
     uint8 value, uint8 cancel_task,
     uint8 stop_delay);
@@ -130,5 +136,9 @@ supla_roller_shutter_cfg_t *supla_esp_gpio_get_rs__cfg(int port);
 supla_roller_shutter_cfg_t *GPIO_ICACHE_FLASH
 supla_esp_gpio_get_rs_cfg(supla_relay_cfg_t *rel_cfg);
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_timer_cb(void *timer_arg);
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
+    int channel_number, TChannelConfig_RollerShutter *rsConfig);
+void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
+    int channel_number, TChannelConfig_FacadeBlind *fbConfig);
 
 #endif /*_SUPLA_ESP_RS_FB_H*/

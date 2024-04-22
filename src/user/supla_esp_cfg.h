@@ -68,7 +68,11 @@ typedef struct {
 
   char CfgButtonType;
   char Button1Type;
-  char Button2Type;
+
+  union {
+    char Button2Type;
+    signed char AdditionalTimeMargin;  // for RollerShutter and FacadeBlinds
+  };
 
   char StatusLedOff;
   char InputCfgTriggerOff;
@@ -76,7 +80,10 @@ typedef struct {
   char FirmwareUpdate;
   char Test;
 
-  char UpsideDown;
+  union {
+    char UpsideDown;
+    char MotorUpsideDown;  // used as bitmap
+  };
 
   unsigned int Time1[CFG_TIME1_COUNT];
   unsigned int Time2[CFG_TIME2_COUNT];
@@ -111,9 +118,16 @@ typedef struct {
   // It is not guaranteed that bytes outside of this 200 bytes array will be
   // initialized to 0 when CleanConfigSignature is set.
   // So if needed, add new parameter and decrease below array size accordingly.
-  unsigned int Time3[CFG_TIME3_COUNT];
-  char zero[200 - CFG_TIME3_COUNT * sizeof(unsigned int)];
-
+  unsigned int Time3[CFG_TIME3_COUNT];  // Tilting time
+  char ButtonsUpsideDown;
+  unsigned char Tilt0Angle[RS_MAX_COUNT];  // not used in device
+  unsigned char Tilt100Angle[RS_MAX_COUNT];  // not used in device
+  unsigned char FacadeBlindType[RS_MAX_COUNT];
+  char zero[200 - CFG_TIME3_COUNT * sizeof(unsigned int)
+            - sizeof(char)
+            - RS_MAX_COUNT * sizeof(unsigned char)
+            - RS_MAX_COUNT * sizeof(unsigned char)
+            - RS_MAX_COUNT * sizeof(unsigned char)];
 } SuplaEspCfg;
 
 typedef struct {

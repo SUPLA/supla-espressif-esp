@@ -2695,7 +2695,7 @@ typedef struct {
   signed char TimeMargin;  // -1 default (device specific), 0 - no margin,
                            // > 0 - % of opening/closing time added on extreme
                            // positions
-} TChannelConfig_Rollershutter;  // v. >= 16
+} TChannelConfig_RollerShutter;  // v. >= 16
 
 typedef struct {
   _supla_int_t ClosingTimeMS;

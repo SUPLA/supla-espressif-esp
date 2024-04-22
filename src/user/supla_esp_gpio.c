@@ -508,7 +508,20 @@ supla_esp_gpio_init(void) {
 		supla_rs_cfg[a].tilt_change_time = &supla_esp_cfg.Time3[a];
     supla_rs_cfg[a].auto_opening_time = &supla_esp_cfg.AutoCalOpenTime[a];
     supla_rs_cfg[a].auto_closing_time = &supla_esp_cfg.AutoCalCloseTime[a];
-	}
+    supla_rs_cfg[a].tilt_type = &supla_esp_cfg.FacadeBlindType[a];
+    supla_log(
+        LOG_DEBUG,
+        "RS loaded: position %d, tilt %d, auto open %d, auto close %d, "
+        "open %d, close %d, tilting %d, type %d",
+        *supla_rs_cfg[a].position, *supla_rs_cfg[a].tilt,
+        *supla_rs_cfg[a].auto_opening_time, *supla_rs_cfg[a].auto_closing_time,
+        *supla_rs_cfg[a].full_opening_time, *supla_rs_cfg[a].full_closing_time,
+        *supla_rs_cfg[a].tilt_change_time, *supla_rs_cfg[a].tilt_type);
+    if (*supla_rs_cfg[a].tilt_type == 0 ||
+        *supla_rs_cfg[a].tilt_change_time == 0) {
+      *supla_rs_cfg[a].tilt = -1;
+    }
+  }
 
 	#if defined(USE_GPIO3) ||  defined(USE_GPIO1) || defined(UART_SWAP)
 		 system_uart_swap ();

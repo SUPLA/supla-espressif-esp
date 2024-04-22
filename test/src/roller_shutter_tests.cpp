@@ -15,6 +15,7 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "gmock/gmock.h"
 #include <eagle_soc_mock.h>
 #include <eagle_soc_stub.h>
 #include <gtest/gtest.h>
@@ -1945,6 +1946,8 @@ char custom_srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
   return 1;
 }
 
+using ::testing::ElementsAreArray;
+
 TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   SrpcMock srpc;
   int curTime = 10000;  // start at +10 ms
@@ -1953,6 +1956,10 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   EXPECT_CALL(srpc, srpc_params_init(_));
   EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
   EXPECT_CALL(srpc, srpc_set_proto_version(_, SUPLA_PROTO_VERSION));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({0xFF, 0, 0, 0, 0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
 
   regResult.result_code = SUPLA_RESULTCODE_TRUE;
 

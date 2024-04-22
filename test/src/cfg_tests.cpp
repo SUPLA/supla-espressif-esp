@@ -41,7 +41,7 @@ TEST(ConfigurationTests, Str2IntConversion) {
   ASSERT_EQ(12, cfg_str2int("1a2"));
   ASSERT_EQ(0, cfg_str2int("0"));
   ASSERT_EQ(123, cfg_str2int("123"));
-  ASSERT_EQ(123, cfg_str2int("-123"));
+  ASSERT_EQ(-123, cfg_str2int("-123"));
   ASSERT_EQ(2147483647, cfg_str2int("2147483647"));
   ASSERT_EQ((unsigned int)4294967295, cfg_str2int("4294967295"));
 }

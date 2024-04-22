@@ -118,12 +118,17 @@ supla_esp_board_calcfg_request(TSD_DeviceCalCfgRequest *request);
 void DEVCONN_ICACHE_FLASH
 supla_esp_channel_set_value(TSD_SuplaChannelNewValue *new_value);
 void DEVCONN_ICACHE_FLASH supla_esp_srpc_init(void);
-void DEVCONN_ICACHE_FLASH
+bool DEVCONN_ICACHE_FLASH
 supla_esp_channel_config_result(TSD_ChannelConfig *result);
 
 #ifdef BOARD_CHANNEL_CONFIG
 void ICACHE_FLASH_ATTR
 supla_esp_board_channel_config(TSD_ChannelConfig *config);
 #endif /*BOARD_CHANNEL_CONFIG*/
+
+#ifdef RETREIVE_CHANNEL_CONFIG
+void DEVCONN_ICACHE_FLASH
+supla_esp_set_channel_config(int channel_number);
+#endif /*RETREIVE_CHANNEL_CONFIG*/
 
 #endif /* SUPLA_ESP_CLIENT_H_ */
