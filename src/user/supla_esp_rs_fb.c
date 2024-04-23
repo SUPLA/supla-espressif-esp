@@ -302,8 +302,16 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
   }
 
   if (value == RS_RELAY_UP) {
+    if (supla_esp_cfg.AdditionalTimeMargin == 0 &&
+        supla_esp_gpio_rs_get_current_position(rs_cfg) == 0) {
+      return;
+    }
     supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 1);
   } else if (value == RS_RELAY_DOWN) {
+    if (supla_esp_cfg.AdditionalTimeMargin == 0 &&
+        supla_esp_gpio_rs_get_current_position(rs_cfg) == 100) {
+      return;
+    }
     supla_esp_gpio_relay_hi(rs_cfg->down->gpio_id, 1);
   } else {
     supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 0);

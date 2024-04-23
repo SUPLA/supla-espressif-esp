@@ -69,6 +69,7 @@ class RollerShutterTestsF : public ::testing::Test {
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
+    supla_esp_cfg.AdditionalTimeMargin = -1;
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallback1;
   }
