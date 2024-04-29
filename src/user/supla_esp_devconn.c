@@ -122,9 +122,11 @@ typedef struct {
   int channel_count;
 }devconn_params;
 
+#ifdef _ROLLERSHUTTER_SUPPORT
 // We keep visualization type here, so that we can send it back to server when
 // needed. Visualization type is not kept on device
 static unsigned char channel_config_visualization_type[CHANNEL_MAX_COUNT] = {0};
+#endif
 
 static devconn_params *devconn = NULL;
 
