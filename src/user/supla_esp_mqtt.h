@@ -32,6 +32,7 @@
 #define MQTT_ACTION_REVEAL 6
 #define MQTT_ACTION_STOP 7
 #define MQTT_ACTION_RECALIBRATE 8
+#define MQTT_ACTION_SET_TILT 9
 
 #define MQTT_ACTION_TRIGGER_MAX_COUNT 8
 
@@ -100,14 +101,14 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
 #endif
 
 #ifdef MQTT_HA_ROLLERSHUTTER_SUPPORT
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_fb_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
-    uint8 channel_number, const char *mfr);
+    uint8 channel_number, const char *mfr, bool add_tilt_support);
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_fb_action(
     const void *topic_name, uint16_t topic_name_size, const char *message,
     size_t message_size, uint8 *channel_number, uint8 *action,
-    uint8 *percentage);
+    uint8 *percentage, uint8 *tilt);
 
 void ICACHE_FLASH_ATTR
 supla_esp_mqtt_rs_recalibrate(unsigned char channelNumber);
