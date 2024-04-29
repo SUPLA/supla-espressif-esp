@@ -508,7 +508,7 @@ supla_esp_gpio_init(void) {
 		supla_rs_cfg[a].tilt_change_time = &supla_esp_cfg.Time3[a];
     supla_rs_cfg[a].auto_opening_time = &supla_esp_cfg.AutoCalOpenTime[a];
     supla_rs_cfg[a].auto_closing_time = &supla_esp_cfg.AutoCalCloseTime[a];
-    supla_rs_cfg[a].tilt_type = &supla_esp_cfg.FacadeBlindType[a];
+    supla_rs_cfg[a].tilt_type = &supla_esp_cfg.TiltControlType[a];
     supla_log(
         LOG_DEBUG,
         "RS loaded: position %d, tilt %d, auto open %d, auto close %d, "

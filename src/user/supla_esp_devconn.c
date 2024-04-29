@@ -346,7 +346,9 @@ void DEVCONN_ICACHE_FLASH supla_esp_devconn_send_channel_values_cb(void *ptr) {
         char value[SUPLA_CHANNELVALUE_SIZE];
         memset(value, 0, SUPLA_CHANNELVALUE_SIZE);
         value[0] = supla_esp_gpio_rs_get_current_position(&supla_rs_cfg[a]);
-        value[1] = supla_esp_gpio_rs_get_current_tilt(&supla_rs_cfg[a]);
+        if (supla_esp_gpio_rs_is_tilt_supported(&supla_rs_cfg[a])) {
+          value[1] = supla_esp_gpio_rs_get_current_tilt(&supla_rs_cfg[a]);
+        }
         value[3] = supla_rs_cfg[a].flags;
 
         srpc_ds_async_channel_value_changed(
@@ -2116,8 +2118,8 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
       }
     }
   } else if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
-      request->DataType == SUPLA_CALCFG_DATATYPE_FB_SETTINGS &&
-      request->DataSize == sizeof(TCalCfg_FacadeBlindSettings)) {
+      request->DataType == SUPLA_CALCFG_DATATYPE_FB_SETTINGS) {
+//      request->DataSize == sizeof(TCalCfg_FacadeBlindSettings)) {
     for (int i = 0; i < RS_MAX_COUNT; i++) {
       if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
           supla_rs_cfg[i].up->channel == request->ChannelNumber &&
@@ -2128,16 +2130,16 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
         } else {
           result.Result = SUPLA_CALCFG_RESULT_DONE;
 
-          TCalCfg_FacadeBlindSettings *fbSettings =
-            (TCalCfg_FacadeBlindSettings *)(request->Data);
+//          TCalCfg_FacadeBlindSettings *fbSettings =
+//            (TCalCfg_FacadeBlindSettings *)(request->Data);
 
           supla_rs_cfg[i].autoCal_step = 0;
           *(supla_rs_cfg[i].auto_opening_time) = 0;
           *(supla_rs_cfg[i].auto_closing_time) = 0;
           *(supla_rs_cfg[i].position) = 0;  // not calibrated
           *(supla_rs_cfg[i].tilt) = 0;  // not calibrated
-          supla_esp_gpio_rs_apply_new_times(i, fbSettings->FullClosingTimeMS,
-              fbSettings->FullOpeningTimeMS, fbSettings->TiltingTimeMS);
+ //         supla_esp_gpio_rs_apply_new_times(i, fbSettings->FullClosingTimeMS,
+ //             fbSettings->FullOpeningTimeMS, fbSettings->TiltingTimeMS);
           // trigger calibration by setting position to fully open
           supla_esp_gpio_rs_add_task(i, 0, 0);
         }
@@ -2213,8 +2215,8 @@ supla_esp_set_channel_config(int channel_number) {
       channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
       channelConfig->Tilt0Angle = supla_esp_cfg.Tilt0Angle[channel_number];
       channelConfig->Tilt100Angle = supla_esp_cfg.Tilt100Angle[channel_number];
-      channelConfig->FacadeBlindType =
-          supla_esp_cfg.FacadeBlindType[channel_number];
+      channelConfig->TiltControlType =
+          supla_esp_cfg.TiltControlType[channel_number];
 
       srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
       break;

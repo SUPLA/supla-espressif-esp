@@ -849,6 +849,9 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
 
   EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
 
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
   // Button click >3s after enter cfg mode should trigger cfgmode exit
   // simulate button release on gpio 1
   eagleStub.gpioOutputSet(BUTTON_UP, 0);

@@ -122,7 +122,7 @@ typedef struct {
   char ButtonsUpsideDown;
   unsigned char Tilt0Angle[RS_MAX_COUNT];  // not used in device
   unsigned char Tilt100Angle[RS_MAX_COUNT];  // not used in device
-  unsigned char FacadeBlindType[RS_MAX_COUNT];
+  unsigned char TiltControlType[RS_MAX_COUNT];
   char zero[200 - CFG_TIME3_COUNT * sizeof(unsigned int)
             - sizeof(char)
             - RS_MAX_COUNT * sizeof(unsigned char)

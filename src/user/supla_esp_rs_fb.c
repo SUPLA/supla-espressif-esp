@@ -138,7 +138,9 @@ supla_esp_gpio_rs_get_current_position(supla_roller_shutter_cfg_t *rs_cfg) {
 sint8 GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_get_current_tilt(supla_roller_shutter_cfg_t *rs_cfg) {
   sint8 result = 0;
-  if (rs_cfg && *rs_cfg->tilt >= 100 && *rs_cfg->tilt <= 10100) {
+  if (!supla_esp_gpio_rs_is_tilt_supported(rs_cfg)) {
+    result = -1;
+  } else if (rs_cfg && *rs_cfg->tilt >= 100 && *rs_cfg->tilt <= 10100) {
     // we add 50 here in order to round tilt to closest integer
     // instead of rounding down, which could translate 1.99% to 1%
     result = (*rs_cfg->tilt - 100 + 50) / 100;
@@ -149,7 +151,8 @@ supla_esp_gpio_rs_get_current_tilt(supla_roller_shutter_cfg_t *rs_cfg) {
 bool GPIO_ICACHE_FLASH
 supla_esp_gpio_rs_is_tilt_set(supla_roller_shutter_cfg_t *rs_cfg) {
   bool result = true;
-  if (rs_cfg && (*rs_cfg->tilt < 100 || *rs_cfg->tilt > 10100)) {
+  if (rs_cfg && (*rs_cfg->tilt < 100 || *rs_cfg->tilt > 10100) &&
+      supla_esp_gpio_rs_is_tilt_supported(rs_cfg)) {
     result = false;
   }
   return result;
@@ -373,6 +376,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
   if (*rs_cfg->tilt_type == FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED &&
       *rs_cfg->position < 10100) {
     remaining_tilt_time = 0;
+    *rs_cfg->tilt = 100;
   }
 
   // adjust tilt change
@@ -666,7 +670,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
         }
 
         rs_cfg->task.direction = RS_DIRECTION_NONE;
-        supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
+        if (!supla_esp_gpio_rs_is_tilt_supported(rs_cfg)) {
+          supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
+        }
 
 #ifdef SUPLA_DEBUG
         supla_log(LOG_DEBUG, "task position setting completed");
@@ -974,7 +980,6 @@ supla_esp_gpio_rs_cancel_task(supla_roller_shutter_cfg_t *rs_cfg) {
 
 void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
     sint8 tilt) {
-
   if (idx < 0 || idx >= RS_MAX_COUNT) {
     return;
   }
@@ -1015,6 +1020,9 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_add_task(int idx, sint8 position,
 
   if (*supla_rs_cfg[idx].tilt_type ==
       FB_TILT_TYPE_TILTING_ONLY_AT_FULLY_CLOSED) {
+    if (position == -1 && tilt >= 0) {
+      position = 100;
+    }
     if (position != 100) {
       if (!(position == -1 && *supla_rs_cfg[idx].position == 10100)) {
         tilt = 0;
@@ -1118,7 +1126,7 @@ supla_esp_gpio_rs_is_tilt_supported(supla_roller_shutter_cfg_t *rs_cfg) {
     return false;
   }
 
-  if (*rs_cfg->tilt_change_time == 0) {
+  if (*rs_cfg->tilt_change_time == 0 || *rs_cfg->tilt_type == 0) {
     return false;
   }
 
@@ -1198,6 +1206,17 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
                                     rsConfig->ClosingTimeMS,
                                     rsConfig->OpeningTimeMS, 0);
 
+  if (supla_esp_cfg.TiltControlType[channel_number] != 0) {
+    supla_esp_cfg.TiltControlType[channel_number] = 0;
+    saveConfig = true;
+  }
+
+  if (supla_esp_cfg.Time3[channel_number] != 0) {
+    // reset tilting time to 0
+    supla_esp_cfg.Time3[channel_number] = 0;
+    saveConfig = true;
+  }
+
   if (saveConfig) {
     supla_esp_cfg_save(&supla_esp_cfg);
   }
@@ -1212,7 +1231,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
       "tt %d, tm %d, type %d", channel_number, fbConfig->MotorUpsideDown,
       fbConfig->ButtonsUpsideDown, fbConfig->OpeningTimeMS,
       fbConfig->ClosingTimeMS, fbConfig->TiltingTimeMS,
-      fbConfig->TimeMargin, fbConfig->FacadeBlindType);
+      fbConfig->TimeMargin, fbConfig->TiltControlType);
 
   bool saveConfig = false;
   if (fbConfig->MotorUpsideDown > 0 && fbConfig->MotorUpsideDown < 3) {
@@ -1262,11 +1281,11 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
     }
   }
 
-  if (fbConfig->FacadeBlindType !=
-      supla_esp_cfg.FacadeBlindType[channel_number]) {
-    supla_esp_cfg.FacadeBlindType[channel_number] = fbConfig->FacadeBlindType;
-    supla_log(LOG_DEBUG, "FB[%d] blind type %d", channel_number,
-              fbConfig->FacadeBlindType);
+  if (fbConfig->TiltControlType !=
+      supla_esp_cfg.TiltControlType[channel_number]) {
+    supla_esp_cfg.TiltControlType[channel_number] = fbConfig->TiltControlType;
+    supla_log(LOG_DEBUG, "FB[%d] tilt control type %d", channel_number,
+              fbConfig->TiltControlType);
     saveConfig = true;
   }
 

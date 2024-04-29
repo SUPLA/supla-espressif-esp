@@ -114,10 +114,11 @@ void GPIO_ICACHE_FLASH supla_esp_input_notify_state_change(
   // Silent period disables inputs for first 400 ms after startup in order to
   // init current input state.
   if (silent_period) {
-    if (system_get_time() - supla_esp_gpio_init_time < INPUT_SILENT_STARTUP_TIME_MS * 1000) {
+    if (system_get_time() - supla_esp_gpio_init_time <
+        INPUT_SILENT_STARTUP_TIME_MS * 1000) {
       input_cfg->last_state = new_state;
       return;
-    }  else {
+    } else {
       silent_period = false;
     }
   }
@@ -417,9 +418,14 @@ supla_esp_input_is_advanced_mode_enabled(supla_input_cfg_t *input_cfg) {
     // another direction is in advanced mode. If yes, then we switch both
     // inputs to advanced mode in order to get the same default behabior
     // for both inputs
+    // Additionally, when tilt_type is configured then device is with tilt
+    // support, so we always use advanced button mode
     supla_roller_shutter_cfg_t *rs_cfg =
       supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
     if (rs_cfg) {
+      if (*rs_cfg->tilt_type != SUPLA_TILT_CONTROL_TYPE_UNKNOWN) {
+        return true;
+      }
       int another_gpio_id = (input_cfg->relay_gpio_id == rs_cfg->up->gpio_id) ?
         rs_cfg->down->gpio_id : rs_cfg->up->gpio_id;
       int i = 0;
@@ -464,12 +470,6 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
           if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
             supla_esp_gpio_on_input_active(input_cfg);
           }
-        } else {
-          supla_esp_input_send_action_trigger(input_cfg,
-              SUPLA_ACTION_CAP_TURN_OFF);
-          if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
-            supla_esp_gpio_on_input_inactive(input_cfg);
-          }
         }
       }
 
@@ -481,6 +481,14 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_state_change_handling(
           supla_esp_input_start_cfg_mode();
         }
       }
+    }
+  }
+
+  if (new_state == INPUT_STATE_INACTIVE) {
+    supla_esp_input_send_action_trigger(input_cfg,
+        SUPLA_ACTION_CAP_TURN_OFF);
+    if (input_cfg->type == INPUT_TYPE_MOTION_SENSOR) {
+      supla_esp_gpio_on_input_inactive(input_cfg);
     }
   }
 
@@ -507,8 +515,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
           supla_esp_input_start_cfg_mode();
         }
       }
-      if (input_cfg->click_counter == 1 && 
-          (input_cfg->active_triggers & SUPLA_ACTION_CAP_HOLD) &&
+      if (input_cfg->click_counter == 1 &&
           delta_time >= btn_hold_time_ms * 1000) {
         supla_esp_input_send_action_trigger(input_cfg, SUPLA_ACTION_CAP_HOLD);
         input_cfg->click_counter = 0;
@@ -516,7 +523,7 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
           os_timer_disarm(&input_cfg->timer);
         }
       }
-    } 
+    }
   }
 
   // BISTABLE buttons and inactive state for monostable
@@ -553,6 +560,8 @@ void GPIO_ICACHE_FLASH supla_esp_input_advanced_timer_cb(void *timer_arg) {
 // TOGGLE_x or PRESS_x depending on current click_counter
 void GPIO_ICACHE_FLASH
 supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
+  supla_roller_shutter_cfg_t *rs_cfg =
+    supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
   if (action == 0) {
     if (input_cfg->click_counter == -1) {
       return;
@@ -560,8 +569,6 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     // if there is related relay gpio id, then single click/press is used for
     // device's local action
     if (input_cfg->click_counter == 1 && input_cfg->relay_gpio_id != 255) {
-      supla_roller_shutter_cfg_t *rs_cfg =
-        supla_esp_gpio_get_rs__cfg(input_cfg->relay_gpio_id);
       if (rs_cfg != NULL) {
         // in advanced mode with AT, roller shutter still requires
         // to call input active/inactive methods depending on input state
@@ -618,9 +625,27 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
        case 5:
          action = SUPLA_ACTION_CAP_TOGGLE_x5;
          break;
-     };
+     }
     }
+  }
 
+  // Hold action handling for tilt functions (based on RS)
+  if (rs_cfg != NULL && rs_cfg->tilt_type != SUPLA_TILT_CONTROL_TYPE_UNKNOWN &&
+      !(action & input_cfg->active_triggers) &&
+      !supla_esp_input_can_button_exit_cfgmode(input_cfg) &&
+      !supla_esp_input_is_cfg_on_hold_enabled(input_cfg)) {
+    if (action == SUPLA_ACTION_CAP_HOLD) {
+      rs_cfg->last_button_trigger_was_hold = true;
+      // trigger facede blind movement
+      int direction = (rs_cfg->up->gpio_id == input_cfg->relay_gpio_id)
+        ? RS_RELAY_UP
+        : RS_RELAY_DOWN;
+      supla_esp_gpio_rs_set_relay(rs_cfg, direction, 1, 1);
+    } else if (action == SUPLA_ACTION_CAP_TURN_OFF &&
+               rs_cfg->last_button_trigger_was_hold) {
+      rs_cfg->last_button_trigger_was_hold = false;
+      supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
+    }
   }
 
   if (!(action & input_cfg->active_triggers)) {
