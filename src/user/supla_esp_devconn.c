@@ -1982,75 +1982,89 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     return false;
   }
 
-  if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER ||
-      result->Func == SUPLA_CHANNELFNC_POWERSWITCH ||
-      result->Func == SUPLA_CHANNELFNC_LIGHTSWITCH) {
-    if (result->ChannelNumber >= 0 && result->ChannelNumber < CFG_TIME2_COUNT) {
-      int staircaseTimeMs = 0;
-      if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
-        if (result->ConfigType == 0 &&
-            result->ConfigSize == sizeof(TChannelConfig_StaircaseTimer)) {
-          TChannelConfig_StaircaseTimer *staircaseCfg =
-            (TChannelConfig_StaircaseTimer *)(result->Config);
-          supla_log(LOG_DEBUG, "Staircase cfg time: %d ms",
-              staircaseCfg->TimeMS);
-          staircaseTimeMs = staircaseCfg->TimeMS;
+  switch (result->Func) {
+    case SUPLA_CHANNELFNC_STAIRCASETIMER:
+    case SUPLA_CHANNELFNC_POWERSWITCH:
+    case SUPLA_CHANNELFNC_LIGHTSWITCH: {
+      if (result->ChannelNumber >= 0 &&
+          result->ChannelNumber < CFG_TIME2_COUNT) {
+        int staircaseTimeMs = 0;
+        if (result->Func == SUPLA_CHANNELFNC_STAIRCASETIMER) {
+          if (result->ConfigType == 0 &&
+              result->ConfigSize == sizeof(TChannelConfig_StaircaseTimer)) {
+            TChannelConfig_StaircaseTimer *staircaseCfg =
+                (TChannelConfig_StaircaseTimer *)(result->Config);
+            supla_log(LOG_DEBUG, "Staircase cfg time: %d ms",
+                      staircaseCfg->TimeMS);
+            staircaseTimeMs = staircaseCfg->TimeMS;
+          }
         }
-      }
-      if (staircaseTimeMs != supla_esp_cfg.Time2[result->ChannelNumber]) {
-        supla_log(LOG_DEBUG, "Changing channel %d configuration Time2 to %d",
-            result->ChannelNumber, staircaseTimeMs);
-        supla_esp_cfg.Time2[result->ChannelNumber] = staircaseTimeMs;
-        supla_esp_cfg_save(&supla_esp_cfg);
+        if (staircaseTimeMs != supla_esp_cfg.Time2[result->ChannelNumber]) {
+          supla_log(LOG_DEBUG, "Changing channel %d configuration Time2 to %d",
+                    result->ChannelNumber, staircaseTimeMs);
+          supla_esp_cfg.Time2[result->ChannelNumber] = staircaseTimeMs;
+          supla_esp_cfg_save(&supla_esp_cfg);
 
-        supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0, 0);
-      }
-    }
-  }
-#ifdef _ROLLERSHUTTER_SUPPORT
-  else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER) {
-    TChannelConfig_RollerShutter *channelConfig =
-      (TChannelConfig_RollerShutter *)result->Config;
-    supla_esp_gpio_rs_apply_new_config(result->ChannelNumber, channelConfig);
-    // TODO(klew): add ignoring "not set" values in case where device doesn't
-    // support such setting at all
-    if (channelConfig->MotorUpsideDown == 0) {
-      return false;
-    }
-    if (channelConfig->ButtonsUpsideDown == 0) {
-      return false;
-    }
-    if (channelConfig->TimeMargin == 0) {
-      return false;
-    }
-  } else if (result->Func == SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND) {
-    TChannelConfig_FacadeBlind *channelConfig =
-      (TChannelConfig_FacadeBlind *)result->Config;
-    supla_esp_gpio_fb_apply_new_config(result->ChannelNumber, channelConfig);
-    // TODO(klew): add ignoring "not set" values in case where device doesn't
-    // support such setting at all
-    if (channelConfig->MotorUpsideDown == 0) {
-      return false;
-    }
-    if (channelConfig->ButtonsUpsideDown == 0) {
-      return false;
-    }
-    if (channelConfig->TimeMargin == 0) {
-      return false;
-    }
-  }
-#endif
-  else if (result->Func == SUPLA_CHANNELFNC_ACTIONTRIGGER) {
-    if (result->ConfigType == 0 &&
-        result->ConfigSize == sizeof(TChannelConfig_ActionTrigger)) {
-      for (int i = 0; i < INPUT_MAX_COUNT; i++) {
-        if (supla_input_cfg[i].channel == result->ChannelNumber) {
-          TChannelConfig_ActionTrigger *actionTriggerCfg =
-            (TChannelConfig_ActionTrigger *)(result->Config);
-            supla_esp_input_set_active_triggers(&(supla_input_cfg[i]),
-                actionTriggerCfg->ActiveActions);
+          supla_esp_gpio_relay_set_duration_timer(result->ChannelNumber, 1, 0,
+                                                  0);
         }
       }
+      break;
+    }
+#ifdef _ROLLERSHUTTER_SUPPORT
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER:
+    case SUPLA_CHANNELFNC_TERRACE_AWNING:
+    case SUPLA_CHANNELFNC_PROJECTOR_SCREEN:
+    case SUPLA_CHANNELFNC_CURTAIN:
+    case SUPLA_CHANNELFNC_ROLLER_GARAGE_DOOR:
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEROOFWINDOW: {
+      TChannelConfig_RollerShutter *channelConfig =
+          (TChannelConfig_RollerShutter *)result->Config;
+      supla_esp_gpio_rs_apply_new_config(result->ChannelNumber, channelConfig);
+      // TODO(klew): add ignoring "not set" values in case where device doesn't
+      // support such setting at all
+      if (channelConfig->MotorUpsideDown == 0) {
+        return false;
+      }
+      if (channelConfig->ButtonsUpsideDown == 0) {
+        return false;
+      }
+      if (channelConfig->TimeMargin == 0) {
+        return false;
+      }
+      break;
+    }
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND:
+    case SUPLA_CHANNELFNC_VERTICAL_BLIND: {
+      TChannelConfig_FacadeBlind *channelConfig =
+          (TChannelConfig_FacadeBlind *)result->Config;
+      supla_esp_gpio_fb_apply_new_config(result->ChannelNumber, channelConfig);
+      // TODO(klew): add ignoring "not set" values in case where device doesn't
+      // support such setting at all
+      if (channelConfig->MotorUpsideDown == 0) {
+        return false;
+      }
+      if (channelConfig->ButtonsUpsideDown == 0) {
+        return false;
+      }
+      if (channelConfig->TimeMargin == 0) {
+        return false;
+      }
+    }
+#endif
+    case SUPLA_CHANNELFNC_ACTIONTRIGGER: {
+      if (result->ConfigType == 0 &&
+          result->ConfigSize == sizeof(TChannelConfig_ActionTrigger)) {
+        for (int i = 0; i < INPUT_MAX_COUNT; i++) {
+          if (supla_input_cfg[i].channel == result->ChannelNumber) {
+            TChannelConfig_ActionTrigger *actionTriggerCfg =
+                (TChannelConfig_ActionTrigger *)(result->Config);
+            supla_esp_input_set_active_triggers(
+                &(supla_input_cfg[i]), actionTriggerCfg->ActiveActions);
+          }
+        }
+      }
+      break;
     }
   }
   return true;
@@ -2185,6 +2199,11 @@ supla_esp_set_channel_config(int channel_number) {
   config.Func = devconn->channel_function_from_server[channel_number];
   config.ConfigType = 0;  // Default config
   switch (devconn->channel_function_from_server[channel_number]) {
+    case SUPLA_CHANNELFNC_TERRACE_AWNING:
+    case SUPLA_CHANNELFNC_PROJECTOR_SCREEN:
+    case SUPLA_CHANNELFNC_CURTAIN:
+    case SUPLA_CHANNELFNC_ROLLER_GARAGE_DOOR:
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEROOFWINDOW:
     case SUPLA_CHANNELFNC_CONTROLLINGTHEROLLERSHUTTER: {
       config.ConfigSize = sizeof(TChannelConfig_RollerShutter);
       TChannelConfig_RollerShutter *channelConfig =
@@ -2200,7 +2219,8 @@ supla_esp_set_channel_config(int channel_number) {
       srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
       break;
     }
-    case SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND: {
+    case SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND:
+    case SUPLA_CHANNELFNC_VERTICAL_BLIND: {
       config.ConfigSize = sizeof(TChannelConfig_FacadeBlind);
       TChannelConfig_FacadeBlind *channelConfig =
           (TChannelConfig_FacadeBlind *)&config.Config;
