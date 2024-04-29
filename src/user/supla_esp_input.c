@@ -629,6 +629,7 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
     }
   }
 
+#ifdef _ROLLERSHUTTER_SUPPORT
   // Hold action handling for tilt functions (based on RS)
   if (rs_cfg != NULL && rs_cfg->tilt_type != SUPLA_TILT_CONTROL_TYPE_UNKNOWN &&
       !(action & input_cfg->active_triggers) &&
@@ -647,6 +648,7 @@ supla_esp_input_send_action_trigger(supla_input_cfg_t *input_cfg, int action) {
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
     }
   }
+#endif
 
   if (!(action & input_cfg->active_triggers)) {
     supla_log(LOG_DEBUG, "Input: action %d is not activated", action);
