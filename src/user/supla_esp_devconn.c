@@ -122,6 +122,9 @@ typedef struct {
   int channel_count;
 }devconn_params;
 
+// We keep visualization type here, so that we can send it back to server when
+// needed. Visualization type is not kept on device
+static unsigned char channel_config_visualization_type[CHANNEL_MAX_COUNT] = {0};
 
 static devconn_params *devconn = NULL;
 
@@ -2020,6 +2023,10 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     case SUPLA_CHANNELFNC_CONTROLLINGTHEROOFWINDOW: {
       TChannelConfig_RollerShutter *channelConfig =
           (TChannelConfig_RollerShutter *)result->Config;
+      channel_config_visualization_type[result->ChannelNumber] =
+          channelConfig->VisualizationType;
+      supla_log(LOG_DEBUG, "Visualization type: %d",
+                channelConfig->VisualizationType);
       supla_esp_gpio_rs_apply_new_config(result->ChannelNumber, channelConfig);
       // TODO(klew): add ignoring "not set" values in case where device doesn't
       // support such setting at all
@@ -2038,6 +2045,10 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     case SUPLA_CHANNELFNC_VERTICAL_BLIND: {
       TChannelConfig_FacadeBlind *channelConfig =
           (TChannelConfig_FacadeBlind *)result->Config;
+      channel_config_visualization_type[result->ChannelNumber] =
+          channelConfig->VisualizationType;
+      supla_log(LOG_DEBUG, "Visualization type: %d",
+                channelConfig->VisualizationType);
       supla_esp_gpio_fb_apply_new_config(result->ChannelNumber, channelConfig);
       // TODO(klew): add ignoring "not set" values in case where device doesn't
       // support such setting at all
@@ -2216,6 +2227,9 @@ supla_esp_set_channel_config(int channel_number) {
           2 : 1);
       channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
 
+      channelConfig->VisualizationType =
+        channel_config_visualization_type[channel_number];
+
       srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
       break;
     }
@@ -2237,6 +2251,9 @@ supla_esp_set_channel_config(int channel_number) {
       channelConfig->Tilt100Angle = supla_esp_cfg.Tilt100Angle[channel_number];
       channelConfig->TiltControlType =
           supla_esp_cfg.TiltControlType[channel_number];
+
+      channelConfig->VisualizationType =
+        channel_config_visualization_type[channel_number];
 
       srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
       break;
