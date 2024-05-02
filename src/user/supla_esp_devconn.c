@@ -2216,7 +2216,9 @@ supla_esp_set_channel_config(int channel_number) {
   config.ChannelNumber = channel_number;
   config.Func = devconn->channel_function_from_server[channel_number];
   config.ConfigType = 0;  // Default config
+  (void)(config);
   switch (devconn->channel_function_from_server[channel_number]) {
+#ifdef _ROLLERSHUTTER_SUPPORT
     case SUPLA_CHANNELFNC_TERRACE_AWNING:
     case SUPLA_CHANNELFNC_PROJECTOR_SCREEN:
     case SUPLA_CHANNELFNC_CURTAIN:
@@ -2265,6 +2267,7 @@ supla_esp_set_channel_config(int channel_number) {
       srpc_ds_async_set_channel_config_request(devconn->srpc, &config);
       break;
     }
+#endif  /*_ROLLERSHUTTER_SUPPORT*/
     default:
       supla_log(LOG_ERR, "Unknown channel function %i",
                 devconn->channel_function_from_server[channel_number]);
