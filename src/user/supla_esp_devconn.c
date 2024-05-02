@@ -2137,16 +2137,18 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
           *(supla_rs_cfg[i].auto_opening_time) = 0;
           *(supla_rs_cfg[i].auto_closing_time) = 0;
           *(supla_rs_cfg[i].position) = 0;  // not calibrated
-          supla_esp_gpio_rs_apply_new_times(i, rsSettings->FullClosingTimeMS,
-              rsSettings->FullOpeningTimeMS, 0);
+          *(supla_rs_cfg[i].tilt) = 0;  // not calibrated
+          if (supla_esp_gpio_is_rs(&supla_rs_cfg[i])) {
+            supla_esp_gpio_rs_apply_new_times(i, rsSettings->FullClosingTimeMS,
+                rsSettings->FullOpeningTimeMS, -1);
+          }
           // trigger calibration by setting position to fully open
           supla_esp_gpio_rs_add_task(i, 0, 0);
         }
       }
     }
   } else if (request->Command == SUPLA_CALCFG_CMD_RECALIBRATE &&
-      request->DataType == SUPLA_CALCFG_DATATYPE_FB_SETTINGS) {
-//      request->DataSize == sizeof(TCalCfg_FacadeBlindSettings)) {
+      request->DataType == 0) {
     for (int i = 0; i < RS_MAX_COUNT; i++) {
       if (supla_rs_cfg[i].up != NULL && supla_rs_cfg[i].down != NULL &&
           supla_rs_cfg[i].up->channel == request->ChannelNumber &&
@@ -2157,16 +2159,11 @@ supla_esp_calcfg_request(TSD_DeviceCalCfgRequest *request) {
         } else {
           result.Result = SUPLA_CALCFG_RESULT_DONE;
 
-//          TCalCfg_FacadeBlindSettings *fbSettings =
-//            (TCalCfg_FacadeBlindSettings *)(request->Data);
-
           supla_rs_cfg[i].autoCal_step = 0;
           *(supla_rs_cfg[i].auto_opening_time) = 0;
           *(supla_rs_cfg[i].auto_closing_time) = 0;
           *(supla_rs_cfg[i].position) = 0;  // not calibrated
           *(supla_rs_cfg[i].tilt) = 0;  // not calibrated
- //         supla_esp_gpio_rs_apply_new_times(i, fbSettings->FullClosingTimeMS,
- //             fbSettings->FullOpeningTimeMS, fbSettings->TiltingTimeMS);
           // trigger calibration by setting position to fully open
           supla_esp_gpio_rs_add_task(i, 0, 0);
         }
@@ -2227,7 +2224,7 @@ supla_esp_set_channel_config(int channel_number) {
           (1 << channel_number)) ? 2 : 1;
       channelConfig->ButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown == 1 ?
           2 : 1);
-      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
+      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin + 1;
 
       channelConfig->VisualizationType =
         channel_config_visualization_type[channel_number];
@@ -2248,7 +2245,7 @@ supla_esp_set_channel_config(int channel_number) {
       channelConfig->MotorUpsideDown = (motorUpsideDown ? 2 : 1);
       channelConfig->ButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown == 1 ?
           2 : 1);
-      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
+      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin + 1;
       channelConfig->Tilt0Angle = supla_esp_cfg.Tilt0Angle[channel_number];
       channelConfig->Tilt100Angle = supla_esp_cfg.Tilt100Angle[channel_number];
       channelConfig->TiltControlType =
