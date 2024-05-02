@@ -2023,46 +2023,54 @@ supla_esp_channel_config_result(TSD_ChannelConfig *result) {
     case SUPLA_CHANNELFNC_CURTAIN:
     case SUPLA_CHANNELFNC_ROLLER_GARAGE_DOOR:
     case SUPLA_CHANNELFNC_CONTROLLINGTHEROOFWINDOW: {
-      TChannelConfig_RollerShutter *channelConfig =
+      if (result->ConfigType == 0 &&
+          result->ConfigSize >= sizeof(TChannelConfig_RollerShutter)) {
+        TChannelConfig_RollerShutter *channelConfig =
           (TChannelConfig_RollerShutter *)result->Config;
-      channel_config_visualization_type[result->ChannelNumber] =
+        channel_config_visualization_type[result->ChannelNumber] =
           channelConfig->VisualizationType;
-      supla_log(LOG_DEBUG, "Visualization type: %d",
-                channelConfig->VisualizationType);
-      supla_esp_gpio_rs_apply_new_config(result->ChannelNumber, channelConfig);
-      // TODO(klew): add ignoring "not set" values in case where device doesn't
-      // support such setting at all
-      if (channelConfig->MotorUpsideDown == 0) {
-        return false;
-      }
-      if (channelConfig->ButtonsUpsideDown == 0) {
-        return false;
-      }
-      if (channelConfig->TimeMargin == 0) {
-        return false;
+        supla_log(LOG_DEBUG, "Visualization type: %d",
+            channelConfig->VisualizationType);
+        supla_esp_gpio_rs_apply_new_config(result->ChannelNumber,
+                                           channelConfig);
+        // TODO(klew): add ignoring "not set" values in case where device
+        // doesn't support such setting at all
+        if (channelConfig->MotorUpsideDown == 0) {
+          return false;
+        }
+        if (channelConfig->ButtonsUpsideDown == 0) {
+          return false;
+        }
+        if (channelConfig->TimeMargin == 0) {
+          return false;
+        }
       }
       break;
     }
     case SUPLA_CHANNELFNC_CONTROLLINGTHEFACADEBLIND:
     case SUPLA_CHANNELFNC_VERTICAL_BLIND: {
-      TChannelConfig_FacadeBlind *channelConfig =
+      if (result->ConfigType == 0 &&
+          result->ConfigSize >= sizeof(TChannelConfig_FacadeBlind)) {
+        TChannelConfig_FacadeBlind *channelConfig =
           (TChannelConfig_FacadeBlind *)result->Config;
-      channel_config_visualization_type[result->ChannelNumber] =
+        channel_config_visualization_type[result->ChannelNumber] =
           channelConfig->VisualizationType;
-      supla_log(LOG_DEBUG, "Visualization type: %d",
-                channelConfig->VisualizationType);
-      supla_esp_gpio_fb_apply_new_config(result->ChannelNumber, channelConfig);
-      // TODO(klew): add ignoring "not set" values in case where device doesn't
-      // support such setting at all
-      if (channelConfig->MotorUpsideDown == 0) {
-        return false;
+        supla_log(LOG_DEBUG, "Visualization type: %d",
+            channelConfig->VisualizationType);
+        supla_esp_gpio_fb_apply_new_config(result->ChannelNumber, channelConfig);
+        // TODO(klew): add ignoring "not set" values in case where device doesn't
+        // support such setting at all
+        if (channelConfig->MotorUpsideDown == 0) {
+          return false;
+        }
+        if (channelConfig->ButtonsUpsideDown == 0) {
+          return false;
+        }
+        if (channelConfig->TimeMargin == 0) {
+          return false;
+        }
       }
-      if (channelConfig->ButtonsUpsideDown == 0) {
-        return false;
-      }
-      if (channelConfig->TimeMargin == 0) {
-        return false;
-      }
+      break;
     }
 #endif
     case SUPLA_CHANNELFNC_ACTIONTRIGGER: {
