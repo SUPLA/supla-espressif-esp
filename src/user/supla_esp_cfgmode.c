@@ -834,13 +834,21 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
         } else if (pVars->current_var == VAR_BM3) {
           cfg->ButtonMode[3] = pVars->intval[0] - '0';
         } else if (pVars->current_var == VAR_TC0) {
+#if (RS_MAX_COUNT > 0)
           cfg->TiltControlType[0] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 0)*/
         } else if (pVars->current_var == VAR_TC1) {
+#if (RS_MAX_COUNT > 1)
           cfg->TiltControlType[1] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 1)*/
         } else if (pVars->current_var == VAR_TC2) {
+#if (RS_MAX_COUNT > 2)
           cfg->TiltControlType[2] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 2)*/
         } else if (pVars->current_var == VAR_TC3) {
+#if (RS_MAX_COUNT > 3)
           cfg->TiltControlType[3] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 3)*/
         }
 #ifdef CFG_TIME_VARIABLES
         else if (pVars->current_var == VAR_T10) {
