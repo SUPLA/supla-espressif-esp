@@ -2234,7 +2234,10 @@ supla_esp_set_channel_config(int channel_number) {
           (1 << channel_number)) ? 2 : 1;
       channelConfig->ButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown == 1 ?
           2 : 1);
-      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin + 1;
+      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
+      if (supla_esp_cfg.AdditionalTimeMargin >= 0) {
+        channelConfig->TimeMargin += 1;
+      }
 
       channelConfig->VisualizationType =
         channel_config_visualization_type[channel_number];
@@ -2255,7 +2258,10 @@ supla_esp_set_channel_config(int channel_number) {
       channelConfig->MotorUpsideDown = (motorUpsideDown ? 2 : 1);
       channelConfig->ButtonsUpsideDown = (supla_esp_cfg.ButtonsUpsideDown == 1 ?
           2 : 1);
-      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin + 1;
+      channelConfig->TimeMargin = supla_esp_cfg.AdditionalTimeMargin;
+      if (supla_esp_cfg.AdditionalTimeMargin >= 0) {
+        channelConfig->TimeMargin += 1;
+      }
       channelConfig->Tilt0Angle = supla_esp_cfg.Tilt0Angle[channel_number];
       channelConfig->Tilt100Angle = supla_esp_cfg.Tilt100Angle[channel_number];
       channelConfig->TiltControlType =
