@@ -60,6 +60,7 @@ void gpioCallback3() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 }
 
 class RollerShutterCommonFixture : public ::testing::Test {
@@ -131,6 +132,7 @@ void gpioCallback4() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 }
 
 class RollerShutterCalCfgAutoCalF : public RollerShutterCommonFixture {
@@ -159,6 +161,7 @@ void gpioCallback5() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 }
 
 class RollerShutterCalCfgNotSupportedF : public RollerShutterCommonFixture {

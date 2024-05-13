@@ -96,12 +96,14 @@ typedef struct {
   bool detectedPowerConsumption;
   uint8 last_direction;
   bool last_button_trigger_was_hold;
+  uint8 rs_time_margin;
 } supla_roller_shutter_cfg_t;
 
 extern supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
 #ifdef _ROLLERSHUTTER_SUPPORT
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(int value);
+void GPIO_ICACHE_FLASH
+supla_esp_gpio_rs_set_time_margin(supla_roller_shutter_cfg_t *rsCfg, int value);
 bool GPIO_ICACHE_FLASH supla_esp_gpio_is_rs(supla_roller_shutter_cfg_t *rs_cfg);
 bool GPIO_ICACHE_FLASH supla_esp_gpio_is_fb(supla_roller_shutter_cfg_t *rs_cfg);
 

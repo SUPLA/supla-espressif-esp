@@ -64,18 +64,18 @@ class RollerShutterTestsF : public ::testing::Test {
   EagleSocStub eagleStub;
 
   void SetUp() override {
-    supla_esp_gpio_rs_set_time_margin(110);
+    supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[0], 110);
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
-    supla_esp_cfg.AdditionalTimeMargin = -1;
+    supla_esp_cfg.AdditionalTimeMargin[0] = -1;
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallback1;
   }
 
   void TearDown() override {
-    supla_esp_gpio_rs_set_time_margin(110);
+    supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[0], 110);
     cleanupTimers();
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
@@ -2199,7 +2199,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithModifiedTimeMarginCheck) {
   *rsCfg->position = 100;  // actual position: (x - 100)/100 = 0%
 
   // we set 50% time margin added to 0/100% positions
-  supla_esp_gpio_rs_set_time_margin(50);
+  supla_esp_gpio_rs_set_time_margin(rsCfg, 50);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2424,7 +2424,7 @@ TEST_F(RollerShutterTestsF, RelayDownMarginCheck) {
     rsTimerCb(rsCfg);  // rs timer cb is called every 10 ms
   }
 
-  supla_esp_gpio_rs_set_time_margin(30);
+  supla_esp_gpio_rs_set_time_margin(rsCfg, 30);
 
   // Move RS UP.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);

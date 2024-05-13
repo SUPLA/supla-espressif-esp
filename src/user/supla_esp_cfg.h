@@ -69,10 +69,7 @@ typedef struct {
   char CfgButtonType;
   char Button1Type;
 
-  union {
-    char Button2Type;
-    signed char AdditionalTimeMargin;  // for RollerShutter and FacadeBlinds
-  };
+  char Button2Type;
 
   char StatusLedOff;
   char InputCfgTriggerOff;
@@ -123,11 +120,14 @@ typedef struct {
   unsigned char Tilt0Angle[RS_MAX_COUNT];  // not used in device
   unsigned char Tilt100Angle[RS_MAX_COUNT];  // not used in device
   unsigned char TiltControlType[RS_MAX_COUNT];
-  char zero[200 - CFG_TIME3_COUNT * sizeof(unsigned int)
-            - sizeof(char)
-            - RS_MAX_COUNT * sizeof(unsigned char)
-            - RS_MAX_COUNT * sizeof(unsigned char)
-            - RS_MAX_COUNT * sizeof(unsigned char)];
+  signed char AdditionalTimeMargin[RS_MAX_COUNT];
+  char zero[200
+            - CFG_TIME3_COUNT * sizeof(unsigned int)  // Time3
+            - sizeof(char)  // ButtonsUpsideDown
+            - RS_MAX_COUNT * sizeof(unsigned char)  // Tilt0Angle
+            - RS_MAX_COUNT * sizeof(unsigned char)  // Tilt100Angle
+            - RS_MAX_COUNT * sizeof(unsigned char)  // TiltControlType
+            - RS_MAX_COUNT * sizeof(signed char)];  // AdditionalTimeMargin
 } SuplaEspCfg;
 
 typedef struct {

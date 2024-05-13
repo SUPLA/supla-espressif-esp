@@ -100,27 +100,30 @@
 #define VAR_BM3 53  // ButtonMode[3]
 
 #define VAR_BUD 55  // Buttons upside down
-#define VAR_ATM 56  // Additional time margin
-#define VAR_TC0 57  // Tilt control type idx 0
-#define VAR_TC1 58  // Tilt control type idx 0
-#define VAR_TC2 59  // Tilt control type idx 0
-#define VAR_TC3 60  // Tilt control type idx 0
+#define VAR_TM0 56  // Additional time margin 0
+#define VAR_TM1 57  // Additional time margin 1
+#define VAR_TM2 58  // Additional time margin 2
+#define VAR_TM3 59  // Additional time margin 3
+#define VAR_TC0 60  // Tilt control type idx 0
+#define VAR_TC1 61  // Tilt control type idx 1
+#define VAR_TC2 62  // Tilt control type idx 2
+#define VAR_TC3 63  // Tilt control type idx 3
 
-#define VAR_US0 61  // Motor upside down 0
-#define VAR_US1 62  // Motor upside down 1
-#define VAR_US2 63  // Motor upside down 2
-#define VAR_US3 64  // Motor upside down 3
+#define VAR_US0 64  // Motor upside down 0
+#define VAR_US1 65  // Motor upside down 1
+#define VAR_US2 66  // Motor upside down 2
+#define VAR_US3 67  // Motor upside down 3
 
-#define VAR_BU0 65  // Button upside down 0
-#define VAR_BU1 66  // Button upside down 1
-#define VAR_BU2 67  // Button upside down 2
-#define VAR_BU3 68  // Button upside down 3
+#define VAR_BU0 68  // Button upside down 0
+#define VAR_BU1 69  // Button upside down 1
+#define VAR_BU2 70  // Button upside down 2
+#define VAR_BU3 71  // Button upside down 3
 
 #ifdef CFG_TIME_VARIABLES
-#define VAR_T30 69
-#define VAR_T31 70
-#define VAR_T32 71
-#define VAR_T33 72
+#define VAR_T30 72
+#define VAR_T31 73
+#define VAR_T32 74
+#define VAR_T33 75
 #endif /*CFG_TIME_VARIABLES*/
 
 typedef struct {
@@ -412,11 +415,16 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char bm3[3] = {'b', 'm', '3'};
 
       char bud[3] = {'b', 'u', 'd'};
+
       char bu0[3] = {'b', 'u', '0'};
       char bu1[3] = {'b', 'u', '1'};
       char bu2[3] = {'b', 'u', '2'};
       char bu3[3] = {'b', 'u', '3'};
-      char atm[3] = {'a', 't', 'm'};
+
+      char tm0[3] = {'t', 'm', '0'};
+      char tm1[3] = {'t', 'm', '1'};
+      char tm2[3] = {'t', 'm', '2'};
+      char tm3[3] = {'t', 'm', '3'};
 
       char tc0[3] = {'t', 'c', '0'};  // Tilt control type idx 0
       char tc1[3] = {'t', 'c', '1'};  // Tilt control type idx 1
@@ -547,8 +555,23 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
-        } else if (memcmp(atm, &pdata[a], 3) == 0) {
-          pVars->current_var = VAR_ATM;
+        } else if (memcmp(tm0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM3;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
@@ -871,12 +894,36 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
             cfg->ButtonsUpsideDown &= ~(1 << 3);
           }
 
-        } else if (pVars->current_var == VAR_ATM) {
-          cfg->AdditionalTimeMargin =
+        } else if (pVars->current_var == VAR_TM0) {
+          cfg->AdditionalTimeMargin[0] =
             cfg_str2int(pVars->intval);
-          if (cfg->AdditionalTimeMargin < -1 ||
-              cfg->AdditionalTimeMargin > 100) {
-            cfg->AdditionalTimeMargin = -1;
+          if (cfg->AdditionalTimeMargin[0] < -1 ||
+              cfg->AdditionalTimeMargin[0] > 100) {
+            cfg->AdditionalTimeMargin[0] = -1;
+          }
+
+        } else if (pVars->current_var == VAR_TM1) {
+          cfg->AdditionalTimeMargin[1] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[1] < -1 ||
+              cfg->AdditionalTimeMargin[1] > 100) {
+            cfg->AdditionalTimeMargin[1] = -1;
+          }
+
+        } else if (pVars->current_var == VAR_TM2) {
+          cfg->AdditionalTimeMargin[2] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[2] < -1 ||
+              cfg->AdditionalTimeMargin[2] > 100) {
+            cfg->AdditionalTimeMargin[2] = -1;
+          }
+
+        } else if (pVars->current_var == VAR_TM3) {
+          cfg->AdditionalTimeMargin[3] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[3] < -1 ||
+              cfg->AdditionalTimeMargin[3] > 100) {
+            cfg->AdditionalTimeMargin[3] = -1;
           }
 
         } else if (pVars->current_var == VAR_TRG) {

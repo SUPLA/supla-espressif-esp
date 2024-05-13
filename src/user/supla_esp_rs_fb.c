@@ -42,14 +42,13 @@ supla_roller_shutter_cfg_t supla_rs_cfg[RS_MAX_COUNT];
 
 #ifdef _ROLLERSHUTTER_SUPPORT
 
-static uint8 rs_time_margin = 110;
-
-void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(int value) {
+void GPIO_ICACHE_FLASH supla_esp_gpio_rs_set_time_margin(
+    supla_roller_shutter_cfg_t *rsCfg, int value) {
   supla_log(LOG_DEBUG, "supla_esp_gpio_rs_set_time_margin(%d)", value);
   if (value >= 0 && value <= 100) {
-    rs_time_margin = value;
+    rsCfg->rs_time_margin = value;
   } else {
-    rs_time_margin = 110;
+    rsCfg->rs_time_margin = 110;
   }
 }
 
@@ -305,13 +304,13 @@ supla_esp_gpio_rs_set_relay(supla_roller_shutter_cfg_t *rs_cfg, uint8 value,
   }
 
   if (value == RS_RELAY_UP) {
-    if (supla_esp_cfg.AdditionalTimeMargin == 0 &&
+    if (supla_esp_cfg.AdditionalTimeMargin[rs_cfg->up->channel] == 0 &&
         supla_esp_gpio_rs_get_current_position(rs_cfg) == 0) {
       return;
     }
     supla_esp_gpio_relay_hi(rs_cfg->up->gpio_id, 1);
   } else if (value == RS_RELAY_DOWN) {
-    if (supla_esp_cfg.AdditionalTimeMargin == 0 &&
+    if (supla_esp_cfg.AdditionalTimeMargin[rs_cfg->up->channel] == 0 &&
         supla_esp_gpio_rs_get_current_position(rs_cfg) == 100) {
       return;
     }
@@ -438,7 +437,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
     // from physical buttons or in app). It is not executed when new position
     // is given in % value.
     if ((*time) / 1000 >=
-        (int)(full_time_ms * (1.0 * rs_time_margin / 100.0))) {
+        (int)(full_time_ms * (1.0 * rs_cfg->rs_time_margin / 100.0))) {
       int idx = supla_esp_gpio_rs_get_idx_by_ptr(rs_cfg);
       if (idx >= 0) {
         if (supla_esp_gpio_rs_is_autocal_done(idx)) {
@@ -453,7 +452,7 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
         }
       }
       supla_esp_gpio_rs_set_relay(rs_cfg, RS_RELAY_OFF, 0, 0);
-      supla_log(LOG_DEBUG, "Timeout full_time * %d%", rs_time_margin);
+      supla_log(LOG_DEBUG, "Timeout full_time * %d%", rs_cfg->rs_time_margin);
     }
 
     return;
@@ -628,8 +627,8 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_task_processing(
       // default rs_time_margin is set to 1.1 -> 110% for button movement
       // If it is changed to other value, then we apply it also as margin for
       // percantage control
-      if (rs_time_margin < 110) {
-        time_margin = rs_time_margin;
+      if (rs_cfg->rs_time_margin < 110) {
+        time_margin = rs_cfg->rs_time_margin;
         if (isRsInMove && time_margin < 50) {
           time_margin = 50;
         }
@@ -1200,9 +1199,11 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_apply_new_config(
     if (timeMargin > 0) {
       timeMargin -= 1;
     }
-    if (timeMargin != supla_esp_cfg.AdditionalTimeMargin) {
-      supla_esp_cfg.AdditionalTimeMargin = timeMargin;
-      supla_esp_gpio_rs_set_time_margin(supla_esp_cfg.AdditionalTimeMargin);
+    if (timeMargin !=
+        supla_esp_cfg.AdditionalTimeMargin[channel_number]) {
+      supla_esp_cfg.AdditionalTimeMargin[channel_number] = timeMargin;
+      supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[channel_number],
+          supla_esp_cfg.AdditionalTimeMargin[channel_number]);
       saveConfig = true;
     }
   }
@@ -1279,9 +1280,10 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_fb_apply_new_config(
     if (timeMargin > 0) {
       timeMargin -= 1;
     }
-    if (timeMargin != supla_esp_cfg.AdditionalTimeMargin) {
-      supla_esp_cfg.AdditionalTimeMargin = timeMargin;
-      supla_esp_gpio_rs_set_time_margin(supla_esp_cfg.AdditionalTimeMargin);
+    if (timeMargin != supla_esp_cfg.AdditionalTimeMargin[channel_number]) {
+      supla_esp_cfg.AdditionalTimeMargin[channel_number] = timeMargin;
+      supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[channel_number],
+          supla_esp_cfg.AdditionalTimeMargin[channel_number]);
       saveConfig = true;
     }
   }

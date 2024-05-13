@@ -70,6 +70,7 @@ void gpioCallbackFacadeBlind() {
   *supla_rs_cfg[0].full_opening_time = 0;
   *supla_rs_cfg[0].tilt_change_time = 0;
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 }
 
 TSD_SuplaRegisterDeviceResult regResultFacadeBlinds;
@@ -89,12 +90,12 @@ class FacadeBlindTestsF : public ::testing::Test {
   supla_roller_shutter_cfg_t *rsCfg = nullptr;
 
   void SetUp() override {
-    supla_esp_gpio_rs_set_time_margin(110);
+    supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[0], 110);
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     supla_esp_gpio_init_time = 0;
-    supla_esp_cfg.AdditionalTimeMargin = -1;
+    supla_esp_cfg.AdditionalTimeMargin[0] = -1;
     gpioInitCb = *gpioCallbackFacadeBlind;
 
     EXPECT_CALL(time, system_get_time())
@@ -138,7 +139,7 @@ class FacadeBlindTestsF : public ::testing::Test {
 
   void TearDown() override {
     supla_esp_devconn_release();
-    supla_esp_gpio_rs_set_time_margin(110);
+    supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[0], 110);
     cleanupTimers();
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));

@@ -64,6 +64,7 @@ void gpioCallback2() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 }
 
 TSD_SuplaRegisterDeviceResult regResultAutoCal;
@@ -182,6 +183,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 
   // Second RS with autocal
   // up
@@ -197,6 +199,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[1].up = &supla_relay_cfg[2];
   supla_rs_cfg[1].down = &supla_relay_cfg[3];
   supla_rs_cfg[1].delayed_trigger.value = 0;
+  supla_rs_cfg[1].rs_time_margin = 110;
 
   // Third RS without autocal
   // up
@@ -212,6 +215,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[2].up = &supla_relay_cfg[4];
   supla_rs_cfg[2].down = &supla_relay_cfg[5];
   supla_rs_cfg[2].delayed_trigger.value = 0;
+  supla_rs_cfg[2].rs_time_margin = 110;
 
   // Fourth RS with autocal
   // up
@@ -227,6 +231,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[3].up = &supla_relay_cfg[6];
   supla_rs_cfg[3].down = &supla_relay_cfg[7];
   supla_rs_cfg[3].delayed_trigger.value = 0;
+  supla_rs_cfg[3].rs_time_margin = 110;
 }
 
 class RollerShutterFourAutoCalF : public ::testing::Test {
