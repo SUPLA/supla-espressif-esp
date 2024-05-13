@@ -895,36 +895,44 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           }
 
         } else if (pVars->current_var == VAR_TM0) {
+#if (RS_MAX_COUNT > 0)
           cfg->AdditionalTimeMargin[0] =
             cfg_str2int(pVars->intval);
           if (cfg->AdditionalTimeMargin[0] < -1 ||
               cfg->AdditionalTimeMargin[0] > 100) {
             cfg->AdditionalTimeMargin[0] = -1;
           }
+#endif
 
         } else if (pVars->current_var == VAR_TM1) {
+#if (RS_MAX_COUNT > 1)
           cfg->AdditionalTimeMargin[1] =
             cfg_str2int(pVars->intval);
           if (cfg->AdditionalTimeMargin[1] < -1 ||
               cfg->AdditionalTimeMargin[1] > 100) {
             cfg->AdditionalTimeMargin[1] = -1;
           }
+#endif
 
         } else if (pVars->current_var == VAR_TM2) {
+#if (RS_MAX_COUNT > 2)
           cfg->AdditionalTimeMargin[2] =
             cfg_str2int(pVars->intval);
           if (cfg->AdditionalTimeMargin[2] < -1 ||
               cfg->AdditionalTimeMargin[2] > 100) {
             cfg->AdditionalTimeMargin[2] = -1;
           }
+#endif
 
         } else if (pVars->current_var == VAR_TM3) {
+#if (RS_MAX_COUNT > 3)
           cfg->AdditionalTimeMargin[3] =
             cfg_str2int(pVars->intval);
           if (cfg->AdditionalTimeMargin[3] < -1 ||
               cfg->AdditionalTimeMargin[3] > 100) {
             cfg->AdditionalTimeMargin[3] = -1;
           }
+#endif
 
         } else if (pVars->current_var == VAR_TRG) {
           cfg->Trigger = pVars->intval[0] - '0';
