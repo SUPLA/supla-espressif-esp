@@ -5,6 +5,7 @@ enable_testing()
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 set(CMAKE_BUILD_TYPE Debug)
+set( CMAKE_EXPORT_COMPILE_COMMANDS ON )
 
 add_compile_options(-fsanitize=address)
 add_link_options(-fsanitize=address -static-libasan)
@@ -60,6 +61,7 @@ file(GLOB SRC
   ../src/user/supla_esp_dns_client.c
   ../src/user/supla_esp_wifi.c
   ../src/user/uptime.c
+  ../src/user/supla_esp_rs_fb.c
   )
 
 add_executable(supla_common_test ${SRC} ${TEST_SRC} ${COMMON_DOUBLE_SRC})

@@ -35,6 +35,7 @@
 #include "supla-dev/log.h"
 #include "supla_esp_cfg.h"
 #include "supla_esp_gpio.h"
+#include "supla_esp_rs_fb.h"
 #include "supla_esp_state.h"
 #include "supla_esp_wifi.h"
 
@@ -1765,9 +1766,9 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_prepare_em_message(
 #endif /*MQTT_HA_EM_SUPPORT*/
 
 #ifdef MQTT_HA_ROLLERSHUTTER_SUPPORT
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_fb_prepare_message(
     char **topic_name_out, void **message_out, size_t *message_size_out,
-    uint8 channel_number, const char *mfr) {
+    uint8 channel_number, const char *mfr, bool add_tilt_support) {
   if (!supla_esp_mqtt_prepare_ha_cfg_topic("cover", topic_name_out,
                                            channel_number, 0)) {
     return 0;
@@ -1781,7 +1782,7 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
         "\"mf\":\"%s\","
         "\"name\":\"%s\","
         "\"sw\":\"%s\"},"
-        "\"name\":\"#%i Roof window operation\","
+        "\"name\":\"#%i %s\","
         "\"uniq_id\":\"supla_%02x%02x%02x%02x%02x%02x_%i_%i\","
         "\"qos\":0,"
         "\"ret\":false,"
@@ -1809,7 +1810,8 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
             "{%% endif %%}"
           "{%% else %%}"
             "0"
-          "{%% endif %%}\"}";
+          "{%% endif %%}\""
+          "%s}";
 
   char c = 0;
 
@@ -1825,11 +1827,23 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
     buffer_size = ets_snprintf(a ? *message_out : &c, a ? buffer_size : 1, cfg,
                                supla_esp_mqtt_vars->prefix, channel_number,
                                supla_esp_mqtt_vars->device_id, mfr, device_name,
-                               SUPLA_ESP_SOFTVER, channel_number, mac[0],
-                               mac[1], mac[2], mac[3], mac[4], mac[5],
-                               channel_number, 0, supla_esp_mqtt_vars->prefix) +
-                  1;
-
+                               SUPLA_ESP_SOFTVER, channel_number,
+                               add_tilt_support ? "Facade blind operation" :
+                               "Roller shutter operation",
+                               mac[0], mac[1], mac[2], mac[3], mac[4], mac[5],
+                               channel_number, 0,
+                               supla_esp_mqtt_vars->prefix,
+                               add_tilt_support ?
+                               ",\"tilt_cmd_t\":\"~/set/tilt\","
+                               "\"tilt_status_t\":\"~/state/tilt\","
+                               "\"tilt_min\":100,\"tilt_max\":0,"
+                               "\"tilt_opened_value\":0,"
+                               "\"tilt_closed_value\":100,"
+                               "\"tilt_status_tpl\":\""
+                               "{% if int(value, default=0) <= 0 %}0"
+                               "{% elif value | int > 100 %}100"
+                               "{% else %}{{value | int}}{% endif %}\"" :
+                               "") + 1;
     if (!a) {
       *message_out = malloc(buffer_size);
       if (*message_out == NULL) {
@@ -1846,10 +1860,10 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_ha_rs_prepare_message(
   return 1;
 }
 
-uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
+uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_fb_action(
     const void *topic_name, uint16_t topic_name_size, const char *message,
     size_t message_size, uint8 *channel_number, uint8 *action,
-    uint8 *percentage) {
+    uint8 *percentage, uint8 *tilt) {
   if (!topic_name || topic_name_size == 0 || !message || message_size == 0 ||
       !channel_number || !action || !supla_esp_mqtt_vars->prefix ||
       supla_esp_mqtt_vars->prefix[0] == 0 ||
@@ -1884,7 +1898,15 @@ uint8 ICACHE_FLASH_ATTR supla_esp_mqtt_parser_rs_action(
       *action = MQTT_ACTION_SHUT_WITH_PERCENTAGE;
       return 1;
     }
-
+  } else if (topic_name_size == 8 &&
+             memcmp(tn, "set/tilt", topic_name_size) == 0) {
+    uint8 err = 1;
+    int p = supla_esp_mqtt_str2int(message, message_size, &err);
+    if (!err && p >= 0 && p <= 100) {
+      *tilt = p;
+      *action = MQTT_ACTION_SET_TILT;
+      return 1;
+    }
   } else if (topic_name_size == 14 &&
              memcmp(tn, "execute_action", topic_name_size) == 0) {
     if (message_size == 4 &&
@@ -1926,9 +1948,10 @@ supla_esp_mqtt_rs_recalibrate(unsigned char channelNumber) {
       *(supla_rs_cfg[i].position) = 0;  // not calibrated
 
       supla_esp_gpio_rs_apply_new_times(i, supla_esp_cfg.Time2[i],
-                                        supla_esp_cfg.Time1[i]);
+                                        supla_esp_cfg.Time1[i],
+                                        supla_esp_cfg.Time3[i]);
       // trigger calibration by setting position to fully open
-      supla_esp_gpio_rs_add_task(i, 0);
+      supla_esp_gpio_rs_add_task(i, 0, 0);
     }
   }
 }

@@ -22,7 +22,7 @@
 #include "board/supla_esp_board.h"
 #include "espmissingincludes.h"
 
-#define SUPLA_ESP_SOFTVER "2.8.59"
+#define SUPLA_ESP_SOFTVER "2.8.60"
 
 #define STATE_UNKNOWN 0
 #define STATE_DISCONNECTED 1
@@ -111,6 +111,10 @@
 #ifndef CFG_TIME2_COUNT
 #define CFG_TIME2_COUNT 8
 #endif /*CFG_TIME2_COUNT*/
+
+#ifndef CFG_TIME3_COUNT
+#define CFG_TIME3_COUNT 8
+#endif /*CFG_TIME3_COUNT*/
 
 #ifndef STATE_CFG_TIME1_COUNT
 #define STATE_CFG_TIME1_COUNT CFG_TIME1_COUNT

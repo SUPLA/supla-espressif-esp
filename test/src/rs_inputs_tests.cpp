@@ -255,7 +255,8 @@ TEST_F(RsInputsFixture, MonostableRsCfgButton) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
   }
 
   // +1000 ms
@@ -473,7 +474,8 @@ TEST_F(RsInputsFixture, BistableButton) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
   }
 
   // +1000 ms
@@ -672,7 +674,8 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
 
     EXPECT_CALL(srpc, srpc_ds_async_action_trigger(2, SUPLA_ACTION_CAP_HOLD));
   }
@@ -846,6 +849,9 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithAT) {
 
   EXPECT_EQ(currentDeviceState, STATE_CFGMODE);
 
+  EXPECT_FALSE(eagleStub.getGpioValue(3));
+  EXPECT_FALSE(eagleStub.getGpioValue(4));
+
   // Button click >3s after enter cfg mode should trigger cfgmode exit
   // simulate button release on gpio 1
   eagleStub.gpioOutputSet(BUTTON_UP, 0);
@@ -932,7 +938,8 @@ TEST_F(RsInputsFixture, BistableButtonWithAT) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
 
     EXPECT_CALL(srpc,
                 srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
@@ -1164,7 +1171,8 @@ TEST_F(RsInputsFixture, MonostableRsWithATOnSingleButton) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
 
     EXPECT_CALL(srpc, srpc_ds_async_action_trigger(2, SUPLA_ACTION_CAP_HOLD));
   }
@@ -1418,7 +1426,8 @@ TEST_F(RsInputsFixture, BistableButtonWithATOnSingleInput) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
 
     EXPECT_CALL(srpc,
                 srpc_ds_async_action_trigger(1, SUPLA_ACTION_CAP_TOGGLE_x2));
@@ -1644,10 +1653,12 @@ TEST_F(RsInputsFixture, TwoRs) {
   ASSERT_NE(ets_gpio_intr_func, nullptr);
 
   EXPECT_CALL(srpc,
-              valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+              valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+      .Times(2);
 
   EXPECT_CALL(srpc,
-              valueChanged(_, 1, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+              valueChanged(_, 1, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+      .Times(2);
 
   // +1000 ms
   for (int i = 0; i < 100; i++) {
@@ -1839,7 +1850,8 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputs) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
   }
 
   moveTime(1000);
@@ -1956,7 +1968,8 @@ TEST_F(RsInputsFixture, BistableButtonWithATNoDelayBetweenInputs) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+        .Times(2);
   }
 
   moveTime(1000);
@@ -2094,7 +2107,8 @@ TEST_F(RsInputsFixture, BistableButtonWithLessThan1sToggles) {
   {
     InSequence seq;
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+        .Times(2);
   }
 
   moveTime(1000);
@@ -2142,7 +2156,7 @@ TEST_F(RsInputsFixture, BistableButtonWithLessThan1sTogglesWithNotify) {
   {
     InSequence seq;
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).Times(2);
   }
 
   moveTime(1000);
@@ -2215,7 +2229,8 @@ TEST_F(RsInputsFixture, BistableButtonWithNoDelayBetweenInputsBasedOnNotify) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
   }
 
   moveTime(1000);
@@ -2325,7 +2340,8 @@ TEST_F(RsInputsFixture, MonostableRsCfgButtonWithATAndTriggerOnPress) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0}))).
+      Times(2);
 
     EXPECT_CALL(srpc, srpc_ds_async_action_trigger(2, SUPLA_ACTION_CAP_HOLD));
   }

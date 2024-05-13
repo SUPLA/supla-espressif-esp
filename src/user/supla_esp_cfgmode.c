@@ -31,6 +31,7 @@
 #include "supla_esp_devconn.h"
 #include "supla_esp_gpio.h"
 #include "supla_esp_mqtt.h"
+#include "supla_esp_rs_fb.h"
 
 #define TYPE_UNKNOWN 0
 #define TYPE_GET 1
@@ -88,15 +89,42 @@
 
 #define VAR_SBT 45  // Staircase Button Type
 
-#define VAR_BP0 46 // ButtonType[0]
-#define VAR_BP1 47 // ButtonType[1]
-#define VAR_BP2 48 // ButtonType[2]
-#define VAR_BP3 49 // ButtonType[3]
+#define VAR_BP0 46  // ButtonType[0]
+#define VAR_BP1 47  // ButtonType[1]
+#define VAR_BP2 48  // ButtonType[2]
+#define VAR_BP3 49  // ButtonType[3]
 
-#define VAR_BM0 50 // ButtonMode[0]
-#define VAR_BM1 51 // ButtonMode[1]
-#define VAR_BM2 52 // ButtonMode[2]
-#define VAR_BM3 53 // ButtonMode[3]
+#define VAR_BM0 50  // ButtonMode[0]
+#define VAR_BM1 51  // ButtonMode[1]
+#define VAR_BM2 52  // ButtonMode[2]
+#define VAR_BM3 53  // ButtonMode[3]
+
+#define VAR_BUD 55  // Buttons upside down
+#define VAR_TM0 56  // Additional time margin 0
+#define VAR_TM1 57  // Additional time margin 1
+#define VAR_TM2 58  // Additional time margin 2
+#define VAR_TM3 59  // Additional time margin 3
+#define VAR_TC0 60  // Tilt control type idx 0
+#define VAR_TC1 61  // Tilt control type idx 1
+#define VAR_TC2 62  // Tilt control type idx 2
+#define VAR_TC3 63  // Tilt control type idx 3
+
+#define VAR_US0 64  // Motor upside down 0
+#define VAR_US1 65  // Motor upside down 1
+#define VAR_US2 66  // Motor upside down 2
+#define VAR_US3 67  // Motor upside down 3
+
+#define VAR_BU0 68  // Button upside down 0
+#define VAR_BU1 69  // Button upside down 1
+#define VAR_BU2 70  // Button upside down 2
+#define VAR_BU3 71  // Button upside down 3
+
+#ifdef CFG_TIME_VARIABLES
+#define VAR_T30 72
+#define VAR_T31 73
+#define VAR_T32 74
+#define VAR_T33 75
+#endif /*CFG_TIME_VARIABLES*/
 
 typedef struct {
   char step;
@@ -216,16 +244,25 @@ int ICACHE_FLASH_ATTR HexToInt(char *str, int len) {
   return result;
 };
 
-unsigned int ICACHE_FLASH_ATTR cfg_str2int(const char *str) {
+int ICACHE_FLASH_ATTR cfg_str2int(const char *str) {
   int result = 0;
 
   short s = 0;
+  bool minus = false;
+  if (str[s] == '-') {
+    minus = true;
+    s++;
+  }
   while (str[s] != 0) {
     if (str[s] >= '0' && str[s] <= '9') {
       result = result * 10 + str[s] - '0';
     }
 
+
     s++;
+  }
+  if (minus) {
+    result = -result;
   }
 
   return result;
@@ -329,6 +366,10 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char rbt[3] = {'r', 'b', 't'};
       char eml[3] = {'e', 'm', 'l'};
       char usd[3] = {'u', 's', 'd'};
+      char us0[3] = {'u', 's', '0'};
+      char us1[3] = {'u', 's', '1'};
+      char us2[3] = {'u', 's', '2'};
+      char us3[3] = {'u', 's', '3'};
       char trg[3] = {'t', 'r', 'g'};
       char cmd[3] = {'c', 'm', 'd'};
 
@@ -357,6 +398,10 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char t21[3] = {'t', '2', '1'};
       char t22[3] = {'t', '2', '2'};
       char t23[3] = {'t', '2', '3'};
+      char t30[3] = {'t', '3', '0'};
+      char t31[3] = {'t', '3', '1'};
+      char t32[3] = {'t', '3', '2'};
+      char t33[3] = {'t', '3', '3'};
 #endif /*CFG_TIME_VARIABLES*/
 
       char bp0[3] = {'b', 'p', '0'};
@@ -368,6 +413,23 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
       char bm1[3] = {'b', 'm', '1'};
       char bm2[3] = {'b', 'm', '2'};
       char bm3[3] = {'b', 'm', '3'};
+
+      char bud[3] = {'b', 'u', 'd'};
+
+      char bu0[3] = {'b', 'u', '0'};
+      char bu1[3] = {'b', 'u', '1'};
+      char bu2[3] = {'b', 'u', '2'};
+      char bu3[3] = {'b', 'u', '3'};
+
+      char tm0[3] = {'t', 'm', '0'};
+      char tm1[3] = {'t', 'm', '1'};
+      char tm2[3] = {'t', 'm', '2'};
+      char tm3[3] = {'t', 'm', '3'};
+
+      char tc0[3] = {'t', 'c', '0'};  // Tilt control type idx 0
+      char tc1[3] = {'t', 'c', '1'};  // Tilt control type idx 1
+      char tc2[3] = {'t', 'c', '2'};  // Tilt control type idx 2
+      char tc3[3] = {'t', 'c', '3'};  // Tilt control type idx 3
 
       if (len - a >= 4 && pdata[a + 3] == '=') {
         if (memcmp(sid, &pdata[a], 3) == 0) {
@@ -448,8 +510,93 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
+        } else if (memcmp(us0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_US0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(us1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_US1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(us2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_US2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(us3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_US3;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bud, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BUD;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bu0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BU0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bu1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BU1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bu2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BU2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(bu3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_BU3;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tm3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TM3;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
         } else if (memcmp(trg, &pdata[a], 3) == 0) {
           pVars->current_var = VAR_TRG;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tc0, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TC0;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tc1, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TC1;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tc2, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TC2;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(tc3, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_TC3;
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
@@ -608,6 +755,25 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           pVars->buff_size = 12;
           pVars->pbuff = pVars->intval;
 
+        } else if (memcmp(t30, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T30;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t31, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T31;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t32, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T32;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
+
+        } else if (memcmp(t33, &pdata[a], 3) == 0) {
+          pVars->current_var = VAR_T33;
+          pVars->buff_size = 12;
+          pVars->pbuff = pVars->intval;
         }
 #endif /*CFG_TIME_VARIABLES*/
         a += 4;
@@ -667,7 +833,106 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           if (reboot != NULL) *reboot = pVars->intval[0] - '0';
 
         } else if (pVars->current_var == VAR_USD) {
-          cfg->UpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+          cfg->MotorUpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+
+        } else if (pVars->current_var == VAR_US0) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->MotorUpsideDown |= (1 << 0);
+          } else {
+            cfg->MotorUpsideDown &= ~(1 << 0);
+          }
+
+        } else if (pVars->current_var == VAR_US1) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->MotorUpsideDown |= (1 << 1);
+          } else {
+            cfg->MotorUpsideDown &= ~(1 << 1);
+          }
+
+        } else if (pVars->current_var == VAR_US2) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->MotorUpsideDown |= (1 << 2);
+          } else {
+            cfg->MotorUpsideDown &= ~(1 << 2);
+          }
+
+        } else if (pVars->current_var == VAR_US3) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->MotorUpsideDown |= (1 << 3);
+          } else {
+            cfg->MotorUpsideDown &= ~(1 << 3);
+          }
+
+        } else if (pVars->current_var == VAR_BUD) {
+          cfg->ButtonsUpsideDown = (pVars->intval[0] - '0') == 1 ? 1 : 0;
+
+        } else if (pVars->current_var == VAR_BU0) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->ButtonsUpsideDown |= (1 << 0);
+          } else {
+            cfg->ButtonsUpsideDown &= ~(1 << 0);
+          }
+
+        } else if (pVars->current_var == VAR_BU1) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->ButtonsUpsideDown |= (1 << 1);
+          } else {
+            cfg->ButtonsUpsideDown &= ~(1 << 1);
+          }
+
+        } else if (pVars->current_var == VAR_BU2) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->ButtonsUpsideDown |= (1 << 2);
+          } else {
+            cfg->ButtonsUpsideDown &= ~(1 << 2);
+          }
+
+        } else if (pVars->current_var == VAR_BU3) {
+          if ((pVars->intval[0] - '0') == 1) {
+            cfg->ButtonsUpsideDown |= (1 << 3);
+          } else {
+            cfg->ButtonsUpsideDown &= ~(1 << 3);
+          }
+
+        } else if (pVars->current_var == VAR_TM0) {
+#if (RS_MAX_COUNT > 0)
+          cfg->AdditionalTimeMargin[0] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[0] < -1 ||
+              cfg->AdditionalTimeMargin[0] > 100) {
+            cfg->AdditionalTimeMargin[0] = -1;
+          }
+#endif
+
+        } else if (pVars->current_var == VAR_TM1) {
+#if (RS_MAX_COUNT > 1)
+          cfg->AdditionalTimeMargin[1] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[1] < -1 ||
+              cfg->AdditionalTimeMargin[1] > 100) {
+            cfg->AdditionalTimeMargin[1] = -1;
+          }
+#endif
+
+        } else if (pVars->current_var == VAR_TM2) {
+#if (RS_MAX_COUNT > 2)
+          cfg->AdditionalTimeMargin[2] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[2] < -1 ||
+              cfg->AdditionalTimeMargin[2] > 100) {
+            cfg->AdditionalTimeMargin[2] = -1;
+          }
+#endif
+
+        } else if (pVars->current_var == VAR_TM3) {
+#if (RS_MAX_COUNT > 3)
+          cfg->AdditionalTimeMargin[3] =
+            cfg_str2int(pVars->intval);
+          if (cfg->AdditionalTimeMargin[3] < -1 ||
+              cfg->AdditionalTimeMargin[3] > 100) {
+            cfg->AdditionalTimeMargin[3] = -1;
+          }
+#endif
 
         } else if (pVars->current_var == VAR_TRG) {
           cfg->Trigger = pVars->intval[0] - '0';
@@ -736,7 +1001,22 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
           cfg->ButtonMode[2] = pVars->intval[0] - '0';
         } else if (pVars->current_var == VAR_BM3) {
           cfg->ButtonMode[3] = pVars->intval[0] - '0';
-
+        } else if (pVars->current_var == VAR_TC0) {
+#if (RS_MAX_COUNT > 0)
+          cfg->TiltControlType[0] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 0)*/
+        } else if (pVars->current_var == VAR_TC1) {
+#if (RS_MAX_COUNT > 1)
+          cfg->TiltControlType[1] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 1)*/
+        } else if (pVars->current_var == VAR_TC2) {
+#if (RS_MAX_COUNT > 2)
+          cfg->TiltControlType[2] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 2)*/
+        } else if (pVars->current_var == VAR_TC3) {
+#if (RS_MAX_COUNT > 3)
+          cfg->TiltControlType[3] = pVars->intval[0] - '0';
+#endif  /*(RS_MAX_COUNT > 3)*/
         }
 #ifdef CFG_TIME_VARIABLES
         else if (pVars->current_var == VAR_T10) {
@@ -777,6 +1057,26 @@ void ICACHE_FLASH_ATTR supla_esp_parse_vars(TrivialHttpParserVars *pVars,
         } else if (pVars->current_var == VAR_T23) {
           if (CFG_TIME2_COUNT > 3) {
             cfg->Time2[3] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T30) {
+          if (CFG_TIME3_COUNT > 0) {
+            cfg->Time3[0] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T31) {
+          if (CFG_TIME3_COUNT > 1) {
+            cfg->Time3[1] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T32) {
+          if (CFG_TIME3_COUNT > 2) {
+            cfg->Time3[2] =
+                cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
+          }
+        } else if (pVars->current_var == VAR_T33) {
+          if (CFG_TIME3_COUNT > 3) {
+            cfg->Time3[3] =
                 cfg_str2centInt(pVars->intval, CFG_TIME_VARIABLES_PRECISION);
           }
         }
@@ -935,7 +1235,8 @@ void ICACHE_FLASH_ATTR supla_esp_recv_callback(void *arg, char *pdata,
     bool save_state = false;
     for (int idx = 0; idx < CFG_TIME1_COUNT; idx++) {
       if (supla_esp_gpio_rs_apply_new__times(idx, new_cfg.Time2[idx],
-                                             new_cfg.Time1[idx], false)) {
+                                             new_cfg.Time1[idx],
+                                             new_cfg.Time3[idx], false)) {
         save_state = true;
       }
     }

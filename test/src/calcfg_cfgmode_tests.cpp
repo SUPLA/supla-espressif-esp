@@ -190,7 +190,8 @@ TEST_F(CalCfgFixture, RequestNotAuthorized) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+        .Times(2);
 
     EXPECT_CALL(srpc, srpc_ds_async_device_calcfg_result(
                           _, 0, -1, SUPLA_CALCFG_CMD_ENTER_CFG_MODE,
@@ -222,7 +223,8 @@ TEST_F(CalCfgFixture, EnterCfgModeAndTimeoutExit) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+        .Times(2);
 
     EXPECT_CALL(srpc, srpc_ds_async_device_calcfg_result(
                           _, 0, -1, SUPLA_CALCFG_CMD_ENTER_CFG_MODE,
@@ -258,7 +260,8 @@ TEST_F(CalCfgFixture, EnterCfgModeAndClientConnected) {
     InSequence seq;
 
     EXPECT_CALL(
-        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})));
+        srpc, valueChanged(_, 0, ElementsAreArray({255, 0, 0, 0, 0, 0, 0, 0})))
+        .Times(2);
 
     EXPECT_CALL(srpc, srpc_ds_async_device_calcfg_result(
                           _, 0, -1, SUPLA_CALCFG_CMD_ENTER_CFG_MODE,

@@ -64,6 +64,7 @@ void gpioCallback2() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 }
 
 TSD_SuplaRegisterDeviceResult regResultAutoCal;
@@ -182,6 +183,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[0].up = &supla_relay_cfg[0];
   supla_rs_cfg[0].down = &supla_relay_cfg[1];
   supla_rs_cfg[0].delayed_trigger.value = 0;
+  supla_rs_cfg[0].rs_time_margin = 110;
 
   // Second RS with autocal
   // up
@@ -197,6 +199,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[1].up = &supla_relay_cfg[2];
   supla_rs_cfg[1].down = &supla_relay_cfg[3];
   supla_rs_cfg[1].delayed_trigger.value = 0;
+  supla_rs_cfg[1].rs_time_margin = 110;
 
   // Third RS without autocal
   // up
@@ -212,6 +215,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[2].up = &supla_relay_cfg[4];
   supla_rs_cfg[2].down = &supla_relay_cfg[5];
   supla_rs_cfg[2].delayed_trigger.value = 0;
+  supla_rs_cfg[2].rs_time_margin = 110;
 
   // Fourth RS with autocal
   // up
@@ -227,6 +231,7 @@ void gpioCallbackFourRs() {
   supla_rs_cfg[3].up = &supla_relay_cfg[6];
   supla_rs_cfg[3].down = &supla_relay_cfg[7];
   supla_rs_cfg[3].delayed_trigger.value = 0;
+  supla_rs_cfg[3].rs_time_margin = 110;
 }
 
 class RollerShutterFourAutoCalF : public ::testing::Test {
@@ -529,8 +534,8 @@ TEST_F(RollerShutterAutoCalWithSrpc,
   supla_esp_channel_set_value(&reqValue);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
-  // +5000 ms
-  for (int i = 0; i < 500; i++) {
+  // +10000 ms
+  for (int i = 0; i < 1000; i++) {
     curTime += 10000;  // +10ms
     executeTimers();
   }
@@ -619,11 +624,27 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_SetNewPosition) {
       .WillRepeatedly(Return(0));
 
   EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({19, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
               valueChanged(_, 0, ElementsAreArray({20, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
   EXPECT_CALL(srpc,
-              valueChanged(_, 0, ElementsAreArray({68, 0, 0, 0, 0, 0, 0, 0})))
+              valueChanged(_, 0, ElementsAreArray({38, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({58, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({78, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({98, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
   EXPECT_CALL(srpc,
@@ -788,41 +809,28 @@ TEST_F(RollerShutterAutoCalWithSrpc,
   int curTime = 10000;  // start at +10 ms
   EXPECT_CALL(time, system_get_time()).WillRepeatedly(ReturnPointee(&curTime));
 
-  char expectedValue[8] = {};
-  expectedValue[0] = static_cast<char>(0xFF);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue)))
+  {
+    ::testing::InSequence seq;
+    EXPECT_CALL(srpc,
+        valueChanged(_, 0, ElementsAreArray({0xFF, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
-  // Calibration started (proper flag added)
-  char expectedValue4[8] = {};
-  expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
+    // Calibration started (proper flag added)
+    EXPECT_CALL(
+        srpc, valueChanged(_, 0,
+          ElementsAreArray(
+            {0xFF, 0, 0, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS,
+            0, 0, 0, 0})))
       .WillOnce(Return(0));
 
-  char expectedValue2[8] = {};
-  expectedValue2[0] = static_cast<char>(0x00);
-  expectedValue2[3] = static_cast<char>(0x00);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
+    EXPECT_CALL(srpc,
+        valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
-  // after calibration we set position 80 (intermediate step 4)
-  char expectedValue5[8] = {};
-  expectedValue5[0] = static_cast<char>(0x04);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue5)))
-      .WillOnce(Return(0));
-
-  // after calibration we set position 80 (intermediate step 50)
-  char expectedValue6[8] = {};
-  expectedValue6[0] = static_cast<char>(46);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue6)))
-      .WillOnce(Return(0));
-
-  // after calibration we set position 80
-  char expectedValue7[8] = {};
-  expectedValue7[0] = static_cast<char>(80);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue7)))
-      .WillOnce(Return(0));
+    // after calibration we set position 80 (intermediate step values are
+    // ignored)
+    EXPECT_CALL(srpc, valueChanged(_, 0, _)).Times(6);
+  }
 
   supla_esp_gpio_init();
 
@@ -1020,7 +1028,7 @@ TEST_F(RollerShutterAutoCalF, RsNotCalibrated_TriggerAutoCalAddTask0) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 0);
+  supla_esp_gpio_rs_add_task(0, 0, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1084,7 +1092,7 @@ TEST_F(RollerShutterAutoCalF, RsNotCalibrated_TriggerAutoCalAddTask60) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1145,7 +1153,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1174,7 +1182,7 @@ TEST_F(RollerShutterAutoCalF,
               eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_GT(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   // Calibration procedure should happen here
   for (int i = 0; i < 800; i++) {
@@ -1241,7 +1249,7 @@ TEST_F(RollerShutterAutoCalWithSrpc,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1319,7 +1327,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1346,13 +1354,13 @@ TEST_F(RollerShutterAutoCalF,
               eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_GT(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
   for (int i = 0; i < 50; i++) {
     curTime += 10000;  // +10ms
     executeTimers();
   }
 
-  supla_esp_gpio_rs_add_task(0, 90);
+  supla_esp_gpio_rs_add_task(0, 90, 0);
   for (int i = 0; i < 50; i++) {
     curTime += 10000;  // +10ms
     executeTimers();
@@ -1415,7 +1423,7 @@ TEST_F(RollerShutterAutoCalF, RsNotCalibrated_TriggerAutoCalAndAbort) {
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1493,7 +1501,7 @@ TEST_F(RollerShutterAutoCalF,
   EXPECT_FALSE(eagleStub.getGpioValue(UP_GPIO));
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
-  supla_esp_gpio_rs_add_task(0, 60);
+  supla_esp_gpio_rs_add_task(0, 60, 0);
 
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
@@ -1828,8 +1836,8 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
   // manual calibration times
-  supla_esp_gpio_rs_apply_new_times(0, 2000, 2200);
-  supla_esp_gpio_rs_add_task(0, 50);
+  supla_esp_gpio_rs_apply_new_times(0, 2000, 2200, 0);
+  supla_esp_gpio_rs_add_task(0, 50, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -1859,8 +1867,8 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // enable auto calibration
-  supla_esp_gpio_rs_apply_new_times(0, 0, 0);
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_apply_new_times(0, 0, 0, 0);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -1880,8 +1888,8 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // new times should be ignored
-  supla_esp_gpio_rs_apply_new_times(0, 0, 0);
-  supla_esp_gpio_rs_add_task(0, 30);
+  supla_esp_gpio_rs_apply_new_times(0, 0, 0, 0);
+  supla_esp_gpio_rs_add_task(0, 30, 0);
 
   // + 10 s
   for (int i = 0; i < 150; i++) {
@@ -1922,7 +1930,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -1963,7 +1971,7 @@ TEST_F(RollerShutterAutoCalF, AutoCalibrationFromCfgmodeOrMqtt) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 53);
+  supla_esp_gpio_rs_add_task(0, 53, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2011,8 +2019,8 @@ TEST_F(RollerShutterAutoCalF, SwitchToManualCalibrationDuringAutoCalibration) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
   // manual calibration times
-  supla_esp_gpio_rs_apply_new_times(0, 0, 0);
-  supla_esp_gpio_rs_add_task(0, 50);
+  supla_esp_gpio_rs_apply_new_times(0, 0, 0, 0);
+  supla_esp_gpio_rs_add_task(0, 50, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2054,7 +2062,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToManualCalibrationDuringAutoCalibration) {
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
   // trigger calibration with manual time
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2102,8 +2110,8 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringManualCalibration) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
   // manual calibration times
-  supla_esp_gpio_rs_apply_new_times(0, 2000, 2000);
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_apply_new_times(0, 2000, 2000, 0);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2149,7 +2157,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringManualCalibration) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2197,8 +2205,8 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringMoveDown) {
   EXPECT_FALSE(eagleStub.getGpioValue(DOWN_GPIO));
 
   // manual calibration times
-  supla_esp_gpio_rs_apply_new_times(0, 2000, 2000);
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_apply_new_times(0, 2000, 2000, 0);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2254,7 +2262,7 @@ TEST_F(RollerShutterAutoCalF, SwitchToAutoCalibrationDuringMoveDown) {
   EXPECT_TRUE(eagleStub.getGpioValue(DOWN_GPIO));
   EXPECT_EQ(rsCfg->autoCal_step, 0);
 
-  supla_esp_gpio_rs_add_task(0, 33);
+  supla_esp_gpio_rs_add_task(0, 33, 0);
 
   // + 10 s
   for (int i = 0; i < 1000; i++) {
@@ -2655,27 +2663,35 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLost) {
   upTime = 2000;
   downTime = 2000;
 
-  char expectedValue1[8] = {};
-  expectedValue1[0] = static_cast<char>(1);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue1)))
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({1, 0, 0, 0, 0, 0, 0, 0})))
       .Times(2)
       .WillRepeatedly(Return(0));
 
-  char expectedValue2[8] = {};
-  expectedValue2[0] = static_cast<char>(49);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue2)))
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({19, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
-  char expectedValue3[8] = {};
-  expectedValue3[0] = static_cast<char>(99);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue3)))
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({39, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
-  char expectedValue4[8] = {};
-  expectedValue4[0] = static_cast<char>(100);
-  expectedValue4[3] =
-      static_cast<char>(RS_VALUE_FLAG_CALIBRATION_LOST);  // calibration lost
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({59, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({79, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({99, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc, valueChanged(_, 0,
+                                 ElementsAreArray(
+                                     {100, 0, 0, RS_VALUE_FLAG_CALIBRATION_LOST,
+                                      0, 0, 0, 0})))
       .WillOnce(Return(0));
 
   supla_esp_cfg.Time1[0] = 0;
@@ -2883,8 +2899,8 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveUp) {
   supla_esp_channel_set_value(&reqValue);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
-  // +2000 ms
-  for (int i = 0; i < 200; i++) {
+  // +5000 ms
+  for (int i = 0; i < 5000; i++) {
     curTime += 10000;  // +10ms
     executeTimers();
   }
@@ -2911,7 +2927,19 @@ TEST_F(RollerShutterAutoCalWithSrpc, RsAutoCalibrated_CalibrationLostMoveDown) {
       .WillRepeatedly(Return(0));
 
   EXPECT_CALL(srpc,
-              valueChanged(_, 0, ElementsAreArray({50, 0, 0, 0, 0, 0, 0, 0})))
+              valueChanged(_, 0, ElementsAreArray({20, 0, 0, 0, 0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({40, 0, 0, 0, 0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({60, 0, 0, 0, 0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({80, 0, 0, 0, 0, 0, 0, 0})))
       .WillRepeatedly(Return(0));
 
   EXPECT_CALL(srpc,
@@ -2995,20 +3023,24 @@ TEST_F(RollerShutterAutoCalWithSrpc, AutoCalibrationWithLongStartupTime) {
   upTime = 1200;
   downTime = 1300;
 
-  char expectedValue[8] = {};
-  expectedValue[0] = static_cast<char>(0xFF);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue)))
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({0xFF, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
   // Calibration started (proper flag added)
-  char expectedValue4[8] = {};
-  expectedValue4[0] = static_cast<char>(0xFF);
-  expectedValue4[3] = static_cast<char>(RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS);
-  EXPECT_CALL(srpc, valueChanged(_, 0, ElementsAreArray(expectedValue4)))
+  EXPECT_CALL(
+      srpc, valueChanged(_, 0,
+                         ElementsAreArray(
+                             {0xFF, 0, 0, RS_VALUE_FLAG_CALIBRATION_IN_PROGRESS,
+                              0, 0, 0, 0})))
       .WillOnce(Return(0));
 
   EXPECT_CALL(srpc,
               valueChanged(_, 0, ElementsAreArray({0, 0, 0, 0, 0, 0, 0, 0})))
+      .WillOnce(Return(0));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({5, 0, 0, 0, 0, 0, 0, 0})))
       .WillOnce(Return(0));
 
   EXPECT_CALL(srpc,
@@ -3197,7 +3229,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 100);
+  supla_esp_gpio_rs_add_task(0, 100, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -3251,7 +3283,7 @@ TEST_F(RollerShutterAutoCalF, Task0And100WithTimeMarginCheck) {
 
   // Move RS up.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 0);
+  supla_esp_gpio_rs_add_task(0, 0, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +10.1 s

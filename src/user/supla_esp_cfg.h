@@ -68,6 +68,7 @@ typedef struct {
 
   char CfgButtonType;
   char Button1Type;
+
   char Button2Type;
 
   char StatusLedOff;
@@ -76,7 +77,10 @@ typedef struct {
   char FirmwareUpdate;
   char Test;
 
-  char UpsideDown;
+  union {
+    char UpsideDown;
+    char MotorUpsideDown;  // used as bitmap
+  };
 
   unsigned int Time1[CFG_TIME1_COUNT];
   unsigned int Time2[CFG_TIME2_COUNT];
@@ -101,7 +105,7 @@ typedef struct {
   // Please implement it in board code depending on needs.
   // ButtonType defines type of button: monostable, bistable
   char ButtonType[BTN_MAX_COUNT];
-  // ButtonMode defines if button is used only internally by device (or is 
+  // ButtonMode defines if button is used only internally by device (or is
   // disalbed), or if ActionTrigger should be published
   char ButtonMode[BTN_MAX_COUNT];
 
@@ -111,8 +115,19 @@ typedef struct {
   // It is not guaranteed that bytes outside of this 200 bytes array will be
   // initialized to 0 when CleanConfigSignature is set.
   // So if needed, add new parameter and decrease below array size accordingly.
-  char zero[200];
-
+  unsigned int Time3[CFG_TIME3_COUNT];  // Tilting time
+  char ButtonsUpsideDown;
+  unsigned char Tilt0Angle[RS_MAX_COUNT];  // not used in device
+  unsigned char Tilt100Angle[RS_MAX_COUNT];  // not used in device
+  unsigned char TiltControlType[RS_MAX_COUNT];
+  signed char AdditionalTimeMargin[RS_MAX_COUNT];
+  char zero[200
+            - CFG_TIME3_COUNT * sizeof(unsigned int)  // Time3
+            - sizeof(char)  // ButtonsUpsideDown
+            - RS_MAX_COUNT * sizeof(unsigned char)  // Tilt0Angle
+            - RS_MAX_COUNT * sizeof(unsigned char)  // Tilt100Angle
+            - RS_MAX_COUNT * sizeof(unsigned char)  // TiltControlType
+            - RS_MAX_COUNT * sizeof(signed char)];  // AdditionalTimeMargin
 } SuplaEspCfg;
 
 typedef struct {
@@ -204,27 +219,31 @@ typedef struct {
 
 typedef struct {
 
-	char Relay[RELAY_MAX_COUNT];
+  char Relay[RELAY_MAX_COUNT];
 
+  union {
     int color[RS_MAX_COUNT];
-    char color_brightness[RS_MAX_COUNT];
-    char brightness[RS_MAX_COUNT];
+    int tilt[RS_MAX_COUNT];
+  };
 
-    int rs_position[RS_MAX_COUNT];
-    
-    unsigned int Time1Left[STATE_CFG_TIME1_COUNT];
-    unsigned int Time2Left[STATE_CFG_TIME2_COUNT];
+  char color_brightness[RS_MAX_COUNT];
+  char brightness[RS_MAX_COUNT];
 
-    char turnedOff[RS_MAX_COUNT];
+  int rs_position[RS_MAX_COUNT];
 
-    char zero[200];
-/*
-	char ltag;
-	char len;
-	char log[20][200];
-*/
+  unsigned int Time1Left[STATE_CFG_TIME1_COUNT];
+  unsigned int Time2Left[STATE_CFG_TIME2_COUNT];
 
-}SuplaEspState;
+  char turnedOff[RS_MAX_COUNT];
+
+  char zero[200];
+  /*
+     char ltag;
+     char len;
+     char log[20][200];
+     */
+
+} SuplaEspState;
 
 #define CMD_MAXSIZE 100
 extern char *user_cmd;

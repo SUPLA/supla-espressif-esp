@@ -15,6 +15,7 @@
  Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  */
 
+#include "gmock/gmock.h"
 #include <eagle_soc_mock.h>
 #include <eagle_soc_stub.h>
 #include <gtest/gtest.h>
@@ -25,6 +26,7 @@ extern "C" {
 #include <osapi.h>
 #include <supla_esp_cfg.h>
 #include <supla_esp_devconn.h>
+#include <supla_esp_rs_fb.h>
 #include <supla_esp_gpio.h>
 
 #include "board_stub.h"
@@ -62,17 +64,18 @@ class RollerShutterTestsF : public ::testing::Test {
   EagleSocStub eagleStub;
 
   void SetUp() override {
-    supla_esp_gpio_rs_set_time_margin(110);
+    supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[0], 110);
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
     memset(&supla_relay_cfg, 0, sizeof(supla_relay_cfg));
     memset(&supla_input_cfg, 0, sizeof(supla_input_cfg));
+    supla_esp_cfg.AdditionalTimeMargin[0] = -1;
     supla_esp_gpio_init_time = 0;
     gpioInitCb = *gpioCallback1;
   }
 
   void TearDown() override {
-    supla_esp_gpio_rs_set_time_margin(110);
+    supla_esp_gpio_rs_set_time_margin(&supla_rs_cfg[0], 110);
     cleanupTimers();
     memset(&supla_esp_cfg, 0, sizeof(supla_esp_cfg));
     memset(&supla_esp_state, 0, sizeof(SuplaEspState));
@@ -189,52 +192,52 @@ TEST_F(RollerShutterTestsF, gpioInitWithRsAndTasks) {
   ASSERT_NE(rsCfg, nullptr);
   EXPECT_EQ(*rsCfg->position, 0);
 
-  EXPECT_EQ(rsCfg->task.percent, 0);
+  EXPECT_EQ(rsCfg->task.position, 0);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 0);
+  EXPECT_EQ(rsCfg->task.state, 0);
 
-  supla_esp_gpio_rs_add_task(0, 10);
+  supla_esp_gpio_rs_add_task(0, 10, 0);
 
-  EXPECT_EQ(rsCfg->task.percent, 10);
+  EXPECT_EQ(rsCfg->task.position, 10);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 1);
+  EXPECT_EQ(rsCfg->task.state, 1);
 
   // make sure that nothing happens when we call non existing RS (1 and 2)
-  supla_esp_gpio_rs_add_task(1, 20);
-  supla_esp_gpio_rs_add_task(2, 30);
+  supla_esp_gpio_rs_add_task(1, 20, 0);
+  supla_esp_gpio_rs_add_task(2, 30, 0);
 
-  EXPECT_EQ(rsCfg->task.percent, 10);
+  EXPECT_EQ(rsCfg->task.position, 10);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 1);
+  EXPECT_EQ(rsCfg->task.state, 1);
 
-  supla_esp_gpio_rs_add_task(0, 20);
+  supla_esp_gpio_rs_add_task(0, 20, 0);
 
-  EXPECT_EQ(rsCfg->task.percent, 20);
+  EXPECT_EQ(rsCfg->task.position, 20);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 1);
+  EXPECT_EQ(rsCfg->task.state, 1);
 
   supla_esp_gpio_rs_cancel_task(rsCfg);
 
-  EXPECT_EQ(rsCfg->task.percent, 0);
+  EXPECT_EQ(rsCfg->task.position, 0);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 0);
+  EXPECT_EQ(rsCfg->task.state, 0);
 
   supla_esp_gpio_rs_cancel_task(nullptr);
 
   // check if task is not executed when current possition is the same as
   // requested
   *rsCfg->position = 1600;  // 15 * 100 + 100
-  supla_esp_gpio_rs_add_task(0, 15);
+  supla_esp_gpio_rs_add_task(0, 15, 0);
 
-  EXPECT_EQ(rsCfg->task.percent, 0);
+  EXPECT_EQ(rsCfg->task.position, 0);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 0);
+  EXPECT_EQ(rsCfg->task.state, 0);
 
-  supla_esp_gpio_rs_add_task(0, 16);
+  supla_esp_gpio_rs_add_task(0, 16, 0);
 
-  EXPECT_EQ(rsCfg->task.percent, 16);
+  EXPECT_EQ(rsCfg->task.position, 16);
   EXPECT_EQ(rsCfg->task.direction, RS_DIRECTION_NONE);
-  EXPECT_EQ(rsCfg->task.active, 1);
+  EXPECT_EQ(rsCfg->task.state, 1);
 }
 
 TEST_F(RollerShutterTestsF, MoveDownNotCalibrated) {
@@ -884,7 +887,7 @@ TEST_F(RollerShutterTestsF, CalibrationWithTargetPosition) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 40);
+  supla_esp_gpio_rs_add_task(0, 40, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -1019,7 +1022,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithUnfortunateTiming) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 100);
+  supla_esp_gpio_rs_add_task(0, 100, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -1132,7 +1135,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithUnfortunateTiming2) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 10);
+  supla_esp_gpio_rs_add_task(0, 10, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -1220,7 +1223,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 1);
+  supla_esp_gpio_rs_add_task(0, 1, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -1261,7 +1264,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
     rsTimerCb(rsCfg);  // rs timer cb is called every 10 ms
   }
 
-  supla_esp_gpio_rs_add_task(0, 2);
+  supla_esp_gpio_rs_add_task(0, 2, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +240 ms
@@ -1291,7 +1294,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
     rsTimerCb(rsCfg);  // rs timer cb is called every 10 ms
   }
 
-  supla_esp_gpio_rs_add_task(0, 1);
+  supla_esp_gpio_rs_add_task(0, 1, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +240 ms
@@ -1321,7 +1324,7 @@ TEST_F(RollerShutterTestsF, MoveDownWithSmallSteps) {
     rsTimerCb(rsCfg);  // rs timer cb is called every 10 ms
   }
 
-  supla_esp_gpio_rs_add_task(0, 2);
+  supla_esp_gpio_rs_add_task(0, 2, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +240 ms
@@ -1944,6 +1947,8 @@ char custom_srpc_getdata(void *_srpc, TsrpcReceivedData *rd,
   return 1;
 }
 
+using ::testing::ElementsAreArray;
+
 TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   SrpcMock srpc;
   int curTime = 10000;  // start at +10 ms
@@ -1952,6 +1957,10 @@ TEST_F(RollerShutterTestsF, NotCalibratedWithTargetPositionFromServer) {
   EXPECT_CALL(srpc, srpc_params_init(_));
   EXPECT_CALL(srpc, srpc_init(_)).WillOnce(Return((void *)1));
   EXPECT_CALL(srpc, srpc_set_proto_version(_, SUPLA_PROTO_VERSION));
+
+  EXPECT_CALL(srpc,
+              valueChanged(_, 0, ElementsAreArray({0xFF, 0, 0, 0, 0, 0, 0, 0})))
+      .WillRepeatedly(Return(0));
 
   regResult.result_code = SUPLA_RESULTCODE_TRUE;
 
@@ -2076,7 +2085,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithTimeMarginCheck) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 100);
+  supla_esp_gpio_rs_add_task(0, 100, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -2134,7 +2143,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithTimeMarginCheck) {
 
   // Move RS up.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 0);
+  supla_esp_gpio_rs_add_task(0, 0, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +10.1 s
@@ -2190,7 +2199,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithModifiedTimeMarginCheck) {
   *rsCfg->position = 100;  // actual position: (x - 100)/100 = 0%
 
   // we set 50% time margin added to 0/100% positions
-  supla_esp_gpio_rs_set_time_margin(50);
+  supla_esp_gpio_rs_set_time_margin(rsCfg, 50);
 
   EXPECT_EQ(rsCfg->up_time, 0);
   EXPECT_EQ(rsCfg->down_time, 0);
@@ -2213,7 +2222,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithModifiedTimeMarginCheck) {
 
   // Move RS down.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 100);
+  supla_esp_gpio_rs_add_task(0, 100, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   EXPECT_EQ(rsCfg->up_time, 0);
@@ -2295,7 +2304,7 @@ TEST_F(RollerShutterTestsF, Task0And100WithModifiedTimeMarginCheck) {
 
   // Move RS up.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
-  supla_esp_gpio_rs_add_task(0, 0);
+  supla_esp_gpio_rs_add_task(0, 0, 0);
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);
 
   // +10.1 s
@@ -2415,7 +2424,7 @@ TEST_F(RollerShutterTestsF, RelayDownMarginCheck) {
     rsTimerCb(rsCfg);  // rs timer cb is called every 10 ms
   }
 
-  supla_esp_gpio_rs_set_time_margin(30);
+  supla_esp_gpio_rs_set_time_margin(rsCfg, 30);
 
   // Move RS UP.
   EXPECT_EQ(rsCfg->delayed_trigger.value, 0);

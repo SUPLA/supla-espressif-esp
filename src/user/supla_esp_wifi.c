@@ -126,9 +126,3 @@ supla_esp_wifi_station_connect(_wifi_void_status status_cb) {
                  (os_timer_func_t *)supla_esp_wifi_check_status, NULL);
   os_timer_arm(&supla_esp_wifi_vars.timer, WIFI_CHECK_STATUS_INTERVAL_MS, 1);
 }
-
-void ICACHE_FLASH_ATTR supla_esp_wifi_station_disconnect(void) {
-  supla_esp_gpio_state_disconnected();
-  os_timer_disarm(&supla_esp_wifi_vars.timer);
-  supla_esp_wifi_check_status(NULL);
-}
