@@ -345,6 +345,11 @@ void GPIO_ICACHE_FLASH supla_esp_gpio_rs_move_position(
   }
 
   int last_pos = *rs_cfg->position;
+
+  if (supla_esp_gpio_rs_is_tilt_supported(rs_cfg) &&
+      (*rs_cfg->tilt < 100 || *rs_cfg->tilt > 10100)) {
+    *rs_cfg->tilt = 100;
+  }
   int last_tilt = *rs_cfg->tilt;
 
   unsigned int full_time = full_time_ms * 1000;
