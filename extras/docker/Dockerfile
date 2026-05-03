@@ -1,8 +1,19 @@
-FROM debian:stretch-backports
+FROM debian:13
 
 RUN apt-get update 
-RUN apt-get -y install git vim wget build-essential python python-pip screen
-RUN pip install esptool
+RUN apt-get -y install git vim wget build-essential esptool screen zlib1g-dev
+
+RUN wget https://www.python.org/ftp/python/2.7.13/Python-2.7.13.tgz \
+ && tar xzf Python-2.7.13.tgz \
+ && cd Python-2.7.13 \
+ && ./configure --prefix=/usr/local/python2.7 \
+ && make -j$(nproc) \
+ && make install
+
+RUN /usr/local/python2.7/bin/python2.7 -c "import zlib; print(zlib.ZLIB_VERSION)"
+RUN echo '#!/bin/sh\nexec /usr/local/python2.7/bin/python2.7 "$@"' > /usr/bin/python \
+ && chmod +x /usr/bin/python
+
 RUN mkdir /hdd2
 RUN if uname -m | grep x86_64; then \
       cd /hdd2 && \ 
