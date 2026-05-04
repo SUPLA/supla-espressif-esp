@@ -1,3 +1,19 @@
+---
+kind: secret
+name: rocket_url
+data: ZBt5uk9d2NO5veU6LzGZr5OGbtRhUAjO+rw4qQVxEsq5cqmSho9Fd8bMQXBiH1eiHuCdXA==
+
+---
+kind: secret
+name: rocket_user
+data: /U819jiFM29HlTDFN1ICBUHq849jsgpRx1Ap/Yi4AiKDBDUC+fy9pDCuKMMT
+
+---
+kind: secret
+name: rocket_token
+data: Q6+6S9feDl3k3ITFqA35Hk9ldkuEmv58trwO4Q/KRGnv8ZwEcJISHWe33QZp3UEa/WiHBTclQtE01Ac24xFYGvdt1eIdaS8=
+
+---
 kind: pipeline
 name: default
 
