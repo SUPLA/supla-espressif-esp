@@ -22,8 +22,11 @@ steps:
   image: devel/esp8266
   pull: never
   commands:
+  - ls -al
   - mkdir -p /CProjects
+  - ls -al
   - ln -s /drone/src /CProjects/supla-espressif-esp
+  - ls -al
   - ./test/check_compilation_of_all_targets.sh
 
 - name: rocket
