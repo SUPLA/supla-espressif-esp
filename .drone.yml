@@ -38,8 +38,8 @@ steps:
   image: devel/esp8266
   pull: never
   commands:
-  - ls -al
   - mkdir -p /CProjects
+  - cd /CProjects
   - ls -al
   - ln -s /drone/src /CProjects/supla-espressif-esp
   - ls -al
