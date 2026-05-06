@@ -39,7 +39,12 @@ steps:
   pull: never
   commands:
   - mkdir -p /CProjects
+  - cd /CProjects
+  - ls -al
+  - cd supla-espressif-esp
+  - ls -al
   - ln -s /drone/src /CProjects/supla-espressif-esp
+  - ls -al
   - ./test/check_compilation_of_all_targets.sh
 
 - name: rocket
